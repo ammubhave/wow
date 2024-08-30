@@ -1,0 +1,22 @@
+{
+  "name": "[Optional] Your project name here",
+  "dockerComposeFile": "./docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "postStartCommand": "bun install",
+  "forwardPorts": [8788],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "Prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "zenstack.zenstack",
+        "ms-azuretools.vscode-docker",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  }
+}

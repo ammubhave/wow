@@ -1,0 +1,33 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "wow-do"
+main = "src/index.ts"
+compatibility_date = "2024-08-21"
+send_metrics = false
+
+[durable_objects]
+bindings = [
+    { name = "CHAT_ROOMS", class_name = "ChatRoom", script_name = "wow-do" },
+    { name = "NOTIFICATION_ROOMS", class_name = "NotificationRoom", script_name = "wow-do" },
+    { name = "PRESENCE_ROOMS", class_name = "PresenceRoom", script_name = "wow-do" },
+    { name = "DISCORD_CLIENT", class_name = "DiscordClient", script_name = "wow-do" },
+]
+
+[vars]
+BUN_VERSION = "1.1.26"
+NODE_VERSION = "20"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]
+
+[[migrations]]
+tag = "v2"
+new_classes = ["NotificationRoom"]
+
+[[migrations]]
+tag = "v3"
+new_classes = ["PresenceRoom"]
+
+[[migrations]]
+tag = "v4"
+new_classes = ["DiscordClient"]

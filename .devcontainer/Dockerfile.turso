@@ -1,0 +1,9 @@
+FROM ubuntu:22.04
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+RUN apt-get update && apt-get install -y git curl unzip lsof xz-utils tar
+
+ENV TURSO_INSTALL_SKIP_SIGNUP=true
+RUN curl -sSfL https://get.tur.so/install.sh | bash
+ENV PATH      /root/.turso:$PATH
+

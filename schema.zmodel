@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters", "omitApi"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+abstract model Base {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
+
+model User {
+  id String @id()
+  @@ignore
+}
+
+model WorkspaceMembership {
+  userId      String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@allow('create', true)
+  @@allow('read,delete', userId == auth().id)
+}
+
+model Workspace extends Base {
+  teamName             String
+  eventName            String
+  password             String                @unique
+
+  memberships          WorkspaceMembership[]
+  rounds               Round[]
+  links                WorkspaceLinks[]
+
+  googleAccessToken    String?
+  googleRefreshToken   String?
+  googleTokenExpiresAt DateTime?
+  googleFolderId       String?
+  googleTemplateFileId String?
+
+  discordGuildId       String?
+
+  @@allow('create', true)
+  @@allow('read,update,delete', memberships?[userId == auth().id])
+}
+
+model WorkspaceLinks extends Base {
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  name        String
+  url         String
+
+  @@allow('all', workspace.memberships?[userId == auth().id])
+}
+
+model Round extends Base {
+  workspaceId       String
+  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  name              String
+
+  unassignedPuzzles Puzzle[]
+  metaPuzzles       MetaPuzzle[]
+
+  @@allow('all', workspace.memberships?[userId == auth().id])
+}
+
+model MetaPuzzle {
+  id                  String       @id
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt()
+
+  name                String
+  link                String?
+  googleSpreadsheetId String?
+
+  answer              String?
+
+  puzzles             Puzzle[]
+  status              String?
+
+  round               Round        @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  roundId             String
+
+  metaPuzzle          MetaPuzzle?  @relation("MetaMetaPuzzles", fields: [metaPuzzleId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  metaPuzzleId        String?
+  metaPuzzles         MetaPuzzle[] @relation("MetaMetaPuzzles")
+
+  @@allow('all', round.workspace.memberships?[userId == auth().id])
+}
+
+model Puzzle extends Base {
+  name                String
+  link                String?
+  googleSpreadsheetId String?
+
+  answer              String?
+  status              String?
+
+  // --------
+  metaPuzzle          MetaPuzzle? @relation(fields: [metaPuzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  metaPuzzleId        String?
+  // -- OR --
+  round               Round?      @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  roundId             String?
+  // --------
+
+  @@allow('all', round.workspace.memberships?[userId == auth().id])
+  @@allow('all', metaPuzzle.round.workspace.memberships?[userId == auth().id])
+}

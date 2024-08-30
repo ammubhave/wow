@@ -1,0 +1,23 @@
+services:
+  dev:
+    build:
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    environment:
+      WRANGLER_SEND_METRICS: false
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    depends_on:
+      - db
+  db:
+    build:
+      dockerfile: Dockerfile.turso
+    volumes:
+      - ..:/workspace:cached
+    command: turso dev --db-file /workspace/dev.sqlite
+    ports:
+      - 8080
