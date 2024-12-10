@@ -25,7 +25,8 @@ dist-ssr
 *.sw?
 
 .turbo
-.wrangler
+.wrangler/*
+!.wrangler/types/runtime.d.ts
 
 .cache
 build

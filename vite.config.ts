@@ -1,22 +1,16 @@
 import mdx from "@mdx-js/rollup";
-import { vitePlugin as remix } from "@remix-run/dev";
 import {
   fromNodeRequest,
   toNodeRequest,
 } from "@remix-run/dev/dist/vite/node-adapter";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
-import { cjsInterop } from "vite-plugin-cjs-interop";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+// https://vite.dev/config/
 export default defineConfig({
-  optimizeDeps: {
-    entries: ["./app/**/*.ts", "./app/**/*.tsx"],
-  },
   plugins: [
-    cjsInterop({
-      dependencies: ["@kinde-oss/kinde-auth-react"],
-    }),
     {
       name: "cloudflare-proxy",
       async configureServer(server) {
@@ -32,31 +26,23 @@ export default defineConfig({
           const url = new URL(req.url);
           url.host = "localhost:8787";
           url.protocol = "http";
-          fetch(url, req).then(async (res) => {
-            await toNodeRequest(res as any, nodeRes);
-          });
+
+          fetch(url, new Request(req, { redirect: "manual" })).then(
+            async (res) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await toNodeRequest(res as any, nodeRes);
+            },
+          );
         });
       },
     },
-    {
-      enforce: "pre",
-      ...mdx(),
-    },
-    remix({
-      ssr: false,
-      future: {
-        v3_fetcherPersist: true,
-        v3_relativeSplatPath: true,
-        v3_throwAbortReason: true,
-        v3_singleFetch: true,
-        v3_lazyRouteDiscovery: true,
-      },
-    }),
+    mdx(),
+    react(),
     sentryVitePlugin({
       org: "wafflehaus-organized-workspace",
       project: "wow-frontend",
       sourcemaps: {
-        filesToDeleteAfterUpload: ["build/client/**/*.js.map"],
+        filesToDeleteAfterUpload: ["dist/**/*.js.map"],
       },
       telemetry: false,
     }),
@@ -64,5 +50,15 @@ export default defineConfig({
   ],
   build: {
     sourcemap: true,
+    chunkSizeWarningLimit: 2500,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            return "vendor";
+          }
+        },
+      },
+    },
   },
 });

@@ -1,5 +1,6 @@
 {
   "remote.autoForwardPorts": false,
   "remote.autoForwardPortsFallback": 0,
-  "remote.restoreForwardedPorts": false
+  "remote.restoreForwardedPorts": false,
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

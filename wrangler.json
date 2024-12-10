@@ -2,12 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "wow",
   "account_id": "ff0f90cb5a46c881c601b8f3c650c60e",
-  "main": "src/index.ts",
+  "main": "src/server/index.ts",
   "send_metrics": false,
   "compatibility_date": "2024-12-05",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./build/client",
+    "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
@@ -16,24 +16,6 @@
   "upload_source_maps": true,
   "placement": { "mode": "smart" },
   "vars": { "NODE_VERSION": "22" },
-  "env": {
-    "local": {
-      "vars": {
-        "NODE_VERSION": "22",
-        "TURSO_URL": "http://db:8080",
-        "TURSO_AUTH_TOKEN": ""
-      },
-      "durable_objects": {
-        "bindings": [
-          { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
-          { "name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom" },
-          { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" },
-          { "name": "DISCORD_CLIENT", "class_name": "DiscordClient" }
-        ]
-      },
-      "tail_consumers": []
-    }
-  },
   "durable_objects": {
     "bindings": [
       { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
