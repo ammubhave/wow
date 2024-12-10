@@ -1,50 +1,39 @@
-# React + TypeScript + Vite
+# Wafflehäus Organized Workspace
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Getting Started
 
-Currently, two official plugins are available:
+1. Install [Visual Studio Code](https://code.visualstudio.com/) or [Cursor](https://www.cursor.com/)
+2. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension in your IDE.
+3. Open the repository inside the IDE and click on "Reopen in Container" in the bottom right corner. If this doesn't appear, then type `Command+Shift+P` and select "Dev Containers: Rebuild and Reopen in Container".
+4. Ask Amol for secrets that need to be set in `.env.local` file.
+5. Open a new terminal inside vscode (i.e. inside the dev container) and run
+6. If this is the first time you're running the app, you will have to synchronize your local database instance schema by running `pnpm run db:push:local`.
+7. Run the following command to start the dev server.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-});
+```bash
+pnpm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+8. After the dev server starts, the web app will be available at `http://localhost:8788`.
 
-```js
-// eslint.config.js
-import react from "eslint-plugin-react";
+## Code Structure
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: "18.3" } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs["jsx-runtime"].rules,
-  },
-});
-```
+### Frontend
+
+The frontend is built using [Remix](https://remix.run/). Most of the code is in the `src` directory.
+
+### Backend
+
+The backend is built using [Cloudflare Workers](https://workers.cloudflare.com/) and [Durable Objects](https://developers.cloudflare.com/durable-objects/). Most of the code is in the `src/server` directory.
+
+### Database
+
+The database a SQLite database is powered by [Turso](https://turso.tech/). The schema is defined in the `schema.zmodel` file and uses [Zenstack](https://zenstack.dev/) as the ORM.
+
+### Authentication
+
+The app uses [Kinde](https://kinde.com/) for authentication.
+
+### Deployment
+
+The app is deployed to Cloudflare. The repository is configured to automatically deploy the `main` branch on every push to the repository.
