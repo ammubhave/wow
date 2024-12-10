@@ -72,6 +72,7 @@ export default defineConfig({
       sourcemaps: {
         filesToDeleteAfterUpload: ["build/client/**/*.js.map"],
       },
+      telemetry: false,
     }),
     tsconfigPaths(),
   ],

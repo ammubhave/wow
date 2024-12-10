@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",
+    "@hono/trpc-server": "^0.3.4",
     "@hookform/resolvers": "^3.9.0",
     "@kinde-oss/kinde-auth-react": "^4.0.2",
     "@libsql/client": "^0.14.0",

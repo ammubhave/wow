@@ -1,3 +1,4 @@
+import { trpcServer } from "@hono/trpc-server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { Mutex } from "async-mutex";
 import { DurableObject } from "cloudflare:workers";
@@ -242,35 +243,26 @@ export class DiscordClient extends DurableObject {
   }
 }
 
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    if (url.pathname === "/healthz") {
-      return new Response("OK");
-    } else if (url.pathname.startsWith("/api/")) {
-      const resp = await fetchRequestHandler({
-        req: request,
-        endpoint: "/api/trpc",
-        router: appRouter,
-        createContext: ({ req }) =>
-          createContext({ req, env: env, waitUntil: ctx.waitUntil }),
-      });
-      return resp;
-    }
-    return await env.ASSETS.fetch(request);
+const app = new Hono<{ Bindings: Env }>();
 
-    // We will create a `DurableObjectId` using the pathname from the Worker request
-    // This id refers to a unique instance of our 'MyDurableObject' class above
-    // let id: DurableObjectId = env.MY_DURABLE_OBJECT.idFromName(new URL(request.url).pathname);
+app.get("/healthz", async (c) => {
+  return c.text("OK");
+});
 
-    // This stub creates a communication channel with the Durable Object instance
-    // The Durable Object constructor will be invoked upon the first call for a given id
-    // let stub = env.MY_DURABLE_OBJECT.get(id);
+app.use(
+  "/api/trpc/*",
+  trpcServer({
+    endpoint: "/api/trpc",
+    router: appRouter,
+    createContext: (opts, c) =>
+      createContext({
+        req: opts.req,
+        env: c.env,
+        waitUntil: c.executionCtx.waitUntil,
+      }),
+  }),
+);
 
-    // We call the `sayHello()` RPC method on the stub to invoke the method on the remote
-    // Durable Object instance
-    // let greeting = await stub.sayHello("world");
+app.notFound((c) => c.env.ASSETS.fetch(c.req.raw));
 
-    // return new Response(greeting);
-  },
-} satisfies ExportedHandler<Env>;
+export default app;
