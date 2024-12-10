@@ -1,5 +1,6 @@
 import { KindeProvider } from "@kinde-oss/kinde-auth-react";
 import {
+  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
@@ -7,6 +8,7 @@ import {
   ScrollRestoration,
   useLocation,
   useNavigate,
+  useRouteError,
 } from "@remix-run/react";
 import { useEffect } from "react";
 import { Provider } from "react-redux";
@@ -16,6 +18,7 @@ import { store } from "./store";
 
 import "./tailwind.css";
 
+import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import { toast } from "sonner";
 
 import { Toaster } from "./components/ui/sonner";
@@ -54,7 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+function App() {
   // If an error message was passed in the URL, show it to the user.
   const location = useLocation();
   const navigate = useNavigate();
@@ -93,6 +96,10 @@ export default function App() {
   );
 }
 
+export default withSentry(App, {
+  wrapWithErrorBoundary: true,
+});
+
 export function HydrateFallback() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
@@ -102,3 +109,31 @@ export function HydrateFallback() {
     </div>
   );
 }
+
+export const ErrorBoundary = () => {
+  const error = useRouteError();
+
+  captureRemixErrorBoundaryError(error);
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div>
+        <h1>
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  } else if (error instanceof Error) {
+    return (
+      <div>
+        <h1>Error</h1>
+        <p>{error.message}</p>
+        <p>The stack trace is:</p>
+        <pre>{error.stack}</pre>
+      </div>
+    );
+  } else {
+    return <h1>Unknown Error</h1>;
+  }
+};

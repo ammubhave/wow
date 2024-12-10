@@ -13,7 +13,8 @@ RUN source $NVM_DIR/nvm.sh \
     && nvm alias default $NODE_VERSION \
     && nvm use default
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
-ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+ENV PNPM_HOME /root/.local/share/pnpm
+ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PNPM_HOME:$PATH
 
-RUN curl -fsSL https://bun.sh/install | bash
+RUN corepack enable pnpm
 EXPOSE 8788

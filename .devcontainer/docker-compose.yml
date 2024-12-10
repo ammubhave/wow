@@ -6,6 +6,7 @@ services:
       - ..:/workspace:cached
     environment:
       WRANGLER_SEND_METRICS: false
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
     cap_add:
       - SYS_PTRACE
     security_opt:

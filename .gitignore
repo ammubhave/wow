@@ -36,3 +36,5 @@ web/.env
 prisma/schema.prisma
 dev.sqlite*
 prod.sqlite*
+
+/.pnpm-store

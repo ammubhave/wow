@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wow",
+  "account_id": "ff0f90cb5a46c881c601b8f3c650c60e",
+  "main": "src/index.ts",
+  "send_metrics": false,
+  "compatibility_date": "2024-12-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./build/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true },
+  "tail_consumers": [{ "service": "wow-tail" }],
+  "upload_source_maps": true,
+  "placement": { "mode": "smart" },
+  "vars": { "NODE_VERSION": "22" },
+  "durable_objects": {
+    "bindings": [
+      { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
+      { "name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom" },
+      { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" },
+      { "name": "DISCORD_CLIENT", "class_name": "DiscordClient" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": [
+        "ChatRoom",
+        "NotificationRoom",
+        "PresenceRoom",
+        "DiscordClient"
+      ]
+    }
+  ]
+}

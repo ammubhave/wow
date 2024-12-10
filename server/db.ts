@@ -15,6 +15,7 @@ export async function getDb(context: {
   });
   const adapter = new PrismaLibSQL(libsql);
   const prisma = new PrismaClient({ adapter });
+  console.log("prisma", prisma);
   const url = new URL(context.request.url);
   const jwt = z.string().parse(url.searchParams.get("token"));
   const payload = z

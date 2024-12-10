@@ -1,10 +1,10 @@
 {
-  "name": "[Optional] Your project name here",
+  "name": "wow",
   "dockerComposeFile": "./docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
-  "postStartCommand": "bun install",
+  "postStartCommand": "pnpm install",
   "forwardPorts": [8788],
   "customizations": {
     "vscode": {
