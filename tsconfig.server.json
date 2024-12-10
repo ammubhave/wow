@@ -20,8 +20,8 @@
     "noEmit": true
   },
   "include": [
-    "functions/**/*.ts",
     "server/**/*.ts",
+    "src/**/*.ts",
     "worker-configuration.d.ts",
     "vite.config.ts"
   ]

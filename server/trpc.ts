@@ -82,15 +82,7 @@ export const createContext = async ({
       }
       await env.DISCORD_CLIENT.get(
         env.DISCORD_CLIENT.idFromName(workspace.discordGuildId),
-      )!.fetch(
-        new Request("https://example.com/sync", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(workspace),
-        }),
-      );
+      ).sync(workspace as any);
     },
     user: {
       id: payload.sub,
@@ -109,13 +101,10 @@ export const createContext = async ({
       const room = env.NOTIFICATION_ROOMS.get(
         env.NOTIFICATION_ROOMS.idFromName(workspaceId),
       );
-      await room.fetch(
-        new Request("https://example.com/broadcast", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
+      await room.broadcast(
+        JSON.stringify({
+          ...data,
+          timestamp: Date.now(),
         }),
       );
     },

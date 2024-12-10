@@ -1,17 +1,20 @@
 import { createClient } from "@libsql/client";
 import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@prisma/client";
+import { Hono } from "hono";
 import { z } from "zod";
 
-export const onRequest: PagesFunction<Env> = async (context) => {
+const app = new Hono<{ Bindings: Env }>();
+
+app.all("/", async (c) => {
   const libsql = createClient({
-    url: context.env.TURSO_URL,
-    authToken: context.env.TURSO_AUTH_TOKEN,
+    url: c.env.TURSO_URL,
+    authToken: c.env.TURSO_AUTH_TOKEN,
   });
   const adapter = new PrismaLibSQL(libsql);
   const prisma = new PrismaClient({ adapter });
 
-  const url = new URL(context.request.url);
+  const url = new URL(c.req.url);
   const { redirectUrl, workspaceId } = z
     .object({ redirectUrl: z.string(), workspaceId: z.string() })
     .parse(
@@ -68,18 +71,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       },
     },
   });
-  context.waitUntil(
+  c.executionCtx.waitUntil(
     (async () => {
-      context.env.DISCORD_CLIENT.get(
-        context.env.DISCORD_CLIENT.idFromName(guildId),
-      )!.fetch(
-        new Request("https://example.com/sync", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(workspace),
-        }),
+      c.env.DISCORD_CLIENT.get(c.env.DISCORD_CLIENT.idFromName(guildId)).sync(
+        workspace as any,
       );
     })(),
   );
@@ -89,4 +84,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     },
     status: 302,
   });
-};
+});
+
+export default app;

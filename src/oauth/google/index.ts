@@ -1,17 +1,25 @@
 import { createClient } from "@libsql/client";
 import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@prisma/client";
+import { Hono } from "hono";
 import { z } from "zod";
 
-export const onRequest: PagesFunction<Env> = async (context) => {
+const app = new Hono<{ Bindings: Env }>();
+
+app.all("/", async (c) => {
   const libsql = createClient({
-    url: context.env.TURSO_URL,
-    authToken: context.env.TURSO_AUTH_TOKEN,
+    url: c.env.TURSO_URL,
+    authToken: c.env.TURSO_AUTH_TOKEN,
   });
   const adapter = new PrismaLibSQL(libsql);
   const prisma = new PrismaClient({ adapter });
 
-  const url = new URL(context.request.url);
+  const url = new URL(c.req.url);
+  // For dev
+  if (url.hostname === "localhost" && url.port === "8787") {
+    url.port = "8788";
+  }
+
   const { redirectUrl, workspaceId } = z
     .object({ redirectUrl: z.string(), workspaceId: z.string() })
     .parse(
@@ -45,8 +53,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       },
       body: new URLSearchParams({
         redirect_uri: url.toString(),
-        client_id: context.env.VITE_GOOGLE_API_CLIENT_ID,
-        client_secret: context.env.GOOGLE_API_CLIENT_SECRET,
+        client_id: c.env.VITE_GOOGLE_API_CLIENT_ID,
+        client_secret: c.env.GOOGLE_API_CLIENT_SECRET,
         grant_type: "authorization_code",
         code,
       }),
@@ -79,4 +87,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     },
     status: 302,
   });
-};
+});
+
+export default app;

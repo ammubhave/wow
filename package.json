@@ -3,11 +3,11 @@
   "type": "module",
   "scripts": {
     "build": "remix vite:build",
-    "dev": "concurrently --restart-tries -1 \"remix vite:dev --host 0.0.0.0 --port 8788\" \"wrangler dev --ip 0.0.0.0\"",
+    "dev": "concurrently --restart-tries -1 \"remix vite:dev --host 0.0.0.0 --port 8788\" \"mkdir -p build/client && wrangler dev --ip 0.0.0.0 --env local\"",
     "start": "wrangler dev --ip 0.0.0.0 --port 8788",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "preview": "vite preview",
-    "cf-typegen": "npx wrangler types --x-include-runtime",
+    "cf-typegen": "npx wrangler types --x-include-runtime -e local",
     "typecheck": "tsc",
     "prepare": "husky",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

@@ -29,9 +29,7 @@ dist-ssr
 
 .cache
 build
-do/.env
-web/.env
-.dev.vars
+# .dev.vars
 
 prisma/schema.prisma
 dev.sqlite*

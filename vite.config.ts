@@ -11,19 +11,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   optimizeDeps: {
-    include: [
-      "react-google-drive-picker",
-      "@tanstack/react-query",
-      "@trpc/client",
-      "@heroicons/react/24/solid",
-      "@radix-ui/react-icons",
-      "@trpc/react-query",
-      "@radix-ui/react-dropdown-menu",
-      "@hookform/resolvers/zod",
-      "react-hook-form",
-      "zod",
-      "@radix-ui/react-label",
-    ],
+    entries: ["./app/**/*.ts", "./app/**/*.tsx"],
   },
   plugins: [
     cjsInterop({
@@ -35,18 +23,16 @@ export default defineConfig({
         server.middlewares.use((nodeReq, nodeRes, next) => {
           if (
             !nodeReq.url?.startsWith("/api/") &&
-            !nodeReq.url?.startsWith("/healthz/")
+            !nodeReq.url?.startsWith("/healthz")
           ) {
             return next();
           }
-
           const req = fromNodeRequest(nodeReq, nodeRes);
           req.headers.set("accept-encoding", "identity");
           const url = new URL(req.url);
           url.host = "localhost:8787";
           url.protocol = "http";
           fetch(url, req).then(async (res) => {
-            // console.log(nodeReq, res);
             await toNodeRequest(res as any, nodeRes);
           });
         });
