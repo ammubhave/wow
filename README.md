@@ -2,11 +2,11 @@
 
 ## Getting Started
 
-1. Install [Visual Studio Code](https://code.visualstudio.com/) or [Cursor](https://www.cursor.com/)
+1. Install [Visual Studio Code](https://code.visualstudio.com/) or [Cursor](https://www.cursor.com/).
 2. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension in your IDE.
 3. Open the repository inside the IDE and click on "Reopen in Container" in the bottom right corner. If this doesn't appear, then type `Command+Shift+P` and select "Dev Containers: Rebuild and Reopen in Container".
-4. Ask Amol for secrets that need to be set in `.env.local` file.
-5. Open a new terminal inside vscode (i.e. inside the dev container) and run
+4. Ask Amol or Allen for secrets that need to be set in `.env.local` and `.dev.vars` files.
+5. Open a new terminal inside VSCode (i.e. inside the dev container).
 6. If this is the first time you're running the app, you will have to synchronize your local database instance schema by running `pnpm run db:push:local`.
 7. Run the following command to start the dev server.
 
@@ -28,7 +28,7 @@ The backend is built using [Cloudflare Workers](https://workers.cloudflare.com/)
 
 ### Database
 
-The database a SQLite database is powered by [Turso](https://turso.tech/). The schema is defined in the `schema.zmodel` file and uses [Zenstack](https://zenstack.dev/) as the ORM.
+The database is a SQLite database powered by [Turso](https://turso.tech/). The schema is defined in the `schema.zmodel` file and uses [Zenstack](https://zenstack.dev/) as the ORM.
 
 ### Authentication
 
