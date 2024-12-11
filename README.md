@@ -20,7 +20,7 @@ pnpm run dev
 
 ### Frontend
 
-The frontend is built using [Remix](https://remix.run/). Most of the code is in the `src` directory.
+The frontend is built using React and [React Router](https://reactrouter.com/). Most of the code is in the `src` directory.
 
 ### Backend
 
