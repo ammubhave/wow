@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -142,7 +143,17 @@ export function AddNewPuzzleDialog({
       }),
       {
         loading: "Adding puzzle...",
-        success: "Success! Puzzle added.",
+        success: (puzzle) => (
+              <>
+              Success! Puzzle added. Go to
+              <Link
+                to={`/wow/${workspaceId}/puzzles/${puzzle.id}`}
+                className="-m-2 block p-2 hover:underline"
+              >
+                {puzzle.name}
+              </Link>
+              </>
+        ),
         error: "Oops! Something went wrong.",
         description: data.name,
       },

@@ -38,6 +38,19 @@ export function Header() {
   const shareGoogleDriveFolderMutation =
     trpc.workspaces.shareGoogleDriveFolder.useMutation();
 
+  const randomHeaderFlavors =
+    ["Wafflehäus Organized WOW",
+    "WOW: Full House",
+    "Wafflehäus From Home",
+    "WOW For Häus",
+    "ecapskroW dezinagrO suähelffaW",
+    "The New WOW",
+    ];
+  let randomHeaderFlavor = "Wafflehäus Organized Workspace";
+  if (Math.random() > 0.5) {
+    randomHeaderFlavor = randomHeaderFlavors[Math.floor(Math.random() * randomHeaderFlavors.length)];
+  }
+
   return (
     <header className="bg-background sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-4 md:px-6 justify-between">
       <nav className="flex flex-row items-center gap-1 sm:gap-5 text-lg font-medium md:text-sm lg:gap-6">
@@ -51,11 +64,11 @@ export function Header() {
         </Button>
         <div className="contents flex-1 text-lg font-semibold">
           {pathnames.length === 3 && pathnames[1] === "wow" ? (
-            <span className="font-semi-bold text-lg">Blackboard</span>
+            <span className="font-semi-bold text-lg">{randomHeaderFlavor}</span>
           ) : !workspaceId ||
             pathnames.length === 3 ||
             pathnames[2] === "create" ? (
-            <span className="font-semi-bold text-lg">WOW</span>
+            <span className="font-semi-bold text-lg">{randomHeaderFlavor}</span>
           ) : (
             <Button
               asChild
