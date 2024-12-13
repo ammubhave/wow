@@ -1,17 +1,21 @@
 import { ArrowLongLeftIcon } from "@heroicons/react/24/solid";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
-import { ExternalLinkIcon, PersonIcon } from "@radix-ui/react-icons";
+import { ExternalLinkIcon, GearIcon, PersonIcon } from "@radix-ui/react-icons";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { setIsDarkModeEnabled } from "@/features/settings/is-dark-mode-enabled";
 import { trpc } from "@/lib/trpc";
 import { usePuzzle } from "@/lib/usePuzzle";
+import { useAppDispatch, useAppSelector } from "@/store";
 
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
@@ -45,11 +49,23 @@ export function Header() {
     "WOW For Häus",
     "ecapskroW dezinagrO suähelffaW",
     "The New WOW",
+    "🧇🏠 🧩 💼🚀",
     ];
-  let randomHeaderFlavor = "Wafflehäus Organized Workspace";
-  if (Math.random() > 0.5) {
-    randomHeaderFlavor = randomHeaderFlavors[Math.floor(Math.random() * randomHeaderFlavors.length)];
+  let randomHeaderFlavor = sessionStorage.getItem("randomHeaderFlavor");
+  if (randomHeaderFlavor == null) {
+    randomHeaderFlavor = "Wafflehäus Organized Workspace";
+    if (Math.random() > 0.5) {
+      randomHeaderFlavor = randomHeaderFlavors[Math.floor(Math.random() * randomHeaderFlavors.length)];
+    }
+    sessionStorage.setItem("randomHeaderFlavor", randomHeaderFlavor);
   }
+
+  const dispatch = useAppDispatch();
+  const { isDarkModeEnabled } = useAppSelector(
+      (state) => state.isDarkModeEnabled
+  );
+  // This is needed for the initial page load, since otherwise dark mode doesn't get read anywhere.
+  dispatch(setIsDarkModeEnabled(isDarkModeEnabled));
 
   return (
     <header className="bg-background sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-4 md:px-6 justify-between">
@@ -73,7 +89,7 @@ export function Header() {
             <Button
               asChild
               variant={"ghost"}
-              className="flex items-center justify-center gap-2 text-sm font-semibold leading-6 text-gray-900"
+              className="flex items-center justify-center gap-2 text-sm font-semibold leading-6 text-gray-900 dark:text-white"
             >
               <Link to={`/wow/${workspaceId}`}>
                 <ArrowLongLeftIcon className="size-6" />
@@ -124,6 +140,23 @@ export function Header() {
             )
           )}
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="-my-3">
+                <GearIcon className="size-4" />
+                <span className="sr-only">Toggle settings</span>
+              </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuCheckboxItem
+              checked={isDarkModeEnabled}
+              onCheckedChange={(checked) => dispatch(setIsDarkModeEnabled(checked))}
+              onSelect={event => event.preventDefault()}
+            >
+              Dark Mode
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" className="rounded-lg">
