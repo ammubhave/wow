@@ -48,93 +48,100 @@ import { useAppSelector } from "@/store";
 
 export default function Page() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
-  const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
 
   return (
     <PresencesWebSocket workspaceId={workspaceId!}>
       <div className="flex gap-4 min-h-screen">
-        <Card className="flex-1 min-h-screen">
-          <CardHeader className="px-7">
-            <CardTitle className="flex items-center justify-between">
-              Blackboard
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="-my-3">
-                    <DotsHorizontalIcon className="size-4" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setIsAddNewRoundDialogOpen(true)}
-                  >
-                    Add new round
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <AddNewRoundDialog
-                workspaceId={workspaceId!}
-                open={isAddNewRoundDialogOpen}
-                setOpen={setIsAddNewRoundDialogOpen}
-              />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-0 md:px-6">
-            <div className="md:rounded-lg overflow-hidden border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="p-0 w-[2px]" />
-                    <TableHead>Name</TableHead>
-                    <TableHead>Solution</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      Working on this
-                    </TableHead>
-                    <TableHead className="w-0">
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rounds.isLoading &&
-                    Array.from({ length: 10 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell />
-                        <TableCell>
-                          <Skeleton className="h-6 w-40" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-6 w-40" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-6 w-40" />
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Skeleton className="h-6 w-full" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-6 w-6" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {rounds.data?.map((round) => (
-                    <BlackboardRound
-                      key={round.id}
-                      workspaceId={workspaceId!}
-                      round={round}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <Blackboard workspaceId={workspaceId!} />
         <Sidebar/>
       </div>
     </PresencesWebSocket>
   );
+}
+
+function Blackboard({workspaceId}: {
+  workspaceId: string;
+}) {
+  const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
+  const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
+  return (
+    <Card className="flex-1 min-h-screen">
+      <CardHeader className="px-7">
+        <CardTitle className="flex items-center justify-between">
+          Blackboard
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="-my-3">
+                <DotsHorizontalIcon className="size-4" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setIsAddNewRoundDialogOpen(true)}
+              >
+                Add new round
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <AddNewRoundDialog
+            workspaceId={workspaceId!}
+            open={isAddNewRoundDialogOpen}
+            setOpen={setIsAddNewRoundDialogOpen}
+          />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-0 md:px-6">
+        <div className="md:rounded-lg overflow-hidden border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="p-0 w-[2px]" />
+                <TableHead>Name</TableHead>
+                <TableHead>Solution</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  Working on this
+                </TableHead>
+                <TableHead className="w-0">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rounds.isLoading &&
+                Array.from({ length: 10 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell />
+                    <TableCell>
+                      <Skeleton className="h-6 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-40" />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-6" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              {rounds.data?.map((round) => (
+                <BlackboardRound
+                  key={round.id}
+                  workspaceId={workspaceId!}
+                  round={round}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>);
 }
 
 function BlackboardRound({
