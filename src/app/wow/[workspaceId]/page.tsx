@@ -367,7 +367,7 @@ function BlackboardMetaPuzzle({
           )}
         </TableCell>
         <TableCell
-          className="items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none"
+          className="items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
           contentEditable={metaPuzzle.id !== ""}
           suppressContentEditableWarning={true}
           onInput={(e) => {
@@ -382,7 +382,7 @@ function BlackboardMetaPuzzle({
             onValueChange={onStatusChange}
             value={metaPuzzle.status ?? "none"}
           >
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none">
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -584,7 +584,7 @@ function BlackboardPuzzle({
           )}
         </TableCell>
         <TableCell
-          className="items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none"
+          className="items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
           contentEditable={puzzle.id !== ""}
           suppressContentEditableWarning={true}
           onInput={(e) => {
@@ -599,7 +599,7 @@ function BlackboardPuzzle({
             onValueChange={onStatusChange}
             value={puzzle.status ?? "none"}
           >
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none">
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
