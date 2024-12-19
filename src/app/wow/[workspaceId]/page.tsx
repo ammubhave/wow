@@ -53,7 +53,7 @@ export default function Page() {
     <PresencesWebSocket workspaceId={workspaceId!}>
       <div className="flex gap-4 min-h-screen">
         <Blackboard workspaceId={workspaceId!} />
-        <Sidebar/>
+        <Sidebar workspaceId={workspaceId!} />
       </div>
     </PresencesWebSocket>
   );

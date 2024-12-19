@@ -1,25 +1,24 @@
-import { useParams } from "react-router";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CommentBox } from "@/components/comment-box";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RouterOutputs, trpc } from "@/lib/trpc";
+import { trpc } from "@/lib/trpc";
 
-export function Sidebar() {
-  const { workspaceId } = useParams<{ workspaceId: string }>();
-  const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
+export function Sidebar({workspaceId}: {
+  workspaceId: string;
+}) {
+  const comment = trpc.comments.findComment.useQuery({ workspaceId: workspaceId! });
+  const commentId = { workspaceId : workspaceId };
 
   return (
     <div className="w-0 invisible lg:visible lg:w-1/6 top-20 sticky self-start">
       <Card className="sticky">
         <CardHeader>
-          Test stuff
+          <CommentBox comment={comment?.data?.text} commentId={commentId} />
         </CardHeader>
         <CardContent>
           <nav>

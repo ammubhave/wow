@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Chat } from "@/components/chat";
+import { CommentBox } from "@/components/comment-box";
 import { EditPuzzleDialog } from "@/components/edit-puzzle-dialog";
 import { PresencesWebSocket } from "@/components/presences-websocket";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { trpc } from "@/lib/trpc";
 import { usePuzzle } from "@/lib/usePuzzle";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 import { cn, getBgColorClassNamesForPuzzleStatus } from "@/lib/utils";
@@ -136,6 +138,9 @@ function PuzzleInfoPanel({
 
   const presences =
     useAppSelector((state) => state.presences.value)[puzzle.id] ?? [];
+
+  const commentId = { puzzleId : puzzle.id! };
+  const comment = trpc.comments.findComment.useQuery(commentId);
 
   return (
     <Card
@@ -257,6 +262,9 @@ function PuzzleInfoPanel({
                   </span>
                 ))}
               </div>
+            </div>
+            <div>
+              <CommentBox comment={comment?.data?.text} commentId={commentId} />
             </div>
           </form>
         </Form>
