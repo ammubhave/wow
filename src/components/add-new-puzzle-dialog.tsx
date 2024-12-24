@@ -43,6 +43,7 @@ export function AddNewPuzzleDialog({
       metaPuzzleId: string;
     }
 )) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const FormSchema = z.object({
     name: z.string().min(1),
   });
@@ -58,7 +59,7 @@ export function AddNewPuzzleDialog({
       setOpen(false);
       await utils.rounds.list.cancel({ workspaceId });
       const previousRounds = utils.rounds.list.getData({ workspaceId });
-      let newRounds = structuredClone(previousRounds);
+      const newRounds = structuredClone(previousRounds);
       if (newRounds) {
         (() => {
           const newPuzzle = {
@@ -66,6 +67,7 @@ export function AddNewPuzzleDialog({
             name: variables.name,
             answer: null,
             status: null,
+            importance: null,
             link: null,
             googleSpreadsheetId: null,
             puzzles: [],
@@ -113,6 +115,7 @@ export function AddNewPuzzleDialog({
             if ("roundId" in ids) {
               if (round.id === ids.roundId) {
                 round.unassignedPuzzles.push({
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ...(data as any),
                 });
                 return;
@@ -121,6 +124,7 @@ export function AddNewPuzzleDialog({
               for (const metaPuzzle of round.metaPuzzles) {
                 if (metaPuzzle.id === ids.metaPuzzleId) {
                   metaPuzzle.puzzles.push({
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     ...(data as any),
                   });
                   return;
@@ -144,15 +148,15 @@ export function AddNewPuzzleDialog({
       {
         loading: "Adding puzzle...",
         success: (puzzle) => (
-              <>
-              Success! Puzzle added. Go to
-              <Link
-                to={`/wow/${workspaceId}/puzzles/${puzzle.id}`}
-                className="-m-2 block p-2 hover:underline"
-              >
-                {puzzle.name}
-              </Link>
-              </>
+          <>
+            Success! Puzzle added. Go to
+            <Link
+              to={`/wow/${workspaceId}/puzzles/${puzzle.id}`}
+              className="-m-2 block p-2 hover:underline"
+            >
+              {puzzle.name}
+            </Link>
+          </>
         ),
         error: "Oops! Something went wrong.",
         description: data.name,

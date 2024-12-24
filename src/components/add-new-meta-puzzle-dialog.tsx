@@ -37,6 +37,7 @@ export function AddNewMetaPuzzleDialog({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const FormSchema = z.object({
     name: z.string().min(1),
     assignUnassignedPuzzles: z.boolean(),
@@ -54,7 +55,7 @@ export function AddNewMetaPuzzleDialog({
       setOpen(false);
       await utils.rounds.list.cancel({ workspaceId });
       const previousRounds = utils.rounds.list.getData({ workspaceId });
-      let newRounds = structuredClone(previousRounds);
+      const newRounds = structuredClone(previousRounds);
       if (newRounds) {
         for (const round of newRounds) {
           if (round.id === roundId) {
@@ -65,6 +66,7 @@ export function AddNewMetaPuzzleDialog({
               name: variables.name,
               answer: null,
               status: null,
+              importance: null,
               link: null,
               googleSpreadsheetId: null,
               puzzles: [],
@@ -90,6 +92,7 @@ export function AddNewMetaPuzzleDialog({
         for (const round of newRounds) {
           if (round.id === roundId) {
             round.metaPuzzles.push({
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ...(data as any),
               puzzles: [],
               metaPuzzles: [],

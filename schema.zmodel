@@ -88,6 +88,7 @@ model MetaPuzzle {
 
   puzzles             Puzzle[]
   status              String?
+  importance          String?
 
   round               Round        @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   roundId             String
@@ -106,6 +107,7 @@ model Puzzle extends Base {
 
   answer              String?
   status              String?
+  importance          String?
 
   // --------
   metaPuzzle          MetaPuzzle? @relation(fields: [metaPuzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)

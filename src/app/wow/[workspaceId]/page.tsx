@@ -87,6 +87,7 @@ export default function Page() {
                   <TableHead>Name</TableHead>
                   <TableHead>Solution</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Importance</TableHead>
                   <TableHead className="hidden sm:table-cell">
                     Working on this
                   </TableHead>
@@ -100,6 +101,9 @@ export default function Page() {
                   Array.from({ length: 10 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell />
+                      <TableCell>
+                        <Skeleton className="h-6 w-40" />
+                      </TableCell>
                       <TableCell>
                         <Skeleton className="h-6 w-40" />
                       </TableCell>
@@ -329,6 +333,22 @@ function BlackboardMetaPuzzle({
       );
     }
   }
+  function onImportanceChange(value: string) {
+    const newValue = value === "none" ? null : value;
+    if (metaPuzzle.importance !== newValue) {
+      toast.promise(
+        mutation.mutateAsync({
+          id: metaPuzzle.id,
+          importance: newValue,
+        }),
+        {
+          loading: "Updating meta puzzle importance...",
+          success: "Success! Meta puzzle importance updated.",
+          error: "Oops! Something went wrong.",
+        },
+      );
+    }
+  }
 
   const presences =
     useAppSelector((state) => state.presences.value)[metaPuzzle.id] ?? [];
@@ -389,12 +409,27 @@ function BlackboardMetaPuzzle({
               <SelectItem value="none">None</SelectItem>
               <SelectItem value="solved">Solved</SelectItem>
               <SelectItem value="backsolved">Backsolved</SelectItem>
-              <SelectItem value="obsolete">Obsolete</SelectItem>
               <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
               <SelectItem value="extraction">Extraction</SelectItem>
               <SelectItem value="stuck">Stuck</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="very_stuck">Very Stuck</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell>
+          <Select
+            onValueChange={onImportanceChange}
+            value={metaPuzzle.importance ?? "none"}
+          >
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="vip">VIP</SelectItem>
+              <SelectItem value="important">Important</SelectItem>
+              <SelectItem value="obsolete">Obsolete</SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
@@ -552,6 +587,17 @@ function BlackboardPuzzle({
       );
     }
   }
+  function onImportanceChange(value: string) {
+    const newValue = value === "none" ? null : value;
+    if (puzzle.importance !== newValue) {
+      toast.promise(
+        mutation.mutateAsync({
+          id: puzzle.id,
+          importance: newValue,
+        }),
+      );
+    }
+  }
 
   const presences = useAppSelector(
     (state) => state.presences.value[puzzle.id] ?? [],
@@ -615,6 +661,22 @@ function BlackboardPuzzle({
               <SelectItem value="stuck">Stuck</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="very_stuck">Very Stuck</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell>
+          <Select
+            onValueChange={onImportanceChange}
+            value={puzzle.importance ?? "none"}
+          >
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="vip">VIP</SelectItem>
+              <SelectItem value="important">Important</SelectItem>
+              <SelectItem value="obsolete">Obsolete</SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
