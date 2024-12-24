@@ -155,12 +155,12 @@ function BlackboardRound({
   return (
     <>
       <TableRow>
-        <TableCell colSpan={6} className="py-6 bg-muted/50" />
+        <TableCell colSpan={7} className="py-6 bg-muted/50" />
       </TableRow>
       <TableRow className="bg-secondary text-secondary-foreground">
         <TableCell className="p-0" />
         <TableCell className="text-xl font-semibold">{round.name}</TableCell>
-        <TableCell colSpan={2} />
+        <TableCell colSpan={3} />
         <TableCell className="hidden sm:table-cell" />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
@@ -231,7 +231,7 @@ function BlackboardRound({
       {round.unassignedPuzzles.length > 0 && (
         <>
           <TableRow className="bg-muted/50">
-            <TableCell colSpan={6} className="py-2" />
+            <TableCell colSpan={7} className="py-2" />
           </TableRow>
           <TableRow
             className="border-l-4 bg-muted/50"
@@ -245,7 +245,7 @@ function BlackboardRound({
               }}
               className="p-0"
             />
-            <TableCell className="text-lg font-semibold" colSpan={5}>
+            <TableCell className="text-lg font-semibold" colSpan={6}>
               Unassigned Puzzles
             </TableCell>
           </TableRow>
@@ -356,7 +356,7 @@ function BlackboardMetaPuzzle({
   return (
     <>
       <TableRow className="bg-muted/50">
-        <TableCell colSpan={6} className="py-2" />
+        <TableCell colSpan={7} className="py-2" />
       </TableRow>
       <TableRow
         className={cn(
