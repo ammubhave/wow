@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { string, z } from "zod";
 
 import { procedure, router } from "../trpc";
 
@@ -19,7 +19,43 @@ export const roundsRouter = router({
         },
       });
     }),
+  
+  listPuzzles: procedure
+    .input(z.object({ workspaceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const rounds = await ctx.db.round.findMany({
+        where: { workspaceId: input.workspaceId },
+        include: {
+          metaPuzzles: {
+            include: {
+              puzzles: true,
+              metaPuzzles: true,
+            },
+          },
+          unassignedPuzzles: true,
+        },
+      });
 
+      const roundFlattenedPuzzles = [];
+      rounds.forEach((round) => {
+        const flattenedPuzzles = new Array<string>();
+        const puzzleStack = round.metaPuzzles || [];
+        while (puzzleStack.length > 0) {
+          const metaPuzzle = puzzleStack.shift();
+          puzzleStack.push(...metaPuzzle.metaPuzzles || []);
+          flattenedPuzzles.push(metaPuzzle.id);
+          metaPuzzle.puzzles.forEach((puzzle) => {
+            flattenedPuzzles.push(puzzle.id);
+          });
+        }
+        round.unassignedPuzzles.forEach((puzzle) => {
+          flattenedPuzzles.push(puzzle.id);
+        })
+        roundFlattenedPuzzles.push([round.id, flattenedPuzzles]);
+      });
+      return roundFlattenedPuzzles;
+    }),
+    
   create: procedure
     .input(z.object({ workspaceId: z.string(), name: z.string() }))
     .mutation(async ({ ctx, input }) => {

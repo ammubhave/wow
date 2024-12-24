@@ -11,8 +11,10 @@ import { trpc } from "@/lib/trpc";
 export function Sidebar({workspaceId}: {
   workspaceId: string;
 }) {
-  const comment = trpc.comments.findComment.useQuery({ workspaceId: workspaceId! });
-  const commentId = { workspaceId : workspaceId };
+  const commentId = { workspaceId : workspaceId! };
+  const comment = trpc.comments.findComment.useQuery(commentId);
+
+  const roundFlattenedPuzzles = trpc.rounds.listPuzzles.useQuery({ workspaceId: workspaceId! });
 
   return (
     <div className="w-0 invisible lg:visible lg:w-1/6 top-20 sticky self-start">
@@ -24,28 +26,18 @@ export function Sidebar({workspaceId}: {
           <nav>
             <Table>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    1
-                  </TableCell>
-                  <TableCell>
-                    2
-                  </TableCell>
-                  <TableCell>
-                    3
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    4
-                  </TableCell>
-                  <TableCell>
-                    5
-                  </TableCell>
-                  <TableCell>
-                    6
-                  </TableCell>
-                </TableRow>
+                {roundFlattenedPuzzles.data?.map(([roundId, flattenedPuzzles], roundIndex) => (
+                  <TableRow key={roundId}>
+                    <TableCell className="whitespace-nowrap">
+                      <a href={"#" + roundId}>Round {roundIndex}</a>
+                    </TableCell>
+                    {flattenedPuzzles.map((id, puzzleIndex) => (
+                      <TableCell key={id} className="inline-block">
+                        <a href={"#" + id}>{puzzleIndex+1}</a>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </nav>

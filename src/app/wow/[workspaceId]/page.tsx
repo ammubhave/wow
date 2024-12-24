@@ -165,7 +165,7 @@ function BlackboardRound({
         <TableCell colSpan={6} className="py-6 bg-muted/50" />
       </TableRow>
       <TableRow className="bg-secondary text-secondary-foreground">
-        <TableCell className="p-0" />
+        <TableCell className="p-0"><span id={round.id} className="relative scroll-mt-20" /></TableCell>
         <TableCell className="text-xl font-semibold">{round.name}</TableCell>
         <TableCell colSpan={2} />
         <TableCell className="hidden sm:table-cell" />
@@ -364,7 +364,9 @@ function BlackboardMetaPuzzle({
             backgroundColor: color,
           }}
           className="p-0"
-        />
+        >
+          <span id={metaPuzzle.id} className="relative scroll-mt-20" />
+        </TableCell>
         <TableCell className="text-lg font-semibold uppercase">
           {metaPuzzle.googleSpreadsheetId ? (
             <Link
@@ -581,7 +583,9 @@ function BlackboardPuzzle({
             backgroundColor: color,
           }}
           className="p-0"
-        />
+        >
+          <span id={puzzle.id} className="relative scroll-mt-20" />
+        </TableCell>
         <TableCell>
           {puzzle.googleSpreadsheetId ? (
             <Link
