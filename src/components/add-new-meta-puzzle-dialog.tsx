@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -11,18 +12,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { trpc } from "@/lib/trpc";
-
-import { Checkbox } from "./ui/checkbox";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { trpc } from "@/lib/trpc";
 
 export function AddNewMetaPuzzleDialog({
   workspaceId,
@@ -41,11 +41,13 @@ export function AddNewMetaPuzzleDialog({
   const FormSchema = z.object({
     name: z.string().min(1),
     assignUnassignedPuzzles: z.boolean(),
+    link: z.string().url().or(z.string().length(0)),
   });
   const form = useForm<z.infer<typeof FormSchema>>({
     defaultValues: {
       name: "",
       assignUnassignedPuzzles: false,
+      link: "",
     },
   });
   const utils = trpc.useUtils();
@@ -67,7 +69,7 @@ export function AddNewMetaPuzzleDialog({
               answer: null,
               status: null,
               importance: null,
-              link: null,
+              link: variables.link,
               googleSpreadsheetId: null,
               puzzles: [],
               metaPuzzles: [],
@@ -134,14 +136,28 @@ export function AddNewMetaPuzzleDialog({
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">Name</FormLabel>
-                    <div className="col-span-3">
-                      <FormControl>
-                        <Input {...field} autoComplete="off" />
-                      </FormControl>
-                      <FormMessage />
-                    </div>
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} autoComplete="off" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="link"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Link</FormLabel>
+                    <FormControl>
+                      <Input type="url" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Link to this puzzle on the hunt website.
+                    </FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

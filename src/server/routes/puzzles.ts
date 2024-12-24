@@ -30,6 +30,7 @@ export const puzzlesRouter = router({
         ]),
         z.object({
           name: z.string(),
+          link: z.string().url().or(z.string().length(0)),
         }),
       ),
     )
@@ -66,6 +67,7 @@ export const puzzlesRouter = router({
         puzzle = await ctx.db.puzzle.create({
           data: {
             name: input.name,
+            link: input.link,
             ...("roundId" in input
               ? { roundId: input.roundId }
               : { metaPuzzleId: input.metaPuzzleId }),
@@ -77,6 +79,7 @@ export const puzzlesRouter = router({
             id: `meta-${createId()}`,
             name: input.name,
             roundId: input.roundId,
+            link: input.link,
           },
         });
       }
