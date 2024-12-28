@@ -142,6 +142,6 @@ model Comment extends Base {
 
   @@allow('read', true)
   @@allow('create,update,delete', metaPuzzle.round.workspace.memberships?[userId == auth().id])
-  @@allow('create,update,delete', puzzle.round.workspace.memberships?[userId == auth().id])
+  @@allow('create,update,delete', puzzle.round.workspace.memberships?[userId == auth().id] || puzzle.metaPuzzle.round.workspace.memberships?[userId == auth().id])
   @@allow('create,update,delete', workspace.memberships?[userId == auth().id])
 }

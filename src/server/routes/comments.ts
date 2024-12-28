@@ -65,10 +65,11 @@ export const commentsRouter = router({
           orderBy: { updatedAt: 'asc' },
         });
         while (matchingComments.length > 10) {
+          const firstComment = matchingComments.shift();
           await tx.comment.delete({
             where: {
               ...commentId,
-              id: matchingComments[0].id,
+              id: firstComment?.id,
             }
           });
         }

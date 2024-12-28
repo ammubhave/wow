@@ -139,7 +139,7 @@ function PuzzleInfoPanel({
   const presences =
     useAppSelector((state) => state.presences.value)[puzzle.id] ?? [];
 
-  const commentId = { puzzleId : puzzle.id! };
+  const commentId = puzzle.id.startsWith("meta-") ? { metaPuzzleId: puzzle.id! } : { puzzleId : puzzle.id! };
   const comment = trpc.comments.findComment.useQuery(commentId);
 
   return (

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DotsVerticalIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -21,15 +21,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 
+const DEFAULT_MESSAGE = "No comment set.";
+
 export function CommentBox({comment, commentId}: {
-    comment: string;
+    comment?: string;
     commentId: { workspaceId: string } | { metaPuzzleId: string } | { puzzleId: string };
   }) {
     const [isEditingComment, setIsEditingComment] = useState(false);
+    const [updatedComment, setComment] = useState(comment || DEFAULT_MESSAGE);
+    useEffect(() => setComment(comment || DEFAULT_MESSAGE), [comment]);
   
     const mutation = trpc.comments.create.useMutation();
     const updateComment = (text: string) => {
-      if (text == comment) {
+      if (text == updatedComment) {
         return;
       }
       toast.promise(
@@ -39,35 +43,38 @@ export function CommentBox({comment, commentId}: {
         }),
         {
           loading: "Saving comment...",
-          success: "Comment updated!",
+          success: (_data) => {
+            setComment(text);
+            setIsEditingComment(false);
+            return "Comment updated!";
+          },
           error: "Oops! Something went wrong.",
         });
     }
     
     const formSchema = z.object({
       comment: z.string(),
-      button: z.string(),
     });
     const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        comment: comment,
-        button: "",
+        comment: updatedComment,
       },
     });
     const onSubmit = (data: z.infer<typeof formSchema>) => {
-      // TODO implement this to change the comment.
-      // TODO also implement canceling changes to comments.
-      console.log(JSON.stringify(data));
       updateComment(data.comment);
-    }
+    };
+
+    const onCancel = (_data: z.infer<typeof formSchema>) => {
+      setIsEditingComment(false);
+    };
   
     return (
       <div className="justify-between flex-wrap">
         <span>
           {!isEditingComment ? (
             <span>
-                {comment || "No comment set."}
+                {updatedComment}
                 <span className="float-right">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -77,10 +84,13 @@ export function CommentBox({comment, commentId}: {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setIsEditingComment(true)}>
+                        <DropdownMenuItem onClick={() => {
+                          form.setValue("comment", updatedComment);
+                          setIsEditingComment(true);
+                        }}>
                             Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateComment("")}>
+                        <DropdownMenuItem onClick={() => updateComment(DEFAULT_MESSAGE)}>
                             Clear
                         </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -89,22 +99,21 @@ export function CommentBox({comment, commentId}: {
             </span>
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+              <form className="space-y-2">
                 <FormField 
                   control={form.control}
                   name="comment"
                   render={({ field }) => (
                     <FormItem>
-                      {comment}
                       <FormControl>
-                        <Input className="dark:bg-black" {...field}/>
+                        <Input className="dark:bg-black" {...field} autoFocus/>
                       </FormControl>
                     </FormItem>
                   )}
                 />
                 <span className="gap-2 flex">
-                  <Button type="submit" value="save">Save</Button>
-                  <Button type="submit" value="cancel">Cancel</Button>
+                  <Button type="submit" onClick={form.handleSubmit(onSubmit)}>Save</Button>
+                  <Button type="submit" onClick={form.handleSubmit(onCancel)}>Cancel</Button>
                 </span>
               </form>
             </Form>
