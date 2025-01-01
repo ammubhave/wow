@@ -45,6 +45,7 @@ import { RouterOutputs, trpc } from "@/lib/trpc";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 import { cn, getBgColorClassNamesForPuzzleStatus } from "@/lib/utils";
 import { useAppSelector } from "@/store";
+import { Trigger } from "@radix-ui/react-dialog";
 
 export default function Page() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -403,6 +404,12 @@ function BlackboardMetaPuzzle({
             form.setValue("answer", e.currentTarget.innerText);
           }}
           onBlur={form.handleSubmit(onAnswerChange)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
         >
           {form.getValues("answer")}
         </TableCell>
@@ -648,6 +655,12 @@ function BlackboardPuzzle({
             form.setValue("answer", e.currentTarget.innerText);
           }}
           onBlur={form.handleSubmit(onAnswerChange)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
         >
           {form.getValues("answer")}
         </TableCell>

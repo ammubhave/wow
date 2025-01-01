@@ -34,7 +34,7 @@ export const commentsRouter = router({
         )
     )
     .mutation(async ({ ctx, input }) => {
-      let comment
+      let comment;
       await ctx.db.$transaction(async (tx) => {
         const commentId = makeCommentIndex(input);
 
