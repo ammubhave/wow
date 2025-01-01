@@ -162,12 +162,12 @@ function BlackboardRound({
   return (
     <>
       <TableRow>
-        <TableCell colSpan={6} className="py-6 bg-muted/50" />
+        <TableCell colSpan={7} className="py-6 bg-muted/50" />
       </TableRow>
       <TableRow className="bg-secondary text-secondary-foreground">
         <TableCell className="p-0"><span id={round.id} className="relative scroll-mt-20" /></TableCell>
         <TableCell className="text-xl font-semibold">{round.name}</TableCell>
-        <TableCell colSpan={2} />
+        <TableCell colSpan={3} />
         <TableCell className="hidden sm:table-cell" />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
@@ -238,7 +238,7 @@ function BlackboardRound({
       {round.unassignedPuzzles.length > 0 && (
         <>
           <TableRow className="bg-muted/50">
-            <TableCell colSpan={6} className="py-2" />
+            <TableCell colSpan={7} className="py-2" />
           </TableRow>
           <TableRow
             className="border-l-4 bg-muted/50"
@@ -252,7 +252,7 @@ function BlackboardRound({
               }}
               className="p-0"
             />
-            <TableCell className="text-lg font-semibold" colSpan={5}>
+            <TableCell className="text-lg font-semibold" colSpan={6}>
               Unassigned Puzzles
             </TableCell>
           </TableRow>
@@ -340,6 +340,22 @@ function BlackboardMetaPuzzle({
       );
     }
   }
+  function onImportanceChange(value: string) {
+    const newValue = value === "none" ? null : value;
+    if (metaPuzzle.importance !== newValue) {
+      toast.promise(
+        mutation.mutateAsync({
+          id: metaPuzzle.id,
+          importance: newValue,
+        }),
+        {
+          loading: "Updating meta puzzle importance...",
+          success: "Success! Meta puzzle importance updated.",
+          error: "Oops! Something went wrong.",
+        },
+      );
+    }
+  }
 
   const presences =
     useAppSelector((state) => state.presences.value)[metaPuzzle.id] ?? [];
@@ -347,7 +363,7 @@ function BlackboardMetaPuzzle({
   return (
     <>
       <TableRow className="bg-muted/50">
-        <TableCell colSpan={6} className="py-2" />
+        <TableCell colSpan={7} className="py-2" />
       </TableRow>
       <TableRow
         className={cn(
@@ -402,12 +418,27 @@ function BlackboardMetaPuzzle({
               <SelectItem value="none">None</SelectItem>
               <SelectItem value="solved">Solved</SelectItem>
               <SelectItem value="backsolved">Backsolved</SelectItem>
-              <SelectItem value="obsolete">Obsolete</SelectItem>
               <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
               <SelectItem value="extraction">Extraction</SelectItem>
               <SelectItem value="stuck">Stuck</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="very_stuck">Very Stuck</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell>
+          <Select
+            onValueChange={onImportanceChange}
+            value={metaPuzzle.importance ?? "none"}
+          >
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="vip">VIP</SelectItem>
+              <SelectItem value="important">Important</SelectItem>
+              <SelectItem value="obsolete">Obsolete</SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
@@ -565,6 +596,17 @@ function BlackboardPuzzle({
       );
     }
   }
+  function onImportanceChange(value: string) {
+    const newValue = value === "none" ? null : value;
+    if (puzzle.importance !== newValue) {
+      toast.promise(
+        mutation.mutateAsync({
+          id: puzzle.id,
+          importance: newValue,
+        }),
+      );
+    }
+  }
 
   const presences = useAppSelector(
     (state) => state.presences.value[puzzle.id] ?? [],
@@ -630,6 +672,22 @@ function BlackboardPuzzle({
               <SelectItem value="stuck">Stuck</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="very_stuck">Very Stuck</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell>
+          <Select
+            onValueChange={onImportanceChange}
+            value={puzzle.importance ?? "none"}
+          >
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="vip">VIP</SelectItem>
+              <SelectItem value="important">Important</SelectItem>
+              <SelectItem value="obsolete">Obsolete</SelectItem>
             </SelectContent>
           </Select>
         </TableCell>

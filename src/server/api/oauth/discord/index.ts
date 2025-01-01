@@ -74,6 +74,7 @@ app.all("/", async (c) => {
   c.executionCtx.waitUntil(
     (async () => {
       c.env.DISCORD_CLIENT.get(c.env.DISCORD_CLIENT.idFromName(guildId)).sync(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         workspace as any,
       );
     })(),

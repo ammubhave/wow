@@ -17,7 +17,7 @@ export function useRoundsUpdateMutation(
       await callbacks?.onMutate?.();
       await utils.rounds.list.cancel({ workspaceId });
       const previousRounds = utils.rounds.list.getData({ workspaceId });
-      let newRounds = structuredClone(previousRounds);
+      const newRounds = structuredClone(previousRounds);
       if (newRounds) {
         for (const round of newRounds) {
           if (round.id === variables.id) {

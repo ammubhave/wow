@@ -42,27 +42,30 @@ export function Header() {
   const shareGoogleDriveFolderMutation =
     trpc.workspaces.shareGoogleDriveFolder.useMutation();
 
-  const randomHeaderFlavors =
-    ["Wafflehäus Organized WOW",
+  const randomHeaderFlavors = [
+    "Wafflehäus Organized WOW",
     "WOW: Full House",
     "Wafflehäus From Home",
     "WOW For Häus",
     "ecapskroW dezinagrO suähelffaW",
     "The New WOW",
     "🧇🏠 🧩 💼🚀",
-    ];
+  ];
   let randomHeaderFlavor = sessionStorage.getItem("randomHeaderFlavor");
   if (randomHeaderFlavor == null) {
     randomHeaderFlavor = "Wafflehäus Organized Workspace";
     if (Math.random() > 0.5) {
-      randomHeaderFlavor = randomHeaderFlavors[Math.floor(Math.random() * randomHeaderFlavors.length)];
+      randomHeaderFlavor =
+        randomHeaderFlavors[
+          Math.floor(Math.random() * randomHeaderFlavors.length)
+        ];
     }
     sessionStorage.setItem("randomHeaderFlavor", randomHeaderFlavor);
   }
 
   const dispatch = useAppDispatch();
   const { isDarkModeEnabled } = useAppSelector(
-      (state) => state.isDarkModeEnabled
+    (state) => state.isDarkModeEnabled,
   );
   // This is needed for the initial page load, since otherwise dark mode doesn't get read anywhere.
   dispatch(setIsDarkModeEnabled(isDarkModeEnabled));
@@ -142,16 +145,18 @@ export function Header() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="-my-3">
-                <GearIcon className="size-4" />
-                <span className="sr-only">Toggle settings</span>
-              </Button>
+            <Button variant="ghost" size="icon" className="-my-3">
+              <GearIcon className="size-4" />
+              <span className="sr-only">Toggle settings</span>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
               checked={isDarkModeEnabled}
-              onCheckedChange={(checked) => dispatch(setIsDarkModeEnabled(checked))}
-              onSelect={event => event.preventDefault()}
+              onCheckedChange={(checked) =>
+                dispatch(setIsDarkModeEnabled(checked))
+              }
+              onSelect={(event) => event.preventDefault()}
             >
               Dark Mode
             </DropdownMenuCheckboxItem>

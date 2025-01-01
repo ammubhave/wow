@@ -7,7 +7,8 @@ export interface IsDarkModeEnabledState {
 const DARK_MODE = "isDarkModeEnabled";
 
 const initialState: IsDarkModeEnabledState = {
-  isDarkModeEnabled: JSON.parse(localStorage.getItem(DARK_MODE) ?? "") ?? false,
+  isDarkModeEnabled:
+    JSON.parse(localStorage.getItem(DARK_MODE) ?? "false") ?? false,
 };
 
 export const isDarkModeEnabledSlice = createSlice({
@@ -19,7 +20,7 @@ export const isDarkModeEnabledSlice = createSlice({
       localStorage.setItem(DARK_MODE, JSON.stringify(state.isDarkModeEnabled));
       if (state.isDarkModeEnabled) {
         if (!document.documentElement.classList.contains("dark")) {
-            document.documentElement.classList.add("dark");
+          document.documentElement.classList.add("dark");
         }
       } else {
         document.documentElement.classList.remove("dark");

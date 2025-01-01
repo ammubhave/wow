@@ -63,6 +63,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.2.4",
     "@eslint/js": "^9.15.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@mdx-js/react": "^3.1.0",

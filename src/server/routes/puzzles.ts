@@ -30,6 +30,7 @@ export const puzzlesRouter = router({
         ]),
         z.object({
           name: z.string(),
+          link: z.string().url().or(z.string().length(0)),
         }),
       ),
     )
@@ -66,6 +67,7 @@ export const puzzlesRouter = router({
         puzzle = await ctx.db.puzzle.create({
           data: {
             name: input.name,
+            link: input.link,
             ...("roundId" in input
               ? { roundId: input.roundId }
               : { metaPuzzleId: input.metaPuzzleId }),
@@ -77,6 +79,7 @@ export const puzzlesRouter = router({
             id: `meta-${createId()}`,
             name: input.name,
             roundId: input.roundId,
+            link: input.link,
           },
         });
       }
@@ -188,6 +191,7 @@ export const puzzlesRouter = router({
         name: z.string().min(1).optional(),
         answer: z.string().nullable().optional(),
         status: z.string().nullable().optional(),
+        importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
         googleSpreadsheetId: z.string().nullable().optional(),
       }),
@@ -202,6 +206,7 @@ export const puzzlesRouter = router({
             name: input.name,
             answer: input.answer,
             status: input.status,
+            importance: input.importance,
             link: input.link,
             googleSpreadsheetId: input.googleSpreadsheetId?.replace(
               /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
@@ -231,6 +236,7 @@ export const puzzlesRouter = router({
             name: input.name,
             answer: input.answer,
             status: input.status,
+            importance: input.importance,
             link: input.link,
             googleSpreadsheetId: input.googleSpreadsheetId?.replace(
               /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
@@ -258,6 +264,7 @@ export const puzzlesRouter = router({
           },
         });
         workspaceId =
+          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
           puzzle.round?.workspaceId ?? puzzle.metaPuzzle?.round?.workspaceId!;
       }
 
@@ -344,6 +351,7 @@ export const puzzlesRouter = router({
         },
       });
       workspaceId =
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
         puzzle.round?.workspaceId ?? puzzle.metaPuzzle?.round?.workspaceId!;
       googleSpreadsheetId = puzzle.googleSpreadsheetId;
     }

@@ -12,17 +12,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { trpc } from "@/lib/trpc";
-
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { trpc } from "@/lib/trpc";
 
 export function AddNewPuzzleDialog({
   workspaceId,
@@ -43,12 +43,15 @@ export function AddNewPuzzleDialog({
       metaPuzzleId: string;
     }
 )) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const FormSchema = z.object({
     name: z.string().min(1),
+    link: z.string().url().or(z.string().length(0)),
   });
   const form = useForm<z.infer<typeof FormSchema>>({
     defaultValues: {
       name: "",
+      link: "",
     },
   });
   const utils = trpc.useUtils();
@@ -58,7 +61,7 @@ export function AddNewPuzzleDialog({
       setOpen(false);
       await utils.rounds.list.cancel({ workspaceId });
       const previousRounds = utils.rounds.list.getData({ workspaceId });
-      let newRounds = structuredClone(previousRounds);
+      const newRounds = structuredClone(previousRounds);
       if (newRounds) {
         (() => {
           const newPuzzle = {
@@ -66,7 +69,8 @@ export function AddNewPuzzleDialog({
             name: variables.name,
             answer: null,
             status: null,
-            link: null,
+            importance: null,
+            link: variables.link,
             googleSpreadsheetId: null,
             puzzles: [],
             createdAt: new Date().toISOString(),
@@ -113,6 +117,7 @@ export function AddNewPuzzleDialog({
             if ("roundId" in ids) {
               if (round.id === ids.roundId) {
                 round.unassignedPuzzles.push({
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ...(data as any),
                 });
                 return;
@@ -121,6 +126,7 @@ export function AddNewPuzzleDialog({
               for (const metaPuzzle of round.metaPuzzles) {
                 if (metaPuzzle.id === ids.metaPuzzleId) {
                   metaPuzzle.puzzles.push({
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     ...(data as any),
                   });
                   return;
@@ -144,15 +150,15 @@ export function AddNewPuzzleDialog({
       {
         loading: "Adding puzzle...",
         success: (puzzle) => (
-              <>
-              Success! Puzzle added. Go to
-              <Link
-                to={`/wow/${workspaceId}/puzzles/${puzzle.id}`}
-                className="-m-2 block p-2 hover:underline"
-              >
-                {puzzle.name}
-              </Link>
-              </>
+          <>
+            Success! Puzzle added. Go to
+            <Link
+              to={`/wow/${workspaceId}/puzzles/${puzzle.id}`}
+              className="-m-2 block p-2 hover:underline"
+            >
+              {puzzle.name}
+            </Link>
+          </>
         ),
         error: "Oops! Something went wrong.",
         description: data.name,
@@ -174,14 +180,28 @@ export function AddNewPuzzleDialog({
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">Name</FormLabel>
-                    <div className="col-span-3">
-                      <FormControl>
-                        <Input {...field} autoComplete="off" />
-                      </FormControl>
-                      <FormMessage />
-                    </div>
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} autoComplete="off" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="link"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Link</FormLabel>
+                    <FormControl>
+                      <Input type="url" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Link to this puzzle on the hunt website.
+                    </FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

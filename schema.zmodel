@@ -90,6 +90,7 @@ model MetaPuzzle {
 
   puzzles             Puzzle[]
   status              String?
+  importance          String?
 
   comments            Comment[]
 
@@ -110,6 +111,7 @@ model Puzzle extends Base {
 
   answer              String?
   status              String?
+  importance          String?
 
   comments            Comment[]
 

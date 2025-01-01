@@ -45,8 +45,9 @@ function NotificationsWebSocketInner({
       .parse(lastJsonMessage);
     let u = utils;
     if (message.type === "notification") {
-      for (var path of message.paths) {
-        for (var pathSegment of path.path) {
+      for (const path of message.paths) {
+        for (const pathSegment of path.path) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           u = (u as any)[pathSegment];
         }
         u.invalidate(path.input);
