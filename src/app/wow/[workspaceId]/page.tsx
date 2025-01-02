@@ -41,10 +41,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { setIsCollapsedState } from "@/features/settings/is-collapsed";
 import { RouterOutputs, trpc } from "@/lib/trpc";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 import { cn, getBgColorClassNamesForPuzzleStatus } from "@/lib/utils";
-import { useAppSelector } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
 import { Trigger } from "@radix-ui/react-dialog";
 
 export default function Page() {
@@ -162,8 +163,15 @@ function BlackboardRound({
   ] = useState(false);
   const [isEditRoundDialogOpen, setIsEditRoundDialogOpen] = useState(false);
   const [isDeleteRoundDialogOpen, setIsDeleteRoundDialogOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useState(false);
+  
+  const dispatch = useAppDispatch();
+  const isCollapsedState = !!useAppSelector((state) => state.isCollapsed.map[round.id]);
+  const [isCollapsed, setIsCollapsed] = useState(isCollapsedState);
+  useEffect(() => setIsCollapsed(isCollapsedState), [isCollapsedState]);
+  const isUnassignedCollapsedState = !!useAppSelector((state) => state.isCollapsed.map["unassigned-" + round.id]);
+  const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useState(isUnassignedCollapsedState);
+  useEffect(() => setIsUnassignedCollapsed(isUnassignedCollapsedState), [isUnassignedCollapsedState]);
+
   return (
     <>
       <TableRow>
@@ -174,7 +182,10 @@ function BlackboardRound({
           <div
             id={round.id}
             className="relative scroll-mt-20 select-none"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => {
+              dispatch(setIsCollapsedState({id: round.id, isCollapsed: !isCollapsed}));
+              setIsCollapsed(!isCollapsed);
+            }}
           >
             <TriangleRightIcon className={isCollapsed ? "hidden" : ""}/>
             <TriangleLeftIcon className={isCollapsed ? "" : "hidden"}/>
@@ -269,6 +280,7 @@ function BlackboardRound({
               className="p-0"
             >
               <div className="select-none" onClick={(e) => {
+                dispatch(setIsCollapsedState({id: "unassigned-" + round.id, isCollapsed: !isUnassignedCollapsed}));
                 setIsUnassignedCollapsed(!isUnassignedCollapsed);
               }}>
                 <TriangleRightIcon className={isUnassignedCollapsed ? "hidden" : ""}/>
@@ -310,7 +322,11 @@ function BlackboardMetaPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] =
     useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+    
+  const dispatch = useAppDispatch();
+  const isCollapsedState = !!useAppSelector((state) => state.isCollapsed.map[metaPuzzle.id]);
+  const [isCollapsed, setIsCollapsed] = useState(isCollapsedState);
+  useEffect(() => setIsCollapsed(isCollapsedState), [isCollapsedState]);
   const [isParentCollapsed, setIsParentCollapsed] = useState(isAllCollapsed);
   useEffect(() => setIsParentCollapsed(isAllCollapsed), [isAllCollapsed]);
 
@@ -411,6 +427,7 @@ function BlackboardMetaPuzzle({
           className="p-0"
         >
           <div id={metaPuzzle.id} className="relative scroll-mt-20 select-none" onClick={(e) => {
+            dispatch(setIsCollapsedState({id: metaPuzzle.id, isCollapsed: !isCollapsed}));
             setIsCollapsed(!isCollapsed);
           }}>
             <TriangleRightIcon className={isCollapsed ? "hidden" : ""}/>
