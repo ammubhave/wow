@@ -31,7 +31,7 @@ export function Sidebar({workspaceId}: {
                     <TableCell className="whitespace-nowrap">
                       <a href={"#" + roundId}>Round {roundIndex}</a>
                     </TableCell>
-                    {flattenedPuzzles.map((id, puzzleIndex) => (
+                    {flattenedPuzzles.map((id: string, puzzleIndex: number) => (
                       <TableCell key={id} className="inline-block">
                         <a href={"#" + id}>{puzzleIndex+1}</a>
                       </TableCell>

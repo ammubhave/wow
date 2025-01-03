@@ -36,15 +36,15 @@ export const roundsRouter = router({
         },
       });
 
-      const roundFlattenedPuzzles = [];
+      const roundFlattenedPuzzles: Array<Array<string>> = [];
       rounds.forEach((round) => {
         const flattenedPuzzles = new Array<string>();
         const puzzleStack = round.metaPuzzles || [];
         while (puzzleStack.length > 0) {
           const metaPuzzle = puzzleStack.shift();
-          puzzleStack.push(...metaPuzzle.metaPuzzles || []);
-          flattenedPuzzles.push(metaPuzzle.id);
-          metaPuzzle.puzzles.forEach((puzzle) => {
+          puzzleStack.push(...metaPuzzle?.metaPuzzles);
+          flattenedPuzzles.push(metaPuzzle?.id);
+          metaPuzzle?.puzzles.forEach((puzzle) => {
             flattenedPuzzles.push(puzzle.id);
           });
         }

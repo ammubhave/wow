@@ -78,7 +78,11 @@ export const commentsRouter = router({
     }),
 });
 
-function makeCommentIndex(input) {
+function makeCommentIndex(input: {
+  metaPuzzleId?: string;
+  puzzleId?: string;
+  workspaceId?: string;
+}) {
   if ("metaPuzzleId" in input) {
     return { metaPuzzleId: input.metaPuzzleId };
   } else if ("puzzleId" in input) {
