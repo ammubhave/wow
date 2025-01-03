@@ -36,12 +36,12 @@ export const roundsRouter = router({
         },
       });
 
-      const roundFlattenedPuzzles: Array<Array<string>> = [];
+      const roundFlattenedPuzzles: Array<{id: string, puzzles: Array<string>}> = [];
       rounds.forEach((round) => {
         const flattenedPuzzles = new Array<string>();
         const puzzleStack = round.metaPuzzles || [];
         while (puzzleStack.length > 0) {
-          const metaPuzzle = puzzleStack.shift();
+          const metaPuzzle = puzzleStack.shift()!;
           puzzleStack.push(...metaPuzzle?.metaPuzzles);
           flattenedPuzzles.push(metaPuzzle?.id);
           metaPuzzle?.puzzles.forEach((puzzle) => {
@@ -51,7 +51,7 @@ export const roundsRouter = router({
         round.unassignedPuzzles.forEach((puzzle) => {
           flattenedPuzzles.push(puzzle.id);
         })
-        roundFlattenedPuzzles.push([round.id, flattenedPuzzles]);
+        roundFlattenedPuzzles.push({id: round.id, puzzles: flattenedPuzzles});
       });
       return roundFlattenedPuzzles;
     }),

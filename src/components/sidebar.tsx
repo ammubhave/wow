@@ -26,7 +26,7 @@ export function Sidebar({workspaceId}: {
           <nav>
             <Table>
               <TableBody>
-                {roundFlattenedPuzzles.data?.map(([roundId, flattenedPuzzles], roundIndex) => (
+                {roundFlattenedPuzzles.data?.map(({id: roundId, puzzles: flattenedPuzzles}, roundIndex) => (
                   <TableRow key={roundId}>
                     <TableCell className="whitespace-nowrap">
                       <a href={"#" + roundId}>Round {roundIndex}</a>
