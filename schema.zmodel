@@ -41,6 +41,8 @@ model Workspace extends Base {
   rounds               Round[]
   links                WorkspaceLinks[]
 
+  comments            Comment[]
+
   googleAccessToken    String?
   googleRefreshToken   String?
   googleTokenExpiresAt DateTime?
@@ -90,6 +92,8 @@ model MetaPuzzle {
   status              String?
   importance          String?
 
+  comments            Comment[]
+
   round               Round        @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   roundId             String
 
@@ -109,6 +113,8 @@ model Puzzle extends Base {
   status              String?
   importance          String?
 
+  comments            Comment[]
+
   // --------
   metaPuzzle          MetaPuzzle? @relation(fields: [metaPuzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   metaPuzzleId        String?
@@ -119,4 +125,25 @@ model Puzzle extends Base {
 
   @@allow('all', round.workspace.memberships?[userId == auth().id])
   @@allow('all', metaPuzzle.round.workspace.memberships?[userId == auth().id])
+}
+
+model Comment extends Base {
+  text                String
+  active              Boolean
+
+  // --------
+  metaPuzzle          MetaPuzzle?   @relation(fields: [metaPuzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  metaPuzzleId        String?
+  // -- OR --
+  puzzle              Puzzle?       @relation(fields: [puzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  puzzleId            String?
+  // -- OR --
+  workspace           Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  workspaceId         String?
+  // --------
+
+  @@allow('read', true)
+  @@allow('create,update,delete', metaPuzzle.round.workspace.memberships?[userId == auth().id])
+  @@allow('create,update,delete', puzzle.round.workspace.memberships?[userId == auth().id] || puzzle.metaPuzzle.round.workspace.memberships?[userId == auth().id])
+  @@allow('create,update,delete', workspace.memberships?[userId == auth().id])
 }

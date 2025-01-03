@@ -3,11 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 
 import presencesReducer from "./features/presences/presences";
 import isDarkModeEnabledReducer from "./features/settings/is-dark-mode-enabled";
+import isCollapsedReducer from "./features/settings/is-collapsed";
 
 export const store = configureStore({
   reducer: {
     presences: presencesReducer,
     isDarkModeEnabled: isDarkModeEnabledReducer,
+    isCollapsed: isCollapsedReducer,
   },
 });
 

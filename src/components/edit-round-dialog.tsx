@@ -85,7 +85,7 @@ export function EditRoundDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Edit puzzle</DialogTitle>
+              <DialogTitle>Edit round</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
