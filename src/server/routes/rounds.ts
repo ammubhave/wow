@@ -38,19 +38,17 @@ export const roundsRouter = router({
 
       const roundFlattenedPuzzles: Array<{id: string, puzzles: Array<string>}> = [];
       rounds.forEach((round) => {
-        const flattenedPuzzles = new Array<string>();
-        const puzzleStack = round.metaPuzzles || [];
-        while (puzzleStack.length > 0) {
-          const metaPuzzle = puzzleStack.shift()!;
-          puzzleStack.push(...metaPuzzle?.metaPuzzles);
-          flattenedPuzzles.push(metaPuzzle?.id);
-          metaPuzzle?.puzzles.forEach((puzzle) => {
-            flattenedPuzzles.push(puzzle.id);
-          });
-        }
-        round.unassignedPuzzles.forEach((puzzle) => {
-          flattenedPuzzles.push(puzzle.id);
-        })
+        // This ignores metaPuzzle.metaPuzzles (e.g. meta-metas).
+        const flattenedPuzzles: Array<string> =
+          [
+            ...round.metaPuzzles?.flatMap((metaPuzzle) => [
+              metaPuzzle.id,
+              ...metaPuzzle.puzzles.map((puzzle) => puzzle.id),
+            ]),
+            ...round.unassignedPuzzles?.map(
+              (puzzle) => puzzle.id
+            ),
+          ];
         roundFlattenedPuzzles.push({id: round.id, puzzles: flattenedPuzzles});
       });
       return roundFlattenedPuzzles;
