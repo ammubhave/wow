@@ -13,6 +13,7 @@ export const workspacesRouter = router({
         googleAccessToken: true,
         googleFolderId: true,
         googleTemplateFileId: true,
+        comment: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -47,6 +48,7 @@ export const workspacesRouter = router({
         googleAccessToken: true,
         googleFolderId: true,
         googleTemplateFileId: true,
+        comment: true,
       },
       where: {
         id: input,
@@ -110,6 +112,7 @@ export const workspacesRouter = router({
         teamName: z.string().min(1).optional(),
         eventName: z.string().min(1).optional(),
         password: z.string().min(8).optional(),
+        comment: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -118,6 +121,7 @@ export const workspacesRouter = router({
           teamName: input.teamName,
           eventName: input.eventName,
           password: input.password,
+          comment: input.comment,
         },
         where: {
           id: input.id,

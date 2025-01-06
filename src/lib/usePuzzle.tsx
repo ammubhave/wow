@@ -22,19 +22,9 @@ export function usePuzzle(
     rounds.data &&
     (() => {
       for (const round of rounds.data) {
-        for (const metaPuzzle of round.metaPuzzles) {
-          if (metaPuzzle.id === puzzleId) {
-            return metaPuzzle;
-          }
-          for (const puzzle of metaPuzzle.puzzles) {
-            if (puzzle.id === puzzleId) {
-              return puzzle;
-            }
-          }
-        }
-        for (const unassignedPuzzle of round.unassignedPuzzles) {
-          if (unassignedPuzzle.id === puzzleId) {
-            return unassignedPuzzle;
+        for (const puzzle of round.puzzles) {
+          if (puzzle.id === puzzleId) {
+            return puzzle;
           }
         }
       }

@@ -20,45 +20,33 @@ export function DeletePuzzleDialog({
   children,
   open,
   setOpen,
-  ...ids
 }: {
   workspaceId: string;
   puzzleId: string;
   children?: React.ReactNode;
   open: boolean;
   setOpen: (open: boolean) => void;
-} & ({ roundId: string } | { roundId: null; metaPuzzleId: string })) {
+}) {
   const utils = trpc.useUtils();
   const mutation = trpc.puzzles.delete.useMutation({
     onMutate: async (variables) => {
       setOpen(false);
       await utils.rounds.list.cancel({ workspaceId });
       const previousRounds = utils.rounds.list.getData({ workspaceId });
-      const newRounds = structuredClone(previousRounds);
-      if (newRounds) {
-        (() => {
-          for (const round of newRounds) {
-            if (!("metaPuzzleId" in ids)) {
-              if (round.id === ids.roundId) {
-                round.unassignedPuzzles = round.unassignedPuzzles.filter(
-                  (puzzle) => puzzle.id !== variables,
-                );
-                return;
-              }
-            } else {
-              for (const metaPuzzle of round.metaPuzzles) {
-                if (metaPuzzle.id === ids.metaPuzzleId) {
-                  metaPuzzle.puzzles = metaPuzzle.puzzles.filter(
-                    (puzzle) => puzzle.id !== variables,
-                  );
-                  return;
-                }
-              }
-            }
-          }
-        })();
-        utils.rounds.list.setData({ workspaceId }, newRounds);
-      }
+      const newRounds = previousRounds?.map((round) => ({
+        ...round,
+        puzzles: round.puzzles.filter((puzzle) => puzzle.id !== variables),
+        unassignedPuzzles: round.unassignedPuzzles.filter(
+          (puzzle) => puzzle.id !== variables,
+        ),
+        metaPuzzles: round.metaPuzzles.map((metaPuzzle) => ({
+          ...metaPuzzle,
+          childPuzzles: metaPuzzle.childPuzzles.filter(
+            (puzzle) => puzzle.id !== variables,
+          ),
+        })),
+      }));
+      utils.rounds.list.setData({ workspaceId }, newRounds);
       return { previousRounds };
     },
     onError: (_error, _variables, context) => {

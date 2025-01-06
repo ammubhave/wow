@@ -90,18 +90,10 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/:puzzleId", async (c) => {
   const puzzleId = z.string().parse(c.req.param("puzzleId"));
   const { db } = await getDb({ env: c.env, request: c.req.raw });
-
-  if (puzzleId.startsWith("meta-")) {
-    await db.metaPuzzle.findFirstOrThrow({
-      where: { id: puzzleId },
-      select: { id: true },
-    });
-  } else {
-    await db.puzzle.findFirstOrThrow({
-      where: { id: puzzleId },
-      select: { id: true },
-    });
-  }
+  await db.puzzle.findFirstOrThrow({
+    where: { id: puzzleId },
+    select: { id: true },
+  });
   const room = c.env.CHAT_ROOMS.get(c.env.CHAT_ROOMS.idFromName(puzzleId));
   return room.fetch(c.req.raw);
 });

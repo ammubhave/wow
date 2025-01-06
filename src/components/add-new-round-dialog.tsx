@@ -46,6 +46,7 @@ export function AddNewRoundDialog({
           workspaceId: variables.workspaceId,
           name: variables.name,
           id: "",
+          puzzles: [],
           unassignedPuzzles: [],
           metaPuzzles: [],
           createdAt: new Date().toISOString(),
@@ -65,6 +66,7 @@ export function AddNewRoundDialog({
           ...(context?.previousRounds ?? []),
           {
             ...data,
+            puzzles: [],
             unassignedPuzzles: [],
             metaPuzzles: [],
           },

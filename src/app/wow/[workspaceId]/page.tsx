@@ -1,6 +1,10 @@
 import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { DotsHorizontalIcon, TriangleRightIcon, TriangleLeftIcon } from "@radix-ui/react-icons";
+import {
+  DotsHorizontalIcon,
+  TriangleLeftIcon,
+  TriangleRightIcon,
+} from "@radix-ui/react-icons";
 import { sha256 } from "js-sha256";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -46,7 +50,6 @@ import { RouterOutputs, trpc } from "@/lib/trpc";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 import { cn, getBgColorClassNamesForPuzzleStatus } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { Trigger } from "@radix-ui/react-dialog";
 
 export default function Page() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -61,9 +64,7 @@ export default function Page() {
   );
 }
 
-function Blackboard({workspaceId}: {
-  workspaceId: string;
-}) {
+function Blackboard({ workspaceId }: { workspaceId: string }) {
   const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   return (
@@ -140,12 +141,15 @@ function Blackboard({workspaceId}: {
                 />
               ))}
               {/* Gets rid of the scroll bar when the last row is hidden. */}
-              <TableRow><TableCell colSpan={7} className="py-0" /></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} className="py-0" />
+              </TableRow>
             </TableBody>
           </Table>
         </div>
       </CardContent>
-    </Card>);
+    </Card>
+  );
 }
 
 function BlackboardRound({
@@ -163,14 +167,23 @@ function BlackboardRound({
   ] = useState(false);
   const [isEditRoundDialogOpen, setIsEditRoundDialogOpen] = useState(false);
   const [isDeleteRoundDialogOpen, setIsDeleteRoundDialogOpen] = useState(false);
-  
+
   const dispatch = useAppDispatch();
-  const isCollapsedState = !!useAppSelector((state) => state.isCollapsed.map[round.id]);
+  const isCollapsedState = !!useAppSelector(
+    (state) => state.isCollapsed.map[round.id],
+  );
   const [isCollapsed, setIsCollapsed] = useState(isCollapsedState);
   useEffect(() => setIsCollapsed(isCollapsedState), [isCollapsedState]);
-  const isUnassignedCollapsedState = !!useAppSelector((state) => state.isCollapsed.map["unassigned-" + round.id]);
-  const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useState(isUnassignedCollapsedState);
-  useEffect(() => setIsUnassignedCollapsed(isUnassignedCollapsedState), [isUnassignedCollapsedState]);
+  const isUnassignedCollapsedState = !!useAppSelector(
+    (state) => state.isCollapsed.map["unassigned-" + round.id],
+  );
+  const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useState(
+    isUnassignedCollapsedState,
+  );
+  useEffect(
+    () => setIsUnassignedCollapsed(isUnassignedCollapsedState),
+    [isUnassignedCollapsedState],
+  );
 
   return (
     <>
@@ -183,12 +196,17 @@ function BlackboardRound({
             id={round.id}
             className="relative scroll-mt-20 select-none"
             onClick={() => {
-              dispatch(setIsCollapsedState({id: round.id, isCollapsed: !isCollapsed}));
+              dispatch(
+                setIsCollapsedState({
+                  id: round.id,
+                  isCollapsed: !isCollapsed,
+                }),
+              );
               setIsCollapsed(!isCollapsed);
             }}
           >
-            <TriangleRightIcon className={isCollapsed ? "hidden" : ""}/>
-            <TriangleLeftIcon className={isCollapsed ? "" : "hidden"}/>
+            <TriangleRightIcon className={isCollapsed ? "hidden" : ""} />
+            <TriangleLeftIcon className={isCollapsed ? "" : "hidden"} />
           </div>
         </TableCell>
         <TableCell className="text-xl font-semibold">{round.name}</TableCell>
@@ -263,28 +281,38 @@ function BlackboardRound({
       ))}
       {round.unassignedPuzzles.length > 0 && (
         <>
-          <TableRow className={cn(
-            "bg-muted/50",
-            isCollapsed ? "collapse" : "",
-          )}>
+          <TableRow
+            className={cn("bg-muted/50", isCollapsed ? "collapse" : "")}
+          >
             <TableCell colSpan={7} className="py-2" />
           </TableRow>
-          <TableRow className={cn(
-            "bg-muted/50",
-            isCollapsed ? "collapse" : "",
-          )}>
+          <TableRow
+            className={cn("bg-muted/50", isCollapsed ? "collapse" : "")}
+          >
             <TableCell
               style={{
                 backgroundColor: "grey",
               }}
               className="p-0"
             >
-              <div className="select-none" onClick={(e) => {
-                dispatch(setIsCollapsedState({id: "unassigned-" + round.id, isCollapsed: !isUnassignedCollapsed}));
-                setIsUnassignedCollapsed(!isUnassignedCollapsed);
-              }}>
-                <TriangleRightIcon className={isUnassignedCollapsed ? "hidden" : ""}/>
-                <TriangleLeftIcon className={isUnassignedCollapsed ? "" : "hidden"}/>
+              <div
+                className="select-none"
+                onClick={(_e) => {
+                  dispatch(
+                    setIsCollapsedState({
+                      id: "unassigned-" + round.id,
+                      isCollapsed: !isUnassignedCollapsed,
+                    }),
+                  );
+                  setIsUnassignedCollapsed(!isUnassignedCollapsed);
+                }}
+              >
+                <TriangleRightIcon
+                  className={isUnassignedCollapsed ? "hidden" : ""}
+                />
+                <TriangleLeftIcon
+                  className={isUnassignedCollapsed ? "" : "hidden"}
+                />
               </div>
             </TableCell>
             <TableCell className="text-lg font-semibold" colSpan={6}>
@@ -322,9 +350,11 @@ function BlackboardMetaPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] =
     useState(false);
-    
+
   const dispatch = useAppDispatch();
-  const isCollapsedState = !!useAppSelector((state) => state.isCollapsed.map[metaPuzzle.id]);
+  const isCollapsedState = !!useAppSelector(
+    (state) => state.isCollapsed.map[metaPuzzle.id],
+  );
   const [isCollapsed, setIsCollapsed] = useState(isCollapsedState);
   useEffect(() => setIsCollapsed(isCollapsedState), [isCollapsedState]);
   const [isParentCollapsed, setIsParentCollapsed] = useState(isAllCollapsed);
@@ -407,10 +437,9 @@ function BlackboardMetaPuzzle({
 
   return (
     <>
-      <TableRow className={cn(
-        "bg-muted/50",
-        isParentCollapsed ? "collapse" : "",
-      )}>
+      <TableRow
+        className={cn("bg-muted/50", isParentCollapsed ? "collapse" : "")}
+      >
         <TableCell colSpan={7} className="py-2" />
       </TableRow>
       <TableRow
@@ -426,12 +455,21 @@ function BlackboardMetaPuzzle({
           }}
           className="p-0"
         >
-          <div id={metaPuzzle.id} className="relative scroll-mt-20 select-none" onClick={(e) => {
-            dispatch(setIsCollapsedState({id: metaPuzzle.id, isCollapsed: !isCollapsed}));
-            setIsCollapsed(!isCollapsed);
-          }}>
-            <TriangleRightIcon className={isCollapsed ? "hidden" : ""}/>
-            <TriangleLeftIcon className={isCollapsed ? "" : "hidden"}/>
+          <div
+            id={metaPuzzle.id}
+            className="relative scroll-mt-20 select-none"
+            onClick={(_e) => {
+              dispatch(
+                setIsCollapsedState({
+                  id: metaPuzzle.id,
+                  isCollapsed: !isCollapsed,
+                }),
+              );
+              setIsCollapsed(!isCollapsed);
+            }}
+          >
+            <TriangleRightIcon className={isCollapsed ? "hidden" : ""} />
+            <TriangleLeftIcon className={isCollapsed ? "" : "hidden"} />
           </div>
         </TableCell>
         <TableCell className="text-lg font-semibold uppercase">
@@ -558,7 +596,8 @@ function BlackboardMetaPuzzle({
           </div>
           <AddNewPuzzleDialog
             workspaceId={workspaceId!}
-            metaPuzzleId={metaPuzzle.id}
+            roundId={metaPuzzle.roundId}
+            parentPuzzleId={metaPuzzle.id}
             open={isAddNewPuzzleFeedingThisMetaDialogOpen}
             setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
           />
@@ -570,23 +609,13 @@ function BlackboardMetaPuzzle({
           />
           <DeletePuzzleDialog
             workspaceId={workspaceId!}
-            roundId={metaPuzzle.roundId}
             puzzleId={metaPuzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}
           />
         </TableCell>
       </TableRow>
-      {metaPuzzle.metaPuzzles.map((puzzle, idx) => (
-        <BlackboardPuzzle
-          key={idx}
-          workspaceId={workspaceId}
-          color={color}
-          puzzle={puzzle}
-          isCollapsed={isParentCollapsed || isCollapsed}
-        />
-      ))}
-      {metaPuzzle.puzzles.map((puzzle, idx) => (
+      {metaPuzzle.childPuzzles.map((puzzle, idx) => (
         <BlackboardPuzzle
           key={idx}
           workspaceId={workspaceId}
@@ -606,7 +635,7 @@ function BlackboardPuzzle({
   isCollapsed,
 }: {
   workspaceId: string;
-  puzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0]["puzzles"][0];
+  puzzle: RouterOutputs["rounds"]["list"][0]["puzzles"][0]["childPuzzles"][0];
   color?: string;
   isCollapsed?: boolean;
 }) {
@@ -820,10 +849,6 @@ function BlackboardPuzzle({
           />
           <DeletePuzzleDialog
             workspaceId={workspaceId!}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            metaPuzzleId={puzzle.metaPuzzleId as any}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            roundId={puzzle.roundId as any}
             puzzleId={puzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}

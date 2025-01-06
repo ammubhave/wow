@@ -35,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { trpc } from "@/lib/trpc";
 import { usePuzzle } from "@/lib/usePuzzle";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 import { cn, getBgColorClassNamesForPuzzleStatus } from "@/lib/utils";
@@ -95,8 +94,9 @@ function PuzzleInfoPanel({
 }: {
   workspaceId: string;
   puzzle: {
+    comment: string;
     id: string;
-    metaPuzzleId: string | null;
+    parentPuzzleId: string | null;
     name: string;
     link: string | null;
     googleSpreadsheetId: string | null;
@@ -138,9 +138,6 @@ function PuzzleInfoPanel({
 
   const presences =
     useAppSelector((state) => state.presences.value)[puzzle.id] ?? [];
-
-  const commentId = puzzle.id.startsWith("meta-") ? { metaPuzzleId: puzzle.id! } : { puzzleId : puzzle.id! };
-  const comment = trpc.comments.findComment.useQuery(commentId);
 
   return (
     <Card
@@ -264,7 +261,7 @@ function PuzzleInfoPanel({
               </div>
             </div>
             <div>
-              <CommentBox comment={comment?.data?.text} commentId={commentId} />
+              <CommentBox comment={puzzle.comment} puzzleId={puzzle.id} />
             </div>
           </form>
         </Form>

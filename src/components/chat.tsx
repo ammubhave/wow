@@ -28,7 +28,7 @@ export function Chat({ puzzleId, token }: { puzzleId: string; token: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { sendJsonMessage, lastJsonMessage } = useWebSocket(
-    `wss://${typeof window !== "undefined" ? window.location.host : ""}/api/do/chat/${puzzleId}?token=${token}`,
+    `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/chat/${puzzleId}?token=${token}`,
     {
       share: false,
       shouldReconnect: () => true,

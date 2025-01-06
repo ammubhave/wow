@@ -1,4 +1,4 @@
-import { string, z } from "zod";
+import { z } from "zod";
 
 import { procedure, router } from "../trpc";
 
@@ -6,54 +6,25 @@ export const roundsRouter = router({
   list: procedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.round.findMany({
-        where: { workspaceId: input.workspaceId },
-        include: {
-          metaPuzzles: {
-            include: {
-              puzzles: true,
-              metaPuzzles: true,
-            },
-          },
-          unassignedPuzzles: true,
-        },
-      });
-    }),
-  
-  listPuzzles: procedure
-    .input(z.object({ workspaceId: z.string() }))
-    .query(async ({ ctx, input }) => {
       const rounds = await ctx.db.round.findMany({
         where: { workspaceId: input.workspaceId },
         include: {
-          metaPuzzles: {
+          puzzles: {
             include: {
-              puzzles: true,
-              metaPuzzles: true,
+              childPuzzles: true,
             },
           },
-          unassignedPuzzles: true,
         },
       });
-
-      const roundFlattenedPuzzles: Array<{id: string, puzzles: Array<string>}> = [];
-      rounds.forEach((round) => {
-        // This ignores metaPuzzle.metaPuzzles (e.g. meta-metas).
-        const flattenedPuzzles: Array<string> =
-          [
-            ...round.metaPuzzles?.flatMap((metaPuzzle) => [
-              metaPuzzle.id,
-              ...metaPuzzle.puzzles.map((puzzle) => puzzle.id),
-            ]),
-            ...round.unassignedPuzzles?.map(
-              (puzzle) => puzzle.id
-            ),
-          ];
-        roundFlattenedPuzzles.push({id: round.id, puzzles: flattenedPuzzles});
-      });
-      return roundFlattenedPuzzles;
+      return rounds.map((round) => ({
+        ...round,
+        unassignedPuzzles: round.puzzles.filter(
+          (puzzle) => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null,
+        ),
+        metaPuzzles: round.puzzles.filter((puzzle) => puzzle.isMetaPuzzle),
+      }));
     }),
-    
+
   create: procedure
     .input(z.object({ workspaceId: z.string(), name: z.string() }))
     .mutation(async ({ ctx, input }) => {

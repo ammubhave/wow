@@ -105,45 +105,15 @@ app.get("/puzzles/:puzzleId", async (c) => {
   const { db } = await getDb({ env: c.env, request: c.req.raw });
   const { id: workspaceId } = await db.workspace.findFirstOrThrow({
     where: {
-      OR: [
-        {
-          rounds: {
+      rounds: {
+        some: {
+          puzzles: {
             some: {
-              unassignedPuzzles: {
-                some: {
-                  id: puzzleId,
-                },
-              },
+              id: puzzleId,
             },
           },
         },
-        {
-          rounds: {
-            some: {
-              metaPuzzles: {
-                some: {
-                  puzzles: {
-                    some: {
-                      id: puzzleId,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        {
-          rounds: {
-            some: {
-              metaPuzzles: {
-                some: {
-                  id: puzzleId,
-                },
-              },
-            },
-          },
-        },
-      ],
+      },
     },
     select: {
       id: true,

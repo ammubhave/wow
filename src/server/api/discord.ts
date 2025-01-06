@@ -5,17 +5,12 @@ export const syncSchema = z.object({
   rounds: z.array(
     z.object({
       name: z.string(),
-      metaPuzzles: z.array(
+      puzzles: z.array(
         z.object({
+          isMetaPuzzle: z.boolean(),
           name: z.string(),
           status: z.string().nullable(),
-          puzzles: z.array(
-            z.object({ name: z.string(), status: z.string().nullable() }),
-          ),
         }),
-      ),
-      unassignedPuzzles: z.array(
-        z.object({ name: z.string(), status: z.string().nullable() }),
       ),
     }),
   ),
@@ -47,29 +42,22 @@ export class DiscordClient {
   }
 
   public async sync(workspace: z.infer<typeof syncSchema>) {
-    let allPuzzles = workspace.rounds.map((round) => ({
-      name: round.name,
-      puzzles: [
-        ...round.metaPuzzles.flatMap((metaPuzzle) => [
-          {
-            name: `[META] ${metaPuzzle.name}`,
-            status: metaPuzzle.status,
-          },
-          ...metaPuzzle.puzzles,
-        ]),
-        ...round.unassignedPuzzles,
-      ],
-    }));
-    allPuzzles = allPuzzles.filter((round) => {
-      round.puzzles = round.puzzles.filter((puzzle) => {
-        return (
-          puzzle.status !== "solved" &&
-          puzzle.status !== "backsolved" &&
-          puzzle.status !== "obsolete"
-        );
-      });
-      return round.puzzles.length > 0;
-    });
+    const allPuzzles = workspace.rounds
+      .map((round) => ({
+        name: round.name,
+        puzzles: round.puzzles
+          .filter(
+            (puzzle) =>
+              puzzle.status !== "solved" &&
+              puzzle.status !== "backsolved" &&
+              puzzle.status !== "obsolete",
+          )
+          .map((puzzle) => ({
+            name: `${puzzle.isMetaPuzzle ? "[META] " : ""}${puzzle.name}`,
+            status: puzzle.status,
+          })),
+      }))
+      .filter((round) => round.puzzles.length > 0);
 
     const channelsWithDuplicates = await this.listChannels(
       workspace.discordGuildId,

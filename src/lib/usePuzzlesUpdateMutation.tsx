@@ -1,8 +1,6 @@
 import { RouterInputs, trpc } from "@/lib/trpc";
 
 function sanitizePuzzle(puzzle: RouterInputs["puzzles"]["update"]) {
-  puzzle.metaPuzzleId =
-    puzzle.metaPuzzleId === "KkOFT9DeqyStF6SF" ? null : puzzle.metaPuzzleId;
   puzzle.answer =
     puzzle.answer === undefined || puzzle.answer === null
       ? puzzle.answer
@@ -56,7 +54,7 @@ export function usePuzzlesUpdateMutation(
                 Object.assign(metaPuzzle, variables);
                 return;
               }
-              for (const puzzle of metaPuzzle.puzzles) {
+              for (const puzzle of metaPuzzle.childPuzzles) {
                 if (puzzle.id === variables.id) {
                   Object.assign(puzzle, variables);
                   return;

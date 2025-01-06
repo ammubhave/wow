@@ -41,7 +41,7 @@ model Workspace extends Base {
   rounds               Round[]
   links                WorkspaceLinks[]
 
-  comments            Comment[]
+  comment              String                @default("No comment set.")
 
   googleAccessToken    String?
   googleRefreshToken   String?
@@ -66,42 +66,14 @@ model WorkspaceLinks extends Base {
 }
 
 model Round extends Base {
-  workspaceId       String
-  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  name              String
+  name        String
 
-  unassignedPuzzles Puzzle[]
-  metaPuzzles       MetaPuzzle[]
+  puzzles     Puzzle[]
 
   @@allow('all', workspace.memberships?[userId == auth().id])
-}
-
-model MetaPuzzle {
-  id                  String       @id
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt()
-
-  name                String
-  link                String?
-  googleSpreadsheetId String?
-
-  answer              String?
-
-  puzzles             Puzzle[]
-  status              String?
-  importance          String?
-
-  comments            Comment[]
-
-  round               Round        @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  roundId             String
-
-  metaPuzzle          MetaPuzzle?  @relation("MetaMetaPuzzles", fields: [metaPuzzleId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  metaPuzzleId        String?
-  metaPuzzles         MetaPuzzle[] @relation("MetaMetaPuzzles")
-
-  @@allow('all', round.workspace.memberships?[userId == auth().id])
 }
 
 model Puzzle extends Base {
@@ -113,37 +85,17 @@ model Puzzle extends Base {
   status              String?
   importance          String?
 
-  comments            Comment[]
+  comment             String   @default("No comment set.")
 
-  // --------
-  metaPuzzle          MetaPuzzle? @relation(fields: [metaPuzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  metaPuzzleId        String?
-  // -- OR --
-  round               Round?      @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  roundId             String?
-  // --------
+  round               Round    @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  roundId             String
+
+  isMetaPuzzle        Boolean
+
+  parentPuzzleId      String?
+  parentPuzzle        Puzzle?  @relation("PuzzleMetaPuzzle", fields: [parentPuzzleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  childPuzzles        Puzzle[] @relation("PuzzleMetaPuzzle")
 
   @@allow('all', round.workspace.memberships?[userId == auth().id])
-  @@allow('all', metaPuzzle.round.workspace.memberships?[userId == auth().id])
-}
-
-model Comment extends Base {
-  text                String
-  active              Boolean
-
-  // --------
-  metaPuzzle          MetaPuzzle?   @relation(fields: [metaPuzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  metaPuzzleId        String?
-  // -- OR --
-  puzzle              Puzzle?       @relation(fields: [puzzleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  puzzleId            String?
-  // -- OR --
-  workspace           Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  workspaceId         String?
-  // --------
-
-  @@allow('read', true)
-  @@allow('create,update,delete', metaPuzzle.round.workspace.memberships?[userId == auth().id])
-  @@allow('create,update,delete', puzzle.round.workspace.memberships?[userId == auth().id] || puzzle.metaPuzzle.round.workspace.memberships?[userId == auth().id])
-  @@allow('create,update,delete', workspace.memberships?[userId == auth().id])
+  @@allow('all', parentPuzzle.round.workspace.memberships?[userId == auth().id])
 }

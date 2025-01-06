@@ -43,7 +43,7 @@ export function EditPuzzleDialog({
   workspaceId: string;
   puzzle: {
     id: string;
-    metaPuzzleId: string | null;
+    parentPuzzleId: string | null;
     name: string;
     answer: string | null;
     status: string | null;
@@ -64,12 +64,12 @@ export function EditPuzzleDialog({
     link: z.string().url().or(z.string().length(0)),
     googleSpreadsheetId: z.string(),
     status: z.string(),
-    metaPuzzleId: z.string(),
+    parentPuzzleId: z.string(),
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     values: {
-      metaPuzzleId: puzzle.metaPuzzleId ?? "KkOFT9DeqyStF6SF",
+      parentPuzzleId: puzzle.parentPuzzleId ?? "",
       name: puzzle.name,
       answer: puzzle.answer ?? "",
       link: puzzle.link ?? "",
@@ -94,6 +94,8 @@ export function EditPuzzleDialog({
       mutation.mutateAsync({
         id: puzzle.id,
         ...data,
+        parentPuzzleId:
+          data.parentPuzzleId === "none" ? null : data.parentPuzzleId,
         answer: data.answer === "" ? null : data.answer.toUpperCase(),
         status: data.status === "none" ? null : data.status,
         link: data.link === "" ? null : data.link,
@@ -134,7 +136,7 @@ export function EditPuzzleDialog({
               />
               <FormField
                 control={form.control}
-                name="metaPuzzleId"
+                name="parentPuzzleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Feeds Into</FormLabel>
@@ -149,7 +151,7 @@ export function EditPuzzleDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="KkOFT9DeqyStF6SF">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {metaPuzzles?.map((metaPuzzle) => (
                             <SelectItem
                               key={metaPuzzle.id}

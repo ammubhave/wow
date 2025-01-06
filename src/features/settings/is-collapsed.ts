@@ -7,8 +7,7 @@ export interface IsCollapsedState {
 const IS_COLLAPSED = "isCollapsed";
 
 const initialState: IsCollapsedState = {
-  map:
-    JSON.parse(localStorage.getItem(IS_COLLAPSED) ?? "null") ?? {},
+  map: JSON.parse(localStorage.getItem(IS_COLLAPSED) ?? "null") ?? {},
 };
 
 interface IsCollapsedValue {

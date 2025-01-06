@@ -16,7 +16,7 @@ function NotificationsWebSocketInner({
 }) {
   const utils = trpc.useUtils();
   const { lastJsonMessage } = useWebSocket(
-    `wss://${typeof window !== "undefined" ? window.location.host : ""}/api/do/notification/${workspaceId}?token=${token}`,
+    `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/notification/${workspaceId}?token=${token}`,
     {
       share: false,
       shouldReconnect: () => true,

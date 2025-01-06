@@ -49,19 +49,7 @@ app.all("/", async (c) => {
       rounds: {
         select: {
           name: true,
-          metaPuzzles: {
-            select: {
-              name: true,
-              status: true,
-              puzzles: {
-                select: {
-                  name: true,
-                  status: true,
-                },
-              },
-            },
-          },
-          unassignedPuzzles: {
+          puzzles: {
             select: {
               name: true,
               status: true,

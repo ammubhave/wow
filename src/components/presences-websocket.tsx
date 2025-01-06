@@ -19,8 +19,8 @@ function PresencesWebSocketInner({
 }) {
   const { lastJsonMessage } = useWebSocket(
     puzzleId
-      ? `wss://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/puzzles/${puzzleId}?token=${token}`
-      : `wss://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/workspaces/${workspaceId}?token=${token}`,
+      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/puzzles/${puzzleId}?token=${token}`
+      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/workspaces/${workspaceId}?token=${token}`,
     {
       share: false,
       shouldReconnect: () => true,

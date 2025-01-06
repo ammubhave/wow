@@ -1,4 +1,3 @@
-import { createId } from "@paralleldrive/cuid2";
 import { z } from "zod";
 
 import { procedure, router } from "../trpc";
@@ -23,7 +22,7 @@ export const puzzlesRouter = router({
                   roundId: z.string(),
                 }),
                 z.object({
-                  metaPuzzleId: z.string(),
+                  parentPuzzleId: z.string(),
                 }),
               ]),
             ),
@@ -51,9 +50,10 @@ export const puzzlesRouter = router({
           where: {
             rounds: {
               some: {
-                metaPuzzles: {
+                puzzles: {
                   some: {
-                    id: input.metaPuzzleId,
+                    id: input.parentPuzzleId,
+                    isMetaPuzzle: true,
                   },
                 },
               },
@@ -62,27 +62,30 @@ export const puzzlesRouter = router({
         });
       }
 
-      let puzzle;
-      if (input.type === "puzzle") {
-        puzzle = await ctx.db.puzzle.create({
-          data: {
-            name: input.name,
-            link: input.link,
-            ...("roundId" in input
-              ? { roundId: input.roundId }
-              : { metaPuzzleId: input.metaPuzzleId }),
-          },
-        });
-      } else {
-        puzzle = await ctx.db.metaPuzzle.create({
-          data: {
-            id: `meta-${createId()}`,
-            name: input.name,
-            roundId: input.roundId,
-            link: input.link,
-          },
-        });
-      }
+      const roundId =
+        "roundId" in input
+          ? input.roundId
+          : (
+              await ctx.db.puzzle.findFirstOrThrow({
+                where: {
+                  id: input.parentPuzzleId,
+                },
+              })
+            ).roundId;
+
+      const puzzle = await ctx.db.puzzle.create({
+        data: {
+          name: input.name,
+          link: input.link,
+          roundId,
+          isMetaPuzzle: input.type === "meta-puzzle",
+          parentPuzzleId:
+            "parentPuzzleId" in input ? input.parentPuzzleId : null,
+        },
+        include: {
+          childPuzzles: true,
+        },
+      });
 
       const googleAccessToken = await ctx.getGoogleToken(workspace.id);
       if (googleAccessToken) {
@@ -119,45 +122,31 @@ export const puzzlesRouter = router({
           ).json();
         }
 
+        await ctx.db.puzzle.update({
+          data: {
+            googleSpreadsheetId: z
+              .object({
+                id: z.string(),
+              })
+              .parse(resp).id,
+          },
+          where: {
+            id: puzzle.id,
+          },
+        });
         if (input.type === "meta-puzzle") {
-          await ctx.db.$transaction(async (tx) => {
-            await tx.metaPuzzle.update({
+          if (input.assignUnassignedPuzzles) {
+            await ctx.db.puzzle.updateMany({
               data: {
-                googleSpreadsheetId: z
-                  .object({
-                    id: z.string(),
-                  })
-                  .parse(resp).id,
+                parentPuzzleId: puzzle.id,
               },
               where: {
-                id: puzzle.id,
+                roundId: input.roundId,
+                parentPuzzleId: null,
+                isMetaPuzzle: false,
               },
             });
-            if (input.assignUnassignedPuzzles) {
-              await tx.puzzle.updateMany({
-                data: {
-                  roundId: null,
-                  metaPuzzleId: puzzle.id,
-                },
-                where: {
-                  roundId: input.roundId,
-                },
-              });
-            }
-          });
-        } else {
-          await ctx.db.puzzle.update({
-            data: {
-              googleSpreadsheetId: z
-                .object({
-                  id: z.string(),
-                })
-                .parse(resp).id,
-            },
-            where: {
-              id: puzzle.id,
-            },
-          });
+          }
         }
       }
 
@@ -187,86 +176,45 @@ export const puzzlesRouter = router({
     .input(
       z.object({
         id: z.string(),
-        metaPuzzleId: z.string().nullable().optional(),
+        parentPuzzleId: z.string().nullable().optional(),
         name: z.string().min(1).optional(),
         answer: z.string().nullable().optional(),
         status: z.string().nullable().optional(),
         importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
         googleSpreadsheetId: z.string().nullable().optional(),
+        comment: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       // Update puzzle in database
-      let workspaceId;
-      if (input.id.startsWith("meta-")) {
-        const puzzle = await ctx.db.metaPuzzle.update({
-          data: {
-            metaPuzzleId: input.metaPuzzleId,
-            name: input.name,
-            answer: input.answer,
-            status: input.status,
-            importance: input.importance,
-            link: input.link,
-            googleSpreadsheetId: input.googleSpreadsheetId?.replace(
-              /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
-              "$1",
-            ),
-          },
-          where: {
-            id: input.id,
-          },
-          select: {
-            round: {
-              select: {
-                workspaceId: true,
-              },
+      const {
+        round: { workspaceId },
+      } = await ctx.db.puzzle.update({
+        data: {
+          parentPuzzleId: input.parentPuzzleId,
+          name: input.name,
+          answer: input.answer,
+          status: input.status,
+          importance: input.importance,
+          link: input.link,
+          googleSpreadsheetId: input.googleSpreadsheetId?.replace(
+            /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
+            "$1",
+          ),
+          comment: input.comment,
+        },
+        where: {
+          id: input.id,
+        },
+        select: {
+          round: {
+            select: {
+              workspaceId: true,
             },
           },
-        });
-        workspaceId = puzzle.round.workspaceId;
-      } else {
-        const puzzle = await ctx.db.puzzle.update({
-          data: {
-            metaPuzzleId: input.metaPuzzleId,
-            roundId:
-              input.metaPuzzleId !== null && input.metaPuzzleId !== undefined
-                ? null
-                : undefined,
-            name: input.name,
-            answer: input.answer,
-            status: input.status,
-            importance: input.importance,
-            link: input.link,
-            googleSpreadsheetId: input.googleSpreadsheetId?.replace(
-              /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
-              "$1",
-            ),
-          },
-          where: {
-            id: input.id,
-          },
-          select: {
-            round: {
-              select: {
-                workspaceId: true,
-              },
-            },
-            metaPuzzle: {
-              select: {
-                round: {
-                  select: {
-                    workspaceId: true,
-                  },
-                },
-              },
-            },
-          },
-        });
-        workspaceId =
-          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-          puzzle.round?.workspaceId ?? puzzle.metaPuzzle?.round?.workspaceId!;
-      }
+        },
+      });
 
       // Deferred: Broadcast notification and sync discord
       ctx.waitUntil(
@@ -290,71 +238,22 @@ export const puzzlesRouter = router({
     }),
 
   delete: procedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    let workspaceId;
-    let googleSpreadsheetId;
-    if (input.startsWith("meta-")) {
-      const puzzle = (workspaceId = await ctx.db.$transaction(async (tx) => {
-        const { roundId } = await tx.metaPuzzle.findFirstOrThrow({
+    const {
+      round: { workspaceId },
+      googleSpreadsheetId,
+    } = await ctx.db.puzzle.delete({
+      where: {
+        id: input,
+      },
+      select: {
+        round: {
           select: {
-            roundId: true,
+            workspaceId: true,
           },
-          where: {
-            id: input,
-          },
-        });
-        await tx.puzzle.updateMany({
-          where: {
-            metaPuzzleId: input,
-          },
-          data: {
-            metaPuzzleId: null,
-            roundId: roundId,
-          },
-        });
-        return await tx.metaPuzzle.delete({
-          where: {
-            id: input,
-          },
-          select: {
-            round: {
-              select: {
-                workspaceId: true,
-              },
-            },
-            googleSpreadsheetId: true,
-          },
-        });
-      }));
-      workspaceId = puzzle.round.workspaceId;
-      googleSpreadsheetId = puzzle.googleSpreadsheetId;
-    } else {
-      const puzzle = await ctx.db.puzzle.delete({
-        where: {
-          id: input,
         },
-        select: {
-          round: {
-            select: {
-              workspaceId: true,
-            },
-          },
-          metaPuzzle: {
-            select: {
-              round: {
-                select: {
-                  workspaceId: true,
-                },
-              },
-            },
-          },
-          googleSpreadsheetId: true,
-        },
-      });
-      workspaceId =
-        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-        puzzle.round?.workspaceId ?? puzzle.metaPuzzle?.round?.workspaceId!;
-      googleSpreadsheetId = puzzle.googleSpreadsheetId;
-    }
+        googleSpreadsheetId: true,
+      },
+    });
 
     // Deferred: Broadcast notification, sync discord, and delete google spreadsheet
     ctx.waitUntil(

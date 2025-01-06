@@ -1,4 +1,3 @@
-import { commentsRouter } from "./routes/comments";
 import { puzzlesRouter } from "./routes/puzzles";
 import { roundsRouter } from "./routes/rounds";
 import { workspacesRouter } from "./routes/workspaces";
@@ -8,7 +7,6 @@ export const appRouter = router({
   puzzles: puzzlesRouter,
   rounds: roundsRouter,
   workspaces: workspacesRouter,
-  comments: commentsRouter,
 });
 
 export type AppRouter = typeof appRouter;

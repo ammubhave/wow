@@ -29,20 +29,16 @@ export function AddNewPuzzleDialog({
   children,
   open,
   setOpen,
-  ...ids
+  roundId,
+  parentPuzzleId,
 }: {
   workspaceId: string;
   children?: React.ReactNode;
   open: boolean;
   setOpen: (open: boolean) => void;
-} & (
-  | {
-      roundId: string;
-    }
-  | {
-      metaPuzzleId: string;
-    }
-)) {
+  roundId: string;
+  parentPuzzleId?: string;
+}) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const FormSchema = z.object({
     name: z.string().min(1),
@@ -61,47 +57,43 @@ export function AddNewPuzzleDialog({
       setOpen(false);
       await utils.rounds.list.cancel({ workspaceId });
       const previousRounds = utils.rounds.list.getData({ workspaceId });
-      const newRounds = structuredClone(previousRounds);
-      if (newRounds) {
-        (() => {
-          const newPuzzle = {
-            id: "",
-            name: variables.name,
-            answer: null,
-            status: null,
-            importance: null,
-            link: variables.link,
-            googleSpreadsheetId: null,
-            puzzles: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          for (const round of newRounds) {
-            if ("roundId" in ids) {
-              if (round.id === ids.roundId) {
-                round.unassignedPuzzles.push({
-                  ...newPuzzle,
-                  roundId: ids.roundId,
-                  metaPuzzleId: null,
-                });
-                return;
-              }
-            } else {
-              for (const metaPuzzle of round.metaPuzzles) {
-                if (metaPuzzle.id === ids.metaPuzzleId) {
-                  metaPuzzle.puzzles.push({
-                    ...newPuzzle,
-                    metaPuzzleId: ids.metaPuzzleId,
-                    roundId: null,
-                  });
-                  return;
-                }
-              }
+      const newPuzzle = {
+        id: "",
+        name: variables.name,
+        answer: null,
+        status: null,
+        importance: null,
+        link: variables.link,
+        googleSpreadsheetId: null,
+        childPuzzles: [],
+        isMetaPuzzle: false,
+        comment: "",
+        roundId,
+        parentPuzzleId: parentPuzzleId ?? null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const newRounds = previousRounds?.map((round) =>
+        round.id === roundId
+          ? {
+              ...round,
+              puzzles: [...round.puzzles, newPuzzle],
+              unassignedPuzzles: [
+                ...round.unassignedPuzzles,
+                ...(parentPuzzleId === undefined ? [newPuzzle] : []),
+              ],
+              metaPuzzles: round.metaPuzzles.map((metaPuzzle) =>
+                metaPuzzle.id === parentPuzzleId
+                  ? {
+                      ...metaPuzzle,
+                      childPuzzles: [...metaPuzzle.childPuzzles, newPuzzle],
+                    }
+                  : metaPuzzle,
+              ),
             }
-          }
-        })();
-        utils.rounds.list.setData({ workspaceId }, newRounds);
-      }
+          : round,
+      );
+      utils.rounds.list.setData({ workspaceId }, newRounds);
       return { previousRounds };
     },
     onError: (_error, _variables, context) => {
@@ -111,30 +103,26 @@ export function AddNewPuzzleDialog({
     },
     onSettled: (data, _error, _variables, context) => {
       if (data && context?.previousRounds) {
-        const newRounds = structuredClone(context.previousRounds);
-        (() => {
-          for (const round of newRounds) {
-            if ("roundId" in ids) {
-              if (round.id === ids.roundId) {
-                round.unassignedPuzzles.push({
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  ...(data as any),
-                });
-                return;
+        const newRounds = context.previousRounds?.map((round) =>
+          round.id === roundId
+            ? {
+                ...round,
+                puzzles: [...round.puzzles, data],
+                unassignedPuzzles: [
+                  ...round.unassignedPuzzles,
+                  ...(parentPuzzleId === undefined ? [data] : []),
+                ],
+                metaPuzzles: round.metaPuzzles.map((metaPuzzle) =>
+                  metaPuzzle.id === parentPuzzleId
+                    ? {
+                        ...metaPuzzle,
+                        childPuzzles: [...metaPuzzle.childPuzzles, data],
+                      }
+                    : metaPuzzle,
+                ),
               }
-            } else {
-              for (const metaPuzzle of round.metaPuzzles) {
-                if (metaPuzzle.id === ids.metaPuzzleId) {
-                  metaPuzzle.puzzles.push({
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ...(data as any),
-                  });
-                  return;
-                }
-              }
-            }
-          }
-        })();
+            : round,
+        );
         utils.rounds.list.setData({ workspaceId }, newRounds);
       }
       utils.rounds.list.invalidate({ workspaceId });
@@ -142,10 +130,12 @@ export function AddNewPuzzleDialog({
   });
   function onSubmit(data: z.infer<typeof FormSchema>) {
     toast.promise(
+      // @ts-expect-error error
       mutation.mutateAsync({
         type: "puzzle",
         ...data,
-        ...ids,
+        roundId: parentPuzzleId ? undefined : roundId,
+        parentPuzzleId,
       }),
       {
         loading: "Adding puzzle...",
