@@ -86,6 +86,14 @@ export default function Layout() {
       });
     }
   }, [isAuthenticated, isLoading]);
+  useEffect(() => {
+    if (user) {
+      // @ts-expect-error error
+      window.dataLayer?.push({
+        user_id: user.id,
+      });
+    }
+  }, [user]);
   if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center">
