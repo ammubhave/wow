@@ -9,7 +9,6 @@ interface Env {
 	VITE_GOOGLE_API_KEY: string;
 	DISCORD_BOT_TOKEN: string;
 	VITE_DISCORD_CLIENT_ID: string;
-	SENTRY_AUTH_TOKEN: string;
 	TURSO_URL: string;
 	TURSO_AUTH_TOKEN: string;
 	CHAT_ROOMS: DurableObjectNamespace<import("./src/server/index").ChatRoom>;
