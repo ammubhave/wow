@@ -142,7 +142,7 @@ function PuzzleInfoPanel({
   return (
     <Card
       className={cn(
-        "flex-1 overflow-auto border-0 shadow-none rounded-none",
+        "flex-1 overflow-auto border-0 shadow-none rounded-none md:rounded-none",
         getBgColorClassNamesForPuzzleStatus(puzzle.status),
       )}
     >

@@ -1,6 +1,7 @@
 import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  ChevronRightIcon,
   DotsHorizontalIcon,
   TriangleLeftIcon,
   TriangleRightIcon,
@@ -22,13 +23,13 @@ import { EditRoundDialog } from "@/components/edit-round-dialog";
 import { PresencesWebSocket } from "@/components/presences-websocket";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -56,7 +57,7 @@ export default function Page() {
 
   return (
     <PresencesWebSocket workspaceId={workspaceId!}>
-      <div className="flex gap-4 min-h-screen">
+      <div className="flex flex-1 divide-x items-stretch -m-4 mb-0 md:-m-[2.5rem]">
         <Blackboard workspaceId={workspaceId!} />
         <Sidebar workspaceId={workspaceId!} />
       </div>
@@ -68,9 +69,9 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
   const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   return (
-    <Card className="flex-1 min-h-screen">
-      <CardHeader className="px-7">
-        <CardTitle className="flex items-center justify-between">
+    <div className="flex flex-col divide-y h-[calc(100vh-theme(spacing.16))] flex-1">
+      <div>
+        <div className="p-4 flex items-center justify-between font-semibold leading-none tracking-tight">
           Blackboard
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -92,14 +93,15 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
             open={isAddNewRoundDialogOpen}
             setOpen={setIsAddNewRoundDialogOpen}
           />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-0 md:px-6">
-        <div className="md:rounded-lg overflow-hidden border">
-          <Table>
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="overflow-hidden">
+          <Table className="h-fit">
             <TableHeader>
               <TableRow>
-                <TableHead className="p-0 w-[2px]" />
+                <TableHead className="p-0 w-8" colSpan={1} />
+                <TableHead className="p-0 w-8" colSpan={1} />
                 <TableHead>Name</TableHead>
                 <TableHead>Solution</TableHead>
                 <TableHead>Status</TableHead>
@@ -115,7 +117,7 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
               {rounds.isLoading &&
                 Array.from({ length: 10 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell />
+                    <TableCell colSpan={2} />
                     <TableCell>
                       <Skeleton className="h-6 w-40" />
                     </TableCell>
@@ -147,8 +149,8 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
+      </ScrollArea>
+    </div>
   );
 }
 
@@ -187,13 +189,12 @@ function BlackboardRound({
 
   return (
     <>
-      <TableRow>
-        <TableCell colSpan={7} className="py-6 bg-muted/50" />
-      </TableRow>
       <TableRow className="bg-secondary text-secondary-foreground">
-        <TableCell className="p-0">
-          <div
+        <TableCell className="-p-2">
+          <Button
             id={round.id}
+            variant="ghost"
+            size="icon"
             className="relative scroll-mt-20 select-none"
             onClick={() => {
               dispatch(
@@ -205,12 +206,14 @@ function BlackboardRound({
               setIsCollapsed(!isCollapsed);
             }}
           >
-            <TriangleRightIcon className={isCollapsed ? "hidden" : ""} />
-            <TriangleLeftIcon className={isCollapsed ? "" : "hidden"} />
-          </div>
+            <ChevronRightIcon
+              className={cn("transition", !isCollapsed && "rotate-90")}
+            />
+          </Button>
         </TableCell>
-        <TableCell className="text-xl font-semibold">{round.name}</TableCell>
-        <TableCell colSpan={3} />
+        <TableCell colSpan={5} className="font-semibold text-muted-foreground">
+          {round.name}
+        </TableCell>
         <TableCell className="hidden sm:table-cell" />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
@@ -281,41 +284,67 @@ function BlackboardRound({
       ))}
       {round.unassignedPuzzles.length > 0 && (
         <>
-          <TableRow
-            className={cn("bg-muted/50", isCollapsed ? "collapse" : "")}
-          >
-            <TableCell colSpan={7} className="py-2" />
-          </TableRow>
-          <TableRow
-            className={cn("bg-muted/50", isCollapsed ? "collapse" : "")}
-          >
-            <TableCell
-              style={{
-                backgroundColor: "grey",
-              }}
-              className="p-0"
-            >
+          <TableRow className={cn("group", isCollapsed ? "collapse" : "")}>
+            <TableCell className="p-0" />
+            <TableCell className="p-0 relative">
               <div
-                className="select-none"
-                onClick={(_e) => {
-                  dispatch(
-                    setIsCollapsedState({
-                      id: "unassigned-" + round.id,
-                      isCollapsed: !isUnassignedCollapsed,
-                    }),
-                  );
-                  setIsUnassignedCollapsed(!isUnassignedCollapsed);
-                }}
+                className={cn(
+                  "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
+                  !isUnassignedCollapsed ? "hidden" : "flex",
+                )}
               >
-                <TriangleRightIcon
-                  className={isUnassignedCollapsed ? "hidden" : ""}
-                />
-                <TriangleLeftIcon
-                  className={isUnassignedCollapsed ? "" : "hidden"}
-                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative scroll-mt-20 select-none"
+                  style={{
+                    color: "grey",
+                  }}
+                  onClick={(_e) => {
+                    dispatch(
+                      setIsCollapsedState({
+                        id: "unassigned-" + round.id,
+                        isCollapsed: !isUnassignedCollapsed,
+                      }),
+                    );
+                    setIsUnassignedCollapsed(!isUnassignedCollapsed);
+                  }}
+                >
+                  <ChevronRightIcon
+                    className={cn(
+                      "transition",
+                      !isUnassignedCollapsed && "rotate-90",
+                    )}
+                  />
+                </Button>
               </div>
+              {!isUnassignedCollapsed && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
+                  <div
+                    className={cn("flex-1", isUnassignedCollapsed && "hidden")}
+                  />
+                  <div
+                    style={{
+                      backgroundColor: isUnassignedCollapsed
+                        ? "transparent"
+                        : "grey",
+                      borderColor: "grey",
+                    }}
+                    className="rounded-full size-2 border"
+                  ></div>
+                  <div
+                    style={{
+                      backgroundColor: "grey",
+                    }}
+                    className={cn(
+                      "w-[1px] flex-1",
+                      isUnassignedCollapsed && "hidden",
+                    )}
+                  ></div>
+                </div>
+              )}
             </TableCell>
-            <TableCell className="text-lg font-semibold" colSpan={6}>
+            <TableCell className="font-semibold italic" colSpan={6}>
               Unassigned Puzzles
             </TableCell>
           </TableRow>
@@ -326,6 +355,10 @@ function BlackboardRound({
               workspaceId={workspaceId}
               puzzle={puzzle}
               isCollapsed={isCollapsed || isUnassignedCollapsed}
+              isLast={
+                puzzle ===
+                round.unassignedPuzzles[round.unassignedPuzzles.length - 1]
+              }
             />
           ))}
         </>
@@ -438,41 +471,64 @@ function BlackboardMetaPuzzle({
   return (
     <>
       <TableRow
-        className={cn("bg-muted/50", isParentCollapsed ? "collapse" : "")}
-      >
-        <TableCell colSpan={7} className="py-2" />
-      </TableRow>
-      <TableRow
         className={cn(
+          "group",
           getBgColorClassNamesForPuzzleStatus(metaPuzzle.status),
           metaPuzzle.id === "" && "pointer-events-none cursor-wait",
           isParentCollapsed ? "collapse" : "",
         )}
       >
-        <TableCell
-          style={{
-            backgroundColor: color,
-          }}
-          className="p-0"
-        >
+        <TableCell className="p-0" />
+        <TableCell className="p-0 relative">
           <div
-            id={metaPuzzle.id}
-            className="relative scroll-mt-20 select-none"
-            onClick={(_e) => {
-              dispatch(
-                setIsCollapsedState({
-                  id: metaPuzzle.id,
-                  isCollapsed: !isCollapsed,
-                }),
-              );
-              setIsCollapsed(!isCollapsed);
-            }}
+            className={cn(
+              "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
+              !isCollapsed ? "hidden" : "flex",
+            )}
           >
-            <TriangleRightIcon className={isCollapsed ? "hidden" : ""} />
-            <TriangleLeftIcon className={isCollapsed ? "" : "hidden"} />
+            <Button
+              variant="ghost"
+              size="icon"
+              id={metaPuzzle.id}
+              className="relative scroll-mt-20 select-none"
+              style={{
+                color,
+              }}
+              onClick={(_e) => {
+                dispatch(
+                  setIsCollapsedState({
+                    id: metaPuzzle.id,
+                    isCollapsed: !isCollapsed,
+                  }),
+                );
+                setIsCollapsed(!isCollapsed);
+              }}
+            >
+              <ChevronRightIcon
+                className={cn("transition", !isCollapsed && "rotate-90")}
+              />
+            </Button>
           </div>
+          {!isCollapsed && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
+              <div className={cn("flex-1", isCollapsed && "hidden")} />
+              <div
+                style={{
+                  backgroundColor: isCollapsed ? "transparent" : color,
+                  borderColor: color,
+                }}
+                className="rounded-full size-2 border"
+              ></div>
+              <div
+                style={{
+                  backgroundColor: color,
+                }}
+                className={cn("w-[1px] flex-1", isCollapsed && "hidden")}
+              ></div>
+            </div>
+          )}
         </TableCell>
-        <TableCell className="text-lg font-semibold uppercase">
+        <TableCell className="font-semibold">
           {metaPuzzle.googleSpreadsheetId ? (
             <Link
               to={`puzzles/${metaPuzzle.id}`}
@@ -622,8 +678,55 @@ function BlackboardMetaPuzzle({
           color={color}
           puzzle={puzzle}
           isCollapsed={isParentCollapsed || isCollapsed}
+          isLast={
+            idx === metaPuzzle.childPuzzles.length - 1 &&
+            metaPuzzle.childPuzzles.length > 1
+          }
         />
       ))}
+      {metaPuzzle.childPuzzles.length === 0 &&
+        !isParentCollapsed &&
+        !isCollapsed && (
+          <TableRow>
+            <TableCell colSpan={1} />
+            <TableCell className="p-0">
+              <div className="flex flex-col h-full">
+                <div className="flex-1 flex items-stretch">
+                  <div className="flex-1" />
+                  <div
+                    className="w-[1px]"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: color,
+                    }}
+                  />
+                  <div className="flex-1" />
+                </div>
+                <div className="flex items-center">
+                  <div className="flex-1" />
+                  <div
+                    className="h-[1px] w-[1px]"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: color,
+                    }}
+                  />
+                  <div
+                    className="flex-1 h-[1px]"
+                    style={{
+                      backgroundColor: color,
+                    }}
+                  />
+                </div>
+                <div className="flex-1 flex items-stretch"></div>
+              </div>
+              <span className="relative scroll-mt-20" />
+            </TableCell>
+            <TableCell className="text-muted-foreground italic text-xs">
+              There are no puzzles feeding this meta puzzle.
+            </TableCell>
+          </TableRow>
+        )}
     </>
   );
 }
@@ -633,11 +736,13 @@ function BlackboardPuzzle({
   puzzle,
   color,
   isCollapsed,
+  isLast,
 }: {
   workspaceId: string;
   puzzle: RouterOutputs["rounds"]["list"][0]["puzzles"][0]["childPuzzles"][0];
   color?: string;
   isCollapsed?: boolean;
+  isLast?: boolean;
 }) {
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] =
@@ -713,12 +818,48 @@ function BlackboardPuzzle({
           isPuzzleCollapsed ? "collapse" : "",
         )}
       >
-        <TableCell
-          style={{
-            backgroundColor: color,
-          }}
-          className="p-0"
-        >
+        <TableCell className="p-0" colSpan={1} />
+        <TableCell className="p-0">
+          <div className="flex flex-col h-full">
+            <div className="flex-1 flex items-stretch">
+              <div className="flex-1" />
+              <div
+                className="w-[1px]"
+                style={{
+                  backgroundColor: color,
+                  borderColor: color,
+                }}
+              />
+              <div className="flex-1" />
+            </div>
+            <div className="flex items-center">
+              <div className="flex-1" />
+              <div
+                className="h-[1px] w-[1px]"
+                style={{
+                  backgroundColor: color,
+                  borderColor: color,
+                }}
+              />
+              <div
+                className="flex-1 h-[1px]"
+                style={{
+                  backgroundColor: color,
+                }}
+              />
+            </div>
+            <div className="flex-1 flex items-stretch">
+              <div className="flex-1" />
+              <div
+                className={cn("w-[1px]", isLast && "hidden")}
+                style={{
+                  backgroundColor: color,
+                  borderColor: color,
+                }}
+              />
+              <div className="flex-1" />
+            </div>
+          </div>
           <span id={puzzle.id} className="relative scroll-mt-20" />
         </TableCell>
         <TableCell>
