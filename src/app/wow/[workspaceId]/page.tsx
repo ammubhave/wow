@@ -1,11 +1,6 @@
 import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ChevronRightIcon,
-  DotsHorizontalIcon,
-  TriangleLeftIcon,
-  TriangleRightIcon,
-} from "@radix-ui/react-icons";
+import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { sha256 } from "js-sha256";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -105,9 +100,8 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
                 <TableHead>Name</TableHead>
                 <TableHead>Solution</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">
-                  Working on this
-                </TableHead>
+                <TableHead>Importance</TableHead>
+                <TableHead>Working on this</TableHead>
                 <TableHead className="w-0">
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -127,7 +121,7 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
                     <TableCell>
                       <Skeleton className="h-6 w-40" />
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell>
                       <Skeleton className="h-6 w-full" />
                     </TableCell>
                     <TableCell>
@@ -214,7 +208,7 @@ function BlackboardRound({
         <TableCell colSpan={5} className="font-semibold text-muted-foreground">
           {round.name}
         </TableCell>
-        <TableCell className="hidden sm:table-cell" />
+        <TableCell />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
             <DropdownMenu>
@@ -593,7 +587,7 @@ function BlackboardMetaPuzzle({
             </SelectContent>
           </Select>
         </TableCell>
-        <TableCell className="hidden sm:table-cell">
+        <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map((name) => (
               <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
@@ -931,7 +925,7 @@ function BlackboardPuzzle({
             </SelectContent>
           </Select>
         </TableCell>
-        <TableCell className="hidden sm:table-cell">
+        <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map((name) => (
               <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 px-1.5 py-0.5 text-xs font-medium text-green-900">
