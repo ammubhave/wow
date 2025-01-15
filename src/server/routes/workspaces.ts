@@ -33,27 +33,28 @@ export const workspacesRouter = router({
   }),
 
   get: procedure.input(z.string()).query(async ({ ctx, input }) => {
-    const {
-      googleAccessToken,
-      googleFolderId,
-      googleTemplateFileId,
-      ...workspace
-    } = await ctx.db.workspace.findFirstOrThrow({
-      select: {
-        id: true,
-        teamName: true,
-        eventName: true,
-        password: true,
-        links: true,
-        googleAccessToken: true,
-        googleFolderId: true,
-        googleTemplateFileId: true,
-        comment: true,
-      },
-      where: {
-        id: input,
-      },
-    });
+    const { googleFolderId, googleTemplateFileId, ...workspace } =
+      await ctx.db.workspace.findFirstOrThrow({
+        select: {
+          id: true,
+          teamName: true,
+          eventName: true,
+          password: true,
+          links: true,
+          googleFolderId: true,
+          googleTemplateFileId: true,
+          comment: true,
+        },
+        where: {
+          id: input,
+        },
+      });
+    let googleAccessToken = null;
+    try {
+      googleAccessToken = await ctx.getGoogleToken(workspace.id);
+    } catch (e) {
+      console.error(e);
+    }
     return {
       ...workspace,
       isOnboarding: googleAccessToken === null || googleFolderId === null,
@@ -78,6 +79,32 @@ export const workspacesRouter = router({
           workspaceId: workspace.id,
         },
       });
+
+      const googleAccessToken = await ctx.getGoogleToken(workspace.id);
+      ctx.waitUntil(
+        (async () => {
+          const resp = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}/permissions?sendNotificationEmail=false`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${googleAccessToken}`,
+              },
+              body: JSON.stringify({
+                type: "user",
+                emailAddress: ctx.user.email,
+                role: "writer",
+              }),
+            },
+          );
+          if (!resp.ok) {
+            throw new Error(
+              `Failed to share folder ${workspace.googleFolderId} for user ${ctx.user.email}: ${resp.status}: ${resp.statusText}: ${await resp.text()}`,
+            );
+          }
+        })(),
+      );
+
       return workspace;
     }),
 
