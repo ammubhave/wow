@@ -30,6 +30,7 @@ export const puzzlesRouter = router({
         z.object({
           name: z.string(),
           link: z.string().url().or(z.string().length(0)),
+          worksheetType: z.enum(["google_spreadsheet", "google_drawing"]),
         }),
       ),
     )
@@ -90,7 +91,10 @@ export const puzzlesRouter = router({
       const googleAccessToken = await ctx.getGoogleToken(workspace.id);
       if (googleAccessToken) {
         let resp;
-        if (workspace.googleTemplateFileId) {
+        if (
+          workspace.googleTemplateFileId &&
+          input.worksheetType === "google_spreadsheet"
+        ) {
           resp = await (
             await fetch(
               `https://www.googleapis.com/drive/v3/files/${workspace.googleTemplateFileId}/copy`,
@@ -116,7 +120,10 @@ export const puzzlesRouter = router({
               body: JSON.stringify({
                 name: `${input.name} [${puzzle.id}]`,
                 parents: [workspace.googleFolderId],
-                mimeType: "application/vnd.google-apps.spreadsheet",
+                mimeType:
+                  input.worksheetType === "google_spreadsheet"
+                    ? "application/vnd.google-apps.spreadsheet"
+                    : "application/vnd.google-apps.drawing",
               }),
             })
           ).json();
@@ -124,11 +131,22 @@ export const puzzlesRouter = router({
 
         await ctx.db.puzzle.update({
           data: {
-            googleSpreadsheetId: z
-              .object({
-                id: z.string(),
-              })
-              .parse(resp).id,
+            googleSpreadsheetId:
+              input.worksheetType === "google_spreadsheet"
+                ? z
+                    .object({
+                      id: z.string(),
+                    })
+                    .parse(resp).id
+                : undefined,
+            googleDrawingId:
+              input.worksheetType === "google_drawing"
+                ? z
+                    .object({
+                      id: z.string(),
+                    })
+                    .parse(resp).id
+                : undefined,
           },
           where: {
             id: puzzle.id,
@@ -183,6 +201,7 @@ export const puzzlesRouter = router({
         importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
         googleSpreadsheetId: z.string().nullable().optional(),
+        googleDrawingId: z.string().nullable().optional(),
         comment: z.string().optional(),
       }),
     )
@@ -200,6 +219,10 @@ export const puzzlesRouter = router({
           link: input.link,
           googleSpreadsheetId: input.googleSpreadsheetId?.replace(
             /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
+            "$1",
+          ),
+          googleDrawingId: input.googleDrawingId?.replace(
+            /https:\/\/docs.google.com\/drawings\/d\/([a-zA-Z0-9]+)\/edit.*/g,
             "$1",
           ),
           comment: input.comment,
@@ -241,6 +264,7 @@ export const puzzlesRouter = router({
     const {
       round: { workspaceId },
       googleSpreadsheetId,
+      googleDrawingId,
     } = await ctx.db.puzzle.delete({
       where: {
         id: input,
@@ -252,6 +276,7 @@ export const puzzlesRouter = router({
           },
         },
         googleSpreadsheetId: true,
+        googleDrawingId: true,
       },
     });
 
@@ -259,12 +284,12 @@ export const puzzlesRouter = router({
     ctx.waitUntil(
       (async () => {
         let deleteGoogleSpreadsheetPromise: Promise<void> | undefined;
-        if (googleSpreadsheetId) {
+        if (googleSpreadsheetId || googleDrawingId) {
           deleteGoogleSpreadsheetPromise = (async () => {
             const googleAccessToken = await ctx.getGoogleToken(workspaceId);
             if (googleAccessToken) {
               await fetch(
-                `https://www.googleapis.com/drive/v3/files/${googleSpreadsheetId}`,
+                `https://www.googleapis.com/drive/v3/files/${googleSpreadsheetId || googleDrawingId}`,
                 {
                   method: "DELETE",
                   headers: {

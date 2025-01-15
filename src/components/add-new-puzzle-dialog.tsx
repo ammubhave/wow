@@ -24,6 +24,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+
 export function AddNewPuzzleDialog({
   workspaceId,
   children,
@@ -43,11 +51,13 @@ export function AddNewPuzzleDialog({
   const FormSchema = z.object({
     name: z.string().min(1),
     link: z.string().url().or(z.string().length(0)),
+    worksheetType: z.enum(["google_spreadsheet", "google_drawing"]),
   });
   const form = useForm<z.infer<typeof FormSchema>>({
     defaultValues: {
       name: "",
       link: "",
+      worksheetType: "google_spreadsheet",
     },
   });
   const utils = trpc.useUtils();
@@ -65,6 +75,7 @@ export function AddNewPuzzleDialog({
         importance: null,
         link: variables.link,
         googleSpreadsheetId: null,
+        googleDrawingId: null,
         childPuzzles: [],
         isMetaPuzzle: false,
         comment: "",
@@ -190,6 +201,37 @@ export function AddNewPuzzleDialog({
                     </FormControl>
                     <FormDescription>
                       Link to this puzzle on the hunt website.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="worksheetType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Worksheet Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a worksheet type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="google_spreadsheet">
+                          Google Spreadsheet
+                        </SelectItem>
+                        <SelectItem value="google_drawing">
+                          Google Drawing
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      The kind of puzzle worksheet you want to use.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

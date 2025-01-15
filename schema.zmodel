@@ -80,7 +80,7 @@ model Puzzle extends Base {
   name                String
   link                String?
   googleSpreadsheetId String?
-
+  googleDrawingId     String?
   answer              String?
   status              String?
   importance          String?

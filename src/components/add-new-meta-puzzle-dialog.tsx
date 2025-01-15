@@ -71,6 +71,7 @@ export function AddNewMetaPuzzleDialog({
               importance: null,
               link: variables.link,
               googleSpreadsheetId: null,
+              googleDrawingId: null,
               childPuzzles: [],
               isMetaPuzzle: true,
               comment: "",
@@ -114,6 +115,7 @@ export function AddNewMetaPuzzleDialog({
         type: "meta-puzzle",
         ...data,
         roundId,
+        worksheetType: "google_spreadsheet",
       }),
       {
         loading: "Adding meta puzzle...",

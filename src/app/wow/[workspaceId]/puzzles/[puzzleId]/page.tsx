@@ -2,6 +2,7 @@ import { PuzzlePieceIcon, TableCellsIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
 import { Pencil2Icon } from "@radix-ui/react-icons";
+import { BrushIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router";
@@ -70,7 +71,11 @@ export default function Page() {
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={80}>
             <iframe
-              src={`https://docs.google.com/spreadsheets/d/${puzzle.data.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`}
+              src={
+                puzzle.data.googleSpreadsheetId
+                  ? `https://docs.google.com/spreadsheets/d/${puzzle.data.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
+                  : `https://docs.google.com/drawings/d/${puzzle.data.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
+              }
               className="min-h-[calc(100vh-theme(spacing.16))] w-full bg-white flex-1"
             />
           </ResizablePanel>
@@ -107,6 +112,7 @@ function PuzzleInfoPanel({
     name: string;
     link: string | null;
     googleSpreadsheetId: string | null;
+    googleDrawingId: string | null;
     answer: string | null;
     status: string | null;
     childPuzzles: {
@@ -162,15 +168,28 @@ function PuzzleInfoPanel({
           {puzzle.name}
         </CardTitle>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <a
-              href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <TableCellsIcon className="size-4" />
-            </a>
-          </Button>
+          {puzzle.googleSpreadsheetId && (
+            <Button size="sm" variant="outline" asChild>
+              <a
+                href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <TableCellsIcon className="size-4" />
+              </a>
+            </Button>
+          )}
+          {puzzle.googleDrawingId && (
+            <Button size="sm" variant="outline" asChild>
+              <a
+                href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <BrushIcon className="size-4" />
+              </a>
+            </Button>
+          )}
           {puzzle.link && (
             <Button size="sm" variant="outline" asChild>
               <a href={puzzle.link} target="_blank" rel="noopener noreferrer">

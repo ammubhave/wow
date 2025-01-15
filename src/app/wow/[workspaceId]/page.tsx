@@ -572,7 +572,7 @@ function BlackboardMetaPuzzle({
           )}
         </TableCell>
         <TableCell className="font-semibold">
-          {metaPuzzle.googleSpreadsheetId ? (
+          {metaPuzzle.googleSpreadsheetId || metaPuzzle.googleDrawingId ? (
             <Link
               to={`puzzles/${metaPuzzle.id}`}
               className="-m-2 block p-2 hover:underline"
@@ -903,7 +903,7 @@ function BlackboardPuzzle({
           <span id={puzzle.id} className="relative scroll-mt-20" />
         </TableCell>
         <TableCell>
-          {puzzle.googleSpreadsheetId ? (
+          {puzzle.googleSpreadsheetId || puzzle.googleDrawingId ? (
             <Link
               to={`puzzles/${puzzle.id}`}
               className="-m-2 block p-2 hover:underline"
