@@ -219,32 +219,30 @@ function PuzzleInfoPanel({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={(...event) => {
-                        field.onChange(...event);
-                        form.handleSubmit(onSubmit)();
-                      }}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="solved">Solved</SelectItem>
-                        <SelectItem value="backsolved">Backsolved</SelectItem>
-                        <SelectItem value="obsolete">Obsolete</SelectItem>
-                        <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
-                        <SelectItem value="extraction">Extraction</SelectItem>
-                        <SelectItem value="stuck">Stuck</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="very_stuck">Very Stuck</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
+                  <Select
+                    onValueChange={(...event) => {
+                      field.onChange(...event);
+                      form.handleSubmit(onSubmit)();
+                    }}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="solved">Solved</SelectItem>
+                      <SelectItem value="backsolved">Backsolved</SelectItem>
+                      <SelectItem value="obsolete">Obsolete</SelectItem>
+                      <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
+                      <SelectItem value="extraction">Extraction</SelectItem>
+                      <SelectItem value="stuck">Stuck</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="very_stuck">Very Stuck</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
