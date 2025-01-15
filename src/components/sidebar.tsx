@@ -1,5 +1,4 @@
 import { CommentBox } from "@/components/comment-box";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 
 import { CoffeeIcon } from "./coffee-icon";
@@ -13,24 +12,34 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
       <div className="p-4">
         <CommentBox workspaceId={workspaceId} comment={workspace?.comment} />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 p-2">
         <nav>
-          <Table>
-            <TableBody>
-              {rounds?.map((round, roundIndex) => (
-                <TableRow key={round.id}>
-                  <TableCell className="whitespace-nowrap">
-                    <a href={"#" + round.id}>Round {roundIndex + 1}</a>
-                  </TableCell>
+          <div className="flex flex-col gap-2 text-xs">
+            {rounds?.map((round) => (
+              <div
+                key={round.id}
+                className="grid grid-cols-2 items-center justify-center gap-2"
+              >
+                <a
+                  href={"#" + round.id}
+                  className="text-primary underline underline-offset-4"
+                >
+                  {round.name}
+                </a>
+                <div className="grid grid-cols-5 gap-2">
                   {round.puzzles.map((puzzle, puzzleIndex) => (
-                    <TableCell key={puzzle.id} className="inline-block">
-                      <a href={"#" + puzzle.id}>{puzzleIndex + 1}</a>
-                    </TableCell>
+                    <a
+                      key={puzzle.id}
+                      className="font-medium text-primary underline underline-offset-4"
+                      href={"#" + puzzle.id}
+                    >
+                      {puzzleIndex + 1}
+                    </a>
                   ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </div>
+              </div>
+            ))}
+          </div>
         </nav>
       </div>
       <div className="flex flex-col items-center justify-center gap-4 p-4">
