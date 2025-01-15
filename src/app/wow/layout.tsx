@@ -70,7 +70,7 @@ export default function Layout() {
   }, [user]);
   if (isLoading || !user) {
     return (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center flex-1 min-h-screen">
         <Spinner />
       </div>
     );

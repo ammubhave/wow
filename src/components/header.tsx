@@ -145,9 +145,10 @@ export function Header() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="-my-3">
-              <GearIcon className="size-4" />
-              <span className="sr-only">Toggle settings</span>
+            <Button variant="secondary" className="rounded-lg">
+              <PersonIcon className="mr-2 size-4" />
+              {user?.given_name}
+              <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -160,17 +161,6 @@ export function Header() {
             >
               Dark Mode
             </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" className="rounded-lg">
-              <PersonIcon className="mr-2 size-4" />
-              {user?.given_name}
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
             {workspaceQuery.data && (
               <>
                 {workspaceQuery.data.links.map((link) => (
