@@ -95,7 +95,9 @@ export function EditPuzzleDialog({
         id: puzzle.id,
         ...data,
         parentPuzzleId:
-          data.parentPuzzleId === "none" ? null : data.parentPuzzleId,
+          data.parentPuzzleId === "none" || data.parentPuzzleId === ""
+            ? null
+            : data.parentPuzzleId,
         answer: data.answer === "" ? null : data.answer.toUpperCase(),
         status: data.status === "none" ? null : data.status,
         link: data.link === "" ? null : data.link,

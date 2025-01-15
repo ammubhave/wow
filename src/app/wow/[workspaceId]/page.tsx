@@ -510,7 +510,19 @@ function BlackboardMetaPuzzle({
           isParentCollapsed ? "collapse" : "",
         )}
       >
-        <TableCell className="p-0" />
+        <TableCell className="p-0">
+          {metaPuzzle.link && (
+            <Button variant="ghost" size="icon" asChild>
+              <a
+                href={metaPuzzle.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <PuzzlePieceIcon className="size-4 text-blue-600" />
+              </a>
+            </Button>
+          )}
+        </TableCell>
         <TableCell className="p-0 relative">
           <div
             className={cn(
@@ -643,17 +655,6 @@ function BlackboardMetaPuzzle({
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
-            {metaPuzzle.link && (
-              <Button variant="ghost" size="icon" asChild>
-                <a
-                  href={metaPuzzle.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <PuzzlePieceIcon className="size-4 text-blue-600" />
-                </a>
-              </Button>
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -845,7 +846,20 @@ function BlackboardPuzzle({
           isPuzzleCollapsed ? "collapse" : "",
         )}
       >
-        <TableCell className="p-0" colSpan={1} />
+        <TableCell className="p-0">
+          {puzzle.link && (
+            <Button variant="ghost" size="icon" asChild>
+              <a
+                title="Hunt Link to this puzzle"
+                href={puzzle.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <PuzzlePieceIcon className="size-4 text-blue-600" />
+              </a>
+            </Button>
+          )}
+        </TableCell>
         <TableCell className="p-0">
           <div className="flex flex-col h-full">
             <div className="flex-1 flex items-stretch">
@@ -976,18 +990,6 @@ function BlackboardPuzzle({
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
-            {puzzle.link && (
-              <Button variant="ghost" size="icon" asChild>
-                <a
-                  title="Hunt Link to this puzzle"
-                  href={puzzle.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <PuzzlePieceIcon className="size-4 text-blue-600" />
-                </a>
-              </Button>
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
