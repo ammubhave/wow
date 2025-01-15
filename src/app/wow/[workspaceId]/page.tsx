@@ -2,7 +2,6 @@ import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { sha256 } from "js-sha256";
-import { PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";

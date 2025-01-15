@@ -1,7 +1,6 @@
 import { ArrowLongLeftIcon } from "@heroicons/react/24/solid";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
-import { ExternalLinkIcon, GearIcon, PersonIcon } from "@radix-ui/react-icons";
-import { useEffect, useState } from "react";
+import { ExternalLinkIcon, PersonIcon } from "@radix-ui/react-icons";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 
