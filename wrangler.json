@@ -34,5 +34,12 @@
         "DiscordClient"
       ]
     }
+  ],
+  "workflows": [
+    {
+      "name": "DeleteChannelAfterDelayWorkflow",
+      "binding": "DELETE_CHANNEL_AFTER_DELAY_WORKFLOW",
+      "class_name": "DeleteChannelAfterDelayWorkflow"
+    }
   ]
 }

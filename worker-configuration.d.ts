@@ -12,8 +12,17 @@ interface Env {
 	TURSO_URL: string;
 	TURSO_AUTH_TOKEN: string;
 	CHAT_ROOMS: DurableObjectNamespace<import("./src/server/index").ChatRoom>;
-	NOTIFICATION_ROOMS: DurableObjectNamespace<import("./src/server/index").NotificationRoom>;
-	PRESENCE_ROOMS: DurableObjectNamespace<import("./src/server/index").PresenceRoom>;
-	DISCORD_CLIENT: DurableObjectNamespace<import("./src/server/index").DiscordClient>;
-	ASSETS: Fetcher;
+  NOTIFICATION_ROOMS: DurableObjectNamespace<
+    import("./src/server/index").NotificationRoom
+  >;
+  PRESENCE_ROOMS: DurableObjectNamespace<
+    import("./src/server/index").PresenceRoom
+  >;
+  DISCORD_CLIENT: DurableObjectNamespace<
+    import("./src/server/index").DiscordClient
+  >;
+  ASSETS: Fetcher;
+  DELETE_CHANNEL_AFTER_DELAY_WORKFLOW: Workflow<
+    import("./src/server/api/discord").DeleteChannelAfterDelayWorkflowParams
+  >;
 }

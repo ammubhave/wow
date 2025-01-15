@@ -1,3 +1,8 @@
+import {
+  WorkflowEntrypoint,
+  WorkflowEvent,
+  WorkflowStep,
+} from "cloudflare:workers";
 import { z } from "zod";
 
 export const syncSchema = z.object({
@@ -17,7 +22,7 @@ export const syncSchema = z.object({
 });
 
 export class DiscordClient {
-  constructor(private token: string) {}
+  constructor(private env: Env) {}
 
   private async fetchDiscord(
     url: string,
@@ -29,7 +34,7 @@ export class DiscordClient {
     return await fetch(`https://discord.com/api/v10${url}`, {
       ...init,
       headers: {
-        authorization: `Bot ${this.token}`,
+        authorization: `Bot ${this.env.DISCORD_BOT_TOKEN}`,
         ...(init?.body
           ? {
               "content-type": "application/json",
@@ -133,7 +138,15 @@ export class DiscordClient {
     // Delete old voice channels
     for (const [voiceName, channelId] of voices) {
       if (!puzzles.has(voiceName)) {
-        await this.deleteChannel(channelId.id);
+        await this.updateChannel(channelId.id, {
+          name: "❌ Obsolete Channel",
+        });
+        await this.env.DELETE_CHANNEL_AFTER_DELAY_WORKFLOW.create({
+          id: crypto.randomUUID(),
+          params: {
+            channelId: channelId.id,
+          },
+        });
       }
     }
 
@@ -171,13 +184,14 @@ export class DiscordClient {
 
   public async updateChannel(
     channelId: string,
-    data: { parentId?: string | null },
+    data: { parentId?: string | null; name?: string },
   ) {
     return await (
       await this.fetchDiscord(`/channels/${channelId}`, {
         method: "PATCH",
         body: {
           parent_id: data.parentId,
+          name: data.name,
         },
       })
     ).json();
@@ -217,5 +231,22 @@ export class DiscordClient {
         ...channel,
         name: channel.name.replace("🧩 ", ""),
       }));
+  }
+}
+
+type DeleteChannelAfterDelayWorkflowParams = {
+  channelId: string;
+};
+export class DeleteChannelAfterDelayWorkflow extends WorkflowEntrypoint<
+  Env,
+  DeleteChannelAfterDelayWorkflowParams
+> {
+  async run(
+    event: WorkflowEvent<DeleteChannelAfterDelayWorkflowParams>,
+    step: WorkflowStep,
+  ) {
+    await step.sleep("sleep for 1 minute", "1 minute");
+    const discordClient = new DiscordClient(this.env);
+    await discordClient.deleteChannel(event.payload.channelId);
   }
 }

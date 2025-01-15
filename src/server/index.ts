@@ -19,12 +19,13 @@ import { createContext } from "./trpc";
 export { ChatRoom } from "./api/do/chat";
 export { NotificationRoom } from "./api/do/notification";
 export { PresenceRoom } from "./api/do/presence";
+export { DeleteChannelAfterDelayWorkflow } from "./api/discord";
 
 export class DiscordClient extends DurableObject<Env> {
   mutex = new Mutex();
 
   async sync(data: z.infer<typeof syncSchema>) {
-    const discordClient = new DiscordClientClient(this.env.DISCORD_BOT_TOKEN);
+    const discordClient = new DiscordClientClient(this.env);
     await this.mutex.runExclusive(async () => {
       await discordClient.sync(data);
     });
