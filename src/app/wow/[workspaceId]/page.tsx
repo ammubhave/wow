@@ -2,6 +2,7 @@ import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { sha256 } from "js-sha256";
+import { PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";
@@ -20,6 +21,7 @@ import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -63,31 +65,41 @@ export default function Page() {
 function Blackboard({ workspaceId }: { workspaceId: string }) {
   const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
+  const [hideSolved, setHideSolved] = useState(false);
+
   return (
     <div className="flex flex-col divide-y h-[calc(100vh-theme(spacing.16))] flex-1">
       <div>
         <div className="p-4 flex items-center justify-between font-semibold leading-none tracking-tight">
           Blackboard
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="-my-3">
-                <DotsHorizontalIcon className="size-4" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => setIsAddNewRoundDialogOpen(true)}
-              >
-                Add new round
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <AddNewRoundDialog
-            workspaceId={workspaceId!}
-            open={isAddNewRoundDialogOpen}
-            setOpen={setIsAddNewRoundDialogOpen}
-          />
+          <div className="flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="-my-3">
+                  <DotsHorizontalIcon className="size-4" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => setIsAddNewRoundDialogOpen(true)}
+                >
+                  Add new round
+                </DropdownMenuItem>
+                <DropdownMenuCheckboxItem
+                  checked={hideSolved}
+                  onCheckedChange={setHideSolved}
+                >
+                  Hide solved puzzles
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AddNewRoundDialog
+              workspaceId={workspaceId!}
+              open={isAddNewRoundDialogOpen}
+              setOpen={setIsAddNewRoundDialogOpen}
+            />
+          </div>
         </div>
       </div>
       <ScrollArea className="flex-1">
@@ -134,6 +146,7 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
                   key={round.id}
                   workspaceId={workspaceId!}
                   round={round}
+                  hideSolved={hideSolved}
                 />
               ))}
               {/* Gets rid of the scroll bar when the last row is hidden. */}
@@ -151,9 +164,11 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
 function BlackboardRound({
   workspaceId,
   round,
+  hideSolved,
 }: {
   workspaceId: string;
   round: RouterOutputs["rounds"]["list"][0];
+  hideSolved: boolean;
 }) {
   const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] =
     useState(false);
@@ -179,6 +194,21 @@ function BlackboardRound({
   useEffect(
     () => setIsUnassignedCollapsed(isUnassignedCollapsedState),
     [isUnassignedCollapsedState],
+  );
+
+  const metaPuzzles = round.metaPuzzles.filter(
+    (metaPuzzle) =>
+      !hideSolved ||
+      (metaPuzzle.status !== "solved" && metaPuzzle.status !== "backsolved") ||
+      metaPuzzle.childPuzzles.some(
+        (puzzle) =>
+          puzzle.status !== "solved" && puzzle.status !== "backsolved",
+      ),
+  );
+  const unassignedPuzzles = round.unassignedPuzzles.filter(
+    (puzzle) =>
+      !hideSolved ||
+      (puzzle.status !== "solved" && puzzle.status !== "backsolved"),
   );
 
   return (
@@ -268,12 +298,13 @@ function BlackboardRound({
           />
         </TableCell>
       </TableRow>
-      {round.metaPuzzles.map((metaPuzzle) => (
+      {metaPuzzles.map((metaPuzzle) => (
         <BlackboardMetaPuzzle
           key={metaPuzzle.id}
           workspaceId={workspaceId}
           metaPuzzle={metaPuzzle}
           isAllCollapsed={isCollapsed}
+          hideSolved={hideSolved}
         />
       ))}
       {round.unassignedPuzzles.length > 0 && (
@@ -342,7 +373,7 @@ function BlackboardRound({
               Unassigned Puzzles
             </TableCell>
           </TableRow>
-          {round.unassignedPuzzles.map((puzzle) => (
+          {unassignedPuzzles.map((puzzle) => (
             <BlackboardPuzzle
               color="grey"
               key={puzzle.id}
@@ -350,8 +381,7 @@ function BlackboardRound({
               puzzle={puzzle}
               isCollapsed={isCollapsed || isUnassignedCollapsed}
               isLast={
-                puzzle ===
-                round.unassignedPuzzles[round.unassignedPuzzles.length - 1]
+                puzzle === unassignedPuzzles[unassignedPuzzles.length - 1]
               }
             />
           ))}
@@ -365,10 +395,12 @@ function BlackboardMetaPuzzle({
   workspaceId,
   metaPuzzle,
   isAllCollapsed,
+  hideSolved,
 }: {
   workspaceId: string;
   metaPuzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0];
   isAllCollapsed: boolean;
+  hideSolved: boolean;
 }) {
   const [
     isAddNewPuzzleFeedingThisMetaDialogOpen,
@@ -461,6 +493,12 @@ function BlackboardMetaPuzzle({
 
   const presences =
     useAppSelector((state) => state.presences.value)[metaPuzzle.id] ?? [];
+
+  const childPuzzles = metaPuzzle.childPuzzles.filter(
+    (puzzle) =>
+      !hideSolved ||
+      (puzzle.status !== "solved" && puzzle.status !== "backsolved"),
+  );
 
   return (
     <>
@@ -665,62 +703,57 @@ function BlackboardMetaPuzzle({
           />
         </TableCell>
       </TableRow>
-      {metaPuzzle.childPuzzles.map((puzzle, idx) => (
+      {childPuzzles.map((puzzle, idx) => (
         <BlackboardPuzzle
           key={idx}
           workspaceId={workspaceId}
           color={color}
           puzzle={puzzle}
           isCollapsed={isParentCollapsed || isCollapsed}
-          isLast={
-            idx === metaPuzzle.childPuzzles.length - 1 &&
-            metaPuzzle.childPuzzles.length > 1
-          }
+          isLast={idx === childPuzzles.length - 1}
         />
       ))}
-      {metaPuzzle.childPuzzles.length === 0 &&
-        !isParentCollapsed &&
-        !isCollapsed && (
-          <TableRow>
-            <TableCell colSpan={1} />
-            <TableCell className="p-0">
-              <div className="flex flex-col h-full">
-                <div className="flex-1 flex items-stretch">
-                  <div className="flex-1" />
-                  <div
-                    className="w-[1px]"
-                    style={{
-                      backgroundColor: color,
-                      borderColor: color,
-                    }}
-                  />
-                  <div className="flex-1" />
-                </div>
-                <div className="flex items-center">
-                  <div className="flex-1" />
-                  <div
-                    className="h-[1px] w-[1px]"
-                    style={{
-                      backgroundColor: color,
-                      borderColor: color,
-                    }}
-                  />
-                  <div
-                    className="flex-1 h-[1px]"
-                    style={{
-                      backgroundColor: color,
-                    }}
-                  />
-                </div>
-                <div className="flex-1 flex items-stretch"></div>
+      {childPuzzles.length === 0 && !isParentCollapsed && !isCollapsed && (
+        <TableRow>
+          <TableCell colSpan={1} />
+          <TableCell className="p-0">
+            <div className="flex flex-col h-full">
+              <div className="flex-1 flex items-stretch">
+                <div className="flex-1" />
+                <div
+                  className="w-[1px]"
+                  style={{
+                    backgroundColor: color,
+                    borderColor: color,
+                  }}
+                />
+                <div className="flex-1" />
               </div>
-              <span className="relative scroll-mt-20" />
-            </TableCell>
-            <TableCell className="text-muted-foreground italic text-xs">
-              There are no puzzles feeding this meta puzzle.
-            </TableCell>
-          </TableRow>
-        )}
+              <div className="flex items-center">
+                <div className="flex-1" />
+                <div
+                  className="h-[1px] w-[1px]"
+                  style={{
+                    backgroundColor: color,
+                    borderColor: color,
+                  }}
+                />
+                <div
+                  className="flex-1 h-[1px]"
+                  style={{
+                    backgroundColor: color,
+                  }}
+                />
+              </div>
+              <div className="flex-1 flex items-stretch"></div>
+            </div>
+            <span className="relative scroll-mt-20" />
+          </TableCell>
+          <TableCell className="text-muted-foreground italic text-xs">
+            There are no visible puzzles feeding this meta puzzle.
+          </TableCell>
+        </TableRow>
+      )}
     </>
   );
 }
