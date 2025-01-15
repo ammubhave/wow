@@ -23,6 +23,7 @@ import WowWorkspaceIdSettingsAdministrationPage from "./app/wow/[workspaceId]/se
 import WowWorkspaceIdSettingsPage from "./app/wow/[workspaceId]/settings/page";
 import WowCreateWorkspaceIdPage from "./app/wow/create/[workspaceId]/page";
 import WowCreatePage from "./app/wow/create/page";
+import WowJoinWorkspaceIdPage from "./app/wow/join/[workspaceId]/page";
 import WowLayout from "./app/wow/layout";
 import WowPage from "./app/wow/page";
 
@@ -41,6 +42,11 @@ createRoot(document.getElementById("root")!).render(
               <Route index element={<WowCreatePage />} />
               <Route path=":workspaceId">
                 <Route index element={<WowCreateWorkspaceIdPage />} />
+              </Route>
+            </Route>
+            <Route path="join">
+              <Route path=":workspaceId">
+                <Route index element={<WowJoinWorkspaceIdPage />} />
               </Route>
             </Route>
             <Route path=":workspaceId" element={<WowWorkspaceIdLayout />}>

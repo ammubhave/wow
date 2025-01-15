@@ -133,7 +133,14 @@ export default function Page() {
                   <FormItem>
                     <FormLabel>Workspace ID</FormLabel>
                     <FormControl>
-                      <Input className="bg-background" type="text" {...field} />
+                      <Input
+                        className="bg-background"
+                        type="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

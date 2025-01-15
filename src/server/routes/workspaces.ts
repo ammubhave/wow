@@ -32,6 +32,18 @@ export const workspacesRouter = router({
     );
   }),
 
+  getBasic: procedure.input(z.string()).query(async ({ ctx, input }) => {
+    const workspace = await ctx.prisma.workspace.findFirstOrThrow({
+      where: { id: input },
+      select: {
+        id: true,
+        teamName: true,
+        eventName: true,
+      },
+    });
+    return workspace;
+  }),
+
   get: procedure.input(z.string()).query(async ({ ctx, input }) => {
     const { googleFolderId, googleTemplateFileId, ...workspace } =
       await ctx.db.workspace.findFirstOrThrow({

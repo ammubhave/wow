@@ -29,6 +29,7 @@ export function Header() {
     enabled:
       pathnames[1] === "wow" &&
       pathnames[2] !== "create" &&
+      pathnames[2] !== "join" &&
       pathnames[2] !== undefined,
   });
   const puzzleNameQuery = usePuzzle(
@@ -85,7 +86,8 @@ export function Header() {
             <span className="font-semi-bold text-lg">{randomHeaderFlavor}</span>
           ) : !workspaceId ||
             pathnames.length === 3 ||
-            pathnames[2] === "create" ? (
+            pathnames[2] === "create" ||
+            pathnames[2] === "join" ? (
             <span className="font-semi-bold text-lg">{randomHeaderFlavor}</span>
           ) : (
             <Button
@@ -187,6 +189,8 @@ export function Header() {
 
             {workspaceId &&
               user?.email &&
+              pathnames[2] !== "create" &&
+              pathnames[2] !== "join" &&
               !workspaceQuery.data?.isOnboarding && (
                 <DropdownMenuItem
                   onClick={() => {

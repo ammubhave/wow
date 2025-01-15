@@ -1,6 +1,7 @@
 import { PlusIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusCircledIcon } from "@radix-ui/react-icons";
+import { CopyIcon } from "lucide-react";
 import { Suspense } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router";
@@ -303,6 +304,33 @@ function DetailsCard({ workspaceId }: { workspaceId: string }) {
                 </FormItem>
               )}
             />
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Invitation Link
+              </label>
+              <p className="text-muted-foreground text-sm flex items-center gap-2">
+                https://join.wafflehaus.io/{workspaceId}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  onClick={() => {
+                    toast.promise(
+                      navigator.clipboard.writeText(
+                        `https://join.wafflehaus.io/${workspaceId}`,
+                      ),
+                      {
+                        loading: "Copying...",
+                        success: "Join link copied!",
+                        error: "Oops! Something went wrong.",
+                      },
+                    );
+                  }}
+                >
+                  <CopyIcon className="size-4" />
+                </Button>
+              </p>
+            </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
             <Button type="submit">Save</Button>
