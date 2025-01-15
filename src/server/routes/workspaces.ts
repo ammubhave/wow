@@ -64,12 +64,14 @@ export const workspacesRouter = router({
   join: procedure
     .input(
       z.object({
+        workspaceId: z.string(),
         password: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const workspace = await ctx.prisma.workspace.findFirstOrThrow({
         where: {
+          id: input.workspaceId,
           password: input.password,
         },
       });
@@ -111,14 +113,16 @@ export const workspacesRouter = router({
   create: procedure
     .input(
       z.object({
-        teamName: z.string(),
-        eventName: z.string(),
-        password: z.string().min(8),
+        teamName: z.string().min(1),
+        eventName: z.string().min(1),
+        workspaceId: z.string().min(1),
+        password: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const workspace = await ctx.db.workspace.create({
         data: {
+          id: input.workspaceId,
           password: input.password,
           teamName: input.teamName,
           eventName: input.eventName,

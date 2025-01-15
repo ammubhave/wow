@@ -28,11 +28,13 @@ export default function Page() {
   const myWorkspaces = trpc.workspaces.list.useQuery();
 
   const formSchema = z.object({
+    workspaceId: z.string().min(1),
     password: z.string().min(1),
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      workspaceId: "",
       password: "",
     },
   });
@@ -124,6 +126,19 @@ export default function Page() {
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid items-stretch space-y-8"
             >
+              <FormField
+                control={form.control}
+                name="workspaceId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workspace ID</FormLabel>
+                    <FormControl>
+                      <Input className="bg-background" type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="password"

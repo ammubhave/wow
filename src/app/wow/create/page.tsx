@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -110,15 +111,17 @@ export function TopNav({
 
 function CreateWorkspaceCard() {
   const formSchema = z.object({
-    teamName: z.string(),
-    eventName: z.string(),
-    password: z.string().min(8),
+    teamName: z.string().min(1),
+    eventName: z.string().min(1),
+    workspaceId: z.string().min(1),
+    password: z.string().min(1),
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       teamName: "",
       eventName: "",
+      workspaceId: "",
       password: "",
     },
   });
@@ -172,6 +175,24 @@ function CreateWorkspaceCard() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Event Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="workspaceId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Workspace ID</FormLabel>
+                  <FormDescription>
+                    This is the ID that will be used to identify your workspace
+                    and will be used by other users to join your workspace.
+                    (E.g. myteam2025)
+                  </FormDescription>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>

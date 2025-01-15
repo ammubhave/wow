@@ -35,7 +35,7 @@ model WorkspaceMembership {
 model Workspace extends Base {
   teamName             String
   eventName            String
-  password             String                @unique
+  password             String
 
   memberships          WorkspaceMembership[]
   rounds               Round[]
