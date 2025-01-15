@@ -12,6 +12,12 @@ import { Chat } from "@/components/chat";
 import { CommentBox } from "@/components/comment-box";
 import { EditPuzzleDialog } from "@/components/edit-puzzle-dialog";
 import { PresencesWebSocket } from "@/components/presences-websocket";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -35,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { usePuzzle } from "@/lib/usePuzzle";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 import { cn, getBgColorClassNamesForPuzzleStatus } from "@/lib/utils";
@@ -102,6 +109,10 @@ function PuzzleInfoPanel({
     googleSpreadsheetId: string | null;
     answer: string | null;
     status: string | null;
+    childPuzzles: {
+      answer: string | null;
+      name: string;
+    }[];
   };
 }) {
   const formSchema = z.object({
@@ -238,6 +249,29 @@ function PuzzleInfoPanel({
                 </FormItem>
               )}
             />
+            {puzzle.childPuzzles.length > 0 && (
+              <div className="space-y-2">
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="item-1">
+                    <AccordionTrigger>Feeder Puzzle Answers</AccordionTrigger>
+                    <AccordionContent>
+                      <Table>
+                        <TableBody>
+                          {puzzle.childPuzzles.map((childPuzzle) => (
+                            <TableRow key={childPuzzle.name}>
+                              <TableCell>{childPuzzle.name}</TableCell>
+                              <TableCell className="font-mono">
+                                {childPuzzle.answer}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            )}
             <div className="space-y-2">
               <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Hunters Present
