@@ -22,14 +22,20 @@ export const createContext = async ({
 }) => {
   const ctx = {} as unknown as Context;
 
+  // prisma
   const libsql = createClient({
     url: env.TURSO_URL,
     authToken: env.TURSO_AUTH_TOKEN,
   });
   const adapter = new PrismaLibSQL(libsql);
   const prisma = new PrismaClient({ adapter });
+  ctx.prisma = prisma;
+
+  // user
   const jwt = z.string().parse(req.headers.get("authorization")).slice(7);
   const user = await UserService.create(env, ctx, jwt);
+
+  // db
   const db = enhance(prisma, { user: { id: user.id } });
 
   ctx.env = env;
@@ -37,7 +43,6 @@ export const createContext = async ({
     typeof promise === "function"
       ? executionContext.waitUntil(promise())
       : executionContext.waitUntil(promise);
-  ctx.prisma = prisma;
   ctx.db = db;
   ctx.user = user;
   ctx.google = new GoogleService(env, ctx);

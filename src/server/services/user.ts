@@ -30,6 +30,22 @@ export class UserService {
         )
       ).payload,
     );
+    await ctx.prisma.user.upsert({
+      where: { id: payload.sub },
+      create: {
+        id: payload.sub,
+        email: payload.email,
+        firstName: payload.given_name,
+        lastName: payload.family_name ?? undefined,
+        picture: payload.picture ?? undefined,
+      },
+      update: {
+        email: payload.email,
+        firstName: payload.given_name,
+        lastName: payload.family_name ?? undefined,
+        picture: payload.picture ?? undefined,
+      },
+    });
     return new UserService(env, ctx, payload);
   }
 
