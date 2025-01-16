@@ -47,8 +47,7 @@ app.use(
       createContext({
         req: opts.req,
         env: c.env,
-        waitUntil: (promise: Promise<unknown>) =>
-          c.executionCtx.waitUntil(promise),
+        executionContext: c.executionCtx,
       }),
   }),
 );

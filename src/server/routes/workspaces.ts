@@ -63,7 +63,7 @@ export const workspacesRouter = router({
       });
     let googleAccessToken = null;
     try {
-      googleAccessToken = await ctx.getGoogleToken(workspace.id);
+      googleAccessToken = await ctx.google.getAccessToken(workspace.id);
     } catch (e) {
       console.error(e);
     }
@@ -94,7 +94,7 @@ export const workspacesRouter = router({
         },
       });
 
-      const googleAccessToken = await ctx.getGoogleToken(workspace.id);
+      const googleAccessToken = await ctx.google.getAccessToken(workspace.id);
       ctx.waitUntil(
         (async () => {
           const resp = await fetch(
@@ -170,7 +170,7 @@ export const workspacesRouter = router({
           id: input.id,
         },
       });
-      await ctx.broadcastNotification(input.id, {
+      await ctx.notification.broadcast(input.id, {
         type: "notification",
         paths: [{ path: ["workspaces"] }],
       });
@@ -202,7 +202,7 @@ export const workspacesRouter = router({
           ),
         );
       });
-      await ctx.broadcastNotification(input.id, {
+      await ctx.notification.broadcast(input.id, {
         type: "notification",
         paths: [{ path: ["workspaces"] }],
       });
@@ -212,7 +212,7 @@ export const workspacesRouter = router({
     await ctx.db.workspace.delete({
       where: { id: input },
     });
-    await ctx.broadcastNotification(input, {
+    await ctx.notification.broadcast(input, {
       type: "notification",
       paths: [{ path: ["workspaces"] }],
     });
@@ -245,7 +245,7 @@ export const workspacesRouter = router({
       const workspace = await ctx.db.workspace.findFirstOrThrow({
         where: { id: input },
       });
-      const googleAccessToken = await ctx.getGoogleToken(workspace.id);
+      const googleAccessToken = await ctx.google.getAccessToken(workspace.id);
       if (!googleAccessToken) {
         return { state: 0 } as const;
       }
@@ -322,7 +322,7 @@ export const workspacesRouter = router({
           googleFolderId: input.folderId,
         },
       });
-      await ctx.broadcastNotification(input.id, {
+      await ctx.notification.broadcast(input.id, {
         type: "notification",
         paths: [{ path: ["workspaces"] }],
       });
@@ -342,7 +342,7 @@ export const workspacesRouter = router({
           googleTemplateFileId: input.fileId,
         },
       });
-      await ctx.broadcastNotification(input.id, {
+      await ctx.notification.broadcast(input.id, {
         type: "notification",
         paths: [{ path: ["workspaces"] }],
       });
@@ -360,7 +360,9 @@ export const workspacesRouter = router({
         select: { googleFolderId: true },
         where: { id: input.workspaceId },
       });
-      const googleAccessToken = await ctx.getGoogleToken(input.workspaceId);
+      const googleAccessToken = await ctx.google.getAccessToken(
+        input.workspaceId,
+      );
       if (!workspace.googleFolderId || !googleAccessToken) {
         throw new TRPCError({
           code: "FORBIDDEN",

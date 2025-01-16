@@ -88,7 +88,7 @@ export const puzzlesRouter = router({
         },
       });
 
-      const googleAccessToken = await ctx.getGoogleToken(workspace.id);
+      const googleAccessToken = await ctx.google.getAccessToken(workspace.id);
       if (googleAccessToken) {
         let resp;
         if (
@@ -171,7 +171,7 @@ export const puzzlesRouter = router({
       ctx.waitUntil(
         (async () => {
           await Promise.allSettled([
-            ctx.broadcastNotification(workspace.id, {
+            ctx.notification.broadcast(workspace.id, {
               type: "notification",
               paths: [
                 {
@@ -182,7 +182,7 @@ export const puzzlesRouter = router({
                 },
               ],
             }),
-            ctx.syncDiscord(workspace.id),
+            ctx.discord.sync(workspace.id),
           ]);
         })(),
       );
@@ -243,7 +243,7 @@ export const puzzlesRouter = router({
       ctx.waitUntil(
         (async () => {
           await Promise.allSettled([
-            ctx.broadcastNotification(workspaceId, {
+            ctx.notification.broadcast(workspaceId, {
               type: "notification",
               paths: [
                 {
@@ -254,7 +254,7 @@ export const puzzlesRouter = router({
                 },
               ],
             }),
-            ctx.syncDiscord(workspaceId),
+            ctx.discord.sync(workspaceId),
           ]);
         })(),
       );
@@ -286,7 +286,8 @@ export const puzzlesRouter = router({
         let deleteGoogleSpreadsheetPromise: Promise<void> | undefined;
         if (googleSpreadsheetId || googleDrawingId) {
           deleteGoogleSpreadsheetPromise = (async () => {
-            const googleAccessToken = await ctx.getGoogleToken(workspaceId);
+            const googleAccessToken =
+              await ctx.google.getAccessToken(workspaceId);
             if (googleAccessToken) {
               await fetch(
                 `https://www.googleapis.com/drive/v3/files/${googleSpreadsheetId || googleDrawingId}`,
@@ -304,7 +305,7 @@ export const puzzlesRouter = router({
           ...(deleteGoogleSpreadsheetPromise
             ? [deleteGoogleSpreadsheetPromise]
             : []),
-          ctx.broadcastNotification(workspaceId, {
+          ctx.notification.broadcast(workspaceId, {
             type: "notification",
             paths: [
               {
@@ -315,7 +316,7 @@ export const puzzlesRouter = router({
               },
             ],
           }),
-          ctx.syncDiscord(workspaceId),
+          ctx.discord.sync(workspaceId),
         ]);
       })(),
     );

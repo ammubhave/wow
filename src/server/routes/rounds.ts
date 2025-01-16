@@ -40,7 +40,7 @@ export const roundsRouter = router({
       ctx.waitUntil(
         (async () => {
           await Promise.allSettled([
-            ctx.broadcastNotification(input.workspaceId, {
+            ctx.notification.broadcast(input.workspaceId, {
               type: "notification",
               paths: [
                 {
@@ -51,7 +51,7 @@ export const roundsRouter = router({
                 },
               ],
             }),
-            ctx.syncDiscord(input.workspaceId),
+            ctx.discord.sync(input.workspaceId),
           ]);
         })(),
       );
@@ -84,7 +84,7 @@ export const roundsRouter = router({
       ctx.waitUntil(
         (async () => {
           await Promise.allSettled([
-            ctx.broadcastNotification(workspaceId, {
+            ctx.notification.broadcast(workspaceId, {
               type: "notification",
               paths: [
                 {
@@ -95,7 +95,7 @@ export const roundsRouter = router({
                 },
               ],
             }),
-            ctx.syncDiscord(workspaceId),
+            ctx.discord.sync(workspaceId),
           ]);
         })(),
       );
@@ -119,7 +119,7 @@ export const roundsRouter = router({
           },
         });
         await Promise.all([
-          ctx.broadcastNotification(workspace.id, {
+          ctx.notification.broadcast(workspace.id, {
             type: "notification",
             paths: [
               {
@@ -130,7 +130,7 @@ export const roundsRouter = router({
               },
             ],
           }),
-          ctx.syncDiscord(workspace.id),
+          ctx.discord.sync(workspace.id),
         ]);
       })(),
     );
