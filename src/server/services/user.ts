@@ -19,7 +19,7 @@ export class UserService {
   public readonly picture: string | undefined;
   public readonly email: string;
 
-  public static async create(env: Env, ctx: Context, jwt: string) {
+  public static async create(ctx: Context, jwt: string) {
     const payload = PayloadSchema.parse(
       (
         await jwtVerify(
@@ -46,11 +46,10 @@ export class UserService {
         picture: payload.picture ?? undefined,
       },
     });
-    return new UserService(env, ctx, payload);
+    return new UserService(ctx, payload);
   }
 
   private constructor(
-    private readonly env: Env,
     private readonly ctx: Context,
     payload: z.infer<typeof PayloadSchema>,
   ) {

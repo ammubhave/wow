@@ -1,3 +1,4 @@
+import { RoundActivityLogEntrySubType } from "@prisma/client";
 import { z } from "zod";
 
 import { procedure, router } from "../trpc";
@@ -40,6 +41,12 @@ export const roundsRouter = router({
       ctx.waitUntil(
         (async () => {
           await Promise.allSettled([
+            ctx.activityLog.createRound({
+              subType: RoundActivityLogEntrySubType.Create,
+              workspaceId: input.workspaceId,
+              roundId: round.id,
+              roundName: round.name,
+            }),
             ctx.notification.broadcast(input.workspaceId, {
               type: "notification",
               paths: [
@@ -102,37 +109,45 @@ export const roundsRouter = router({
     }),
 
   delete: procedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    const round = await ctx.db.round.findUniqueOrThrow({
+      where: { id: input },
+    });
+    const workspace = await ctx.db.workspace.findFirstOrThrow({
+      select: { id: true },
+      where: {
+        rounds: {
+          some: {
+            id: input,
+          },
+        },
+      },
+    });
+    await ctx.activityLog.createRound({
+      subType: RoundActivityLogEntrySubType.Delete,
+      workspaceId: workspace.id,
+      roundId: round.id,
+      roundName: round.name,
+    });
+
     // Delete round from database
     await ctx.db.round.delete({ where: { id: input } });
 
     // Deferred: Broadcast notification and sync discord
     ctx.waitUntil(
-      (async () => {
-        const workspace = await ctx.db.workspace.findFirstOrThrow({
-          select: { id: true },
-          where: {
-            rounds: {
-              some: {
-                id: input,
+      Promise.all([
+        ctx.notification.broadcast(workspace.id, {
+          type: "notification",
+          paths: [
+            {
+              path: ["rounds", "list"],
+              input: {
+                workspaceId: workspace.id,
               },
             },
-          },
-        });
-        await Promise.all([
-          ctx.notification.broadcast(workspace.id, {
-            type: "notification",
-            paths: [
-              {
-                path: ["rounds", "list"],
-                input: {
-                  workspaceId: workspace.id,
-                },
-              },
-            ],
-          }),
-          ctx.discord.sync(workspace.id),
-        ]);
-      })(),
+          ],
+        }),
+        ctx.discord.sync(workspace.id),
+      ]),
     );
   }),
 });

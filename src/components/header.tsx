@@ -1,6 +1,7 @@
 import { ArrowLongLeftIcon } from "@heroicons/react/24/solid";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
 import { ExternalLinkIcon } from "@radix-ui/react-icons";
+import { HistoryIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 
@@ -130,6 +131,14 @@ export function Header() {
                     </a>
                   </Button>
                 ))}
+                <Button variant="ghost" size="icon" asChild>
+                  <Link
+                    to={`/wow/${workspaceQuery.data.id}/activity-log`}
+                    className="gap-1"
+                  >
+                    <HistoryIcon className="size-4" />
+                  </Link>
+                </Button>
                 <Button variant="ghost" asChild>
                   <Link
                     to={`/wow/${workspaceQuery.data.id}/settings`}

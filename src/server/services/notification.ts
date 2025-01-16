@@ -1,10 +1,7 @@
 import { Context } from "../trpc";
 
 export class NotificationService {
-  constructor(
-    private readonly env: Env,
-    private readonly ctx: Context,
-  ) {}
+  constructor(private readonly ctx: Context) {}
 
   async broadcast(
     workspaceId: string,
@@ -15,8 +12,8 @@ export class NotificationService {
           text: string;
         },
   ) {
-    const room = this.env.NOTIFICATION_ROOMS.get(
-      this.env.NOTIFICATION_ROOMS.idFromName(workspaceId),
+    const room = this.ctx.env.NOTIFICATION_ROOMS.get(
+      this.ctx.env.NOTIFICATION_ROOMS.idFromName(workspaceId),
     );
     await room.broadcast(
       JSON.stringify({

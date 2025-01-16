@@ -1,3 +1,4 @@
+import { PuzzleActivityLogEntrySubType } from "@prisma/client";
 import { z } from "zod";
 
 import { procedure, router } from "../trpc";
@@ -171,6 +172,12 @@ export const puzzlesRouter = router({
       ctx.waitUntil(
         (async () => {
           await Promise.allSettled([
+            ctx.activityLog.createPuzzle({
+              subType: PuzzleActivityLogEntrySubType.Create,
+              puzzleId: puzzle.id,
+              puzzleName: puzzle.name,
+              workspaceId: workspace.id,
+            }),
             ctx.notification.broadcast(workspace.id, {
               type: "notification",
               paths: [
@@ -261,6 +268,25 @@ export const puzzlesRouter = router({
     }),
 
   delete: procedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    const puzzle = await ctx.db.puzzle.findUniqueOrThrow({
+      where: {
+        id: input,
+      },
+      include: {
+        round: {
+          select: {
+            workspaceId: true,
+          },
+        },
+      },
+    });
+    await ctx.activityLog.createPuzzle({
+      subType: PuzzleActivityLogEntrySubType.Delete,
+      puzzleId: puzzle.id,
+      puzzleName: puzzle.name,
+      workspaceId: puzzle.round.workspaceId,
+    });
+
     const {
       round: { workspaceId },
       googleSpreadsheetId,

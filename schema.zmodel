@@ -18,13 +18,17 @@ abstract model Base {
 }
 
 model User {
-  id          String                @id()
-  email       String
-  firstName   String
-  lastName    String?
-  picture     String?
+  id                 String                @id()
+  email              String
+  firstName          String
+  lastName           String?
+  picture            String?
 
-  memberships WorkspaceMembership[]
+  memberships        WorkspaceMembership[]
+  activityLogEntries ActivityLogEntry[]
+
+  @@allow('create,update', id == auth().id)
+  @@allow('read', true)
 }
 
 model WorkspaceMembership {
@@ -57,6 +61,8 @@ model Workspace extends Base {
 
   discordGuildId       String?
 
+  activityLogEntries   ActivityLogEntry[]
+
   @@allow('create', true)
   @@allow('read,update,delete', memberships?[userId == auth().id])
 }
@@ -72,12 +78,14 @@ model WorkspaceLinks extends Base {
 }
 
 model Round extends Base {
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  workspaceId        String
+  workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  name        String
+  name               String
 
-  puzzles     Puzzle[]
+  puzzles            Puzzle[]
+
+  activityLogEntries RoundActivityLogEntry[]
 
   @@allow('all', workspace.memberships?[userId == auth().id])
 }
@@ -91,17 +99,64 @@ model Puzzle extends Base {
   status              String?
   importance          String?
 
-  comment             String   @default("No comment set.")
+  comment             String                   @default("No comment set.")
 
-  round               Round    @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  round               Round                    @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   roundId             String
 
   isMetaPuzzle        Boolean
 
   parentPuzzleId      String?
-  parentPuzzle        Puzzle?  @relation("PuzzleMetaPuzzle", fields: [parentPuzzleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  childPuzzles        Puzzle[] @relation("PuzzleMetaPuzzle")
+  parentPuzzle        Puzzle?                  @relation("PuzzleMetaPuzzle", fields: [parentPuzzleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  childPuzzles        Puzzle[]                 @relation("PuzzleMetaPuzzle")
+
+  activityLogEntries  PuzzleActivityLogEntry[]
 
   @@allow('all', round.workspace.memberships?[userId == auth().id])
   @@allow('all', parentPuzzle.round.workspace.memberships?[userId == auth().id])
+}
+
+enum ActivityLogEntryType {
+  RoundActivityLogEntry
+  PuzzleActivityLogEntry
+}
+
+model ActivityLogEntry extends Base {
+  workspaceId String
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  type        ActivityLogEntryType
+  @@delegate(type)
+
+  @@allow('all', workspace.memberships?[userId == auth().id])
+}
+
+enum RoundActivityLogEntrySubType {
+  Create
+  Delete
+}
+
+model RoundActivityLogEntry extends ActivityLogEntry {
+  roundId   String?
+  round     Round?                       @relation(fields: [roundId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  roundName String
+  subType   RoundActivityLogEntrySubType
+
+  @@allow('all', workspace.memberships?[userId == auth().id])
+}
+
+enum PuzzleActivityLogEntrySubType {
+  Create
+  Delete
+}
+
+model PuzzleActivityLogEntry extends ActivityLogEntry {
+  puzzleId   String?
+  puzzle     Puzzle?                       @relation(fields: [puzzleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  puzzleName String
+  subType    PuzzleActivityLogEntrySubType
+
+  @@allow('all', workspace.memberships?[userId == auth().id])
 }

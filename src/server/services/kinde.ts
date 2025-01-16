@@ -3,10 +3,7 @@ import { z } from "zod";
 import { Context } from "../trpc";
 
 export class KindeService {
-  constructor(
-    private readonly env: Env,
-    private readonly ctx: Context,
-  ) {}
+  constructor(private readonly ctx: Context) {}
 
   async getKindeM2MAccessToken() {
     return z.object({ access_token: z.string() }).parse(
@@ -19,8 +16,8 @@ export class KindeService {
           body: new URLSearchParams({
             audience: "https://wafflehaus.kinde.com/api",
             grant_type: "client_credentials",
-            client_id: this.env.KINDE_CLIENT_ID,
-            client_secret: this.env.KINDE_CLIENT_SECRET,
+            client_id: this.ctx.env.KINDE_CLIENT_ID,
+            client_secret: this.ctx.env.KINDE_CLIENT_SECRET,
           }),
         })
       ).json(),

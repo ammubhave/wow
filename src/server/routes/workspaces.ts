@@ -450,4 +450,16 @@ export const workspacesRouter = router({
         .parse(await guild.json()),
     } as const;
   }),
+
+  getActivityLog: procedure.input(z.string()).query(async ({ ctx, input }) => {
+    return await ctx.db.activityLogEntry.findMany({
+      where: { workspaceId: input },
+      include: {
+        user: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }),
 });

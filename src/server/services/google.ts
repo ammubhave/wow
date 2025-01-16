@@ -3,10 +3,7 @@ import { z } from "zod";
 import { Context } from "../trpc";
 
 export class GoogleService {
-  constructor(
-    private readonly env: Env,
-    private readonly ctx: Context,
-  ) {}
+  constructor(private readonly ctx: Context) {}
 
   async getAccessToken(workspaceId: string) {
     const workspace = await this.ctx.db.workspace.findFirstOrThrow({
@@ -28,8 +25,8 @@ export class GoogleService {
       },
       body: new URLSearchParams({
         refresh_token: workspace.googleRefreshToken,
-        client_id: this.env.VITE_GOOGLE_API_CLIENT_ID,
-        client_secret: this.env.GOOGLE_API_CLIENT_SECRET,
+        client_id: this.ctx.env.VITE_GOOGLE_API_CLIENT_ID,
+        client_secret: this.ctx.env.GOOGLE_API_CLIENT_SECRET,
         grant_type: "refresh_token",
       }),
     });

@@ -16,6 +16,7 @@ import PublicTosPage from "./app/(public)/tos/page";
 import Layout from "./app/layout";
 import LoginPage from "./app/login/page";
 import Page from "./app/page";
+import WowWorkspaceIdActivityLogPage from "./app/wow/[workspaceId]/activity-log/page";
 import WowWorkspaceIdLayout from "./app/wow/[workspaceId]/layout";
 import WowWorkspaceIdPage from "./app/wow/[workspaceId]/page";
 import WowWorkspaceIdPuzzlesPuzzleIdPage from "./app/wow/[workspaceId]/puzzles/[puzzleId]/page";
@@ -67,6 +68,9 @@ createRoot(document.getElementById("root")!).render(
                     element={<WowWorkspaceIdSettingsAdministrationPage />}
                   />
                 </Route>
+              </Route>
+              <Route path="activity-log">
+                <Route index element={<WowWorkspaceIdActivityLogPage />} />
               </Route>
             </Route>
           </Route>
