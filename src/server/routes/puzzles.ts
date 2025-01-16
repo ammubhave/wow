@@ -213,6 +213,28 @@ export const puzzlesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const puzzle = await ctx.db.puzzle.findUniqueOrThrow({
+        where: {
+          id: input.id,
+        },
+        include: {
+          round: {
+            select: {
+              workspaceId: true,
+            },
+          },
+        },
+      });
+      if (input.status !== undefined && input.status !== puzzle.status) {
+        await ctx.activityLog.createPuzzle({
+          subType: PuzzleActivityLogEntrySubType.UpdateStatus,
+          puzzleId: puzzle.id,
+          puzzleName: puzzle.name,
+          workspaceId: puzzle.round.workspaceId,
+          field: input.status ?? "None",
+        });
+      }
+
       // Update puzzle in database
       const {
         round: { workspaceId },

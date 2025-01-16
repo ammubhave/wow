@@ -150,6 +150,7 @@ model RoundActivityLogEntry extends ActivityLogEntry {
 enum PuzzleActivityLogEntrySubType {
   Create
   Delete
+  UpdateStatus
 }
 
 model PuzzleActivityLogEntry extends ActivityLogEntry {
@@ -157,6 +158,7 @@ model PuzzleActivityLogEntry extends ActivityLogEntry {
   puzzle     Puzzle?                       @relation(fields: [puzzleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   puzzleName String
   subType    PuzzleActivityLogEntrySubType
+  field      String?
 
   @@allow('all', workspace.memberships?[userId == auth().id])
 }

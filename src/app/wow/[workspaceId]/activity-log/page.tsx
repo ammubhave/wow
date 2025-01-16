@@ -56,6 +56,9 @@ function PageInner() {
                       activityItem.type === "PuzzleActivityLogEntry") &&
                       activityItem.subType === "Delete" &&
                       "bg-rose-600",
+                    activityItem.type === "PuzzleActivityLogEntry" &&
+                      activityItem.subType === "UpdateStatus" &&
+                      "bg-teal-600",
                   )}
                 >
                   {activityItem.type === "RoundActivityLogEntry" &&
@@ -66,27 +69,39 @@ function PageInner() {
                     activityItem.subType === "Delete" && (
                       <FolderMinusIcon aria-hidden="true" />
                     )}
-                  {activityItem.type === "PuzzleActivityLogEntry" &&
-                    (activityItem.subType === "Create" ||
-                      activityItem.subType === "Delete") && (
-                      <PuzzleIcon aria-hidden="true" />
-                    )}
+                  {activityItem.type === "PuzzleActivityLogEntry" && (
+                    <PuzzleIcon aria-hidden="true" />
+                  )}
                 </div>
               </div>
               <p className="flex-auto py-0.5 text-xs/5 text-gray-500">
                 <span className="font-medium text-gray-900">
                   {activityItem.user.firstName}
                 </span>{" "}
-                {activityItem.subType === "Create" ? "created" : "deleted"}{" "}
+                {activityItem.subType === "Create"
+                  ? "created"
+                  : activityItem.subType === "Delete"
+                    ? "deleted"
+                    : "updated the status of"}{" "}
                 {activityItem.type === "RoundActivityLogEntry"
-                  ? "a round"
-                  : "a puzzle"}{" "}
+                  ? "round"
+                  : "puzzle"}{" "}
                 <span className="font-medium text-gray-900">
                   {activityItem.type === "RoundActivityLogEntry" &&
                     activityItem.roundName}
                   {activityItem.type === "PuzzleActivityLogEntry" &&
                     activityItem.puzzleName}
                 </span>
+                {activityItem.subType === "UpdateStatus" && (
+                  <>
+                    {" "}
+                    to{" "}
+                    <span className="font-medium text-gray-900">
+                      {activityItem.field?.[0].toLocaleUpperCase()}
+                      {activityItem.field?.slice(1)}
+                    </span>
+                  </>
+                )}
               </p>
               <time
                 dateTime={activityItem.createdAt}

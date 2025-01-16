@@ -38,11 +38,13 @@ export class ActivityLogService {
     puzzleId,
     puzzleName,
     workspaceId,
+    field,
   }: {
     subType: PuzzleActivityLogEntrySubType;
     puzzleId: string;
     puzzleName: string;
     workspaceId: string;
+    field?: string;
   }) {
     await this.ctx.db.puzzleActivityLogEntry.create({
       select: { id: true },
@@ -52,6 +54,7 @@ export class ActivityLogService {
         userId: this.ctx.user.id,
         workspaceId,
         puzzleName,
+        field,
       },
     });
   }
