@@ -38,6 +38,9 @@ importers:
       '@radix-ui/react-alert-dialog':
         specifier: ^1.1.4
         version: 1.1.4(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@radix-ui/react-avatar':
+        specifier: ^1.1.2
+        version: 1.1.2(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@radix-ui/react-checkbox':
         specifier: ^1.1.3
         version: 1.1.3(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -153,8 +156,8 @@ importers:
         specifier: ^4.11.1
         version: 4.11.1
       sonner:
-        specifier: ^1.7.1
-        version: 1.7.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: ^1.7.2
+        version: 1.7.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
@@ -179,7 +182,7 @@ importers:
         version: 3.1.0(acorn@8.14.0)(rollup@4.29.2)
       '@remix-run/dev':
         specifier: ^2.15.2
-        version: 2.15.2(@remix-run/react@2.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@types/node@22.10.6)(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0))(wrangler@3.102.0)
+        version: 2.15.2(@remix-run/react@2.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@types/node@22.10.7)(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0))(wrangler@3.103.0)
       '@sentry/vite-plugin':
         specifier: ^3.0.0
         version: 3.0.0(encoding@0.1.13)
@@ -187,8 +190,8 @@ importers:
         specifier: ^0.5.16
         version: 0.5.16(tailwindcss@3.4.17)
       '@types/node':
-        specifier: ^22.10.6
-        version: 22.10.6
+        specifier: ^22.10.7
+        version: 22.10.7
       '@types/react':
         specifier: ^19.0.7
         version: 19.0.7
@@ -197,7 +200,7 @@ importers:
         version: 19.0.3(@types/react@19.0.7)
       '@vitejs/plugin-react-swc':
         specifier: ^3.7.2
-        version: 3.7.2(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0))
+        version: 3.7.2(vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.1)
@@ -223,8 +226,8 @@ importers:
         specifier: ^3.4.2
         version: 3.4.2
       prettier-plugin-tailwindcss:
-        specifier: ^0.6.9
-        version: 0.6.9(@ianvs/prettier-plugin-sort-imports@4.4.1(prettier@3.4.2))(prettier@3.4.2)
+        specifier: ^0.6.10
+        version: 0.6.10(@ianvs/prettier-plugin-sort-imports@4.4.1(prettier@3.4.2))(prettier@3.4.2)
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.17
@@ -239,13 +242,13 @@ importers:
         version: 8.20.0(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3)
       vite:
         specifier: ^6.0.7
-        version: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)
+        version: 6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0)
       vite-tsconfig-paths:
         specifier: ^5.1.4
-        version: 5.1.4(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0))
+        version: 5.1.4(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0))
       wrangler:
-        specifier: ^3.102.0
-        version: 3.102.0
+        specifier: ^3.103.0
+        version: 3.103.0
       zenstack:
         specifier: ^2.11.3
         version: 2.11.3(@prisma/client@6.2.1(prisma@6.2.1))(prisma@6.2.1)
@@ -427,6 +430,15 @@ packages:
   '@cloudflare/kv-asset-handler@0.3.4':
     resolution: {integrity: sha512-YLPHc8yASwjNkmcDMQMY35yiWjoKAKnhUbPRszBRS0YgH+IXtsMp61j+yTcnCE3oO2DgP0U3iejLC8FTtKDC8Q==}
     engines: {node: '>=16.13'}
+
+  '@cloudflare/unenv-preset@1.0.0':
+    resolution: {integrity: sha512-rnihjY4xUsBmlqp0eM2tQXm+40aj3C7WhdH4eGHkLaoBKr3+LwuENByYm5mf65WEeA5NE6BolTnjkiJUts3RuA==}
+    peerDependencies:
+      unenv: npm:unenv-nightly@*
+      workerd: ^1.20241230.0
+    peerDependenciesMeta:
+      workerd:
+        optional: true
 
   '@cloudflare/workerd-darwin-64@1.20241230.0':
     resolution: {integrity: sha512-BZHLg4bbhNQoaY1Uan81O3FV/zcmWueC55juhnaI7NAobiQth9RppadPNpxNAmS9fK2mR5z8xrwMQSQrHmztyQ==}
@@ -1375,6 +1387,19 @@ packages:
       '@types/react-dom':
         optional: true
 
+  '@radix-ui/react-avatar@1.1.2':
+    resolution: {integrity: sha512-GaC7bXQZ5VgZvVvsJ5mu/AEbjYLnhhkoidOboC50Z6FFlLA03wG2ianUoH+zgDQ31/9gCF59bE4+2bBgTyMiig==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
   '@radix-ui/react-checkbox@1.1.3':
     resolution: {integrity: sha512-HD7/ocp8f1B3e6OHygH0n7ZKjONkhciy1Nh0yuBgObqThc3oyx+vuMfFHKAknXRHHWVE9XvXStxJFyjUmB8PIw==}
     peerDependencies:
@@ -2189,11 +2214,11 @@ packages:
   '@types/ms@0.7.34':
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
 
-  '@types/node@20.17.13':
-    resolution: {integrity: sha512-RNf+4dEeV69PIvyp++4IKM2vnLXtmp/JovfeQm5P5+qpKb6wHoH7INywLdZ7z+gVX46kgBP/fwJJvZYaHxtdyw==}
+  '@types/node@20.17.14':
+    resolution: {integrity: sha512-w6qdYetNL5KRBiSClK/KWai+2IMEJuAj+EujKCumalFOwXtvOXaEan9AuwcRID2IcOIAWSIfR495hBtgKlx2zg==}
 
-  '@types/node@22.10.6':
-    resolution: {integrity: sha512-qNiuwC4ZDAUNcY47xgaSuS92cjf8JbSUoaKS77bmLG1rU7MlATVSiw/IlrjtIyyskXBZ8KkNfjK/P5na7rgXbQ==}
+  '@types/node@22.10.7':
+    resolution: {integrity: sha512-V09KvXxFiutGp6B7XkpaDXlNadZxrzajcY50EuoLIpQ6WWYCSvf19lVIazzfIzQvhUN2HjX12spLojTnhuKlGg==}
 
   '@types/react-dom@19.0.3':
     resolution: {integrity: sha512-0Knk+HJiMP/qOZgMyNFamlIjw9OFCsyC2ZbigmEEyXXixgre6IQpm/4V+r3qH4GC1JPvRJKInw+on2rV6YZLeA==}
@@ -4413,15 +4438,15 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier-plugin-tailwindcss@0.6.9:
-    resolution: {integrity: sha512-r0i3uhaZAXYP0At5xGfJH876W3HHGHDp+LCRUJrs57PBeQ6mYHMwr25KH8NPX44F2yGTvdnH7OqCshlQx183Eg==}
+  prettier-plugin-tailwindcss@0.6.10:
+    resolution: {integrity: sha512-ndj2WLDaMzACnr1gAYZiZZLs5ZdOeBYgOsbBmHj3nvW/6q8h8PymsXiEnKvj/9qgCCAoHyvLOisoQdIcsDvIgw==}
     engines: {node: '>=14.21.3'}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': '*'
       '@prettier/plugin-pug': '*'
       '@shopify/prettier-plugin-liquid': '*'
       '@trivago/prettier-plugin-sort-imports': '*'
-      '@zackad/prettier-plugin-twig-melody': '*'
+      '@zackad/prettier-plugin-twig': '*'
       prettier: ^3.0
       prettier-plugin-astro: '*'
       prettier-plugin-css-order: '*'
@@ -4443,7 +4468,7 @@ packages:
         optional: true
       '@trivago/prettier-plugin-sort-imports':
         optional: true
-      '@zackad/prettier-plugin-twig-melody':
+      '@zackad/prettier-plugin-twig':
         optional: true
       prettier-plugin-astro:
         optional: true
@@ -4906,8 +4931,8 @@ packages:
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
 
-  sonner@1.7.1:
-    resolution: {integrity: sha512-b6LHBfH32SoVasRFECrdY8p8s7hXPDn3OHUFbZZbiB1ctLS9Gdh6rpX2dVrpQA0kiL5jcRzDDldwwLkSKk3+QQ==}
+  sonner@1.7.2:
+    resolution: {integrity: sha512-zMbseqjrOzQD1a93lxahm+qMGxWovdMxBlkTbbnZdNqVLt4j+amF9PQxUCL32WfztOFt9t9ADYkejAL3jF9iNA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
@@ -5218,16 +5243,16 @@ packages:
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
 
-  undici@5.28.4:
-    resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
+  undici@5.28.5:
+    resolution: {integrity: sha512-zICwjrDrcrUE0pyyJc1I2QzBkLM8FINsgOrt6WjA+BgajVq9Nxu2PbFFXUrAggLfDXlZGZBVZYw7WNV5KiBiBA==}
     engines: {node: '>=14.0'}
 
   undici@6.21.0:
     resolution: {integrity: sha512-BUgJXc752Kou3oOIuU1i+yZZypyZRqNPW0vqoMPl8VaoalSfeR0D8/t4iAS3yirs79SSMTxTag+ZC86uswv+Cw==}
     engines: {node: '>=18.17'}
 
-  unenv-nightly@2.0.0-20241218-183400-5d6aec3:
-    resolution: {integrity: sha512-7Xpi29CJRbOV1/IrC03DawMJ0hloklDLq/cigSe+J2jkcC+iDres2Cy0r4ltj5f0x7DqsaGaB4/dLuCPPFZnZA==}
+  unenv-nightly@2.0.0-20250109-100802-88ad671:
+    resolution: {integrity: sha512-Uij6gODNNNNsNBoDlnaMvZI99I6YlVJLRfYH8AOLMlbFrW7k2w872v9VLuIdch2vF8QBeSC4EftIh5sG4ibzdA==}
 
   unified@10.1.2:
     resolution: {integrity: sha512-pUSWAi/RAnVy1Pif2kAoeWNBa3JVrx0MId2LASj8G+7AiHWoKZNTomq6LG326T68U7/e263X6fTdcXIy7XnF7Q==}
@@ -5570,8 +5595,8 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  wrangler@3.102.0:
-    resolution: {integrity: sha512-Za4DstbS3+/hu+///K/4dFFeV6XbPBAGp7NCnVajchxRTwEPTdbO5eezH0HLJPMHK6G/0yIzyhlEMnyg4YzHAA==}
+  wrangler@3.103.0:
+    resolution: {integrity: sha512-DK1wLHwiELI5jmHolf7ZCWji+CkSgSZdD/ccrCtDWr5r9vJSb6gpPG9Dc7E68Z/yMFub9+r2XuwKLHEABMLZWw==}
     engines: {node: '>=16.17.0'}
     hasBin: true
     peerDependencies:
@@ -5917,6 +5942,12 @@ snapshots:
   '@cloudflare/kv-asset-handler@0.3.4':
     dependencies:
       mime: 3.0.0
+
+  '@cloudflare/unenv-preset@1.0.0(unenv-nightly@2.0.0-20250109-100802-88ad671)(workerd@1.20241230.0)':
+    dependencies:
+      unenv: unenv-nightly@2.0.0-20250109-100802-88ad671
+    optionalDependencies:
+      workerd: 1.20241230.0
 
   '@cloudflare/workerd-darwin-64@1.20241230.0':
     optional: true
@@ -6659,6 +6690,18 @@ snapshots:
       '@types/react': 19.0.7
       '@types/react-dom': 19.0.3(@types/react@19.0.7)
 
+  '@radix-ui/react-avatar@1.1.2(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+    dependencies:
+      '@radix-ui/react-context': 1.1.1(@types/react@19.0.7)(react@19.0.0)
+      '@radix-ui/react-primitive': 2.0.1(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@radix-ui/react-use-callback-ref': 1.1.0(@types/react@19.0.7)(react@19.0.0)
+      '@radix-ui/react-use-layout-effect': 1.1.0(@types/react@19.0.7)(react@19.0.0)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+    optionalDependencies:
+      '@types/react': 19.0.7
+      '@types/react-dom': 19.0.3(@types/react@19.0.7)
+
   '@radix-ui/react-checkbox@1.1.3(@types/react-dom@19.0.3(@types/react@19.0.7))(@types/react@19.0.7)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@radix-ui/primitive': 1.1.1
@@ -7086,7 +7129,7 @@ snapshots:
       react: 19.0.0
       react-redux: 9.2.0(@types/react@19.0.7)(react@19.0.0)(redux@5.0.1)
 
-  '@remix-run/dev@2.15.2(@remix-run/react@2.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@types/node@22.10.6)(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0))(wrangler@3.102.0)':
+  '@remix-run/dev@2.15.2(@remix-run/react@2.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@types/node@22.10.7)(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0))(wrangler@3.103.0)':
     dependencies:
       '@babel/core': 7.26.0
       '@babel/generator': 7.26.3
@@ -7103,7 +7146,7 @@ snapshots:
       '@remix-run/router': 1.21.0
       '@remix-run/server-runtime': 2.15.2(typescript@5.7.3)
       '@types/mdx': 2.0.13
-      '@vanilla-extract/integration': 6.5.0(@types/node@22.10.6)
+      '@vanilla-extract/integration': 6.5.0(@types/node@22.10.7)
       arg: 5.0.2
       cacache: 17.1.4
       chalk: 4.1.2
@@ -7142,12 +7185,12 @@ snapshots:
       tar-fs: 2.1.1
       tsconfig-paths: 4.2.0
       valibot: 0.41.0(typescript@5.7.3)
-      vite-node: 1.6.0(@types/node@22.10.6)
+      vite-node: 1.6.0(@types/node@22.10.7)
       ws: 7.5.10
     optionalDependencies:
       typescript: 5.7.3
-      vite: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)
-      wrangler: 3.102.0
+      vite: 6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0)
+      wrangler: 3.103.0
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -7509,11 +7552,11 @@ snapshots:
 
   '@types/ms@0.7.34': {}
 
-  '@types/node@20.17.13':
+  '@types/node@20.17.14':
     dependencies:
       undici-types: 6.19.8
 
-  '@types/node@22.10.6':
+  '@types/node@22.10.7':
     dependencies:
       undici-types: 6.20.0
 
@@ -7533,7 +7576,7 @@ snapshots:
 
   '@types/ws@8.5.13':
     dependencies:
-      '@types/node': 22.10.6
+      '@types/node': 22.10.7
 
   '@typescript-eslint/eslint-plugin@8.20.0(@typescript-eslint/parser@8.20.0(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3))(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3)':
     dependencies:
@@ -7637,7 +7680,7 @@ snapshots:
     transitivePeerDependencies:
       - babel-plugin-macros
 
-  '@vanilla-extract/integration@6.5.0(@types/node@22.10.6)':
+  '@vanilla-extract/integration@6.5.0(@types/node@22.10.7)':
     dependencies:
       '@babel/core': 7.26.0
       '@babel/plugin-syntax-typescript': 7.25.9(@babel/core@7.26.0)
@@ -7650,8 +7693,8 @@ snapshots:
       lodash: 4.17.21
       mlly: 1.7.3
       outdent: 0.8.0
-      vite: 5.4.11(@types/node@22.10.6)
-      vite-node: 1.6.0(@types/node@22.10.6)
+      vite: 5.4.11(@types/node@22.10.7)
+      vite-node: 1.6.0(@types/node@22.10.7)
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -7666,10 +7709,10 @@ snapshots:
 
   '@vanilla-extract/private@1.0.6': {}
 
-  '@vitejs/plugin-react-swc@3.7.2(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0))':
+  '@vitejs/plugin-react-swc@3.7.2(vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0))':
     dependencies:
       '@swc/core': 1.10.1
-      vite: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)
+      vite: 6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0)
     transitivePeerDependencies:
       - '@swc/helpers'
 
@@ -8624,7 +8667,7 @@ snapshots:
 
   eval@0.1.8:
     dependencies:
-      '@types/node': 22.10.6
+      '@types/node': 22.10.7
       require-like: 0.1.2
 
   event-target-shim@5.0.1: {}
@@ -10048,7 +10091,7 @@ snapshots:
       exit-hook: 2.2.1
       glob-to-regexp: 0.4.1
       stoppable: 1.1.0
-      undici: 5.28.4
+      undici: 5.28.5
       workerd: 1.20241230.0
       ws: 8.18.0
       youch: 3.3.4
@@ -10380,7 +10423,7 @@ snapshots:
   pkg-types@1.3.0:
     dependencies:
       confbox: 0.1.8
-      mlly: 1.7.3
+      mlly: 1.7.4
       pathe: 1.1.2
 
   pkg-types@1.3.1:
@@ -10479,7 +10522,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-tailwindcss@0.6.9(@ianvs/prettier-plugin-sort-imports@4.4.1(prettier@3.4.2))(prettier@3.4.2):
+  prettier-plugin-tailwindcss@0.6.10(@ianvs/prettier-plugin-sort-imports@4.4.1(prettier@3.4.2))(prettier@3.4.2):
     dependencies:
       prettier: 3.4.2
     optionalDependencies:
@@ -11022,7 +11065,7 @@ snapshots:
       dot-case: 3.0.4
       tslib: 2.8.1
 
-  sonner@1.7.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  sonner@1.7.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
@@ -11384,13 +11427,13 @@ snapshots:
 
   undici-types@6.20.0: {}
 
-  undici@5.28.4:
+  undici@5.28.5:
     dependencies:
       '@fastify/busboy': 2.1.1
 
   undici@6.21.0: {}
 
-  unenv-nightly@2.0.0-20241218-183400-5d6aec3:
+  unenv-nightly@2.0.0-20250109-100802-88ad671:
     dependencies:
       defu: 6.1.4
       mlly: 1.7.4
@@ -11591,13 +11634,13 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-node@1.6.0(@types/node@22.10.6):
+  vite-node@1.6.0(@types/node@22.10.7):
     dependencies:
       cac: 6.7.14
       debug: 4.4.0
       pathe: 1.1.2
       picocolors: 1.1.1
-      vite: 5.4.11(@types/node@22.10.6)
+      vite: 5.4.11(@types/node@22.10.7)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -11609,33 +11652,33 @@ snapshots:
       - supports-color
       - terser
 
-  vite-tsconfig-paths@5.1.4(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)):
+  vite-tsconfig-paths@5.1.4(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0)):
     dependencies:
       debug: 4.4.0
       globrex: 0.1.2
       tsconfck: 3.1.4(typescript@5.7.3)
     optionalDependencies:
-      vite: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)
+      vite: 6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  vite@5.4.11(@types/node@22.10.6):
+  vite@5.4.11(@types/node@22.10.7):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.1
       rollup: 4.29.2
     optionalDependencies:
-      '@types/node': 22.10.6
+      '@types/node': 22.10.7
       fsevents: 2.3.3
 
-  vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0):
+  vite@6.0.7(@types/node@22.10.7)(jiti@1.21.7)(yaml@2.7.0):
     dependencies:
       esbuild: 0.24.2
       postcss: 8.5.1
       rollup: 4.29.2
     optionalDependencies:
-      '@types/node': 22.10.6
+      '@types/node': 22.10.7
       fsevents: 2.3.3
       jiti: 1.21.7
       yaml: 2.7.0
@@ -11759,16 +11802,17 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20241230.0
       '@cloudflare/workerd-windows-64': 1.20241230.0
 
-  wrangler@3.102.0:
+  wrangler@3.103.0:
     dependencies:
       '@cloudflare/kv-asset-handler': 0.3.4
+      '@cloudflare/unenv-preset': 1.0.0(unenv-nightly@2.0.0-20250109-100802-88ad671)(workerd@1.20241230.0)
       '@esbuild-plugins/node-globals-polyfill': 0.2.3(esbuild@0.17.19)
       '@esbuild-plugins/node-modules-polyfill': 0.2.2(esbuild@0.17.19)
       blake3-wasm: 2.1.5
       esbuild: 0.17.19
       miniflare: 3.20241230.2
       path-to-regexp: 6.3.0
-      unenv: unenv-nightly@2.0.0-20241218-183400-5d6aec3
+      unenv: unenv-nightly@2.0.0-20250109-100802-88ad671
       workerd: 1.20241230.0
     optionalDependencies:
       fsevents: 2.3.3
@@ -11828,7 +11872,7 @@ snapshots:
   zenstack@2.11.3(@prisma/client@6.2.1(prisma@6.2.1))(prisma@6.2.1):
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@types/node': 20.17.13
+      '@types/node': 20.17.14
       '@zenstackhq/language': 2.11.3
       '@zenstackhq/sdk': 2.11.3(@prisma/client@6.2.1(prisma@6.2.1))
       async-exit-hook: 2.0.1

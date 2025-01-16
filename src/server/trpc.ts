@@ -27,8 +27,10 @@ export const createContext = async ({
   const payload = z
     .object({
       given_name: z.string(),
+      family_name: z.string().optional().nullable(),
       email: z.string(),
       sub: z.string(),
+      picture: z.string().optional().nullable(),
     })
     .parse(
       (
@@ -77,6 +79,11 @@ export const createContext = async ({
     user: {
       id: payload.sub,
       firstName: payload.given_name,
+      lastName: payload.family_name ?? undefined,
+      name:
+        payload.given_name +
+        (payload.family_name ? " " + payload.family_name : ""),
+      picture: payload.picture ?? undefined,
       email: payload.email,
     },
     broadcastNotification: async (
@@ -165,7 +172,9 @@ export const createContext = async ({
     },
   };
 };
+
 type Context = Awaited<ReturnType<typeof createContext>>;
+
 const t = initTRPC.context<Context>().create();
 export const router = t.router;
 export const procedure = t.procedure;

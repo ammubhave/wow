@@ -1,6 +1,6 @@
 import { ArrowLongLeftIcon } from "@heroicons/react/24/solid";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
-import { ExternalLinkIcon, PersonIcon } from "@radix-ui/react-icons";
+import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ import { trpc } from "@/lib/trpc";
 import { usePuzzle } from "@/lib/usePuzzle";
 import { useAppDispatch, useAppSelector } from "@/store";
 
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -111,7 +112,7 @@ export function Header() {
       </nav>
       <div className="flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <div className="ml-auto flex-1 sm:flex-initial" />
-        <div className="hidden sm:block">
+        <div className="hidden sm:flex items-center">
           {workspaceQuery.isLoading ? (
             <Skeleton className="h-6 w-[250px]" />
           ) : (
@@ -146,10 +147,12 @@ export function Header() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" className="rounded-lg">
-              <PersonIcon className="mr-2 size-4" />
+            <Button variant="ghost" className="rounded-lg">
+              <Avatar className="size-6 mr-2">
+                <AvatarImage src={user?.picture ?? undefined} />
+                <AvatarFallback>{user?.given_name?.[0]}</AvatarFallback>
+              </Avatar>
               {user?.given_name}
-              <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
