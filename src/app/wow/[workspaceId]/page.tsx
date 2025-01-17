@@ -25,6 +25,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -66,12 +71,35 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   const [hideSolved, setHideSolved] = useState(false);
 
+  const presences =
+    useAppSelector((state) => state.presences.value)[workspaceId] ?? [];
+
   return (
     <div className="flex flex-col divide-y h-[calc(100dvh-theme(spacing.16))] flex-1">
       <div>
         <div className="p-4 flex items-center justify-between font-semibold leading-none tracking-tight">
           Blackboard
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <HoverCard openDelay={0}>
+              <HoverCardTrigger>
+                <span className="cursor-default inline-flex items-center gap-x-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 hover:bg-green-200">
+                  <svg
+                    viewBox="0 0 6 6"
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 fill-green-500"
+                  >
+                    <circle r={3} cx={3} cy={3} />
+                  </svg>
+                  {presences.length} Online
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent className="flex flex-col gap-1 text-sm font-normal w-fit">
+                {presences.map((presence) => (
+                  <div key={presence}>{presence}</div>
+                ))}
+              </HoverCardContent>
+            </HoverCard>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="-my-3">
