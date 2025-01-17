@@ -34,6 +34,12 @@ export const workspacesRouter = router({
   }),
 
   getBasic: procedure.input(z.string()).query(async ({ ctx, input }) => {
+    const joined = await ctx.prisma.workspaceMembership.findFirst({
+      where: {
+        userId: ctx.user.id,
+        workspaceId: input,
+      },
+    });
     const workspace = await ctx.prisma.workspace.findFirstOrThrow({
       where: { id: input },
       select: {
@@ -42,7 +48,10 @@ export const workspacesRouter = router({
         eventName: true,
       },
     });
-    return workspace;
+    return {
+      ...workspace,
+      joined,
+    };
   }),
 
   get: procedure.input(z.string()).query(async ({ ctx, input }) => {

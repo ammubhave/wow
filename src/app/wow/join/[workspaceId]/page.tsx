@@ -1,5 +1,6 @@
 import { ArrowRightEndOnRectangleIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -22,6 +23,12 @@ export default function Page() {
   const navigate = useNavigate();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const workspace = trpc.workspaces.getBasic.useQuery(workspaceId!);
+
+  useEffect(() => {
+    if (workspace.data?.joined) {
+      navigate(`/wow/${workspaceId}`);
+    }
+  }, [workspace.data?.joined, workspaceId]);
 
   const formSchema = z.object({
     password: z.string().min(1),
