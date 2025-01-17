@@ -39,7 +39,8 @@ model WorkspaceMembership {
 
   @@unique([userId, workspaceId])
   @@allow('create', true)
-  @@allow('read,delete', userId == auth().id)
+  @@allow('read', workspace.memberships?[userId == auth().id])
+  @@allow('delete', userId == auth().id)
 }
 
 model Workspace extends Base {

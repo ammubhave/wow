@@ -50,6 +50,7 @@ export default function Page() {
             x-chunk="dashboard-04-chunk-0"
           >
             <span className="text-primary font-semibold">General</span>
+            <Link to="members">Members</Link>
             <Link to="administration">Administration</Link>
           </nav>
           <Suspense fallback={<Skeleton className="h-96 w-full" />}>

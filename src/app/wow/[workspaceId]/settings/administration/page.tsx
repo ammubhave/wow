@@ -40,6 +40,7 @@ export default function Page() {
             x-chunk="dashboard-04-chunk-0"
           >
             <Link to="./..">General</Link>
+            <Link to="../members">Members</Link>
             <span className="text-primary font-semibold">Administration</span>
           </nav>
           <Suspense fallback={<Skeleton className="h-96 w-full" />}>

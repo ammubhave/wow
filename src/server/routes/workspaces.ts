@@ -469,4 +469,25 @@ export const workspacesRouter = router({
       },
     });
   }),
+
+  listMembers: procedure.input(z.string()).query(async ({ ctx, input }) => {
+    return await ctx.db.workspaceMembership.findMany({
+      where: { workspaceId: input },
+      include: {
+        user: true,
+      },
+      orderBy: [
+        {
+          user: {
+            firstName: "asc",
+          },
+        },
+        {
+          user: {
+            lastName: "asc",
+          },
+        },
+      ],
+    });
+  }),
 });

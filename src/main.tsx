@@ -21,6 +21,7 @@ import WowWorkspaceIdLayout from "./app/wow/[workspaceId]/layout";
 import WowWorkspaceIdPage from "./app/wow/[workspaceId]/page";
 import WowWorkspaceIdPuzzlesPuzzleIdPage from "./app/wow/[workspaceId]/puzzles/[puzzleId]/page";
 import WowWorkspaceIdSettingsAdministrationPage from "./app/wow/[workspaceId]/settings/administration/page";
+import WowWorkspaceIdSettingsMembersPage from "./app/wow/[workspaceId]/settings/members/page";
 import WowWorkspaceIdSettingsPage from "./app/wow/[workspaceId]/settings/page";
 import WowCreateWorkspaceIdPage from "./app/wow/create/[workspaceId]/page";
 import WowCreatePage from "./app/wow/create/page";
@@ -62,6 +63,12 @@ createRoot(document.getElementById("root")!).render(
               </Route>
               <Route path="settings">
                 <Route index element={<WowWorkspaceIdSettingsPage />} />
+                <Route path="members">
+                  <Route
+                    index
+                    element={<WowWorkspaceIdSettingsMembersPage />}
+                  />
+                </Route>
                 <Route path="administration">
                   <Route
                     index
