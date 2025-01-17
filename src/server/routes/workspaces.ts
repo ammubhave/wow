@@ -225,6 +225,9 @@ export const workspacesRouter = router({
     }),
 
   delete: procedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    throw new Error(
+      "Workspace deletion has been disabled. Contact support to delete your workspace.",
+    );
     await ctx.db.workspace.delete({
       where: { id: input },
     });

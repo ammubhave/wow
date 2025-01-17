@@ -1,6 +1,7 @@
 import { ArrowLongRightIcon } from "@heroicons/react/24/solid";
-import { Link, useNavigate, useParams } from "react-router";
-import { toast } from "sonner";
+import { Link /*useNavigate,*/, useParams } from "react-router";
+
+// import { toast } from "sonner";
 
 import { DiscordCardContents } from "@/components/discord-card-contents";
 import { GoogleDriveCardContents } from "@/components/google-drive-contents";
@@ -15,14 +16,14 @@ export default function Page() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const workspace = trpc.workspaces.get.useQuery(workspaceId!);
 
-  const navigate = useNavigate();
-  const utils = trpc.useUtils();
-  const mutation = trpc.workspaces.delete.useMutation({
-    onSuccess: () => {
-      utils.invalidate();
-      navigate("/wow");
-    },
-  });
+  // const navigate = useNavigate();
+  // const utils = trpc.useUtils();
+  // const mutation = trpc.workspaces.delete.useMutation({
+  //   onSuccess: () => {
+  //     utils.invalidate();
+  //     navigate("/wow");
+  //   },
+  // });
 
   return (
     <div className="flex justify-center">
@@ -46,15 +47,17 @@ export default function Page() {
             <CardContent className="flex items-center justify-between gap-4 border-t pt-6">
               <Button
                 variant="ghost"
-                onClick={() => {
-                  toast.promise(mutation.mutateAsync(workspaceId!), {
-                    loading: "Deleting workspace...",
-                    success: "Success! Your workspace has been deleted.",
-                    error: "Oops! Something went wrong.",
-                  });
-                }}
+                disabled
+                // onClick={() => {
+                //   toast.promise(mutation.mutateAsync(workspaceId!), {
+                //     loading: "Deleting workspace...",
+                //     success: "Success! Your workspace has been deleted.",
+                //     error: "Oops! Something went wrong.",
+                //   });
+                // }}
               >
-                Delete workspace
+                {/* Delete workspace */}
+                Contact support to delete your workspace
               </Button>
 
               {workspace.data?.isOnboarding && (

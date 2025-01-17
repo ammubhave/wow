@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Suspense } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link /* useNavigate, */, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -53,15 +53,15 @@ export default function Page() {
 }
 
 function DeleteWorkspaceCard() {
-  const navigate = useNavigate();
-  const { workspaceId } = useParams<{ workspaceId: string }>();
-  const utils = trpc.useUtils();
-  const mutation = trpc.workspaces.delete.useMutation({
-    onSuccess: () => {
-      navigate("/");
-      utils.invalidate();
-    },
-  });
+  // const navigate = useNavigate();
+  // const { workspaceId } = useParams<{ workspaceId: string }>();
+  // const utils = trpc.useUtils();
+  // const mutation = trpc.workspaces.delete.useMutation({
+  //   onSuccess: () => {
+  //     navigate("/");
+  //     utils.invalidate();
+  //   },
+  // });
 
   return (
     <Card>
@@ -75,15 +75,17 @@ function DeleteWorkspaceCard() {
       <CardFooter className="border-t px-6 py-4">
         <Button
           variant="destructive"
-          onClick={() => {
-            toast.promise(mutation.mutateAsync(workspaceId!), {
-              loading: "Deleting workspace...",
-              success: "Success! Your workspace has been deleted.",
-              error: "Oops! Something went wrong.",
-            });
-          }}
+          disabled
+          // onClick={() => {
+          //   toast.promise(mutation.mutateAsync(workspaceId!), {
+          //     loading: "Deleting workspace...",
+          //     success: "Success! Your workspace has been deleted.",
+          //     error: "Oops! Something went wrong.",
+          //   });
+          // }}
         >
-          Delete
+          {/* Delete */}
+          Contact support to delete your workspace
         </Button>
       </CardFooter>
     </Card>
