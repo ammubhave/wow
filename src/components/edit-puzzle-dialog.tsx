@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { usePuzzlesUpdateMutation } from "@/lib/usePuzzlesUpdateMutation";
 
+import { Checkbox } from "./ui/checkbox";
 import {
   Form,
   FormControl,
@@ -50,6 +51,7 @@ export function EditPuzzleDialog({
     link: string | null;
     googleSpreadsheetId: string | null;
     googleDrawingId: string | null;
+    isMetaPuzzle: boolean;
   };
   children?: React.ReactNode;
   open: boolean;
@@ -67,6 +69,7 @@ export function EditPuzzleDialog({
     googleDrawingId: z.string(),
     status: z.string(),
     parentPuzzleId: z.string(),
+    isMetaPuzzle: z.boolean(),
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,6 +81,7 @@ export function EditPuzzleDialog({
       googleSpreadsheetId: puzzle.googleSpreadsheetId ?? "",
       googleDrawingId: puzzle.googleDrawingId ?? "",
       status: puzzle.status ?? "none",
+      isMetaPuzzle: puzzle.isMetaPuzzle,
     },
   });
   const mutation = usePuzzlesUpdateMutation(
@@ -233,6 +237,23 @@ export function EditPuzzleDialog({
                       Link to this puzzle on the hunt website.
                     </FormDescription>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isMetaPuzzle"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Is this a meta puzzle?</FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />

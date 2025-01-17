@@ -214,6 +214,7 @@ export const puzzlesRouter = router({
         googleSpreadsheetId: z.string().nullable().optional(),
         googleDrawingId: z.string().nullable().optional(),
         comment: z.string().optional(),
+        isMetaPuzzle: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -280,6 +281,7 @@ export const puzzlesRouter = router({
             "$1",
           ),
           comment: input.comment,
+          isMetaPuzzle: input.isMetaPuzzle,
         },
         where: {
           id: input.id,

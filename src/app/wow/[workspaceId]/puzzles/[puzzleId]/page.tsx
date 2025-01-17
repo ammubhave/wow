@@ -120,6 +120,7 @@ function PuzzleInfoPanel({
       answer: string | null;
       name: string;
     }[];
+    isMetaPuzzle: boolean;
   };
 }) {
   const formSchema = z.object({
