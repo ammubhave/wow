@@ -262,6 +262,8 @@ export function CommentBox({
                         className,
                         "font-medium underline underline-offset-4",
                       )}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       {children}
                     </a>
