@@ -43,7 +43,7 @@ function MembersCard({ workspaceId }: { workspaceId: string }) {
   return (
     <Card>
       <CardHeader className="px-7">
-        <CardTitle>Members</CardTitle>
+        <CardTitle>Members ({members.length})</CardTitle>
         <CardDescription>Members of this workspace.</CardDescription>
       </CardHeader>
       <CardContent className="px-7 flex flex-col gap-3">
