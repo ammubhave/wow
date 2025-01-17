@@ -59,7 +59,9 @@ export function Chat({ puzzleId, token }: { puzzleId: string; token: string }) {
         {messages.map((message, idx) => (
           <div
             key={idx}
+            style={{ overflowWrap: "anywhere" }}
             className={cn(
+              "max-w-[217px]",
               (idx === messages.length - 1 ||
                 messages[idx + 1].name !== message.name) &&
                 "mb-4",
