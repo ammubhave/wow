@@ -86,7 +86,7 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
                   <svg
                     viewBox="0 0 6 6"
                     aria-hidden="true"
-                    className="h-1.5 w-1.5 fill-green-500"
+                    className="h-1.5 w-1.5 fill-green-500 flex-shrink-0"
                   >
                     <circle r={3} cx={3} cy={3} />
                   </svg>
@@ -682,7 +682,7 @@ function BlackboardMetaPuzzle({
                 <svg
                   viewBox="0 0 6 6"
                   aria-hidden="true"
-                  className="h-1.5 w-1.5 fill-green-500"
+                  className="h-1.5 w-1.5 fill-green-500 flex-shrink-0"
                 >
                   <circle r={3} cx={3} cy={3} />
                 </svg>
