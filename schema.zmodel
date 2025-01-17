@@ -119,6 +119,7 @@ model Puzzle extends Base {
 enum ActivityLogEntryType {
   RoundActivityLogEntry
   PuzzleActivityLogEntry
+  WorkspaceActivityLogEntry
 }
 
 model ActivityLogEntry extends Base {
@@ -163,4 +164,12 @@ model PuzzleActivityLogEntry extends ActivityLogEntry {
   field      String?
 
   @@allow('all', workspace.memberships?[userId == auth().id])
+}
+
+enum WorkspaceActivityLogEntrySubType {
+  Join
+}
+
+model WorkspaceActivityLogEntry extends ActivityLogEntry {
+  subType WorkspaceActivityLogEntrySubType
 }

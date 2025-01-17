@@ -2,6 +2,7 @@ import {
   CheckIcon,
   FolderMinusIcon,
   FolderPlusIcon,
+  LogInIcon,
   OctagonAlertIcon,
   PuzzleIcon,
 } from "lucide-react";
@@ -69,6 +70,9 @@ function PageInner() {
                     activityItem.type === "PuzzleActivityLogEntry" &&
                       activityItem.subType === "UpdateAnswer" &&
                       "bg-sky-600",
+                    activityItem.type === "WorkspaceActivityLogEntry" &&
+                      activityItem.subType === "Join" &&
+                      "bg-emerald-600",
                   )}
                 >
                   {activityItem.type === "RoundActivityLogEntry" &&
@@ -92,30 +96,40 @@ function PageInner() {
                     ) : (
                       <PuzzleIcon aria-hidden="true" />
                     ))}
+                  {activityItem.type === "WorkspaceActivityLogEntry" &&
+                    activityItem.subType === "Join" && (
+                      <LogInIcon aria-hidden="true" />
+                    )}
                 </div>
               </div>
               <p className="flex-auto py-0.5 text-xs/5 text-gray-500">
                 <span className="font-medium text-gray-900 dark:text-gray-100">
                   {activityItem.user.firstName}
                 </span>{" "}
-                {activityItem.subType === "Create"
-                  ? "created"
-                  : activityItem.subType === "Delete"
-                    ? "deleted"
-                    : activityItem.subType === "UpdateStatus"
-                      ? "updated the status of"
-                      : activityItem.subType === "UpdateAnswer"
-                        ? "updated the answer of"
-                        : "updated the importance of"}{" "}
+                {activityItem.subType === "Join"
+                  ? "joined"
+                  : activityItem.subType === "Create"
+                    ? "created"
+                    : activityItem.subType === "Delete"
+                      ? "deleted"
+                      : activityItem.subType === "UpdateStatus"
+                        ? "updated the status of"
+                        : activityItem.subType === "UpdateAnswer"
+                          ? "updated the answer of"
+                          : "updated the importance of"}{" "}
                 {activityItem.type === "RoundActivityLogEntry"
                   ? "round"
-                  : "puzzle"}{" "}
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {activityItem.type === "RoundActivityLogEntry" &&
-                    activityItem.roundName}
-                  {activityItem.type === "PuzzleActivityLogEntry" &&
-                    activityItem.puzzleName}
-                </span>
+                  : activityItem.type === "WorkspaceActivityLogEntry"
+                    ? "the workspace"
+                    : "puzzle"}{" "}
+                {activityItem.type !== "WorkspaceActivityLogEntry" && (
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {activityItem.type === "RoundActivityLogEntry" &&
+                      activityItem.roundName}
+                    {activityItem.type === "PuzzleActivityLogEntry" &&
+                      activityItem.puzzleName}
+                  </span>
+                )}
                 {(activityItem.subType === "UpdateStatus" ||
                   activityItem.subType === "UpdateImportance" ||
                   activityItem.subType === "UpdateAnswer") && (

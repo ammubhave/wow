@@ -1,3 +1,4 @@
+import { WorkspaceActivityLogEntrySubType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -96,27 +97,33 @@ export const workspacesRouter = router({
 
       const googleAccessToken = await ctx.google.getAccessToken(workspace.id);
       ctx.waitUntil(
-        (async () => {
-          const resp = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}/permissions?sendNotificationEmail=false`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${googleAccessToken}`,
+        Promise.all([
+          (async () => {
+            const resp = await fetch(
+              `https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}/permissions?sendNotificationEmail=false`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${googleAccessToken}`,
+                },
+                body: JSON.stringify({
+                  type: "user",
+                  emailAddress: ctx.user.email,
+                  role: "writer",
+                }),
               },
-              body: JSON.stringify({
-                type: "user",
-                emailAddress: ctx.user.email,
-                role: "writer",
-              }),
-            },
-          );
-          if (!resp.ok) {
-            throw new Error(
-              `Failed to share folder ${workspace.googleFolderId} for user ${ctx.user.email}: ${resp.status}: ${resp.statusText}: ${await resp.text()}`,
             );
-          }
-        })(),
+            if (!resp.ok) {
+              throw new Error(
+                `Failed to share folder ${workspace.googleFolderId} for user ${ctx.user.email}: ${resp.status}: ${resp.statusText}: ${await resp.text()}`,
+              );
+            }
+          })(),
+          ctx.activityLog.createWorkspace({
+            workspaceId: workspace.id,
+            subType: WorkspaceActivityLogEntrySubType.Join,
+          }),
+        ]),
       );
 
       return workspace;

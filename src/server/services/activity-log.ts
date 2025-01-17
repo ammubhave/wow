@@ -1,6 +1,7 @@
 import {
   PuzzleActivityLogEntrySubType,
   RoundActivityLogEntrySubType,
+  WorkspaceActivityLogEntrySubType,
 } from "@prisma/client";
 
 import { Context } from "../trpc";
@@ -55,6 +56,22 @@ export class ActivityLogService {
         workspaceId,
         puzzleName,
         field,
+      },
+    });
+  }
+
+  async createWorkspace({
+    subType,
+    workspaceId,
+  }: {
+    subType: WorkspaceActivityLogEntrySubType;
+    workspaceId: string;
+  }) {
+    await this.ctx.db.workspaceActivityLogEntry.create({
+      data: {
+        userId: this.ctx.user.id,
+        workspaceId: workspaceId,
+        subType,
       },
     });
   }
