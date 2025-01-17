@@ -56,6 +56,10 @@ export const roundsRouter = router({
                     workspaceId: input.workspaceId,
                   },
                 },
+                {
+                  path: ["workspaces", "getActivityLog"],
+                  input: input.workspaceId,
+                },
               ],
             }),
             ctx.discord.sync(input.workspaceId),
@@ -143,6 +147,10 @@ export const roundsRouter = router({
               input: {
                 workspaceId: workspace.id,
               },
+            },
+            {
+              path: ["workspaces", "getActivityLog"],
+              input: workspace.id,
             },
           ],
         }),

@@ -152,6 +152,7 @@ enum PuzzleActivityLogEntrySubType {
   Delete
   UpdateStatus
   UpdateImportance
+  UpdateAnswer
 }
 
 model PuzzleActivityLogEntry extends ActivityLogEntry {

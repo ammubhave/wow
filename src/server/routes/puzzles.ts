@@ -187,6 +187,10 @@ export const puzzlesRouter = router({
                     workspaceId: workspace.id,
                   },
                 },
+                {
+                  path: ["workspaces", "getActivityLog"],
+                  input: workspace.id,
+                },
               ],
             }),
             ctx.discord.sync(workspace.id),
@@ -246,6 +250,15 @@ export const puzzlesRouter = router({
           field: input.importance ?? "None",
         });
       }
+      if (input.answer !== undefined && input.answer !== puzzle.answer) {
+        await ctx.activityLog.createPuzzle({
+          subType: PuzzleActivityLogEntrySubType.UpdateAnswer,
+          puzzleId: puzzle.id,
+          puzzleName: puzzle.name,
+          workspaceId: puzzle.round.workspaceId,
+          field: input.answer ?? "",
+        });
+      }
 
       // Update puzzle in database
       const {
@@ -292,6 +305,10 @@ export const puzzlesRouter = router({
                   input: {
                     workspaceId,
                   },
+                },
+                {
+                  path: ["workspaces", "getActivityLog"],
+                  input: workspaceId,
                 },
               ],
             }),
@@ -373,6 +390,10 @@ export const puzzlesRouter = router({
                 input: {
                   workspaceId,
                 },
+              },
+              {
+                path: ["workspaces", "getActivityLog"],
+                input: workspaceId,
               },
             ],
           }),

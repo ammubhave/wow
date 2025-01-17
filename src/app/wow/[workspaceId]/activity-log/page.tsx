@@ -40,11 +40,11 @@ function PageInner() {
                 "absolute left-0 top-0 flex w-6 justify-center",
               )}
             >
-              <div className="w-px bg-gray-200" />
+              <div className="w-px bg-gray-200 dark:bg-gray-800" />
             </div>
 
             <>
-              <div className="relative flex size-6 flex-none items-center justify-center bg-white">
+              <div className="relative flex size-6 flex-none items-center justify-center bg-gray-50 dark:bg-gray-950">
                 <div
                   className={cn(
                     "size-5 rounded-full flex items-center justify-center *:size-3 *:text-gray-100",
@@ -60,6 +60,9 @@ function PageInner() {
                       (activityItem.subType === "UpdateStatus" ||
                         activityItem.subType === "UpdateImportance") &&
                       "bg-teal-600",
+                    activityItem.type === "PuzzleActivityLogEntry" &&
+                      activityItem.subType === "UpdateAnswer" &&
+                      "bg-sky-600",
                   )}
                 >
                   {activityItem.type === "RoundActivityLogEntry" &&
@@ -76,7 +79,7 @@ function PageInner() {
                 </div>
               </div>
               <p className="flex-auto py-0.5 text-xs/5 text-gray-500">
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {activityItem.user.firstName}
                 </span>{" "}
                 {activityItem.subType === "Create"
@@ -85,22 +88,30 @@ function PageInner() {
                     ? "deleted"
                     : activityItem.subType === "UpdateStatus"
                       ? "updated the status of"
-                      : "updated the importance of"}{" "}
+                      : activityItem.subType === "UpdateAnswer"
+                        ? "updated the answer of"
+                        : "updated the importance of"}{" "}
                 {activityItem.type === "RoundActivityLogEntry"
                   ? "round"
                   : "puzzle"}{" "}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {activityItem.type === "RoundActivityLogEntry" &&
                     activityItem.roundName}
                   {activityItem.type === "PuzzleActivityLogEntry" &&
                     activityItem.puzzleName}
                 </span>
                 {(activityItem.subType === "UpdateStatus" ||
-                  activityItem.subType === "UpdateImportance") && (
+                  activityItem.subType === "UpdateImportance" ||
+                  activityItem.subType === "UpdateAnswer") && (
                   <>
                     {" "}
                     to{" "}
-                    <span className="font-medium text-gray-900">
+                    <span
+                      className={cn(
+                        "font-medium text-gray-900 dark:text-gray-100",
+                        activityItem.subType === "UpdateAnswer" && "font-mono",
+                      )}
+                    >
                       {activityItem.field?.[0].toLocaleUpperCase()}
                       {activityItem.field?.slice(1)}
                     </span>
