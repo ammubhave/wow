@@ -80,7 +80,7 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
         <div className="p-4 flex items-center justify-between font-semibold leading-none tracking-tight">
           Blackboard
           <div className="flex items-center gap-2">
-            <HoverCard openDelay={0}>
+            <HoverCard openDelay={500}>
               <HoverCardTrigger>
                 <span className="cursor-default inline-flex items-center gap-x-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 hover:bg-green-200">
                   <svg
