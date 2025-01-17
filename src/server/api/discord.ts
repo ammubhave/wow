@@ -139,7 +139,8 @@ export class DiscordClient {
     for (const [voiceName, channelId] of voices) {
       if (!puzzles.has(voiceName)) {
         await this.updateChannel(channelId.id, {
-          name: "❌ Obsolete Channel",
+          name: `✅ ${voiceName}`,
+          parentId: channelId.parentId,
         });
         await this.env.DELETE_CHANNEL_AFTER_DELAY_WORKFLOW.create({
           id: crypto.randomUUID(),
