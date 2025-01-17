@@ -1,4 +1,10 @@
-import { FolderMinusIcon, FolderPlusIcon, PuzzleIcon } from "lucide-react";
+import {
+  CheckIcon,
+  FolderMinusIcon,
+  FolderPlusIcon,
+  OctagonAlertIcon,
+  PuzzleIcon,
+} from "lucide-react";
 import { Suspense } from "react";
 import { useParams } from "react-router";
 
@@ -73,9 +79,19 @@ function PageInner() {
                     activityItem.subType === "Delete" && (
                       <FolderMinusIcon aria-hidden="true" />
                     )}
-                  {activityItem.type === "PuzzleActivityLogEntry" && (
-                    <PuzzleIcon aria-hidden="true" />
-                  )}
+                  {activityItem.type === "PuzzleActivityLogEntry" &&
+                    (activityItem.subType === "UpdateStatus" &&
+                    (activityItem.field === "solved" ||
+                      activityItem.field === "backsolved" ||
+                      activityItem.field === "obsolete") ? (
+                      <CheckIcon aria-hidden="true" />
+                    ) : activityItem.field === "stuck" ||
+                      activityItem.field === "very_stuck" ||
+                      activityItem.field === "pending" ? (
+                      <OctagonAlertIcon aria-hidden="true" />
+                    ) : (
+                      <PuzzleIcon aria-hidden="true" />
+                    ))}
                 </div>
               </div>
               <p className="flex-auto py-0.5 text-xs/5 text-gray-500">
@@ -112,7 +128,7 @@ function PageInner() {
                         activityItem.subType === "UpdateAnswer" && "font-mono",
                       )}
                     >
-                      {activityItem.field?.[0].toLocaleUpperCase()}
+                      {activityItem.field?.[0]?.toLocaleUpperCase()}
                       {activityItem.field?.slice(1)}
                     </span>
                   </>
