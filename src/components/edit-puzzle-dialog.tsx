@@ -65,8 +65,6 @@ export function EditPuzzleDialog({
     name: z.string().min(1),
     answer: z.string(),
     link: z.string().url().or(z.string().length(0)),
-    googleSpreadsheetId: z.string(),
-    googleDrawingId: z.string(),
     status: z.string(),
     parentPuzzleId: z.string(),
     isMetaPuzzle: z.boolean(),
@@ -78,8 +76,6 @@ export function EditPuzzleDialog({
       name: puzzle.name,
       answer: puzzle.answer ?? "",
       link: puzzle.link ?? "",
-      googleSpreadsheetId: puzzle.googleSpreadsheetId ?? "",
-      googleDrawingId: puzzle.googleDrawingId ?? "",
       status: puzzle.status ?? "none",
       isMetaPuzzle: puzzle.isMetaPuzzle,
     },
@@ -108,10 +104,6 @@ export function EditPuzzleDialog({
         answer: data.answer === "" ? null : data.answer.toUpperCase(),
         status: data.status === "none" ? null : data.status,
         link: data.link === "" ? null : data.link,
-        googleSpreadsheetId:
-          data.googleSpreadsheetId === "" ? null : data.googleSpreadsheetId,
-        googleDrawingId:
-          data.googleDrawingId === "" ? null : data.googleDrawingId,
       }),
       {
         loading: "Updating puzzle...",
@@ -254,40 +246,6 @@ export function EditPuzzleDialog({
                     <div className="space-y-1 leading-none">
                       <FormLabel>Is this a meta puzzle?</FormLabel>
                     </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="googleSpreadsheetId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Google Spreadsheet ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Google Spreadsheet ID of the spreadsheet containing the
-                      puzzle. You can also use the URL of the spreadsheet.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="googleDrawingId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Google Drawing ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Google Drawing ID of the drawing containing the puzzle.
-                      You can also use the URL of the drawing.
-                    </FormDescription>
-                    <FormMessage />
                   </FormItem>
                 )}
               />

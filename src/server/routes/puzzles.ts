@@ -211,8 +211,6 @@ export const puzzlesRouter = router({
         status: z.string().nullable().optional(),
         importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
-        googleSpreadsheetId: z.string().nullable().optional(),
-        googleDrawingId: z.string().nullable().optional(),
         comment: z.string().optional(),
         isMetaPuzzle: z.boolean().optional(),
       }),
@@ -272,14 +270,6 @@ export const puzzlesRouter = router({
           status: input.status,
           importance: input.importance,
           link: input.link,
-          googleSpreadsheetId: input.googleSpreadsheetId?.replace(
-            /https:\/\/docs.google.com\/spreadsheets\/d\/([a-zA-Z0-9]+)\/edit.*/g,
-            "$1",
-          ),
-          googleDrawingId: input.googleDrawingId?.replace(
-            /https:\/\/docs.google.com\/drawings\/d\/([a-zA-Z0-9]+)\/edit.*/g,
-            "$1",
-          ),
           comment: input.comment,
           isMetaPuzzle: input.isMetaPuzzle,
         },
