@@ -190,6 +190,14 @@ export function Header() {
                 ))}
                 <DropdownMenuItem asChild>
                   <Link
+                    to={`/wow/${workspaceQuery.data.id}/activity-log`}
+                    className="gap-1"
+                  >
+                    Activity Log
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
                     to={`/wow/${workspaceQuery.data.id}/settings`}
                     className="gap-1"
                   >
