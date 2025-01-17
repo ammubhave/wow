@@ -12,14 +12,14 @@ function PresencesWebSocketInner({
   token,
   children,
 }: {
-  workspaceId?: string;
+  workspaceId: string;
   puzzleId?: string;
   token?: string;
   children: React.ReactNode;
 }) {
   const { lastJsonMessage } = useWebSocket(
     puzzleId
-      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/puzzles/${puzzleId}?token=${token}`
+      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/workspaces/${workspaceId}/puzzles/${puzzleId}?token=${token}`
       : `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/do/presence/workspaces/${workspaceId}?token=${token}`,
     {
       share: false,
@@ -43,7 +43,7 @@ export function PresencesWebSocket({
   puzzleId,
   children,
 }: {
-  workspaceId?: string;
+  workspaceId: string;
   puzzleId?: string;
   children: React.ReactNode;
 }) {

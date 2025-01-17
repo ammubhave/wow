@@ -66,7 +66,7 @@ export default function Page() {
   }
 
   return (
-    <PresencesWebSocket puzzleId={puzzleId!}>
+    <PresencesWebSocket workspaceId={workspaceId!} puzzleId={puzzleId!}>
       <div className="-m-4 flex flex-1 md:-m-[2.5rem]">
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={80}>

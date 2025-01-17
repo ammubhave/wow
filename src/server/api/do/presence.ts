@@ -12,6 +12,32 @@ export class PresenceRoom extends DurableObject<Env> {
     super(ctx, env);
 
     this.app = new Hono<{ Bindings: Env }>();
+    this.app.get(
+      "/api/do/presence/workspaces/:workspaceId/puzzles/:puzzleId",
+      async (c) => {
+        const workspaceId = z.string().parse(c.req.param("workspaceId"));
+        const puzzleId = z.string().parse(c.req.param("puzzleId"));
+        if (c.req.header("Upgrade") != "websocket") {
+          return new Response("expected websocket", { status: 400 });
+        }
+        const token = new URL(c.req.url).searchParams.get("token");
+        if (!token) {
+          return new Response("expected token", { status: 400 });
+        }
+        const { payload } = await jwtVerify(
+          token,
+          createRemoteJWKSet(
+            new URL("https://auth.wafflehaus.io/.well-known/jwks"),
+          ),
+        );
+        const pair = new WebSocketPair();
+        const { given_name: name } = z
+          .object({ given_name: z.string() })
+          .parse(payload);
+        await this.handleSession(pair[1], { name, puzzleId, workspaceId });
+        return new Response(null, { status: 101, webSocket: pair[0] });
+      },
+    );
     this.app.get("/api/do/presence/puzzles/:puzzleId", async (c) => {
       const puzzleId = z.string().parse(c.req.param("puzzleId"));
       if (c.req.header("Upgrade") != "websocket") {
@@ -35,6 +61,7 @@ export class PresenceRoom extends DurableObject<Env> {
       return new Response(null, { status: 101, webSocket: pair[0] });
     });
     this.app.get("/api/do/presence/workspaces/:workspaceId", async (c) => {
+      const workspaceId = z.string().parse(c.req.param("workspaceId"));
       if (c.req.header("Upgrade") != "websocket") {
         return new Response("expected websocket", { status: 400 });
       }
@@ -42,21 +69,24 @@ export class PresenceRoom extends DurableObject<Env> {
       if (!token) {
         return new Response("expected token", { status: 400 });
       }
-      await jwtVerify(
+      const { payload } = await jwtVerify(
         token,
         createRemoteJWKSet(
           new URL("https://auth.wafflehaus.io/.well-known/jwks"),
         ),
       );
       const pair = new WebSocketPair();
-      await this.handleSession(pair[1]);
+      const { given_name: name } = z
+        .object({ given_name: z.string() })
+        .parse(payload);
+      await this.handleSession(pair[1], { name, workspaceId });
       return new Response(null, { status: 101, webSocket: pair[0] });
     });
   }
 
   async handleSession(
     ws: WebSocket,
-    data?: { name: string; puzzleId: string },
+    data?: { name: string; puzzleId?: string; workspaceId?: string },
   ) {
     this.ctx.acceptWebSocket(ws);
     if (data) {
@@ -84,10 +114,15 @@ export class PresenceRoom extends DurableObject<Env> {
       }
       const data = ws.deserializeAttachment();
       if (data) {
-        const { name, puzzleId } = data;
+        const { name, puzzleId, workspaceId } = data;
         if (puzzleId) {
           participants[puzzleId] = [
             ...new Set([...(participants[puzzleId] ?? []), name]),
+          ].sort();
+        }
+        if (workspaceId) {
+          participants[workspaceId] = [
+            ...new Set([...(participants[workspaceId] ?? []), name]),
           ].sort();
         }
       }
