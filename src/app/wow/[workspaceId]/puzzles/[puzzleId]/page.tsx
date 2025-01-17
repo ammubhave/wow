@@ -76,7 +76,7 @@ export default function Page() {
                   ? `https://docs.google.com/spreadsheets/d/${puzzle.data.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
                   : `https://docs.google.com/drawings/d/${puzzle.data.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
               }
-              className="min-h-[calc(100vh-theme(spacing.16))] w-full bg-white flex-1"
+              className="min-h-[calc(100dvh-theme(spacing.16))] w-full bg-white flex-1"
             />
           </ResizablePanel>
           <ResizableHandle withHandle />

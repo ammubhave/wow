@@ -8,11 +8,11 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
   const workspace = trpc.workspaces.get.useQuery(workspaceId).data;
   const rounds = trpc.rounds.list.useQuery({ workspaceId }).data;
   return (
-    <div className="bg-background divide-y hidden lg:flex flex-col gap-4 w-1/5">
-      <div className="p-4">
+    <div className="h-[calc(100dvh-theme(spacing.16))] bg-background divide-y hidden lg:flex flex-col gap-4 w-1/5">
+      <div className="p-4 flex-1 overflow-y-auto">
         <CommentBox workspaceId={workspaceId} comment={workspace?.comment} />
       </div>
-      <div className="flex-1 p-2">
+      <div className="overflow-y-auto flex-1 p-2">
         <nav>
           <div className="flex flex-col gap-2 text-xs">
             {rounds?.map((round) => (

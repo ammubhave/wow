@@ -67,7 +67,7 @@ function Blackboard({ workspaceId }: { workspaceId: string }) {
   const [hideSolved, setHideSolved] = useState(false);
 
   return (
-    <div className="flex flex-col divide-y h-[calc(100vh-theme(spacing.16))] flex-1">
+    <div className="flex flex-col divide-y h-[calc(100dvh-theme(spacing.16))] flex-1">
       <div>
         <div className="p-4 flex items-center justify-between font-semibold leading-none tracking-tight">
           Blackboard

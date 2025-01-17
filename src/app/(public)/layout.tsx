@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Layout() {
   return (
-    <>
+    <div className="h-screen flex flex-col">
       <header className="bg-background sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-4 md:px-6">
         <nav className="flex flex-row items-center gap-5 text-lg font-medium md:text-sm lg:gap-6">
           <Button variant="ghost" asChild>
@@ -22,9 +22,9 @@ export default function Layout() {
           </div>
         </nav>
       </header>
-      <main className="bg-muted/40 flex min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
+      <main className="overflow-y-auto bg-muted/40 flex min-h-[calc(100dvh_-_theme(spacing.16))] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }

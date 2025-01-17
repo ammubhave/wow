@@ -34,7 +34,7 @@ export default function Page() {
             </div>
           </div>
         </header>
-        <div className="flex flex-1 items-center justify-center">
+        <div className="overflow-auto overflow-y-auto flex flex-1 items-center justify-center">
           <div className="max-w-7xl flex-1 px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl lg:max-w-4xl lg:px-12">
               <h1 className="font-display text-foreground text-5xl font-bold tracking-tighter sm:text-7xl">
