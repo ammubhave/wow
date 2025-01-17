@@ -418,15 +418,26 @@ function BlackboardMetaPuzzle({
   const [isParentCollapsed, setIsParentCollapsed] = useState(isAllCollapsed);
   useEffect(() => setIsParentCollapsed(isAllCollapsed), [isAllCollapsed]);
 
+  const { isDarkModeEnabled } = useAppSelector(
+    (state) => state.isDarkModeEnabled,
+  );
   const color = ((id: string) => {
     const hash = sha256(id);
     let hue = parseInt(hash.substring(0, 4), 16) % (360 - 150);
     if (hue > 30) {
       hue += 150;
     }
-    const saturation =
-      (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 80 + 50;
-    const lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.5 * 70;
+    let saturation, lightness;
+    if (isDarkModeEnabled) {
+      saturation =
+        (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 60 + 40;
+      lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.3 * 50 + 50;
+    } else {
+      saturation =
+        (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 80 + 50;
+      lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.5 * 70;
+    }
+
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   })(metaPuzzle.id);
 
