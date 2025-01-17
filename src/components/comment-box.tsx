@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 
 const DEFAULT_MESSAGE = "No comment set.";
@@ -121,7 +121,12 @@ export function CommentBox({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input className="dark:bg-black" {...field} autoFocus />
+                      <Textarea
+                        className="dark:bg-black"
+                        rows={10}
+                        {...field}
+                        autoFocus
+                      />
                     </FormControl>
                   </FormItem>
                 )}
