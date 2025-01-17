@@ -760,7 +760,10 @@ function BlackboardMetaPuzzle({
             </div>
             <span className="relative scroll-mt-20" />
           </TableCell>
-          <TableCell className="text-muted-foreground italic text-xs">
+          <TableCell
+            colSpan={6}
+            className="text-muted-foreground italic text-xs"
+          >
             There are no visible puzzles feeding this meta puzzle.
           </TableCell>
         </TableRow>
