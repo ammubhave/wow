@@ -160,6 +160,20 @@ app.get("/puzzles/:puzzleId", async (c) => {
   return room.fetch(c.req.raw);
 });
 
+app.get("/workspaces/:workspaceId/puzzles/:puzzleId", async (c) => {
+  const workspaceId = z.string().parse(c.req.param("workspaceId"));
+  const { db } = await getDb({ env: c.env, request: c.req.raw });
+  await db.workspaceMembership.findFirstOrThrow({
+    where: {
+      workspaceId,
+    },
+  });
+  const room = c.env.PRESENCE_ROOMS.get(
+    c.env.PRESENCE_ROOMS.idFromName(workspaceId),
+  );
+  return room.fetch(c.req.raw);
+});
+
 app.get("/workspaces/:workspaceId", async (c) => {
   const workspaceId = z.string().parse(c.req.param("workspaceId"));
   const { db } = await getDb({ env: c.env, request: c.req.raw });
