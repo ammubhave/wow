@@ -57,7 +57,8 @@ function PageInner() {
                       activityItem.subType === "Delete" &&
                       "bg-rose-600",
                     activityItem.type === "PuzzleActivityLogEntry" &&
-                      activityItem.subType === "UpdateStatus" &&
+                      (activityItem.subType === "UpdateStatus" ||
+                        activityItem.subType === "UpdateImportance") &&
                       "bg-teal-600",
                   )}
                 >
@@ -82,7 +83,9 @@ function PageInner() {
                   ? "created"
                   : activityItem.subType === "Delete"
                     ? "deleted"
-                    : "updated the status of"}{" "}
+                    : activityItem.subType === "UpdateStatus"
+                      ? "updated the status of"
+                      : "updated the importance of"}{" "}
                 {activityItem.type === "RoundActivityLogEntry"
                   ? "round"
                   : "puzzle"}{" "}
@@ -92,7 +95,8 @@ function PageInner() {
                   {activityItem.type === "PuzzleActivityLogEntry" &&
                     activityItem.puzzleName}
                 </span>
-                {activityItem.subType === "UpdateStatus" && (
+                {(activityItem.subType === "UpdateStatus" ||
+                  activityItem.subType === "UpdateImportance") && (
                   <>
                     {" "}
                     to{" "}

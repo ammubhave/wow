@@ -234,6 +234,18 @@ export const puzzlesRouter = router({
           field: input.status ?? "None",
         });
       }
+      if (
+        input.importance !== undefined &&
+        input.importance !== puzzle.importance
+      ) {
+        await ctx.activityLog.createPuzzle({
+          subType: PuzzleActivityLogEntrySubType.UpdateImportance,
+          puzzleId: puzzle.id,
+          puzzleName: puzzle.name,
+          workspaceId: puzzle.round.workspaceId,
+          field: input.importance ?? "None",
+        });
+      }
 
       // Update puzzle in database
       const {
