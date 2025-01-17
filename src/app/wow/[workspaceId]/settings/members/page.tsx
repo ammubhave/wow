@@ -46,7 +46,7 @@ function MembersCard({ workspaceId }: { workspaceId: string }) {
         <CardTitle>Members</CardTitle>
         <CardDescription>Members of this workspace.</CardDescription>
       </CardHeader>
-      <CardContent className="px-7 flex flex-col gap-2">
+      <CardContent className="px-7 flex flex-col gap-3">
         {members.map((member) => (
           <div
             key={member.userId}
