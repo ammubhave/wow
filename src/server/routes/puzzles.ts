@@ -260,10 +260,20 @@ export const puzzlesRouter = router({
       }
 
       // Update puzzle in database
+      let roundId = undefined;
+      if (input.parentPuzzleId !== undefined && input.parentPuzzleId !== null) {
+        roundId = (
+          await ctx.db.puzzle.findUniqueOrThrow({
+            where: { id: input.parentPuzzleId },
+          })
+        ).roundId;
+      }
+
       const {
         round: { workspaceId },
       } = await ctx.db.puzzle.update({
         data: {
+          roundId,
           parentPuzzleId: input.parentPuzzleId,
           name: input.name,
           answer: input.answer,
