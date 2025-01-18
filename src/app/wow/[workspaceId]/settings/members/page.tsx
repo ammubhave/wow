@@ -61,9 +61,6 @@ function MembersCard({ workspaceId }: { workspaceId: string }) {
                 <div className="font-medium">
                   {member.user.firstName} {member.user.lastName}
                 </div>
-                <div className="text-muted-foreground text-sm">
-                  {member.user.email}
-                </div>
               </div>
             </div>
           </div>

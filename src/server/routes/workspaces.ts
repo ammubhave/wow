@@ -474,7 +474,11 @@ export const workspacesRouter = router({
     return await ctx.db.activityLogEntry.findMany({
       where: { workspaceId: input },
       include: {
-        user: true,
+        user: {
+          omit: {
+            email: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -486,7 +490,11 @@ export const workspacesRouter = router({
     return await ctx.db.workspaceMembership.findMany({
       where: { workspaceId: input },
       include: {
-        user: true,
+        user: {
+          omit: {
+            email: true,
+          },
+        },
       },
       orderBy: [
         {

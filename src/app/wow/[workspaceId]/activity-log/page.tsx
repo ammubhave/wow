@@ -130,9 +130,6 @@ function PageInner() {
                           {activityItem.user.firstName}{" "}
                           {activityItem.user.lastName}
                         </div>
-                        <div className="text-muted-foreground text-xs">
-                          {activityItem.user.email}
-                        </div>
                       </div>
                     </div>
                   </HoverCardContent>
