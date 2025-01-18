@@ -246,7 +246,7 @@ export class DeleteChannelAfterDelayWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<DeleteChannelAfterDelayWorkflowParams>,
     step: WorkflowStep,
   ) {
-    await step.sleep("sleep for 1 minute", "1 minute");
+    await step.sleep("sleep for 10 minutes", "10 minutes");
     const discordClient = new DiscordClient(this.env);
     await discordClient.deleteChannel(event.payload.channelId);
   }
