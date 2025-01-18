@@ -9,6 +9,12 @@ import {
 import { Suspense } from "react";
 import { useParams } from "react-router";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
@@ -103,9 +109,34 @@ function PageInner() {
                 </div>
               </div>
               <p className="flex-auto py-0.5 text-xs/5 text-gray-500">
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {activityItem.user.firstName}
-                </span>{" "}
+                <HoverCard openDelay={200}>
+                  <HoverCardTrigger>
+                    <span className="cursor-default hover:text-gray-500 dark:hover:text-gray-300 font-medium text-gray-900 dark:text-gray-100">
+                      {activityItem.user.firstName}
+                    </span>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="flex items-center justify-center p-2 px-4 w-fit">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="size-8 mr-2">
+                        <AvatarImage
+                          src={activityItem.user.picture ?? undefined}
+                        />
+                        <AvatarFallback>
+                          {activityItem.user.firstName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>{" "}
+                      <div className="flex items-baseline flex-col">
+                        <div className="font-medium">
+                          {activityItem.user.firstName}{" "}
+                          {activityItem.user.lastName}
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {activityItem.user.email}
+                        </div>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>{" "}
                 {activityItem.subType === "Join"
                   ? "joined"
                   : activityItem.subType === "Create"
