@@ -48,6 +48,7 @@
     "@trpc/client": "11.0.0-rc.660",
     "@trpc/react-query": "11.0.0-rc.660",
     "@trpc/server": "11.0.0-rc.660",
+    "@uidotdev/usehooks": "^2.4.1",
     "@zenstackhq/runtime": "^2.11.4",
     "async-mutex": "^0.5.0",
     "class-variance-authority": "^0.7.1",

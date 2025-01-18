@@ -1,6 +1,7 @@
 import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import { sha256 } from "js-sha256";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -69,7 +70,7 @@ export default function Page() {
 function Blackboard({ workspaceId }: { workspaceId: string }) {
   const rounds = trpc.rounds.list.useQuery({ workspaceId: workspaceId! });
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
-  const [hideSolved, setHideSolved] = useState(false);
+  const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
 
   const presences =
     useAppSelector((state) => state.presences.value)[workspaceId] ?? [];
