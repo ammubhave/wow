@@ -75,6 +75,7 @@ export const roundsRouter = router({
       z.object({
         id: z.string(),
         name: z.string().min(1).optional(),
+        status: z.string().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -85,6 +86,7 @@ export const roundsRouter = router({
         },
         data: {
           name: input.name,
+          status: input.status,
         },
         select: {
           workspaceId: true,

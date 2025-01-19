@@ -83,6 +83,8 @@ model Round extends Base {
   workspace          Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   name               String
+  // "solved"
+  status             String?
 
   puzzles            Puzzle[]
 

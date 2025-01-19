@@ -51,6 +51,7 @@ export function AddNewRoundDialog({
           metaPuzzles: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          status: null,
         },
       ]);
       return { previousRounds };

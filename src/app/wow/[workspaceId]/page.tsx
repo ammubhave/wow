@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { sha256 } from "js-sha256";
+import { CheckIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router";
@@ -239,33 +240,86 @@ function BlackboardRound({
       (puzzle.status !== "solved" && puzzle.status !== "backsolved"),
   );
 
+  const utils = trpc.useUtils();
+  const mutation = trpc.rounds.update.useMutation({
+    onSettled: () => {
+      utils.rounds.list.invalidate({ workspaceId });
+    },
+  });
+  function onStatusChange(value: string) {
+    const newValue = value === "none" ? null : value;
+    if (round.status !== newValue) {
+      toast.promise(
+        mutation.mutateAsync({
+          id: round.id,
+          status: newValue,
+        }),
+        {
+          loading: "Updating round status...",
+          success: "Success! Round status updated.",
+          error: "Oops! Something went wrong.",
+        },
+      );
+    }
+  }
+
   return (
     <>
-      <TableRow className="bg-secondary text-secondary-foreground">
-        <TableCell className="-p-2">
-          <Button
-            id={round.id}
-            variant="ghost"
-            size="icon"
-            className="relative scroll-mt-20 select-none"
-            onClick={() => {
-              dispatch(
-                setIsCollapsedState({
-                  id: round.id,
-                  isCollapsed: !isCollapsed,
-                }),
-              );
-              setIsCollapsed(!isCollapsed);
-            }}
+      <TableRow
+        className={cn(
+          "text-secondary-foreground group",
+          round.status === "solved"
+            ? "bg-green-100 dark:bg-green-950"
+            : "bg-secondary",
+        )}
+      >
+        <TableCell className="-p-2 relative">
+          <div
+            className={cn(
+              "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
+              round.status === "solved" ? "hidden" : "flex",
+            )}
           >
-            <ChevronRightIcon
-              className={cn("transition", !isCollapsed && "rotate-90")}
-            />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative scroll-mt-20 select-none"
+              onClick={() => {
+                dispatch(
+                  setIsCollapsedState({
+                    id: round.id,
+                    isCollapsed: !isCollapsed,
+                  }),
+                );
+                setIsCollapsed(!isCollapsed);
+              }}
+            >
+              <ChevronRightIcon
+                className={cn("transition", !isCollapsed && "rotate-90")}
+              />
+            </Button>
+          </div>
+          {round.status === "solved" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
+              <CheckIcon className="size-4 text-green-500" />
+            </div>
+          )}
         </TableCell>
-        <TableCell colSpan={5} className="font-semibold text-muted-foreground">
+        <TableCell colSpan={3} className="font-semibold text-muted-foreground">
           {round.name}
         </TableCell>
+        <TableCell>
+          <Select onValueChange={onStatusChange} value={round.status ?? "none"}>
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="solved">Solved</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell colSpan={1} />
         <TableCell />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
@@ -335,7 +389,7 @@ function BlackboardRound({
           hideSolved={hideSolved}
         />
       ))}
-      {round.unassignedPuzzles.length > 0 && (
+      {unassignedPuzzles.length > 0 && (
         <>
           <TableRow className={cn("group", isCollapsed ? "collapse" : "")}>
             <TableCell className="p-0" />
