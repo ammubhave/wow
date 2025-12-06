@@ -1,0 +1,84 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tanstack-start-app",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.ts",
+  "upload_source_maps": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "wow",
+      "database_id": "33287a33-35b9-47c0-8c7f-2e2d79a73a54"
+    }
+  ],
+  "vars": {
+    "VITE_DISCORD_CLIENT_ID": "1282113902745878628",
+    "VITE_PUBLIC_POSTHOG_KEY": "phc_zNIaWFEMEDxxaRQdE9sl64tBazbyXPx4yHMNaHonP1W",
+    "VITE_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
+    "VITE_GOOGLE_API_KEY": "AIzaSyDMX41xfdC8Vy6Uf2rpmcvGIy3dnmP1D98",
+    "VITE_GOOGLE_API_CLIENT_ID": "933519172272-179lstu86fd5blof9d6las41m1r9mdt7.apps.googleusercontent.com",
+    "BETTER_AUTH_URL": "http://localhost:3000",
+    "BETTER_AUTH_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
+      { "name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom" },
+      { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" },
+      { "name": "DISCORD_CLIENT", "class_name": "DiscordClient" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": [
+        "ChatRoom",
+        "NotificationRoom",
+        "PresenceRoom",
+        "DiscordClient"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "name": "DeleteChannelAfterDelayWorkflow",
+      "binding": "DELETE_CHANNEL_AFTER_DELAY_WORKFLOW",
+      "class_name": "DeleteChannelAfterDelayWorkflow"
+    }
+  ],
+  "env": {
+    "production": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "wow-production",
+          "database_id": "dbd210d9-5627-4157-aec9-7d6431e68833"
+        }
+      ],
+      "vars": {
+        "VITE_DISCORD_CLIENT_ID": "1282113902745878628",
+        "VITE_PUBLIC_POSTHOG_KEY": "phc_zNIaWFEMEDxxaRQdE9sl64tBazbyXPx4yHMNaHonP1W",
+        "VITE_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
+        "VITE_GOOGLE_API_KEY": "AIzaSyDMX41xfdC8Vy6Uf2rpmcvGIy3dnmP1D98",
+        "VITE_GOOGLE_API_CLIENT_ID": "933519172272-179lstu86fd5blof9d6las41m1r9mdt7.apps.googleusercontent.com",
+        "BETTER_AUTH_URL": "https://www.wafflehaus.io"
+      },
+      "durable_objects": {
+        "bindings": [
+          { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
+          { "name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom" },
+          { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" },
+          { "name": "DISCORD_CLIENT", "class_name": "DiscordClient" }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "DeleteChannelAfterDelayWorkflow",
+          "binding": "DELETE_CHANNEL_AFTER_DELAY_WORKFLOW",
+          "class_name": "DeleteChannelAfterDelayWorkflow"
+        }
+      ]
+    }
+  }
+}

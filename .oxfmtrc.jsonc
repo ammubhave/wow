@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "arrowParens": "avoid",
+  "bracketSpacing": false,
+  "bracketSameLine": true,
+  "embeddedLanguageFormatting": "auto",
+  "experimentalSortImports": {},
+  "jsxSingleQuote": false,
+  "objectWrap": "collapse",
+  "quoteProps": "as-needed",
+  "tabWidth": 2,
+  "trailingComma": "es5",
+}
