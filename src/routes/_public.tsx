@@ -15,7 +15,7 @@ function RouteComponent() {
             </Link>
           </Button>
           <div className="contents flex-1 text-lg font-semibold">
-            <span className="font-semi-bold text-lg">Wafflehäus Organized Workspace</span>
+            <span className="font-semi-bold text-lg">Wafflehaüs Organized Workspace</span>
           </div>
         </nav>
       </header>

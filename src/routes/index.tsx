@@ -15,7 +15,7 @@ function App() {
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-4 px-4 sm:justify-between sm:px-6 lg:flex-nowrap lg:px-8">
             <div className="relative z-20 flex flex-col items-center gap-4 text-lg font-medium text-black sm:flex-row">
               <img src="/wafflehaus.png" className="rounded-full" width={48} height={48} />
-              Wafflehäus Organized Workspace
+              Wafflehaüs Organized Workspace
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center gap-4 sm:flex-row">
               <Button variant="ghost" asChild>
@@ -35,7 +35,7 @@ function App() {
               </h1>
               <div className="text-background mt-6 space-y-6 text-2xl tracking-tight">
                 <p className="font-display">
-                  Wafflehäus Organized Workspace (WOW) is a platform for puzzle hunt teams to
+                  Wafflehaüs Organized Workspace (WOW) is a platform for puzzle hunt teams to
                   organize when solving puzzles. It provides several automations such as creating
                   google spreadsheets, discord channels, and more.
                 </p>

@@ -11,7 +11,7 @@ function RouteComponent() {
       </p>
 
       <p className="mb-6 text-gray-700">
-        Welcome to Wafflehäus Organized Workspace ("WOW"). By accessing or using our services, you
+        Welcome to Wafflehaüs Organized Workspace ("WOW"). By accessing or using our services, you
         agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms,
         you may not access or use our services.
       </p>
@@ -54,7 +54,7 @@ function RouteComponent() {
 
       <h2 className="mb-4 text-2xl font-semibold text-gray-800">4. Intellectual Property</h2>
       <p className="mb-6 text-gray-700">
-        The content, features, and functionality on WOW are the exclusive property of Wafflehäus
+        The content, features, and functionality on WOW are the exclusive property of Wafflehaüs
         Organized Workspace and its licensors. You agree not to reproduce, distribute, modify,
         create derivative works of, publicly display, publicly perform, republish, download, store,
         or transmit any of the material on our services, except as permitted by these Terms.

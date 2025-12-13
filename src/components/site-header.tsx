@@ -11,7 +11,7 @@ export function SiteHeader({user}: {user: User}) {
         <div className="px-2 flex items-center gap-4">
           <img src="/favicon.ico" className="shrink-0 size-6 rounded-full" />
           <div className="contents flex-1 text-lg font-semibold">
-            <span className="font-semi-bold text-lg">Wafflehäus Organized Workspace</span>
+            <span className="font-semi-bold text-lg">Wafflehaüs Organized Workspace</span>
           </div>
         </div>
         <div className="w-full sm:ml-auto sm:w-auto" />
