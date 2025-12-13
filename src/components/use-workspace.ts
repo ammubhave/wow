@@ -1,6 +1,5 @@
 import {useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 
-import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
 export function useWorkspace({workspaceId}: {workspaceId: string}) {

@@ -132,7 +132,7 @@ export function DiscordCardContents({
             </div>
           )
         ) : (
-          <Skeleton className="mb-8 h-[40px] w-full" />
+          <Skeleton className="mb-8 h-10 w-full" />
         )}
       </CardContent>
     </>

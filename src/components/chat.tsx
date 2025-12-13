@@ -54,13 +54,13 @@ export function Chat({puzzleId}: {puzzleId: string}) {
             key={idx}
             style={{overflowWrap: "anywhere"}}
             className={cn(
-              "max-w-[217px]",
-              (idx === messages.length - 1 || messages[idx + 1].name !== message.name) && "mb-4"
+              "max-w-54.25",
+              (idx === messages.length - 1 || messages[idx + 1]!.name !== message.name) && "mb-4"
             )}>
             {(idx === 0 ||
-              messages[idx - 1].name !== message.name ||
+              messages[idx - 1]!.name !== message.name ||
               (messages[idx - 1] &&
-                message.timestamp - messages[idx - 1].timestamp > 60 * 1000)) && (
+                message.timestamp - messages[idx - 1]!.timestamp > 60 * 1000)) && (
               <div className="flex items-baseline justify-between space-x-2">
                 <span className="font-semibold">{message.name}</span>
                 <span
@@ -80,7 +80,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder={`Type your message...`}
-          className="mr-2 flex-grow"
+          className="mr-2 grow"
           onKeyDown={e => e.key === "Enter" && handleSend()}
         />
         <Button onClick={handleSend}>

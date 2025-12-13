@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_workspace/$workspaceId/_home/activity-lo
 function RouteComponent() {
   const {workspaceId} = Route.useParams();
   return (
-    <div className="px-4">
+    <div className="p-8">
       <ActivityLog workspaceId={workspaceId} />
     </div>
   );
