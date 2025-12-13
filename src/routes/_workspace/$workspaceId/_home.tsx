@@ -20,14 +20,14 @@ function RouteComponent() {
             navigate({to});
           }}
           className="flex-1 flex flex-col">
-          <div className="px-4 pt-2 justify-between flex">
+          {/* <div className="px-4 pt-2 justify-between flex">
             <TabsList>
               <TabsTrigger value="/$workspaceId/">Blackboard</TabsTrigger>
               <TabsTrigger value="/$workspaceId/activity-log">Activity Log</TabsTrigger>
               <TabsTrigger value="/$workspaceId/settings">Settings</TabsTrigger>
             </TabsList>
             <PresencesCard id={workspaceId} />
-          </div>
+          </div> */}
           <Outlet />
         </Tabs>
       </SidebarInset>

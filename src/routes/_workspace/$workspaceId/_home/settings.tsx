@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings")(
 
 function RouteComponent() {
   const childMatches = useChildMatches();
-  const match = childMatches[0];
+  const match = childMatches[0]!;
   return (
     <div className="flex justify-center px-8">
       <div className="flex max-w-4xl flex-1 flex-col gap-4 md:gap-8">
