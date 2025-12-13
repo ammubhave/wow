@@ -57,7 +57,10 @@ export function Chat({puzzleId}: {puzzleId: string}) {
               "max-w-[217px]",
               (idx === messages.length - 1 || messages[idx + 1].name !== message.name) && "mb-4"
             )}>
-            {(idx === 0 || messages[idx - 1].name !== message.name) && (
+            {(idx === 0 ||
+              messages[idx - 1].name !== message.name ||
+              (messages[idx - 1] &&
+                message.timestamp - messages[idx - 1].timestamp > 60 * 1000)) && (
               <div className="flex items-baseline justify-between space-x-2">
                 <span className="font-semibold">{message.name}</span>
                 <span

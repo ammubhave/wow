@@ -13,7 +13,7 @@ function RouteComponent() {
   const {data: session} = authClient.useSession();
   if (!session) return null;
   return (
-    <NotificationsWebSocket workspaceId={workspaceId!}>
+    <NotificationsWebSocket workspaceId={workspaceId}>
       <PresencesWebSocket workspaceId={workspaceId}>
         <div className="[--header-height:calc(--spacing(14))]">
           <SidebarProvider className="flex flex-col">

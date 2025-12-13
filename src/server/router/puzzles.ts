@@ -201,6 +201,14 @@ export const puzzlesRouter = {
           workspaceId: puzzle.round.workspaceId,
           field: input.status ?? "None",
         });
+        if (input.status === "solved") {
+          waitUntil(
+            context.notification.broadcast(puzzle.round.workspaceId, {
+              type: "solved",
+              message: `Puzzle ${puzzle.name} was solved!`,
+            })
+          );
+        }
       }
       if (input.importance !== undefined && input.importance !== puzzle.importance) {
         await context.activityLog.createPuzzle({

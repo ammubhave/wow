@@ -2,6 +2,7 @@
 
 import type {User} from "better-auth";
 
+import {QueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
 import {ChevronsUpDown, LogOut} from "lucide-react";
 
@@ -9,6 +10,7 @@ import {useTheme} from "@/components/theme-provider";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -24,6 +26,9 @@ import {authClient} from "@/lib/auth-client";
 export function NavUser({user, children}: {user: User; children?: React.ReactNode}) {
   const {setTheme} = useTheme();
   const router = useRouter();
+  const queryClient = new QueryClient();
+  const session = authClient.useSession().data;
+
   return (
     <div className="w-[239px]">
       <DropdownMenu>
@@ -67,6 +72,27 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
               <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Notifications</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuCheckboxItem
+                checked={!session?.user.notificationsDisabled}
+                onClick={async () => {
+                  await authClient.updateUser({notificationsDisabled: false});
+                  await queryClient.invalidateQueries();
+                }}>
+                Enabled
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={session?.user.notificationsDisabled}
+                onClick={async () => {
+                  await authClient.updateUser({notificationsDisabled: true});
+                  await queryClient.invalidateQueries();
+                }}>
+                Disabled
+              </DropdownMenuCheckboxItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuItem

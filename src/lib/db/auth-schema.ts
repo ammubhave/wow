@@ -18,6 +18,7 @@ export const user = sqliteTable("user", {
     .notNull(),
   username: text("username").unique(),
   displayUsername: text("display_username"),
+  notificationsDisabled: integer("notifications_disabled", { mode: "boolean" }),
 });
 
 export const session = sqliteTable(

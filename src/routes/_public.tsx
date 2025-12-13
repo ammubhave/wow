@@ -19,7 +19,7 @@ function RouteComponent() {
           </div>
         </nav>
       </header>
-      <main className="overflow-y-auto bg-muted/40 flex min-h-[calc(100dvh_-_theme(spacing.16))] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
+      <main className="overflow-y-auto bg-muted/40 flex min-h-[calc(100dvh-(--spacing(16)))] flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
         <Outlet />
       </main>
     </div>
