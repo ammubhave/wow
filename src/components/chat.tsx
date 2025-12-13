@@ -7,6 +7,7 @@ import {cn} from "@/lib/utils";
 import {Button} from "./ui/button";
 import {Input} from "./ui/input";
 import {ScrollArea} from "./ui/scroll-area";
+import {Textarea} from "./ui/textarea";
 
 interface Message {
   text: string;
@@ -76,13 +77,16 @@ export function Chat({puzzleId}: {puzzleId: string}) {
         <div ref={messagesEndRef} />
       </ScrollArea>
       <div className="mt-4 flex">
-        <Input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder={`Type your message...`}
-          className="mr-2 grow"
-          onKeyDown={e => e.key === "Enter" && handleSend()}
-        />
+        <div className="relative w-full">
+          <Textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder={`Type your message...`}
+            className="mr-2 grow absolute"
+            onKeyDown={e => e.key === "Enter" && handleSend()}
+          />
+          <div className="invisible mr-2">{input}</div>
+        </div>
         <Button onClick={handleSend}>
           <SendIcon className="size-4" />
           <span className="sr-only">Send</span>
