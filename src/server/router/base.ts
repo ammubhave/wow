@@ -25,9 +25,9 @@ export const procedure = base.use(async ({context: ctx, next}) => {
     throw new ORPCError("UNAUTHORIZED");
   }
   const context = {...ctx, session} as unknown as AuthenticatedContext;
-  context.google = new GoogleService(context);
+  context.google = new GoogleService();
   context.activityLog = new ActivityLogService(context);
-  context.discord = new DiscordService(context);
+  context.discord = new DiscordService();
   context.notification = new NotificationService();
 
   return next({context});

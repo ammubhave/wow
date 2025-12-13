@@ -6,10 +6,8 @@ import {z} from "zod";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
-import {AuthenticatedContext} from "../base";
-
 export class GoogleService {
-  constructor(private readonly ctx: AuthenticatedContext) {}
+  constructor() {}
 
   async getAccessToken(workspaceId: string) {
     const workspace = await db.query.organization.findFirst({

@@ -13,7 +13,13 @@ function RouteComponent() {
     defaultValues: {name: "", email: "", username: "", password: "", confirmPassword: ""},
     onSubmit: async ({value}) =>
       await authClient.signUp.email(
-        {name: value.name, email: value.email, username: value.username, password: value.password},
+        {
+          name: value.name,
+          email: value.email,
+          username: value.username,
+          password: value.password,
+          notificationsDisabled: false,
+        },
         {
           onSuccess: async () => {
             await router.navigate({to: "/login"});

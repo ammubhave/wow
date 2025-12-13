@@ -65,7 +65,7 @@ export class DiscordClient extends DurableObject {
         for (const duplicate of duplicates?.slice(1) ?? []) {
           await this.deleteChannel(duplicate.id);
         }
-        channels.push(duplicates[0]);
+        channels.push(duplicates[0]!);
       }
 
       const categories = new Map(

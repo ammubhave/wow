@@ -2,10 +2,8 @@ import {env} from "cloudflare:workers";
 
 import {db} from "@/lib/db";
 
-import {AuthenticatedContext} from "../base";
-
 export class DiscordService {
-  constructor(private readonly ctx: AuthenticatedContext) {}
+  constructor() {}
 
   async sync(workspaceId: string) {
     const workspace = await db.query.organization.findFirst({

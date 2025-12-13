@@ -1,6 +1,7 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 
-import {type RouterInputs} from "../../server/router/index";
+import type {RouterInputs} from "@/server/router";
+
 import {orpc} from "./orpc";
 
 function sanitizePuzzle(puzzle: RouterInputs["puzzles"]["update"]) {
@@ -35,7 +36,9 @@ export function usePuzzlesUpdateMutation(
         Object.keys(variables).forEach(
           key => (variables as any)[key] === undefined && delete (variables as any)[key]
         );
-        queryClient.cancelQueries({queryKey: orpc.rounds.list.queryKey({input: {workspaceId}})});
+        await queryClient.cancelQueries({
+          queryKey: orpc.rounds.list.queryKey({input: {workspaceId}}),
+        });
         const previousRounds = queryClient.getQueryData(
           orpc.rounds.list.queryKey({input: {workspaceId}})
         );
@@ -83,7 +86,7 @@ export function usePuzzlesUpdateMutation(
       },
       onSettled: async (_data, _error) => {
         await callbacks?.onSettled?.();
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: orpc.rounds.list.queryKey({input: {workspaceId}}),
         });
       },
