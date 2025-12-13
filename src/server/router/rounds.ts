@@ -7,22 +7,25 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
 
-import {procedure} from "./base";
+import {preauthorize, procedure} from "./base";
 
 export const roundsRouter = {
-  list: procedure.input(z.object({workspaceId: z.string()})).handler(async ({input}) => {
-    const rounds = await db.query.round.findMany({
-      where: (t, {eq}) => eq(t.workspaceId, input.workspaceId),
-      with: {puzzles: {with: {childPuzzles: true}}},
-    });
-    return rounds.map(round => ({
-      ...round,
-      unassignedPuzzles: round.puzzles.filter(
-        puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
-      ),
-      metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
-    }));
-  }),
+  list: procedure
+    .input(z.object({workspaceId: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}) => {
+      const rounds = await db.query.round.findMany({
+        where: (t, {eq}) => eq(t.workspaceId, context.workspace.id),
+        with: {puzzles: {with: {childPuzzles: true}}},
+      });
+      return rounds.map(round => ({
+        ...round,
+        unassignedPuzzles: round.puzzles.filter(
+          puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
+        ),
+        metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
+      }));
+    }),
 
   create: procedure
     .input(z.object({workspaceId: z.string(), name: z.string()}))
