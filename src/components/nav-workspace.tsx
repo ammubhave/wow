@@ -2,7 +2,7 @@
 
 import {useQuery} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
-import {ChevronsUpDown, GalleryVerticalEndIcon, Share2Icon, PlusIcon} from "lucide-react";
+import {GalleryVerticalEndIcon, Share2Icon, PlusIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
@@ -15,15 +15,12 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import {useSidebar} from "@/components/ui/sidebar";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
-import {RouterOutputs} from "@/server/router";
 
 import {useWorkspace} from "./use-workspace";
 
 export function NavWorkspace({workspaceId}: {workspaceId: string}) {
-  const {isMobile} = useSidebar();
   const workspaces = useQuery(orpc.workspaces.list.queryOptions());
   const workspace = useWorkspace({workspaceId});
   const user = authClient.useSession().data?.user;
@@ -72,7 +69,7 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
               <span className="truncate text-xs">{workspace.get.data.teamName}</span>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
+          {workspaces.data.length > 1 && <DropdownMenuSeparator />}
           {workspaces.data
             .filter(ws => ws.slug !== workspaceId)
             .map(ws => (

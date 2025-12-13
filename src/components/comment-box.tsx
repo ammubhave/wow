@@ -1,4 +1,4 @@
-import {EllipsisVerticalIcon} from "lucide-react";
+import {PencilIcon} from "lucide-react";
 import {useEffect, useState} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -63,7 +63,7 @@ export function CommentBox({
   };
 
   return (
-    <div className="justify-between flex-wrap">
+    <div className="justify-between flex-wrap relative">
       <span>
         {!isEditingComment ? (
           <span>
@@ -200,11 +200,11 @@ export function CommentBox({
                 {updatedComment}
               </Markdown>
             </div>
-            <span className="float-right">
+            <span className="absolute top-0 -right-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="-my-3">
-                    <EllipsisVerticalIcon className="size-4" />
+                    <PencilIcon className="size-4" />
                     <span className="sr-only">Toggle comment settings</span>
                   </Button>
                 </DropdownMenuTrigger>
