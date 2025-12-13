@@ -11,7 +11,9 @@ export class NotificationRoom extends DurableObject<Env> {
     this.ctx.acceptWebSocket(ws);
   }
 
-  broadcast(message: {type: "invalidate"; timestamp: number}) {
+  broadcast(
+    message: ({type: "invalidate"} | {type: "solved"; message: string}) & {timestamp: number}
+  ) {
     this.ctx.getWebSockets().forEach(ws => {
       ws.send(JSON.stringify(message));
     });

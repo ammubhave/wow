@@ -300,7 +300,7 @@ function BlackboardRound({
                     className="rounded-full size-2 border"></div>
                   <div
                     style={{backgroundColor: "grey"}}
-                    className={cn("w-[1px] flex-1", isUnassignedCollapsed && "hidden")}></div>
+                    className={cn("w-px flex-1", isUnassignedCollapsed && "hidden")}></div>
                 </div>
               )}
             </TableCell>
@@ -451,7 +451,7 @@ function BlackboardMetaPuzzle({
                 className="rounded-full size-2 border"></div>
               <div
                 style={{backgroundColor: color}}
-                className={cn("w-[1px] flex-1", isCollapsed && "hidden")}></div>
+                className={cn("w-px flex-1", isCollapsed && "hidden")}></div>
             </div>
           )}
         </TableCell>
@@ -597,13 +597,13 @@ function BlackboardMetaPuzzle({
             <div className="flex flex-col h-full">
               <div className="flex-1 flex items-stretch">
                 <div className="flex-1" />
-                <div className="w-[1px]" style={{backgroundColor: color, borderColor: color}} />
+                <div className="w-px" style={{backgroundColor: color, borderColor: color}} />
                 <div className="flex-1" />
               </div>
               <div className="flex items-center">
                 <div className="flex-1" />
                 <div
-                  className="h-[1px] w-[1px]"
+                  className="h-[1px] w-px"
                   style={{backgroundColor: color, borderColor: color}}
                 />
                 <div className="flex-1 h-[1px]" style={{backgroundColor: color}} />
@@ -695,21 +695,18 @@ function BlackboardPuzzle({
           <div className="flex flex-col h-full">
             <div className="flex-1 flex items-stretch">
               <div className="flex-1" />
-              <div className="w-[1px]" style={{backgroundColor: color, borderColor: color}} />
+              <div className="w-px" style={{backgroundColor: color, borderColor: color}} />
               <div className="flex-1" />
             </div>
             <div className="flex items-center">
               <div className="flex-1" />
-              <div
-                className="h-[1px] w-[1px]"
-                style={{backgroundColor: color, borderColor: color}}
-              />
+              <div className="h-[1px] w-px" style={{backgroundColor: color, borderColor: color}} />
               <div className="flex-1 h-[1px]" style={{backgroundColor: color}} />
             </div>
             <div className="flex-1 flex items-stretch">
               <div className="flex-1" />
               <div
-                className={cn("w-[1px]", isLast && "hidden")}
+                className={cn("w-px", isLast && "hidden")}
                 style={{backgroundColor: color, borderColor: color}}
               />
               <div className="flex-1" />
