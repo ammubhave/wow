@@ -4,7 +4,7 @@ import type {User} from "better-auth";
 
 import {QueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
-import {ChevronsUpDown, LogOut} from "lucide-react";
+import {BellRingIcon, ChevronsUpDown, LogOut, SunMoonIcon} from "lucide-react";
 
 import {useTheme} from "@/components/theme-provider";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
@@ -67,7 +67,10 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
           {children}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>
+              <SunMoonIcon />
+              Theme
+            </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
@@ -75,7 +78,10 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Notifications</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>
+              <BellRingIcon />
+              Notifications
+            </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuCheckboxItem
                 checked={!session?.user.notificationsDisabled}
