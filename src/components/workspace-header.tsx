@@ -1,5 +1,3 @@
-import type {User} from "better-auth";
-
 // import * as TabsPrimitive from "@radix-ui/react-tabs";
 // import { useLocalStorage } from "@uidotdev/usehooks";
 import {
@@ -9,8 +7,7 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import {ExternalLinkIcon, Share2Icon, Settings, History} from "lucide-react";
-import {toast} from "sonner";
+import {ExternalLinkIcon, Settings, History} from "lucide-react";
 
 // import { ArrowLeftIcon } from "lucide-react";
 
@@ -31,7 +28,12 @@ import {
   BreadcrumbSeparator,
 } from "./ui/breadcrumb";
 import {Button} from "./ui/button";
-import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
+import {
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+} from "./ui/dropdown-menu";
 // import { Button } from "./ui/button";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
@@ -187,26 +189,8 @@ export function WorkspaceHeader() {
               </DropdownMenuGroup>
             </>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              onClick={() => {
-                toast.promise(
-                  workspace.shareGoogleDriveFolder.mutateAsync({
-                    workspaceId: workspaceId,
-                    email: user.email!,
-                  }),
-                  {
-                    loading: "Sharing Google Drive folder...",
-                    success: "Success! Google Drive folder has been shared.",
-                    error: "Oops! Something went wrong.",
-                  }
-                );
-              }}>
-              <Share2Icon />
-              Share Google Drive folder
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          {/* <DropdownMenuSeparator /> */}
+          <NavWorkspace workspaceId={workspaceId} />
         </NavUser>
         {isMobile && (
           <>
