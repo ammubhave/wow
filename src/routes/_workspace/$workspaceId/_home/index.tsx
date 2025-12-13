@@ -3,7 +3,6 @@ import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
 import {CheckIcon, ChevronRightIcon, EllipsisIcon, PuzzleIcon} from "lucide-react";
 import {useState} from "react";
-import {RouterOutputs} from "server/router/index";
 import {toast} from "sonner";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
@@ -34,6 +33,7 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
 import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
+import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/")({
@@ -467,29 +467,31 @@ function BlackboardMetaPuzzle({
             metaPuzzle.name
           )}
         </TableCell>
-        <form.AppField name="answer">
-          {field => (
-            <TableCell
-              className="items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
-              contentEditable={metaPuzzle.id !== ""}
-              suppressContentEditableWarning={true}
-              onInput={e => {
-                field.handleChange(e.currentTarget.innerText);
-              }}
-              onBlur={() => {
-                field.handleBlur();
-                void form.handleSubmit();
-              }}
-              onKeyDown={e => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  e.currentTarget.blur();
-                }
-              }}>
-              {field.state.value}
-            </TableCell>
-          )}
-        </form.AppField>
+        <TableCell className="relative">
+          <form.AppField name="answer">
+            {field => (
+              <input
+                className="px-2 absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
+                contentEditable={metaPuzzle.id !== ""}
+                suppressContentEditableWarning={true}
+                onInput={e => {
+                  field.setValue(e.currentTarget.value.toLocaleUpperCase());
+                }}
+                onBlur={() => {
+                  field.handleBlur();
+                  void form.handleSubmit();
+                }}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.currentTarget.blur();
+                  }
+                }}
+                value={field.state.value}
+              />
+            )}
+          </form.AppField>
+        </TableCell>
         <TableCell>
           <Select onValueChange={onStatusChange} value={metaPuzzle.status ?? "none"}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
@@ -727,29 +729,31 @@ function BlackboardPuzzle({
             puzzle.name
           )}
         </TableCell>
-        <form.AppField name="answer">
-          {field => (
-            <TableCell
-              className="items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
-              contentEditable={puzzle.id !== ""}
-              suppressContentEditableWarning={true}
-              onInput={e => {
-                field.setValue(e.currentTarget.innerText);
-              }}
-              onBlur={() => {
-                field.handleBlur();
-                void form.handleSubmit();
-              }}
-              onKeyDown={e => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  e.currentTarget.blur();
-                }
-              }}>
-              {field.state.value}
-            </TableCell>
-          )}
-        </form.AppField>
+        <TableCell className="relative">
+          <form.AppField name="answer">
+            {field => (
+              <input
+                className="px-2 absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
+                contentEditable={puzzle.id !== ""}
+                suppressContentEditableWarning={true}
+                onInput={e => {
+                  field.setValue(e.currentTarget.value.toLocaleUpperCase());
+                }}
+                onBlur={() => {
+                  field.handleBlur();
+                  void form.handleSubmit();
+                }}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.currentTarget.blur();
+                  }
+                }}
+                value={field.state.value}
+              />
+            )}
+          </form.AppField>
+        </TableCell>
         <TableCell>
           <Select onValueChange={onStatusChange} value={puzzle.status ?? "none"}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">

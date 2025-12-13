@@ -1,3 +1,5 @@
+import type {User} from "better-auth";
+
 // import * as TabsPrimitive from "@radix-ui/react-tabs";
 // import { useLocalStorage } from "@uidotdev/usehooks";
 import {Link, useChildMatches} from "@tanstack/react-router";
@@ -27,7 +29,7 @@ import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/d
 // import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 
-export function WorkspaceHeader({workspaceId, user}: {workspaceId: string; user: {email: string}}) {
+export function WorkspaceHeader({workspaceId, user}: {workspaceId: string; user: User}) {
   const workspace = useWorkspace({workspaceId});
   const {isMobile} = useSidebar();
   const childMatches = useChildMatches();
