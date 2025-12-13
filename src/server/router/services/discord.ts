@@ -1,19 +1,20 @@
 import {env} from "cloudflare:workers";
 
+import {db} from "@/lib/db";
+
 import {AuthenticatedContext} from "../base";
 
 export class DiscordService {
   constructor(private readonly ctx: AuthenticatedContext) {}
 
   async sync(workspaceId: string) {
-    const workspace = await this.ctx.db.workspace.findFirstOrThrow({
-      select: {
-        discordGuildId: true,
-        rounds: {
-          select: {name: true, puzzles: {select: {name: true, status: true, isMetaPuzzle: true}}},
-        },
-      },
-      where: {id: workspaceId},
+    const workspace = await db.query.organization.findFirst({
+      where: (t, {eq}) => eq(t.slug, workspaceId),
+    });
+    if (!workspace) throw new Error("Workspace not found");
+    const rounds = await db.query.round.findMany({
+      where: (t, {eq}) => eq(t.workspaceId, workspace.id),
+      with: {puzzles: true},
     });
     // Skip if discord wasn't setup for this workspace.
     if (!workspace.discordGuildId) {
@@ -21,6 +22,7 @@ export class DiscordService {
     }
     await env.DISCORD_CLIENT.getByName(workspace.discordGuildId).sync({
       ...workspace,
+      rounds,
       discordGuildId: workspace.discordGuildId,
     });
   }

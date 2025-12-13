@@ -135,7 +135,7 @@ function GoogleDriveCard() {
     <Card>
       <GoogleDriveCardContents
         workspaceId={workspaceId}
-        redirectUrl={`/workspaces/${workspaceId}/settings/administration`}
+        redirectUrl={`/${workspaceId}/settings/administration`}
       />
     </Card>
   );
@@ -147,7 +147,7 @@ function DiscordCard() {
     <Card>
       <DiscordCardContents
         workspaceId={workspaceId}
-        redirectUrl={`/workspaces/${workspaceId}/settings/administration`}
+        redirectUrl={`/${workspaceId}/settings/administration`}
       />
     </Card>
   );

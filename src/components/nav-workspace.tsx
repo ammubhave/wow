@@ -35,7 +35,7 @@ export function NavWorkspace({
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarFallback className="rounded-lg">
               {workspace.eventName
-                .split(" ")
+                ?.split(" ")
                 .map(word => word[0]?.toLocaleUpperCase())
                 .filter(c => !!c)
                 .slice(0, 2)
@@ -57,11 +57,11 @@ export function NavWorkspace({
         <DropdownMenuLabel className="text-muted-foreground text-xs">Workspaces</DropdownMenuLabel>
         {workspaces.data.map(workspace => (
           <DropdownMenuItem key={workspace.id} asChild className="gap-2 p-2">
-            <Link to="/$workspaceId" params={{workspaceId: workspace.id}}>
+            <Link to="/$workspaceId" params={{workspaceId: workspace.slug}}>
               <Avatar className="size-8 rounded-lg">
                 <AvatarFallback className="rounded-lg">
                   {workspace.eventName
-                    .split(" ")
+                    ?.split(" ")
                     .map(word => word[0]?.toLocaleUpperCase())
                     .filter(c => !!c)
                     .slice(0, 2)

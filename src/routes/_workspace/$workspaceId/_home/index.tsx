@@ -3,7 +3,6 @@ import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
 import {CheckIcon, ChevronRightIcon, EllipsisIcon, PuzzleIcon} from "lucide-react";
 import {useState} from "react";
-import {RouterOutputs} from "server/router/index";
 import {toast} from "sonner";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
@@ -34,6 +33,7 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
 import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
+import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/")({
