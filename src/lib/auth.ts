@@ -11,6 +11,7 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
   experimental: {joins: true},
   emailAndPassword: {enabled: true},
+  user: {additionalFields: {notificationsDisabled: {type: "boolean", default: false}}},
   plugins: [
     organization({
       membershipLimit: 500,

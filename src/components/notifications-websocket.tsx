@@ -3,6 +3,8 @@ import useWebSocket from "react-use-websocket";
 import {toast} from "sonner";
 import z from "zod";
 
+import {authClient} from "@/lib/auth-client";
+
 let confettiMod: Promise<any> | null = null;
 
 function getConfetti() {
@@ -18,6 +20,7 @@ export function NotificationsWebSocket({
   children: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
+  const notificationsEnabled = authClient.useSession().data?.user.notificationsDisabled === false;
   useWebSocket(
     `${typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}` : ""}/api/notification/${workspaceId}`,
     {
@@ -33,29 +36,31 @@ export function NotificationsWebSocket({
         if (payload.type === "invalidate") {
           await queryClient.invalidateQueries();
         } else if (payload.type === "solved") {
-          const confetti = await getConfetti();
-          var end = Date.now() + 1 * 1000;
-          var colors = ["#f54900", "#e7000b"];
-          (function frame() {
-            confetti({
-              particleCount: 2,
-              angle: 60,
-              spread: 55,
-              origin: {x: 0, y: 1},
-              colors: colors,
-            });
-            confetti({
-              particleCount: 2,
-              angle: 120,
-              spread: 55,
-              origin: {x: 1, y: 1},
-              colors: colors,
-            });
-            if (Date.now() < end) {
-              requestAnimationFrame(frame);
-            }
-          })();
-          toast.success(payload.message);
+          if (notificationsEnabled) {
+            const confetti = await getConfetti();
+            var end = Date.now() + 1 * 1000;
+            var colors = ["#f54900", "#e7000b"];
+            (function frame() {
+              confetti({
+                particleCount: 2,
+                angle: 60,
+                spread: 55,
+                origin: {x: 0, y: 1},
+                colors: colors,
+              });
+              confetti({
+                particleCount: 2,
+                angle: 120,
+                spread: 55,
+                origin: {x: 1, y: 1},
+                colors: colors,
+              });
+              if (Date.now() < end) {
+                requestAnimationFrame(frame);
+              }
+            })();
+            toast.success(payload.message);
+          }
         }
       },
     }
