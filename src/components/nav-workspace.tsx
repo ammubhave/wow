@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {Separator} from "@/components/ui/separator";
 import {SidebarMenuButton, useSidebar} from "@/components/ui/sidebar";
 import {orpc} from "@/lib/orpc";
 import {RouterOutputs} from "@/server/router";
@@ -29,9 +30,14 @@ export function NavWorkspace({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton
-          size="lg"
-          className="max-w-[239px] data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+        <ChevronsUpDown className="ml-auto size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+        side={isMobile ? "bottom" : "right"}
+        align="end"
+        sideOffset={4}>
+        <DropdownMenuLabel className=" text-xs flex items-center gap-2">
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarFallback className="rounded-lg">
               {workspace.eventName
@@ -42,39 +48,34 @@ export function NavWorkspace({
                 .join("")}
             </AvatarFallback>
           </Avatar>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{workspace.eventName}</span>
+          <div className="grid flex-1 text-left text-sm leading-tight font-bold">
+            <span className="truncate">{workspace.eventName}</span>
             <span className="truncate text-xs">{workspace.teamName}</span>
           </div>
-          <ChevronsUpDown className="ml-auto size-4" />
-        </SidebarMenuButton>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-        side={isMobile ? "bottom" : "right"}
-        align="end"
-        sideOffset={4}>
-        <DropdownMenuLabel className="text-muted-foreground text-xs">Workspaces</DropdownMenuLabel>
-        {workspaces.data.map(workspace => (
-          <DropdownMenuItem key={workspace.id} asChild className="gap-2 p-2">
-            <Link to="/$workspaceId" params={{workspaceId: workspace.slug}}>
-              <Avatar className="size-8 rounded-lg">
-                <AvatarFallback className="rounded-lg">
-                  {workspace.eventName
-                    ?.split(" ")
-                    .map(word => word[0]?.toLocaleUpperCase())
-                    .filter(c => !!c)
-                    .slice(0, 2)
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{workspace.eventName}</span>
-                <span className="truncate text-xs">{workspace.teamName}</span>
-              </div>
-            </Link>
-          </DropdownMenuItem>
-        ))}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {workspaces.data
+          .filter(w => w.id !== workspace.id)
+          .map(workspace => (
+            <DropdownMenuItem key={workspace.id} asChild className="gap-2 p-2">
+              <Link to="/$workspaceId" params={{workspaceId: workspace.slug}}>
+                <Avatar className="size-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg">
+                    {workspace.eventName
+                      ?.split(" ")
+                      .map(word => word[0]?.toLocaleUpperCase())
+                      .filter(c => !!c)
+                      .slice(0, 2)
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{workspace.eventName}</span>
+                  <span className="truncate text-xs">{workspace.teamName}</span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem className="gap-2 p-2" asChild>
           <Link to="/workspaces">

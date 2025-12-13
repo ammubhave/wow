@@ -2,8 +2,14 @@ import type {User} from "better-auth";
 
 // import * as TabsPrimitive from "@radix-ui/react-tabs";
 // import { useLocalStorage } from "@uidotdev/usehooks";
-import {Link, useChildMatches} from "@tanstack/react-router";
-import {ExternalLinkIcon, Share2Icon} from "lucide-react";
+import {
+  createFileRoute,
+  Link,
+  useChildMatches,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
+import {ExternalLinkIcon, Share2Icon, Settings, History} from "lucide-react";
 import {toast} from "sonner";
 
 // import { ArrowLeftIcon } from "lucide-react";
@@ -13,6 +19,7 @@ import {toast} from "sonner";
 
 import {Separator} from "@/components/ui/separator";
 import {SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
+import {authClient} from "@/lib/auth-client";
 
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
@@ -26,10 +33,16 @@ import {
 import {Button} from "./ui/button";
 import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 // import { Button } from "./ui/button";
-// import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 
-export function WorkspaceHeader({workspaceId, user}: {workspaceId: string; user: User}) {
+export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
+  component: WorkspaceHeader,
+});
+
+export function WorkspaceHeader() {
+  const {workspaceId} = Route.useParams();
+  const user = authClient.useSession().data?.user;
   const workspace = useWorkspace({workspaceId});
   const {isMobile} = useSidebar();
   const childMatches = useChildMatches();
@@ -38,7 +51,6 @@ export function WorkspaceHeader({workspaceId, user}: {workspaceId: string; user:
     match.routeId === "/_workspace/$workspaceId/puzzles/$puzzleId"
       ? match.params.puzzleId
       : undefined;
-  // const navigate = useNavigate();
   // const [openTabs, setOpenTabs] = useLocalStorage<string[]>("openTabs", []);
   // useEffect(() => {
   //   if (puzzleId && !openTabs.includes(puzzleId)) {
@@ -49,18 +61,42 @@ export function WorkspaceHeader({workspaceId, user}: {workspaceId: string; user:
   const puzzle = workspace.rounds.list.data
     .flatMap(round => round.puzzles)
     .find(p => p.id === puzzleId);
-
+  const navigate = useNavigate();
+  if (!user) {
+    return null;
+  }
   return (
     <header className="bg-background fixed top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
-        <div className="px-2 flex items-center gap-4">
-          <img src="/favicon.ico" className="shrink-0 size-6 rounded-full" />
-        </div>
-        <Separator orientation="vertical" />
-        <NavWorkspace workspace={workspace.get.data} />
-        <Separator orientation="vertical" />
+        <Tabs
+          value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
+          onValueChange={to => {
+            navigate({to});
+          }}
+          className="flex-1 flex flex-col">
+          <div className="px-4 pt-2 justify-between flex">
+            <TabsList>
+              <TabsTrigger value="/$workspaceId/" className="px-2 flex items-center gap-4">
+                <img src="/favicon.ico" className="shrink-0 size-6 rounded-full" />{" "}
+                {workspace.get.data.eventName} Home
+              </TabsTrigger>
+              <TabsTrigger value="/$workspaceId/settings" className="px-2">
+                <Settings className="ml-auto size-4" />
+              </TabsTrigger>
+              <TabsTrigger value="/$workspaceId/activity-log" className="px-2">
+                <History className="ml-auto size-4" />
+              </TabsTrigger>
+              {puzzle && (
+                <TabsTrigger value="/$workspaceId/puzzles/$puzzleId" className="px-2">
+                  {puzzle.name}
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
+        </Tabs>
+        {/* <NavWorkspace workspace={workspace.get.data} /> */}
         <div className="w-full px-3">
-          <Breadcrumb>
+          {/* <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
@@ -76,7 +112,7 @@ export function WorkspaceHeader({workspaceId, user}: {workspaceId: string; user:
                 </>
               )}
             </BreadcrumbList>
-          </Breadcrumb>
+          </Breadcrumb> */}
           {/* <Button variant="ghost" asChild>
             <ArrowLeftIcon /> Home
           </Button> */}
