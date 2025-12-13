@@ -1,4 +1,5 @@
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
+import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
@@ -23,6 +24,9 @@ function RouteComponent() {
         {
           onSuccess: async () => {
             await router.navigate({to: "/login"});
+          },
+          onError: error => {
+            toast.error(error.error.message);
           },
         }
       ),

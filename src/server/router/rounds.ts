@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/client";
 import {waitUntil} from "cloudflare:workers";
-import {eq} from "drizzle-orm";
+import {and, eq, isNull} from "drizzle-orm";
 import {z} from "zod";
 
 import {db} from "@/lib/db";
@@ -111,4 +111,33 @@ export const roundsRouter = {
       ])
     );
   }),
+
+  assignUnassignedPuzzles: procedure
+    .input(z.object({workspaceId: z.string(), parentPuzzleId: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const parentPuzzle = await db.query.puzzle.findFirst({
+        where: (t, {eq}) => eq(t.id, input.parentPuzzleId),
+      });
+      if (!parentPuzzle) throw new ORPCError("NOT_FOUND");
+      await db
+        .update(schema.puzzle)
+        .set({parentPuzzleId: parentPuzzle.id})
+        .where(
+          and(
+            eq(schema.puzzle.roundId, parentPuzzle.roundId),
+            isNull(schema.puzzle.parentPuzzleId),
+            eq(schema.puzzle.isMetaPuzzle, false)
+          )
+        );
+      // Deferred: Broadcast notification and sync discord
+      waitUntil(
+        (async () => {
+          await Promise.allSettled([
+            context.notification.broadcast(input.workspaceId, {type: "invalidate"}),
+            context.discord.sync(input.workspaceId),
+          ]);
+        })()
+      );
+    }),
 };

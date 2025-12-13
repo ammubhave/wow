@@ -90,6 +90,14 @@ export function useWorkspace({workspaceId}: {workspaceId: string}) {
       },
     })
   );
+  const roundAssignUnassignedPuzzlesMutation = useMutation(
+    orpc.rounds.assignUnassignedPuzzles.mutationOptions({
+      onSuccess: () => {
+        void query.refetch();
+        void queryClient.invalidateQueries();
+      },
+    })
+  );
   return {
     get: query,
     shareGoogleDriveFolder: shareGoogleDriveFolderMutation,
@@ -101,6 +109,7 @@ export function useWorkspace({workspaceId}: {workspaceId: string}) {
       create: roundCreateMutation,
       delete: roundDeleteMutation,
       update: roundUpdateMutation,
+      assignUnassignedPuzzles: roundAssignUnassignedPuzzlesMutation,
     },
     links: {list: linksQuery, update: linksUpdateMutation},
     puzzles: {

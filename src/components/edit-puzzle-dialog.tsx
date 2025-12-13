@@ -91,7 +91,7 @@ export function EditPuzzleDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent aria-describedby={undefined} className="sm:max-w-[425px]">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-106.25">
         <form.AppForm>
           <form
             onSubmit={e => {

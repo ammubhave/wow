@@ -6,7 +6,6 @@ import {cn} from "@/lib/utils";
 
 import {Button} from "./ui/button";
 import {Input} from "./ui/input";
-import {ScrollArea} from "./ui/scroll-area";
 
 interface Message {
   text: string;
@@ -48,33 +47,35 @@ export function Chat({puzzleId}: {puzzleId: string}) {
 
   return (
     <>
-      <ScrollArea className="flex-1 pr-4">
-        {messages.map((message, idx) => (
-          <div
-            key={idx}
-            style={{overflowWrap: "anywhere"}}
-            className={cn(
-              "max-w-54.25",
-              (idx === messages.length - 1 || messages[idx + 1]!.name !== message.name) && "mb-4"
-            )}>
-            {(idx === 0 ||
-              messages[idx - 1]!.name !== message.name ||
-              (messages[idx - 1] &&
-                message.timestamp - messages[idx - 1]!.timestamp > 60 * 1000)) && (
-              <div className="flex items-baseline justify-between space-x-2">
-                <span className="font-semibold">{message.name}</span>
-                <span
-                  className="text-muted-foreground text-[10px]"
-                  title={new Date(message.timestamp).toLocaleString()}>
-                  {formatTime(new Date(message.timestamp))}
-                </span>
-              </div>
-            )}
-            <p className="bg-muted mt-1 inline-block rounded-lg p-2">{message.text}</p>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </ScrollArea>
+      <div className="flex-1 pr-4 relative">
+        <div className="absolute inset-0 overflow-y-auto">
+          {messages.map((message, idx) => (
+            <div
+              key={idx}
+              style={{overflowWrap: "anywhere"}}
+              className={cn(
+                "max-w-54.25",
+                (idx === messages.length - 1 || messages[idx + 1]!.name !== message.name) && "mb-4"
+              )}>
+              {(idx === 0 ||
+                messages[idx - 1]!.name !== message.name ||
+                (messages[idx - 1] &&
+                  message.timestamp - messages[idx - 1]!.timestamp > 60 * 1000)) && (
+                <div className="flex items-baseline justify-between space-x-2">
+                  <span className="font-semibold">{message.name}</span>
+                  <span
+                    className="text-muted-foreground text-[10px]"
+                    title={new Date(message.timestamp).toLocaleString()}>
+                    {formatTime(new Date(message.timestamp))}
+                  </span>
+                </div>
+              )}
+              <p className="bg-muted mt-1 inline-block rounded-lg p-2">{message.text}</p>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
       <div className="mt-4 flex">
         <Input
           value={input}

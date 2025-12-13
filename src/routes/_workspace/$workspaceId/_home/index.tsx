@@ -8,6 +8,7 @@ import {toast} from "sonner";
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
 import {AddNewRoundDialog} from "@/components/add-new-round-dialog";
+import {AssignUnassignedPuzzlesDialog} from "@/components/assign-unassigned-puzzles-dialog";
 import {DeletePuzzleDialog} from "@/components/delete-puzzle-dialog";
 import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
@@ -131,6 +132,8 @@ function BlackboardRound({
     useState(false);
   const [isEditRoundDialogOpen, setIsEditRoundDialogOpen] = useState(false);
   const [isDeleteRoundDialogOpen, setIsDeleteRoundDialogOpen] = useState(false);
+  const [isAssignedUnassignedPuzzlesDialogOpen, setIsAssignUnassignedPuzzlesDialogOpen] =
+    useState(false);
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${round.id}`, false);
   const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useLocalStorage(
@@ -304,8 +307,31 @@ function BlackboardRound({
                 </div>
               )}
             </TableCell>
-            <TableCell className="font-semibold italic" colSpan={6}>
+            <TableCell className="font-semibold italic" colSpan={5}>
               Unassigned Puzzles
+            </TableCell>
+            <TableCell>
+              <div className="-my-3 flex items-center justify-end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button disabled={round.id === ""} variant="ghost" size="icon">
+                      <EllipsisIcon className="size-4" />
+                      <span className="sr-only">Toggle menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setIsAssignUnassignedPuzzlesDialogOpen(true)}>
+                      Assign all unassigned puzzles
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <AssignUnassignedPuzzlesDialog
+                workspaceId={workspaceId}
+                roundId={round.id}
+                open={isAssignedUnassignedPuzzlesDialogOpen}
+                setOpen={setIsAssignUnassignedPuzzlesDialogOpen}
+              />
             </TableCell>
           </TableRow>
           {unassignedPuzzles.map(puzzle => (
