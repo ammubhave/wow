@@ -50,7 +50,7 @@ function RouteComponent() {
                     : `https://docs.google.com/drawings/d/${puzzle.data.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
                 }
                 allow="fullscreen; geolocation; microphone; camera; payment"
-                className="min-h-[calc(100dvh-theme(spacing.16))] w-full bg-white flex-1"
+                className="min-h-[calc(100dvh-(--spacing(16)))] w-full bg-white flex-1"
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -78,7 +78,7 @@ function PuzzleInfoPanel({
 }: {
   workspaceId: string;
   puzzle: {
-    comment: string;
+    comment: string | null;
     id: string;
     parentPuzzleId: string | null;
     name: string;
@@ -160,7 +160,7 @@ function PuzzleInfoPanel({
           </EditPuzzleDialog>
         </div>
       </CardHeader>
-      <CardContent className="p-4 text-sm">
+      <CardContent className="p-4 text-sm gap-4 flex flex-col">
         <form.AppForm>
           <form
             onSubmit={e => {
@@ -245,11 +245,15 @@ function PuzzleInfoPanel({
                 ))}
               </div>
             </div>
-            <div>
-              <CommentBox comment={puzzle.comment} workspaceId={workspaceId} puzzleId={puzzle.id} />
-            </div>
           </form>
         </form.AppForm>
+        <div>
+          <CommentBox
+            comment={puzzle.comment ?? ""}
+            workspaceId={workspaceId}
+            puzzleId={puzzle.id}
+          />
+        </div>
       </CardContent>
     </div>
   );

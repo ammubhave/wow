@@ -1,23 +1,9 @@
-import type {User} from "better-auth";
-
-// import * as TabsPrimitive from "@radix-ui/react-tabs";
-// import { useLocalStorage } from "@uidotdev/usehooks";
-import {
-  createFileRoute,
-  Link,
-  useChildMatches,
-  useLocation,
-  useNavigate,
-} from "@tanstack/react-router";
+import {createFileRoute, useChildMatches, useNavigate} from "@tanstack/react-router";
 import {ExternalLinkIcon, Share2Icon, Settings, History} from "lucide-react";
 import {useEffect} from "react";
 import {toast} from "sonner";
 
-// import { ArrowLeftIcon } from "lucide-react";
-
-// import { HomeIcon, XIcon } from "lucide-react";
-// import { useEffect } from "react";
-
+import {PresencesCard} from "@/components/presences-card";
 import {Separator} from "@/components/ui/separator";
 import {SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
@@ -25,20 +11,10 @@ import {authClient} from "@/lib/auth-client";
 import {useAppDispatch, useAppSelector} from "@/store";
 
 import {NavUser} from "./nav-user";
-import {NavWorkspace} from "./nav-workspace";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "./ui/breadcrumb";
 import {Button} from "./ui/button";
 import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
-// import { Button } from "./ui/button";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
-
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
   component: WorkspaceHeader,
 });
@@ -181,6 +157,7 @@ export function WorkspaceHeader() {
             </TabsList>
           </Tabs> */}
         </div>
+        <PresencesCard id={workspaceId} />
         <div className="flex items-center gap-1">
           {workspace.links.list.data.map((link, index) => (
             <Button key={index} variant="ghost" asChild>

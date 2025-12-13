@@ -126,7 +126,7 @@ export function CommentBox({
                     </h4>
                   ),
                   p: ({children, className, node: _node, ...rest}) => (
-                    <p {...rest} className={cn(className, "leading-7 [&:not(:first-child)]:mt-6")}>
+                    <p {...rest} className={cn(className, "leading-7 not-first:mt-6")}>
                       {children}
                     </p>
                   ),
@@ -172,7 +172,7 @@ export function CommentBox({
                       {...rest}
                       className={cn(
                         className,
-                        "border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right"
+                        "border px-4 py-2 text-left [[align=center]]:text-center [[align=right]]:text-right"
                       )}>
                       {children}
                     </td>
@@ -182,7 +182,7 @@ export function CommentBox({
                       {...rest}
                       className={cn(
                         className,
-                        "border px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right"
+                        "border px-4 py-2 text-left font-bold [[align=center]]:text-center [[align=right]]:text-right"
                       )}>
                       {children}
                     </th>

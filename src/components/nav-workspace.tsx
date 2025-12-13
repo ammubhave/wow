@@ -13,8 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {Separator} from "@/components/ui/separator";
-import {SidebarMenuButton, useSidebar} from "@/components/ui/sidebar";
+import {useSidebar} from "@/components/ui/sidebar";
 import {orpc} from "@/lib/orpc";
 import {RouterOutputs} from "@/server/router";
 

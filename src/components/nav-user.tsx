@@ -30,12 +30,12 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
   const session = authClient.useSession().data;
 
   return (
-    <div className="w-[239px]">
+    <div className="w-59.75">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
             size="lg"
-            className="w-[239px] data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+            className="w-59.75 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
             <Avatar className="h-8 w-8 rounded-lg">
               <AvatarImage src={user.image ?? undefined} alt={user.name ?? user.email} />
               <AvatarFallback className="rounded-lg">CN</AvatarFallback>
