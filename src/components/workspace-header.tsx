@@ -10,6 +10,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import {ExternalLinkIcon, Share2Icon, Settings, History} from "lucide-react";
+import {useEffect} from "react";
 import {toast} from "sonner";
 
 // import { ArrowLeftIcon } from "lucide-react";
@@ -19,7 +20,9 @@ import {toast} from "sonner";
 
 import {Separator} from "@/components/ui/separator";
 import {SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
+import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {authClient} from "@/lib/auth-client";
+import {useAppDispatch, useAppSelector} from "@/store";
 
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
@@ -47,10 +50,20 @@ export function WorkspaceHeader() {
   const {isMobile} = useSidebar();
   const childMatches = useChildMatches();
   const match = childMatches[childMatches.length - 1]!;
-  const puzzleId =
+
+  const newPuzzleId =
     match.routeId === "/_workspace/$workspaceId/puzzles/$puzzleId"
       ? match.params.puzzleId
       : undefined;
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    if (newPuzzleId) {
+      dispatch(setLastActivePuzzle(newPuzzleId));
+    }
+  }, [newPuzzleId]);
+  const lastActivePuzzleId = useAppSelector(state => state.lastActivePuzzle.value);
+
+  const puzzleId = newPuzzleId ?? lastActivePuzzleId;
   // const [openTabs, setOpenTabs] = useLocalStorage<string[]>("openTabs", []);
   // useEffect(() => {
   //   if (puzzleId && !openTabs.includes(puzzleId)) {
@@ -71,14 +84,24 @@ export function WorkspaceHeader() {
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
           onValueChange={to => {
-            navigate({to});
+            void navigate({
+              to,
+              params: to === "/$workspaceId/puzzles/$puzzleId" ? {puzzleId} : undefined,
+            });
           }}
           className="flex-1 flex flex-col">
-          <div className="px-4 pt-2 justify-between flex">
+          <div className="justify-between flex items-center gap-2">
+            <div className="px-2 flex items-center gap-4">
+              <img src="/favicon.ico" className="shrink-0 size-6 rounded-full" />
+              <div className="contents flex-1 text-lg font-semibold">
+                <span className="font-semi-bold text-lg text-nowrap">
+                  {workspace.get.data.teamName}
+                </span>
+              </div>
+            </div>
             <TabsList>
               <TabsTrigger value="/$workspaceId/" className="px-2 flex items-center gap-4">
-                <img src="/favicon.ico" className="shrink-0 size-6 rounded-full" />{" "}
-                {workspace.get.data.eventName} Home
+                Home
               </TabsTrigger>
               <TabsTrigger value="/$workspaceId/settings" className="px-2">
                 <Settings className="ml-auto size-4" />
