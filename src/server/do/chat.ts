@@ -22,7 +22,7 @@ export class ChatRoom extends DurableObject {
       await this.resetAlarm();
       server.serializeAttachment({
         ...server.deserializeAttachment(),
-        name: c.var.user!.firstName || "User",
+        name: c.var.session?.user.name || "User",
       });
       server.send(JSON.stringify([...(await this.storage.list()).values()]));
       return new Response(null, {status: 101, webSocket: client});

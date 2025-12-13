@@ -529,7 +529,7 @@ function BlackboardMetaPuzzle({
                 <svg
                   viewBox="0 0 6 6"
                   aria-hidden="true"
-                  className="h-1.5 w-1.5 fill-green-500 flex-shrink-0">
+                  className="h-1.5 w-1.5 fill-green-500 shrink-0">
                   <circle r={3} cx={3} cy={3} />
                 </svg>
                 {name}
@@ -602,11 +602,8 @@ function BlackboardMetaPuzzle({
               </div>
               <div className="flex items-center">
                 <div className="flex-1" />
-                <div
-                  className="h-[1px] w-px"
-                  style={{backgroundColor: color, borderColor: color}}
-                />
-                <div className="flex-1 h-[1px]" style={{backgroundColor: color}} />
+                <div className="h-px w-px" style={{backgroundColor: color, borderColor: color}} />
+                <div className="flex-1 h-px" style={{backgroundColor: color}} />
               </div>
               <div className="flex-1 flex items-stretch"></div>
             </div>
@@ -700,8 +697,8 @@ function BlackboardPuzzle({
             </div>
             <div className="flex items-center">
               <div className="flex-1" />
-              <div className="h-[1px] w-px" style={{backgroundColor: color, borderColor: color}} />
-              <div className="flex-1 h-[1px]" style={{backgroundColor: color}} />
+              <div className="h-px w-px" style={{backgroundColor: color, borderColor: color}} />
+              <div className="flex-1 h-px" style={{backgroundColor: color}} />
             </div>
             <div className="flex-1 flex items-stretch">
               <div className="flex-1" />
