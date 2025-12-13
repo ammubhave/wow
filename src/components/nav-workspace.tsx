@@ -16,6 +16,7 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import {useSidebar} from "@/components/ui/sidebar";
+import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 import {RouterOutputs} from "@/server/router";
 
@@ -48,7 +49,10 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
         Share Google Drive folder
       </DropdownMenuItem>
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger>Workspaces</DropdownMenuSubTrigger>
+        <DropdownMenuSubTrigger>
+          <GalleryVerticalEndIcon className="size-4" />
+          Workspaces
+        </DropdownMenuSubTrigger>
         <DropdownMenuSubContent
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
           sideOffset={4}>
@@ -82,7 +86,6 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
                         .filter(c => !!c)
                         .slice(0, 2)
                         .join("")}
-                      s
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">

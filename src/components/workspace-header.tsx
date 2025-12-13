@@ -19,6 +19,7 @@ import {authClient} from "@/lib/auth-client";
 import {useAppDispatch, useAppSelector} from "@/store";
 
 import {NavUser} from "./nav-user";
+import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
 import {
   DropdownMenuGroup,
@@ -27,7 +28,6 @@ import {
   DropdownMenuSub,
 } from "./ui/dropdown-menu";
 // import { Button } from "./ui/button";
-import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
