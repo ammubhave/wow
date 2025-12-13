@@ -48,13 +48,25 @@ function RouteComponent() {
                     {field => <field.TextField label="Name" />}
                   </form.AppField>
                   <form.AppField name="email">
-                    {field => <field.TextField label="Email" type="email" />}
+                    {field => (
+                      <field.TextField
+                        label="Email"
+                        description="Used for Google Drive sharing and password resets"
+                        type="email"
+                      />
+                    )}
                   </form.AppField>
                   <form.AppField name="username">
                     {field => <field.TextField label="Username" />}
                   </form.AppField>
                   <form.AppField name="password">
-                    {field => <field.TextField label="Password" type="password" />}
+                    {field => (
+                      <field.TextField
+                        label="Password"
+                        description="Password resets not supported"
+                        type="password"
+                      />
+                    )}
                   </form.AppField>
 
                   <FieldGroup>

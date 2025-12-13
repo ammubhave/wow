@@ -24,7 +24,7 @@ function RouteComponent() {
       onSuccess: data => {
         void queryClient.invalidateQueries();
         form.reset();
-        void router.navigate({to: "/$workspaceId", params: {workspaceId: data.id}});
+        void router.navigate({to: "/$workspaceId", params: {workspaceId: data.slug}});
       },
     })
   );
