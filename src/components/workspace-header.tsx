@@ -1,4 +1,12 @@
-import {createFileRoute, useChildMatches, useNavigate} from "@tanstack/react-router";
+// import * as TabsPrimitive from "@radix-ui/react-tabs";
+// import { useLocalStorage } from "@uidotdev/usehooks";
+import {
+  createFileRoute,
+  Link,
+  useChildMatches,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import {ExternalLinkIcon, Share2Icon, Settings, History} from "lucide-react";
 import {useEffect} from "react";
 import {toast} from "sonner";
@@ -11,8 +19,15 @@ import {authClient} from "@/lib/auth-client";
 import {useAppDispatch, useAppSelector} from "@/store";
 
 import {NavUser} from "./nav-user";
+import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
-import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
+import {
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+} from "./ui/dropdown-menu";
+// import { Button } from "./ui/button";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
@@ -187,26 +202,8 @@ export function WorkspaceHeader() {
               </DropdownMenuGroup>
             </>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              onClick={() => {
-                toast.promise(
-                  workspace.shareGoogleDriveFolder.mutateAsync({
-                    workspaceId: workspaceId,
-                    email: user.email!,
-                  }),
-                  {
-                    loading: "Sharing Google Drive folder...",
-                    success: "Success! Google Drive folder has been shared.",
-                    error: "Oops! Something went wrong.",
-                  }
-                );
-              }}>
-              <Share2Icon />
-              Share Google Drive folder
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          {/* <DropdownMenuSeparator /> */}
+          <NavWorkspace workspaceId={workspaceId} />
         </NavUser>
         {isMobile && (
           <>

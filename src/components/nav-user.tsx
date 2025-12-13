@@ -52,7 +52,7 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
           side="bottom"
           align="end"
           sideOffset={4}>
-          <DropdownMenuLabel className="p-0 font-normal">
+          {/* <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.image ?? undefined} alt={user.name ?? user.email} />
@@ -63,7 +63,7 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
                 <span className="truncate text-xs">{user.email}</span>
               </div>
             </div>
-          </DropdownMenuLabel>
+          </DropdownMenuLabel> */}
           {children}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
