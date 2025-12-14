@@ -1,7 +1,5 @@
 "use client";
 
-import type {User} from "better-auth";
-
 import {QueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
 import {BellRingIcon, ChevronsUpDown, LogOut, SunMoonIcon} from "lucide-react";
@@ -22,12 +20,14 @@ import {
 import {SidebarMenuButton} from "@/components/ui/sidebar";
 import {authClient} from "@/lib/auth-client";
 
-export function NavUser({user, children}: {user: User; children?: React.ReactNode}) {
+export function NavUser({children}: {children?: React.ReactNode}) {
   const {setTheme} = useTheme();
   const router = useRouter();
   const queryClient = new QueryClient();
-  const session = authClient.useSession().data;
-
+  const user = authClient.useSession().data?.user;
+  if (!user) {
+    return <div className="min-w-59.75 rounded-md h-12 bg-secondary animate-pulse"></div>;
+  }
   return (
     <div className="w-59.75">
       <DropdownMenu>
@@ -63,8 +63,7 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
               </div>
             </div>
           </DropdownMenuLabel> */}
-          {children}
-          <DropdownMenuSeparator />
+          {children && <DropdownMenuSeparator />}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <SunMoonIcon />
@@ -83,7 +82,7 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuCheckboxItem
-                checked={!session?.user.notificationsDisabled}
+                checked={!user.notificationsDisabled}
                 onClick={async () => {
                   await authClient.updateUser({notificationsDisabled: false});
                   await queryClient.invalidateQueries();
@@ -91,7 +90,7 @@ export function NavUser({user, children}: {user: User; children?: React.ReactNod
                 Enabled
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={session?.user.notificationsDisabled}
+                checked={user.notificationsDisabled}
                 onClick={async () => {
                   await authClient.updateUser({notificationsDisabled: true});
                   await queryClient.invalidateQueries();

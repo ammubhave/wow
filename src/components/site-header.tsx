@@ -1,10 +1,8 @@
-import type {User} from "better-auth";
-
 import {Separator} from "@/components/ui/separator";
 
 import {NavUser} from "./nav-user";
 
-export function SiteHeader({user}: {user: User}) {
+export function SiteHeader() {
   return (
     <header className="bg-background fixed top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
@@ -18,7 +16,7 @@ export function SiteHeader({user}: {user: User}) {
         </div>
         <div className="w-full sm:ml-auto sm:w-auto" />
         <Separator orientation="vertical" />
-        <NavUser user={user} />
+        <NavUser />
       </div>
     </header>
   );
