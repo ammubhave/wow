@@ -10,12 +10,20 @@ const config = defineConfig({
   plugins: [
     devtools(),
     cloudflare({viteEnvironment: {name: "ssr"}}),
-    // this is the plugin that enables path aliases
     viteTsConfigPaths({projects: ["./tsconfig.json"]}),
     tailwindcss(),
     tanstackStart({spa: {enabled: true}}),
     viteReact(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/[hash].js",
+        chunkFileNames: "assets/[hash].js",
+        assetFileNames: "assets/[hash].[ext]",
+      },
+    },
+  },
 });
 
 export default config;
