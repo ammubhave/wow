@@ -3,33 +3,32 @@ import posthog from "posthog-js";
 import {useEffect} from "react";
 
 import {authClient} from "@/lib/auth-client";
+import {getSession} from "@/lib/auth-server";
 import {authMiddleware} from "@/middlewares/auth";
 
 export const Route = createFileRoute("/_workspace")({
   component: RouteComponent,
   server: {middleware: [authMiddleware]},
   loader: async () => {
-    const session = await authClient.getSession();
-    if (!session.data) {
-      throw redirect({to: "/login"});
-    }
-    return {user: session.data.user};
+    const session = await getSession();
+    if (!session) throw redirect({to: "/login"});
   },
 });
 
 function RouteComponent() {
-  const {user} = Route.useLoaderData();
+  const session = authClient.useSession().data;
   useEffect(() => {
+    if (!session) return;
     posthog.identify(
-      user.id,
+      session.user.id,
       {
-        email: user.email,
-        emailVerified: user.emailVerified,
-        name: user.name,
-        updatedAt: user.updatedAt,
+        email: session.user.email,
+        emailVerified: session.user.emailVerified,
+        name: session.user.name,
+        updatedAt: session.user.updatedAt,
       },
-      {createdAt: user.createdAt}
+      {createdAt: session.user.createdAt}
     );
-  }, [posthog]);
+  }, [session?.user]);
   return <Outlet />;
 }
