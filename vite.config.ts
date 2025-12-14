@@ -16,6 +16,7 @@ const config = defineConfig({
     viteReact(),
   ],
   build: {
+    sourcemap: true,
     rollupOptions: {
       output: {
         entryFileNames: "assets/[hash].js",
