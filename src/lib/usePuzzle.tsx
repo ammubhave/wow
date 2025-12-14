@@ -16,9 +16,5 @@ export function usePuzzle(
         }
       }
     })();
-  return {
-    ...workspace.get.data?.rounds,
-    isError: workspace.get.isError || puzzle === undefined,
-    data: puzzle,
-  };
+  return {isError: workspace.get.isError || puzzle === undefined, data: puzzle};
 }

@@ -12,6 +12,10 @@ export const auth = betterAuth({
   experimental: {joins: true},
   emailAndPassword: {enabled: true},
   user: {additionalFields: {notificationsDisabled: {type: "boolean", default: false}}},
+  trustedOrigins: [
+    "https://wow-production.panchal-llc.workers.dev",
+    "https://*-wow-production.panchal-llc.workers.dev",
+  ],
   plugins: [
     organization({
       membershipLimit: 500,

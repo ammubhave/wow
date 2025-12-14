@@ -8,8 +8,11 @@
   "upload_source_maps": true,
   "observability": {
     "enabled": true,
-    "traces": { "enabled": true }
+    "traces": { "enabled": true },
+    "logs": { "enabled": true }
   },
+  "workers_dev": true,
+  "preview_urls": true,
   "d1_databases": [
     {
       "binding": "DB",
