@@ -1,7 +1,7 @@
 // import * as TabsPrimitive from "@radix-ui/react-tabs";
 // import { useLocalStorage } from "@uidotdev/usehooks";
 import {createFileRoute, useChildMatches, useNavigate} from "@tanstack/react-router";
-import {ExternalLinkIcon, Settings, History} from "lucide-react";
+import {ExternalLinkIcon, Info, Settings, History} from "lucide-react";
 import {useEffect} from "react";
 
 import {PresencesCard} from "@/components/presences-card";
@@ -87,6 +87,9 @@ export function WorkspaceHeader() {
               </TabsTrigger>
               <TabsTrigger value="/$workspaceId/activity-log" className="px-2">
                 <History className="ml-auto size-4" />
+              </TabsTrigger>
+              <TabsTrigger value="/$workspaceId/help-page" className="px-2">
+                <Info className="ml-auto size-4" />
               </TabsTrigger>
               {puzzle && (
                 <TabsTrigger value="/$workspaceId/puzzles/$puzzleId" className="px-2">
