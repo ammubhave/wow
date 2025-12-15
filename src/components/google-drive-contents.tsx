@@ -325,7 +325,8 @@ function ConnectToGoogleForm({
         name="state"
         value={new URLSearchParams({redirectUrl, workspaceId}).toString()}
       />
-      <input type="hidden" name="include_granted_scopes" value="false" />s{children}
+      <input type="hidden" name="include_granted_scopes" value="false" />
+      {children}
     </form>
   );
 }

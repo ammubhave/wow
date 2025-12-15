@@ -1,5 +1,6 @@
 import {TanStackDevtools} from "@tanstack/react-devtools";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {ReactQueryDevtoolsPanel} from "@tanstack/react-query-devtools";
 import {createRootRoute, HeadContent, Scripts} from "@tanstack/react-router";
 import {TanStackRouterDevtoolsPanel} from "@tanstack/react-router-devtools";
 import {PostHogProvider} from "posthog-js/react";
@@ -26,7 +27,6 @@ export const Route = createRootRoute({
       },
     ],
   }),
-
   shellComponent: RootDocument,
 });
 
@@ -39,26 +39,29 @@ function RootDocument({children}: {children: React.ReactNode}) {
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <PostHogProvider
-            apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY as string}
-            options={{
-              api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-              defaults: "2025-05-24",
-              capture_exceptions: import.meta.env.MODE !== "development",
-              debug: import.meta.env.MODE === "development",
-            }}>
-            <ReactReduxProvider store={store}>
-              <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-            </ReactReduxProvider>
-          </PostHogProvider>
-        </ThemeProvider>
-        <TanStackDevtools
-          config={{position: "bottom-right"}}
-          plugins={[{name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel />}]}
-        />
-        <Toaster richColors />
-        <Scripts />
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+            <PostHogProvider
+              apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY as string}
+              options={{
+                api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+                defaults: "2025-05-24",
+                capture_exceptions: import.meta.env.MODE !== "development",
+                debug: import.meta.env.MODE === "development",
+              }}>
+              <ReactReduxProvider store={store}>{children}</ReactReduxProvider>
+            </PostHogProvider>
+          </ThemeProvider>
+          <TanStackDevtools
+            config={{position: "bottom-right"}}
+            plugins={[
+              {name: "TanStack Query", render: <ReactQueryDevtoolsPanel />},
+              {name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel />},
+            ]}
+          />
+          <Toaster richColors />
+          <Scripts />
+        </QueryClientProvider>
       </body>
     </html>
   );

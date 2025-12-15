@@ -38,7 +38,10 @@ function RouteComponent() {
               console.log("Created", data);
               void queryClient.invalidateQueries();
               form.reset();
-              void router.navigate({to: "/$workspaceId", params: {workspaceId: value.workspaceId}});
+              void router.navigate({
+                to: "/workspaces/create/$workspaceId",
+                params: {workspaceId: value.workspaceId},
+              });
             },
           }
         ),

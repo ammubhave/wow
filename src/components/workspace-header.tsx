@@ -1,5 +1,3 @@
-// import * as TabsPrimitive from "@radix-ui/react-tabs";
-// import { useLocalStorage } from "@uidotdev/usehooks";
 import {createFileRoute, useChildMatches, useNavigate} from "@tanstack/react-router";
 import {ExternalLinkIcon, Info, Settings, History} from "lucide-react";
 import {useEffect} from "react";
@@ -8,14 +6,12 @@ import {PresencesCard} from "@/components/presences-card";
 import {Separator} from "@/components/ui/separator";
 import {SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
-import {authClient} from "@/lib/auth-client";
 import {useAppDispatch, useAppSelector} from "@/store";
 
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
 import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
-// import { Button } from "./ui/button";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
@@ -24,7 +20,6 @@ export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
 
 export function WorkspaceHeader() {
   const {workspaceId} = Route.useParams();
-  const user = authClient.useSession().data?.user;
   const workspace = useWorkspace({workspaceId});
   const {isMobile} = useSidebar();
   const childMatches = useChildMatches();
@@ -54,9 +49,7 @@ export function WorkspaceHeader() {
     .flatMap(round => round.puzzles)
     .find(p => p.id === puzzleId);
   const navigate = useNavigate();
-  if (!user) {
-    return null;
-  }
+
   return (
     <header className="bg-background fixed top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
@@ -174,7 +167,7 @@ export function WorkspaceHeader() {
           ))}
         </div>
         <Separator orientation="vertical" />
-        <NavUser user={user}>
+        <NavUser>
           {isMobile && (
             <>
               <DropdownMenuSeparator />
