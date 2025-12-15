@@ -85,6 +85,11 @@ export function WorkspaceHeader() {
                 <Info className="ml-auto size-4" />
               </TabsTrigger>
               {puzzle && (
+                <div className="w-full h-full px-1">
+                  <Separator orientation="vertical" />
+                </div>
+              )}
+              {puzzle && (
                 <TabsTrigger value="/$workspaceId/puzzles/$puzzleId" className="px-2">
                   {puzzle.name}
                 </TabsTrigger>
