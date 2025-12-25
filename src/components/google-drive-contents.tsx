@@ -160,14 +160,18 @@ export function GoogleDriveCardContents({
                         <span className="text-sm font-medium">Select Google Drive Folder</span>
                         <span className="text-sm text-gray-500">
                           Folder:{" "}
-                          <Button variant="secondary" className="h-auto px-2 py-0" asChild>
-                            <a
-                              href={state.data.folderLink}
-                              target="_blank"
-                              rel="noopener noreferrer">
-                              {state.data.folderName}
-                            </a>
-                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="h-auto px-2 py-0"
+                            render={
+                              <a
+                                href={state.data.folderLink}
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {state.data.folderName}
+                              </a>
+                            }
+                          />
                         </span>
                       </span>
                       <div>
@@ -235,11 +239,18 @@ export function GoogleDriveCardContents({
                         <span className="text-sm font-medium">Select Template File</span>
                         <span className="text-sm text-gray-500">
                           File:{" "}
-                          <Button variant="secondary" className="h-auto px-2 py-0" asChild>
-                            <a href={state.data.fileLink} target="_blank" rel="noopener noreferrer">
-                              {state.data.fileName}
-                            </a>
-                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="h-auto px-2 py-0"
+                            render={
+                              <a
+                                href={state.data.fileLink}
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {state.data.fileName}
+                              </a>
+                            }
+                          />
                         </span>
                       </span>
                       <div>

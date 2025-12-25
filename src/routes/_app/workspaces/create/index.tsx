@@ -60,11 +60,16 @@ function RouteComponent() {
       <div className="max-w-3xl flex-1 flex flex-col gap-2">
         {" "}
         <div>
-          <Button variant="outline" size="sm" aria-label="Go Back" asChild>
-            <Link to="/workspaces">
-              <ArrowLeftIcon /> Back
-            </Link>
-          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Go Back"
+            render={
+              <Link to="/workspaces">
+                <ArrowLeftIcon /> Back
+              </Link>
+            }
+          />
         </div>
         <form.AppForm>
           <form

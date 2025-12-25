@@ -46,12 +46,16 @@ export function AppSidebar({
       </SidebarContent>
       <SidebarFooter>
         <div className="flex flex-col items-center justify-center gap-4 p-4">
-          <Button variant="secondary" className="gap-2 font-['Cookie'] text-xl" asChild>
-            <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-              <CoffeeIcon className="size-4" />
-              Buy me a coffee
-            </a>
-          </Button>
+          <Button
+            variant="secondary"
+            className="gap-2 font-['Cookie'] text-xl"
+            render={
+              <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
+                <CoffeeIcon className="size-4" />
+                Buy me a coffee
+              </a>
+            }
+          />
           <p className="text-muted-foreground text-xs text-center">
             Help support the hosting and development costs for WOW!
           </p>

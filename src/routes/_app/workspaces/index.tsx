@@ -143,12 +143,16 @@ function RouteComponent() {
               <span className="w-full border-t" />
             </div>
           </div>
-          <Button className="gap-2" variant="outline" asChild>
-            <Link to="/workspaces/create">
-              <PlusIcon className="size-4" />
-              Create a new workspace
-            </Link>
-          </Button>
+          <Button
+            className="gap-2"
+            variant="outline"
+            render={
+              <Link to="/workspaces/create">
+                <PlusIcon className="size-4" />
+                Create a new workspace
+              </Link>
+            }
+          />
         </div>
       </div>
     </div>

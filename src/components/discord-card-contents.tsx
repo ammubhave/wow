@@ -81,14 +81,18 @@ export function DiscordCardContents({
                       {discordInfo.data.ok ? (
                         <>
                           Server Name:{" "}
-                          <Button variant="secondary" className="h-auto px-2 py-0" asChild>
-                            <a
-                              href={`https://discord.com/channels/${discordInfo.data.data.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer">
-                              {discordInfo.data.data.name}
-                            </a>
-                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="h-auto px-2 py-0"
+                            render={
+                              <a
+                                href={`https://discord.com/channels/${discordInfo.data.data.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                {discordInfo.data.data.name}
+                              </a>
+                            }
+                          />
                         </>
                       ) : (
                         <span className="text-sm text-red-500">{discordInfo.data.error}</span>

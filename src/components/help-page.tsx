@@ -1,6 +1,3 @@
-import {useQuery} from "@tanstack/react-query";
-import {ExternalLinkIcon} from "lucide-react";
-
 export function HelpPage() {
   return (
     <div className="flex justify-center">

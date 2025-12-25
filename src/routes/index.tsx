@@ -18,12 +18,8 @@ function App() {
               Wafflehaüs Organized Workspace
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center gap-4 sm:flex-row">
-              <Button variant="ghost" asChild>
-                <Link to="/docs">Documentation</Link>
-              </Button>
-              <Button asChild>
-                <Link to="/workspaces">My Workspaces</Link>
-              </Button>
+              <Button variant="ghost" render={<Link to="/docs">Documentation</Link>} />
+              <Button render={<Link to="/workspaces">My Workspaces</Link>} />
             </div>
           </div>
         </header>
@@ -40,14 +36,16 @@ function App() {
                   google spreadsheets, discord channels, and more.
                 </p>
                 <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Button asChild>
-                    <Link to="/workspaces">Get Started</Link>
-                  </Button>
-                  <Button variant="ghost" className="gap-2" asChild>
-                    <Link to="/docs">
-                      Learn more <span aria-hidden="true">→</span>
-                    </Link>
-                  </Button>
+                  <Button render={<Link to="/workspaces">Get Started</Link>} />
+                  <Button
+                    variant="ghost"
+                    className="gap-2"
+                    render={
+                      <Link to="/docs">
+                        Learn more <span aria-hidden="true">→</span>
+                      </Link>
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -66,12 +64,16 @@ function App() {
               </p>
             </div>
             <div className="max-w-md text-sm">
-              <Button variant="secondary" className="gap-2 font-['Cookie'] text-xl" asChild>
-                <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-                  <CoffeeIcon className="size-4" />
-                  Buy me a coffee
-                </a>
-              </Button>
+              <Button
+                variant="secondary"
+                className="gap-2 font-['Cookie'] text-xl"
+                render={
+                  <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
+                    <CoffeeIcon className="size-4" />
+                    Buy me a coffee
+                  </a>
+                }
+              />
             </div>
           </div>
         </div>

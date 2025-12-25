@@ -164,11 +164,15 @@ export function WorkspaceHeader() {
         <PresencesCard id={workspaceId} />
         <div className="flex items-center gap-1">
           {workspace.links.list.data.map((link, index) => (
-            <Button key={index} variant="ghost" asChild>
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                {link.name} <ExternalLinkIcon className="size-4" />
-              </a>
-            </Button>
+            <Button
+              key={index}
+              variant="ghost"
+              render={
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                  {link.name} <ExternalLinkIcon className="size-4" />
+                </a>
+              }
+            />
           ))}
         </div>
         <Separator orientation="vertical" />

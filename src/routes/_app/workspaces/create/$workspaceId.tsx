@@ -21,11 +21,16 @@ function RouteComponent() {
     <div className="flex justify-center">
       <div className="max-w-3xl flex-1 flex flex-col gap-2">
         <div>
-          <Button variant="outline" size="sm" aria-label="Go Back" asChild>
-            <Link to="/workspaces">
-              <ArrowLeftIcon /> Back
-            </Link>
-          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Go Back"
+            render={
+              <Link to="/workspaces">
+                <ArrowLeftIcon /> Back
+              </Link>
+            }
+          />
         </div>
         <Card>
           <GoogleDriveCardContents
@@ -56,17 +61,18 @@ function RouteComponent() {
               </span>
             )}
             <Button
-              asChild
               className={cn(
                 "gap-2",
                 (!workspace.get.data || workspace.get.data.isOnboarding) &&
                   "pointer-events-none opacity-50"
-              )}>
-              <Link to="/$workspaceId" params={{workspaceId}}>
-                Go to blackboard
-                <ArrowRightIcon className="size-4" />
-              </Link>
-            </Button>
+              )}
+              render={
+                <Link to="/$workspaceId" params={{workspaceId}}>
+                  Go to blackboard
+                  <ArrowRightIcon className="size-4" />
+                </Link>
+              }
+            />
           </CardContent>
         </Card>
       </div>

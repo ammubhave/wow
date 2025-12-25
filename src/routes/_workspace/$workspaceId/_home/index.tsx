@@ -468,11 +468,15 @@ function BlackboardMetaPuzzle({
         )}>
         <TableCell className="p-0">
           {metaPuzzle.link && (
-            <Button variant="ghost" size="icon" asChild>
-              <a href={metaPuzzle.link} target="_blank" rel="noopener noreferrer">
-                <PuzzleIcon className="size-4 text-blue-600" />
-              </a>
-            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              render={
+                <a href={metaPuzzle.link} target="_blank" rel="noopener noreferrer">
+                  <PuzzleIcon className="size-4 text-blue-600" />
+                </a>
+              }
+            />
           )}
         </TableCell>
         <TableCell className="p-0 relative">
@@ -728,15 +732,19 @@ function BlackboardPuzzle({
         )}>
         <TableCell className="p-0">
           {puzzle.link && (
-            <Button variant="ghost" size="icon" asChild>
-              <a
-                title="Hunt Link to this puzzle"
-                href={puzzle.link}
-                target="_blank"
-                rel="noopener noreferrer">
-                <PuzzleIcon className="size-4 text-blue-600" />
-              </a>
-            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              render={
+                <a
+                  title="Hunt Link to this puzzle"
+                  href={puzzle.link}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <PuzzleIcon className="size-4 text-blue-600" />
+                </a>
+              }
+            />
           )}
         </TableCell>
         <TableCell className="p-0">

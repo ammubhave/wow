@@ -123,31 +123,43 @@ function PuzzleInfoPanel({
         <CardTitle className="text-md group flex items-center gap-2">{puzzle.name}</CardTitle>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {puzzle.googleSpreadsheetId && (
-            <Button size="sm" variant="outline" asChild>
-              <a
-                href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
-                target="_blank"
-                rel="noopener noreferrer">
-                <TableIcon className="size-4" />
-              </a>
-            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <TableIcon className="size-4" />
+                </a>
+              }
+            />
           )}
           {puzzle.googleDrawingId && (
-            <Button size="sm" variant="outline" asChild>
-              <a
-                href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
-                target="_blank"
-                rel="noopener noreferrer">
-                <BrushIcon className="size-4" />
-              </a>
-            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <a
+                  href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <BrushIcon className="size-4" />
+                </a>
+              }
+            />
           )}
           {puzzle.link && (
-            <Button size="sm" variant="outline" asChild>
-              <a href={puzzle.link} target="_blank" rel="noopener noreferrer">
-                <PuzzleIcon className="h-3.5 w-3.5" />
-              </a>
-            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <a href={puzzle.link} target="_blank" rel="noopener noreferrer">
+                  <PuzzleIcon className="h-3.5 w-3.5" />
+                </a>
+              }
+            />
           )}
           <EditPuzzleDialog
             workspaceId={workspaceId}
@@ -206,7 +218,7 @@ function PuzzleInfoPanel({
             />
             {puzzle.childPuzzles.length > 0 && (
               <div className="space-y-2">
-                <Accordion type="single" collapsible>
+                <Accordion>
                   <AccordionItem value="item-1">
                     <AccordionTrigger>Feeder Puzzle Answers</AccordionTrigger>
                     <AccordionContent>
