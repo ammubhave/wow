@@ -14,6 +14,7 @@
     "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'"
   },
   "dependencies": {
+    "@base-ui/react": "^1.0.0",
     "@cloudflare/vite-plugin": "^1.19.0",
     "@fontsource-variable/noto-sans": "^5.2.10",
     "@orpc/client": "^1.13.1",

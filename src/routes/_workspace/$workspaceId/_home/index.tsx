@@ -14,6 +14,7 @@ import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
+import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,6 +42,29 @@ export const Route = createFileRoute("/_workspace/$workspaceId/_home/")({
   component: RouteComponent,
 });
 
+const TAG_COLORS = [
+  "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+  "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+  "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+  "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
+];
+
+function hashTag(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getTagColor(tag: string): string {
+  const index = hashTag(tag) % TAG_COLORS.length;
+  return TAG_COLORS[index]!;
+}
+
 function RouteComponent() {
   const {workspaceId} = Route.useParams();
   const workspace = useWorkspace({workspaceId});
@@ -63,6 +87,7 @@ function RouteComponent() {
                       <TableHead>Solution</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Importance</TableHead>
+                      <TableHead>Tags</TableHead>
                       <TableHead>Working on this</TableHead>
                       <TableHead className="w-0">
                         <div className="-my-1 flex items-center justify-end">
@@ -207,8 +232,7 @@ function BlackboardRound({
             </SelectContent>
           </Select>
         </TableCell>
-        <TableCell colSpan={1} />
-        <TableCell />
+        <TableCell colSpan={3} />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
             <DropdownMenu>
@@ -307,7 +331,7 @@ function BlackboardRound({
                 </div>
               )}
             </TableCell>
-            <TableCell className="font-semibold italic" colSpan={5}>
+            <TableCell className="font-semibold italic" colSpan={6}>
               Unassigned Puzzles
             </TableCell>
             <TableCell>
@@ -548,6 +572,7 @@ function BlackboardMetaPuzzle({
             </SelectContent>
           </Select>
         </TableCell>
+        <TableCell></TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(name => (
@@ -807,6 +832,15 @@ function BlackboardPuzzle({
               <SelectItem value="obsolete">Obsolete</SelectItem>
             </SelectContent>
           </Select>
+        </TableCell>
+        <TableCell>
+          <div className="flex gap-1 flex-wrap items-center">
+            {puzzle.tags.map(tag => (
+              <Badge key={tag} className={getTagColor(tag)}>
+                {tag}
+              </Badge>
+            ))}
+          </div>
         </TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">

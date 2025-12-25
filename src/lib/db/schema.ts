@@ -54,6 +54,7 @@ export const puzzle = sqliteTable("puzzle", {
     onDelete: "set null",
     onUpdate: "cascade",
   }),
+  tags: text({mode: "json"}).$type<string[]>().default([]).notNull(),
 });
 
 export const puzzleRelations = relations(puzzle, ({one, many}) => ({
