@@ -1,44 +1,52 @@
-import {relations, sql} from "drizzle-orm";
-import {sqliteTable, text, integer, index, uniqueIndex} from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: integer("email_verified", {mode: "boolean"}).default(false).notNull(),
+  emailVerified: integer("email_verified", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   image: text("image"),
-  createdAt: integer("created_at", {mode: "timestamp_ms"})
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
-  updatedAt: integer("updated_at", {mode: "timestamp_ms"})
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   username: text("username").unique(),
   displayUsername: text("display_username"),
-  notificationsDisabled: integer("notifications_disabled", {mode: "boolean"}),
+  notificationsDisabled: integer("notifications_disabled", { mode: "boolean" }),
 });
 
 export const session = sqliteTable(
   "session",
   {
     id: text("id").primaryKey(),
-    expiresAt: integer("expires_at", {mode: "timestamp_ms"}).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
     token: text("token").notNull().unique(),
-    createdAt: integer("created_at", {mode: "timestamp_ms"})
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
-    updatedAt: integer("updated_at", {mode: "timestamp_ms"})
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: text("user_id")
       .notNull()
-      .references(() => user.id, {onDelete: "cascade"}),
+      .references(() => user.id, { onDelete: "cascade" }),
     activeOrganizationId: text("active_organization_id"),
   },
-  table => [index("session_userId_idx").on(table.userId)]
+  (table) => [index("session_userId_idx").on(table.userId)],
 );
 
 export const account = sqliteTable(
@@ -49,22 +57,26 @@ export const account = sqliteTable(
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
       .notNull()
-      .references(() => user.id, {onDelete: "cascade"}),
+      .references(() => user.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: integer("access_token_expires_at", {mode: "timestamp_ms"}),
-    refreshTokenExpiresAt: integer("refresh_token_expires_at", {mode: "timestamp_ms"}),
+    accessTokenExpiresAt: integer("access_token_expires_at", {
+      mode: "timestamp_ms",
+    }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+      mode: "timestamp_ms",
+    }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: integer("created_at", {mode: "timestamp_ms"})
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
-    updatedAt: integer("updated_at", {mode: "timestamp_ms"})
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  table => [index("account_userId_idx").on(table.userId)]
+  (table) => [index("account_userId_idx").on(table.userId)],
 );
 
 export const verification = sqliteTable(
@@ -73,16 +85,16 @@ export const verification = sqliteTable(
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: integer("expires_at", {mode: "timestamp_ms"}).notNull(),
-    createdAt: integer("created_at", {mode: "timestamp_ms"})
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
-    updatedAt: integer("updated_at", {mode: "timestamp_ms"})
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  table => [index("verification_identifier_idx").on(table.identifier)]
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
 export const organization = sqliteTable(
@@ -92,7 +104,7 @@ export const organization = sqliteTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
     logo: text("logo"),
-    createdAt: integer("created_at", {mode: "timestamp_ms"}).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     metadata: text("metadata"),
     teamName: text("team_name"),
     eventName: text("event_name"),
@@ -100,12 +112,14 @@ export const organization = sqliteTable(
     comment: text("comment"),
     googleAccessToken: text("google_access_token"),
     googleRefreshToken: text("google_refresh_token"),
-    googleTokenExpiresAt: integer("google_token_expires_at", {mode: "timestamp_ms"}),
+    googleTokenExpiresAt: integer("google_token_expires_at", {
+      mode: "timestamp_ms",
+    }),
     googleFolderId: text("google_folder_id"),
     googleTemplateFileId: text("google_template_file_id"),
     discordGuildId: text("discord_guild_id"),
   },
-  table => [uniqueIndex("organization_slug_uidx").on(table.slug)]
+  (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );
 
 export const member = sqliteTable(
@@ -114,17 +128,17 @@ export const member = sqliteTable(
     id: text("id").primaryKey(),
     organizationId: text("organization_id")
       .notNull()
-      .references(() => organization.id, {onDelete: "cascade"}),
+      .references(() => organization.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references(() => user.id, {onDelete: "cascade"}),
+      .references(() => user.id, { onDelete: "cascade" }),
     role: text("role").default("member").notNull(),
-    createdAt: integer("created_at", {mode: "timestamp_ms"}).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
-  table => [
+  (table) => [
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
-  ]
+  ],
 );
 
 export const invitation = sqliteTable(
@@ -133,53 +147,68 @@ export const invitation = sqliteTable(
     id: text("id").primaryKey(),
     organizationId: text("organization_id")
       .notNull()
-      .references(() => organization.id, {onDelete: "cascade"}),
+      .references(() => organization.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
     role: text("role"),
     status: text("status").default("pending").notNull(),
-    expiresAt: integer("expires_at", {mode: "timestamp_ms"}).notNull(),
-    createdAt: integer("created_at", {mode: "timestamp_ms"})
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
     inviterId: text("inviter_id")
       .notNull()
-      .references(() => user.id, {onDelete: "cascade"}),
+      .references(() => user.id, { onDelete: "cascade" }),
   },
-  table => [
+  (table) => [
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
-  ]
+  ],
 );
 
-export const userRelations = relations(user, ({many}) => ({
+export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
   members: many(member),
   invitations: many(invitation),
 }));
 
-export const sessionRelations = relations(session, ({one}) => ({
-  user: one(user, {fields: [session.userId], references: [user.id]}),
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
 }));
 
-export const accountRelations = relations(account, ({one}) => ({
-  user: one(user, {fields: [account.userId], references: [user.id]}),
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
 }));
 
-export const organizationRelations = relations(organization, ({many}) => ({
+export const organizationRelations = relations(organization, ({ many }) => ({
   members: many(member),
   invitations: many(invitation),
 }));
 
-export const memberRelations = relations(member, ({one}) => ({
-  organization: one(organization, {fields: [member.organizationId], references: [organization.id]}),
-  user: one(user, {fields: [member.userId], references: [user.id]}),
+export const memberRelations = relations(member, ({ one }) => ({
+  organization: one(organization, {
+    fields: [member.organizationId],
+    references: [organization.id],
+  }),
+  user: one(user, {
+    fields: [member.userId],
+    references: [user.id],
+  }),
 }));
 
-export const invitationRelations = relations(invitation, ({one}) => ({
+export const invitationRelations = relations(invitation, ({ one }) => ({
   organization: one(organization, {
     fields: [invitation.organizationId],
     references: [organization.id],
   }),
-  user: one(user, {fields: [invitation.inviterId], references: [user.id]}),
+  user: one(user, {
+    fields: [invitation.inviterId],
+    references: [user.id],
+  }),
 }));

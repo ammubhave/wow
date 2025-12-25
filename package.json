@@ -11,7 +11,8 @@
     "format": "oxfmt",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc --noEmit",
-    "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'"
+    "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
@@ -85,7 +86,9 @@
     "concurrently": "^9.2.1",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
+    "husky": "^9.1.7",
     "jsdom": "^27.3.0",
+    "lint-staged": "^16.2.7",
     "oxfmt": "^0.20.0",
     "oxlint": "^1.35.0",
     "oxlint-tsgolint": "^0.10.0",
