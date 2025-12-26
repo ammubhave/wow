@@ -57,8 +57,8 @@ function RouteComponent() {
   });
 
   return (
-    <div className="flex justify-center">
-      <div className="max-w-3xl flex-1 flex flex-col gap-2">
+    <div className="flex justify-center w-full">
+      <div className="max-w-3xl flex-1 flex flex-col items-stretch gap-2">
         <div>
           <Button
             variant="outline"
@@ -73,7 +73,7 @@ function RouteComponent() {
         </div>
         <form.AppForm>
           <Card>
-            <CardHeader className="px-7">
+            <CardHeader>
               <CardTitle>Create workspace</CardTitle>
               <CardDescription>
                 You need to provide a team name and an event name to create your workspace. You also
@@ -81,13 +81,7 @@ function RouteComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form
-                id={form.formId}
-                onSubmit={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  void form.handleSubmit();
-                }}>
+              <form.Form>
                 <FieldGroup>
                   <form.AppField
                     name="teamName"
@@ -112,7 +106,7 @@ function RouteComponent() {
                     children={field => <field.TextField label="Workspace Password" />}
                   />
                 </FieldGroup>
-              </form>
+              </form.Form>
             </CardContent>
             <CardFooter>
               <form.SubmitButton>Create</form.SubmitButton>

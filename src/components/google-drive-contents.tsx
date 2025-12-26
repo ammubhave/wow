@@ -89,18 +89,18 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-4 top-4 -ml-px mt-0.5 h-full w-0.5 bg-indigo-600"
+                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-primary"
                   />
                   <div className="group relative flex items-start">
-                    <span className="flex h-9 items-center">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600">
-                        <CheckIcon aria-hidden="true" className="h-5 w-5 text-white" />
+                    <span className="flex h-8 items-center">
+                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                        <CheckIcon aria-hidden="true" className="size-4 text-white" />
                       </span>
                     </span>
                     <div className="flex pl-4 flex-col sm:flex-row flex-1 gap-2 justify-between">
                       <span className="flex min-w-0 flex-col">
-                        <span className="text-sm font-medium">Connect with Google</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs font-medium">Connect with Google</span>
+                        <span className="text-xs text-gray-500">
                           You're successfully connected to Google.
                         </span>
                       </span>
@@ -116,20 +116,20 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-4 top-4 -ml-px mt-0.5 h-full w-0.5 bg-gray-300"
+                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-gray-300"
                   />
                   <div aria-current="step" className="group relative flex items-start">
-                    <span aria-hidden="true" className="flex h-9 items-center">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-indigo-600 bg-white">
-                        <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
+                    <span aria-hidden="true" className="flex h-8 items-center">
+                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
+                        <span className="size-2 rounded-full bg-primary" />
                       </span>
                     </span>
                     <div className="flex pl-4 flex-1 flex-col sm:flex-row gap-2 justify-between">
                       <span className="flex min-w-0 flex-col">
-                        <span className="text-sm font-medium text-indigo-600">
+                        <span className="text-xs font-medium text-primary">
                           Connect with Google
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs text-gray-500">
                           You need to connect your Google account.
                         </span>
                       </span>
@@ -147,18 +147,18 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-4 top-4 -ml-px mt-0.5 h-full w-0.5 bg-indigo-600"
+                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-primary"
                   />
                   <div className="group relative flex items-start">
-                    <span className="flex h-9 items-center">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600">
-                        <CheckIcon aria-hidden="true" className="h-5 w-5 text-white" />
+                    <span className="flex h-8 items-center">
+                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                        <CheckIcon aria-hidden="true" className="size-4 text-white" />
                       </span>
                     </span>
                     <div className="flex pl-4 flex-1 flex-col sm:flex-row gap-2 justify-between">
                       <span className="flex min-w-0 flex-col">
-                        <span className="text-sm font-medium">Select Google Drive Folder</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs font-medium">Select Google Drive Folder</span>
+                        <span className="text-xs text-gray-500">
                           Folder:{" "}
                           <Button
                             variant="secondary"
@@ -186,17 +186,17 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-4 top-4 -ml-px mt-0.5 h-full w-0.5 bg-gray-300"
+                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-gray-300"
                   />
                   <div aria-current="step" className="group relative flex items-start">
-                    <span aria-hidden="true" className="flex h-9 items-center">
+                    <span aria-hidden="true" className="flex h-8 items-center">
                       {state.data.state === 1 ? (
-                        <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-indigo-600 bg-white">
-                          <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
+                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
+                          <span className="size-2 rounded-full bg-primary" />
                         </span>
                       ) : (
-                        <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white">
-                          <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-gray-300 bg-white">
+                          <span className="size-2 rounded-full bg-transparent" />
                         </span>
                       )}
                     </span>
@@ -204,12 +204,12 @@ export function GoogleDriveCardContents({
                       <span className="flex min-w-0 flex-col">
                         <span
                           className={cn(
-                            "text-sm font-medium",
-                            state.data.state === 1 ? "text-indigo-600" : "text-gray-500"
+                            "text-xs font-medium",
+                            state.data.state === 1 ? "text-primary" : "text-gray-500"
                           )}>
                           Select Google Drive Folder
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs text-gray-500">
                           Choose the folder to put all your puzzles in.
                         </span>
                       </span>
@@ -229,15 +229,15 @@ export function GoogleDriveCardContents({
               {state.data.state === 3 ? (
                 <>
                   <div className="group relative flex items-start">
-                    <span className="flex h-9 items-center">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600">
+                    <span className="flex h-8 items-center">
+                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
                         <CheckIcon aria-hidden="true" className="h-5 w-5 text-white" />
                       </span>
                     </span>
                     <div className="pl-4 flex flex-1 flex-col sm:flex-row gap-2 justify-between">
                       <span className="flex min-w-0 flex-col">
-                        <span className="text-sm font-medium">Select Template File</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs font-medium">Select Template File</span>
+                        <span className="text-xs text-gray-500">
                           File:{" "}
                           <Button
                             variant="secondary"
@@ -264,14 +264,14 @@ export function GoogleDriveCardContents({
               ) : (
                 <>
                   <div aria-current="step" className="group relative flex items-start">
-                    <span aria-hidden="true" className="flex h-9 items-center">
+                    <span aria-hidden="true" className="flex h-8 items-center">
                       {state.data.state === 2 ? (
-                        <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-indigo-600 bg-white">
-                          <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
+                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
+                          <span className="size-2 rounded-full bg-primary" />
                         </span>
                       ) : (
-                        <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white">
-                          <span className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-gray-300 bg-white">
+                          <span className="size-2 rounded-full bg-transparent" />
                         </span>
                       )}
                     </span>
@@ -279,12 +279,12 @@ export function GoogleDriveCardContents({
                       <span className="flex min-w-0 flex-col">
                         <span
                           className={cn(
-                            "text-sm font-medium",
-                            state.data.state === 2 ? "text-indigo-600" : "text-gray-500"
+                            "text-xs font-medium",
+                            state.data.state === 2 ? "text-primary" : "text-gray-500"
                           )}>
                           Select Template File
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs text-gray-500">
                           Select the template file to use for new puzzles.
                         </span>
                       </span>

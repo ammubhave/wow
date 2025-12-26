@@ -59,25 +59,25 @@ export function DiscordCardContents({
           discordInfo.data?.ok !== undefined ? (
             <div>
               <div className="group relative flex items-start">
-                <span className="flex h-9 items-center">
+                <span className="flex h-8 items-center">
                   {discordInfo.data.ok ? (
-                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600">
-                      <CheckIcon aria-hidden="true" className="h-5 w-5 text-white" />
+                    <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                      <CheckIcon aria-hidden="true" className="size-4 text-white" />
                     </span>
                   ) : (
-                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-600">
-                      <XIcon aria-hidden="true" className="h-5 w-5 text-white" />
+                    <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-red-600">
+                      <XIcon aria-hidden="true" className="size-4 text-white" />
                     </span>
                   )}
                 </span>
                 <div className="flex pl-4 flex-1 flex-col sm:flex-row gap-2 justify-between">
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-sm font-medium">
+                    <span className="text-xs font-medium">
                       {discordInfo.data.ok
                         ? "You're successfully connected to Discord."
                         : "There is a problem with your Discord connection."}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs text-gray-500">
                       {discordInfo.data.ok ? (
                         <>
                           Server Name:{" "}
@@ -95,7 +95,7 @@ export function DiscordCardContents({
                           />
                         </>
                       ) : (
-                        <span className="text-sm text-red-500">{discordInfo.data.error}</span>
+                        <span className="text-xs text-red-500">{discordInfo.data.error}</span>
                       )}
                     </span>
                   </span>{" "}
@@ -111,17 +111,15 @@ export function DiscordCardContents({
           ) : (
             <div>
               <div className="group relative flex items-start">
-                <span aria-hidden="true" className="flex h-9 items-center">
-                  <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-indigo-600 bg-white">
-                    <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
+                <span aria-hidden="true" className="flex h-8 items-center">
+                  <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
+                    <span className="size-2 rounded-full bg-primary" />
                   </span>
                 </span>
                 <div className="pl-4 flex flex-1 flex-col sm:flex-row gap-2 justify-between">
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-sm font-medium text-indigo-600">
-                      Connect with Discord
-                    </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs font-medium text-primary">Connect with Discord</span>
+                    <span className="text-xs text-gray-500">
                       You need to connect your Discord account.
                     </span>
                   </span>

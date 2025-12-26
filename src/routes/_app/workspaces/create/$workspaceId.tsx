@@ -56,7 +56,7 @@ function RouteComponent() {
             </Button>
 
             {workspace.get.data?.isOnboarding && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-muted-foreground text-xs">
                 You must connect your Google Drive account first.
               </span>
             )}
