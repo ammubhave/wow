@@ -212,8 +212,8 @@ function PuzzleInfoPanel({
                 return (
                   <field.SelectField
                     label="Status"
-                    onBlur={() => {
-                      field.handleBlur();
+                    onValueChange={v => {
+                      field.handleChange(v as any);
                       void form.handleSubmit();
                     }}
                     className="bg-background"

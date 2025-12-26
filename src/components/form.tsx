@@ -94,19 +94,18 @@ function SelectField({
   description,
   children,
   className,
-  onBlur,
   ...props
 }: React.ComponentProps<typeof Select> & {label: string; description?: string} & Pick<
     React.ComponentProps<typeof SelectValue>,
-    "className" | "onBlur"
+    "className"
   >) {
   const field = useFieldContext<unknown>();
   return (
     <Field>
       <FieldLabel>{label}</FieldLabel>
-      <Select {...props} onValueChange={field.handleChange} value={field.state.value}>
+      <Select onValueChange={field.handleChange} value={field.state.value} {...props}>
         <SelectTrigger>
-          <SelectValue onBlur={onBlur ?? field.handleBlur} className={className} />
+          <SelectValue onBlur={field.handleBlur} className={className} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>
       </Select>
