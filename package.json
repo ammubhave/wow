@@ -11,7 +11,7 @@
     "format": "oxfmt",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc --noEmit",
-    "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'",
+    "postinstall": "concurrently 'wrangler types --strict-vars=false' 'touch src/lib/db/auth-schema.ts && pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'",
     "prepare": "husky"
   },
   "dependencies": {
@@ -101,5 +101,6 @@
   },
   "lint-staged": {
     "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": "oxlint --type-aware"
-  }
+  },
+  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6"
 }

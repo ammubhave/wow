@@ -32,6 +32,7 @@ export const auth = betterAuth({
             googleFolderId: {type: "string", required: false},
             googleTemplateFileId: {type: "string", required: false},
             discordGuildId: {type: "string", required: false},
+            tags: {type: "string[]", required: false, default: ["crossword", "physical"]},
           },
         },
       },

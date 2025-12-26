@@ -39,18 +39,6 @@ export function EditPuzzleDialog({
   setOpen: (open: boolean) => void;
 }) {
   const workspace = useWorkspace({workspaceId});
-  // const metaPuzzles = trpc.rounds.list
-  //   .useQuery({ workspaceId })
-  //   .data?.flatMap((round) => round.metaPuzzles);
-
-  // const formSchema = z.object({
-  //   name: z.string().min(1),
-  //   answer: z.string(),
-  //   link: z.string().url().or(z.string().length(0)),
-  //   status: z.string(),
-  //   parentPuzzleId: z.string(),
-  //   isMetaPuzzle: z.boolean(),
-  // });
   const form = useAppForm({
     defaultValues: {
       parentPuzzleId: puzzle.parentPuzzleId ?? "",
@@ -153,7 +141,7 @@ export function EditPuzzleDialog({
                 children={field => (
                   <field.ComboboxMultipleField
                     label="Tags"
-                    items={["crossword", "sound", "image IDs"]}
+                    items={(workspace.get.data.tags as string[] | null) ?? []}
                   />
                 )}
               />

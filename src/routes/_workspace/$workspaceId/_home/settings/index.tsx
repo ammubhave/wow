@@ -26,6 +26,7 @@ function RouteComponent() {
     <>
       <DetailsCard />
       <UpdateLinksCard />
+      <UpdateTagsCard />
       <LeaveWorkspaceCard />
     </>
   );
@@ -238,6 +239,95 @@ function DetailsCard() {
                 </Button>
               </p>
             </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button type="submit">Save</Button>
+          </CardFooter>
+        </form>
+      </form.AppForm>
+    </Card>
+  );
+}
+
+function UpdateTagsCard() {
+  const {workspaceId} = Route.useParams();
+  const tags = (useWorkspace({workspaceId}).get.data.tags as string[] | undefined) ?? [];
+  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
+  const form = useAppForm({
+    defaultValues: {tags},
+    onSubmit: ({value}) => {
+      toast.promise(mutation.mutateAsync({workspaceId, ...value}), {
+        loading: "Saving...",
+        success: "Success! Your changes have been saved.",
+        error: "Oops! Something went wrong.",
+      });
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="px-7">
+        <CardTitle>Tags</CardTitle>
+        <CardDescription>
+          Add tags to this workspace to help categorize and organize the puzzles.
+        </CardDescription>
+      </CardHeader>
+      <form.AppForm>
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            void form.handleSubmit();
+          }}>
+          <CardContent className="space-y-4">
+            <form.Field name="tags" mode="array">
+              {field => (
+                <>
+                  <Table>
+                    <TableBody>
+                      {field.state.value.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={2}>
+                            <p className="text-muted-foreground">No tags added yet.</p>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {field.state.value.map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <form.AppField
+                              name={`tags[${i}]`}
+                              children={field => <field.TextField className="bg-background" />}
+                            />
+                          </TableCell>
+
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => field.removeValue(i)}>
+                              <TrashIcon className="size-4" />
+                              <span className="sr-only">Remove tag</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="gap-2"
+                      onClick={() => field.pushValue("")}>
+                      <PlusIcon className="size-4" />
+                      Add tag
+                    </Button>
+                  </div>{" "}
+                </>
+              )}
+            </form.Field>
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
             <Button type="submit">Save</Button>

@@ -14,4 +14,4 @@ todos.json
 
 routeTree.gen.ts
 worker-configuration.d.ts
-server/lib/db/auth-schema.ts
+src/lib/db/auth-schema.ts
