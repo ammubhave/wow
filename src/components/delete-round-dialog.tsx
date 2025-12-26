@@ -22,14 +22,14 @@ export function DeleteRoundDialog({
 }: {
   workspaceId: string;
   roundId: string;
-  children?: React.ReactNode;
+  children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
   const workspace = useWorkspace({workspaceId});
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+      {children && <AlertDialogTrigger render={children} />}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
