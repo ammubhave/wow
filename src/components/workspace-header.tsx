@@ -55,7 +55,7 @@ export function WorkspaceHeader() {
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
-          onValueChange={to => {
+          onValueChange={(to: string) => {
             void navigate({
               to,
               params: to === "/$workspaceId/puzzles/$puzzleId" ? {puzzleId} : undefined,
