@@ -72,10 +72,9 @@ function RouteComponent() {
                       />
                     )}
                   </form.AppField>
-
                   <FieldGroup>
                     <Field>
-                      <form.SubmitButton type="submit">Create Account</form.SubmitButton>
+                      <form.SubmitButton>Create Account</form.SubmitButton>
                       <FieldDescription className="px-6 text-center">
                         Already have an account? <Link to="/login">Sign in</Link>
                       </FieldDescription>

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 
 import {useAppForm} from "./form";
+import {FieldGroup} from "./ui/field";
 import {useWorkspace} from "./use-workspace";
 
 export function EditRoundDialog({
@@ -53,28 +54,31 @@ export function EditRoundDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit round</DialogTitle>
+        </DialogHeader>
         <form.AppForm>
           <form
+            id={form.formId}
             onSubmit={event => {
               event.preventDefault();
               event.stopPropagation();
-              form.handleSubmit();
+              void form.handleSubmit();
             }}>
-            <DialogHeader>
-              <DialogTitle>Edit round</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <FieldGroup>
               <form.AppField
                 name="name"
                 validators={{onSubmit: z.string().min(1)}}
                 children={field => <field.TextField label="Name" autoFocus autoComplete="off" />}
               />
-            </div>
-            <DialogFooter>
-              <form.SubmitButton>Save</form.SubmitButton>
-            </DialogFooter>
+            </FieldGroup>
           </form>
         </form.AppForm>
+        <DialogFooter>
+          <form.AppForm>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </form.AppForm>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

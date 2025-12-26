@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_app/workspaces/create/")({component: RouteComponent});
@@ -58,7 +59,6 @@ function RouteComponent() {
   return (
     <div className="flex justify-center">
       <div className="max-w-3xl flex-1 flex flex-col gap-2">
-        {" "}
         <div>
           <Button
             variant="outline"
@@ -72,49 +72,52 @@ function RouteComponent() {
           />
         </div>
         <form.AppForm>
-          <form
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}>
-            <Card>
-              <CardHeader className="px-7">
-                <CardTitle>Create workspace</CardTitle>
-                <CardDescription>
-                  You need to provide a team name and an event name to create your workspace. You
-                  also need to provide a password that other users can use to join your workspace.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <form.AppField
-                  name="teamName"
-                  validators={{onBlur: z.string().min(1)}}
-                  children={field => <field.TextField label="Team Name" />}
-                />
-                <form.AppField
-                  name="eventName"
-                  children={field => <field.TextField label="Event Name" />}
-                />
-                <form.AppField
-                  name="workspaceId"
-                  children={field => (
-                    <field.TextField
-                      label="Workspace ID"
-                      description="This is the ID that will be used to identify your workspace and will be used by other users to join your workspace. (E.g. myteam2025)"
-                    />
-                  )}
-                />
-                <form.AppField
-                  name="password"
-                  children={field => <field.TextField label="Workspace Password" />}
-                />
-              </CardContent>
-              <CardFooter>
-                <Button type="submit">Create</Button>
-              </CardFooter>
-            </Card>
-          </form>
+          <Card>
+            <CardHeader className="px-7">
+              <CardTitle>Create workspace</CardTitle>
+              <CardDescription>
+                You need to provide a team name and an event name to create your workspace. You also
+                need to provide a password that other users can use to join your workspace.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                id={form.formId}
+                onSubmit={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void form.handleSubmit();
+                }}>
+                <FieldGroup>
+                  <form.AppField
+                    name="teamName"
+                    validators={{onBlur: z.string().min(1)}}
+                    children={field => <field.TextField label="Team Name" />}
+                  />
+                  <form.AppField
+                    name="eventName"
+                    children={field => <field.TextField label="Event Name" />}
+                  />
+                  <form.AppField
+                    name="workspaceId"
+                    children={field => (
+                      <field.TextField
+                        label="Workspace ID"
+                        description="This is the ID that will be used to identify your workspace and will be used by other users to join your workspace. (E.g. myteam2025)"
+                      />
+                    )}
+                  />
+                  <form.AppField
+                    name="password"
+                    children={field => <field.TextField label="Workspace Password" />}
+                  />
+                </FieldGroup>
+              </form>
+            </CardContent>
+            <CardFooter>
+              <form.SubmitButton>Create</form.SubmitButton>
+            </CardFooter>
+          </Card>
         </form.AppForm>
       </div>
     </div>

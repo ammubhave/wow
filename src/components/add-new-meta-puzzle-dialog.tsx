@@ -1,7 +1,6 @@
 import {toast} from "sonner";
 import {z} from "zod";
 
-import {Button} from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -53,16 +52,17 @@ export function AddNewMetaPuzzleDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add new meta puzzle</DialogTitle>
+        </DialogHeader>
         <form.AppForm>
           <form
+            id={form.formId}
             onSubmit={e => {
               e.preventDefault();
               e.stopPropagation();
               void form.handleSubmit();
             }}>
-            <DialogHeader>
-              <DialogTitle>Add new meta puzzle</DialogTitle>
-            </DialogHeader>
             <div className="grid gap-4 py-4">
               <form.AppField
                 name="name"
@@ -86,10 +86,10 @@ export function AddNewMetaPuzzleDialog({
                 children={field => <field.CheckboxField label="Assign unassigned puzzles" />}
               />
             </div>
-            <DialogFooter>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
           </form>
+          <DialogFooter>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </DialogFooter>
         </form.AppForm>
       </DialogContent>
     </Dialog>

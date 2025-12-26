@@ -111,19 +111,20 @@ function WorkspacePasswordCard() {
         <CardDescription>The workspace password is used to join the workspace.</CardDescription>
       </CardHeader>
       <form.AppForm>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            void form.handleSubmit();
-          }}>
-          <CardContent>
+        <CardContent>
+          <form
+            id={form.formId}
+            onSubmit={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
+            }}>
             <form.AppField name="password">{field => <field.TextField />}</form.AppField>
-          </CardContent>
-          <CardFooter>
-            <form.SubmitButton>Save</form.SubmitButton>
-          </CardFooter>
-        </form>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <form.SubmitButton>Save</form.SubmitButton>
+        </CardFooter>
       </form.AppForm>
     </Card>
   );

@@ -168,7 +168,7 @@ function SubmitButton({children}: React.ComponentProps<typeof Button>) {
   return (
     <form.Subscribe selector={state => state.isSubmitting}>
       {isSubmitting => (
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} form={form.formId}>
           {children}
         </Button>
       )}

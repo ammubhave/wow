@@ -1,7 +1,6 @@
 import {Link} from "@tanstack/react-router";
 import {toast} from "sonner";
 
-import {Button} from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -71,17 +70,18 @@ export function AddNewPuzzleDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger render={children} />}
-      <DialogContent aria-describedby={undefined} className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add new puzzle</DialogTitle>
+        </DialogHeader>
         <form.AppForm>
           <form
+            id={form.formId}
             onSubmit={e => {
               e.preventDefault();
               e.stopPropagation();
               void form.handleSubmit();
             }}>
-            <DialogHeader>
-              <DialogTitle>Add new puzzle</DialogTitle>
-            </DialogHeader>
             <div className="grid gap-4 py-4">
               <form.AppField
                 name="name"
@@ -111,10 +111,10 @@ export function AddNewPuzzleDialog({
                 )}
               />
             </div>
-            <DialogFooter>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
           </form>
+          <DialogFooter>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </DialogFooter>
         </form.AppForm>
       </DialogContent>
     </Dialog>

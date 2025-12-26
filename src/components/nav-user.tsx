@@ -2,7 +2,7 @@
 
 import {QueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
-import {BellRingIcon, ChevronsUpDown, ChevronsUpDownIcon, LogOut, SunMoonIcon} from "lucide-react";
+import {BellRingIcon, ChevronsUpDownIcon, LogOut, SunMoonIcon} from "lucide-react";
 
 import {useTheme} from "@/components/theme-provider";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";

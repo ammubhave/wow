@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 
 import {useAppForm} from "./form";
+import {FieldGroup} from "./ui/field";
 import {SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
 
@@ -83,17 +84,18 @@ export function EditPuzzleDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-106.25">
+        <DialogHeader>
+          <DialogTitle>Edit puzzle</DialogTitle>
+        </DialogHeader>
         <form.AppForm>
           <form
+            id={form.formId}
             onSubmit={e => {
               e.preventDefault();
               e.stopPropagation();
               void form.handleSubmit();
             }}>
-            <DialogHeader>
-              <DialogTitle>Edit puzzle</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <FieldGroup>
               <form.AppField
                 name="name"
                 validators={{onSubmit: z.string().min(1)}}
@@ -160,12 +162,14 @@ export function EditPuzzleDialog({
                 name="isMetaPuzzle"
                 children={field => <field.CheckboxField label="Is this a meta puzzle?" />}
               />
-            </div>
-            <DialogFooter>
-              <form.SubmitButton>Save</form.SubmitButton>
-            </DialogFooter>
+            </FieldGroup>
           </form>
         </form.AppForm>
+        <DialogFooter>
+          <form.AppForm>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </form.AppForm>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

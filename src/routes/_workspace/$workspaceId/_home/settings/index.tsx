@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {Field, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
 import {orpc} from "@/lib/orpc";
@@ -59,13 +60,14 @@ function UpdateLinksCard() {
         </CardDescription>
       </CardHeader>
       <form.AppForm>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            void form.handleSubmit();
-          }}>
-          <CardContent>
+        <CardContent>
+          <form
+            id={form.formId}
+            onSubmit={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
+            }}>
             <form.Field name="links" mode="array">
               {field => (
                 <>
@@ -128,11 +130,11 @@ function UpdateLinksCard() {
                 </>
               )}
             </form.Field>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit">Save</Button>
-          </CardFooter>
-        </form>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <form.SubmitButton>Save</form.SubmitButton>
+        </CardFooter>
       </form.AppForm>
     </Card>
   );
@@ -203,49 +205,48 @@ function DetailsCard() {
       <form.AppForm>
         <CardContent>
           <form
+            id={form.formId}
             onSubmit={e => {
               e.preventDefault();
               e.stopPropagation();
               void form.handleSubmit();
             }}>
-            <form.AppField
-              name="teamName"
-              children={field => <field.TextField label="Team Name" />}
-            />
-            <form.AppField
-              name="eventName"
-              children={field => <field.TextField label="Event Name" />}
-            />
-            <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Invitation Link
-              </label>
-              <p className="text-muted-foreground text-sm flex items-center gap-2">
-                https://join.wafflehaus.io/{workspaceId}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  onClick={() => {
-                    toast.promise(
-                      navigator.clipboard.writeText(`https://join.wafflehaus.io/${workspaceId}`),
-                      {
-                        loading: "Copying...",
-                        success: "Join link copied!",
-                        error: "Oops! Something went wrong.",
-                      }
-                    );
-                  }}>
-                  <CopyIcon className="size-4" />
-                </Button>
-              </p>
-            </div>
+            <FieldGroup>
+              <form.AppField
+                name="teamName"
+                children={field => <field.TextField label="Team Name" />}
+              />
+              <form.AppField
+                name="eventName"
+                children={field => <field.TextField label="Event Name" />}
+              />
+              <Field>
+                <FieldLabel>Invitation Link</FieldLabel>
+                <p className="text-muted-foreground text-xs flex items-center gap-2">
+                  https://join.wafflehaus.io/{workspaceId}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    onClick={() => {
+                      toast.promise(
+                        navigator.clipboard.writeText(`https://join.wafflehaus.io/${workspaceId}`),
+                        {
+                          loading: "Copying...",
+                          success: "Join link copied!",
+                          error: "Oops! Something went wrong.",
+                        }
+                      );
+                    }}>
+                    <CopyIcon className="size-4" />
+                  </Button>
+                </p>
+              </Field>
+            </FieldGroup>
           </form>
         </CardContent>
         <CardFooter>
-          <form.AppForm>
-            <form.SubmitButton>Save</form.SubmitButton>
-          </form.AppForm>
+          <form.SubmitButton>Save</form.SubmitButton>
         </CardFooter>
       </form.AppForm>
     </Card>
@@ -276,13 +277,14 @@ function UpdateTagsCard() {
         </CardDescription>
       </CardHeader>
       <form.AppForm>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            void form.handleSubmit();
-          }}>
-          <CardContent className="space-y-4">
+        <CardContent className="space-y-4">
+          <form
+            id={form.formId}
+            onSubmit={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
+            }}>
             <form.Field name="tags" mode="array">
               {field => (
                 <>
@@ -331,11 +333,11 @@ function UpdateTagsCard() {
                 </>
               )}
             </form.Field>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit">Save</Button>
-          </CardFooter>
-        </form>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <form.SubmitButton>Save</form.SubmitButton>
+        </CardFooter>
       </form.AppForm>
     </Card>
   );

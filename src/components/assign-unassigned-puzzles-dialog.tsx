@@ -52,16 +52,17 @@ export function AssignUnassignedPuzzlesDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-106.25">
+        <DialogHeader>
+          <DialogTitle>Assign unassigned puzzles</DialogTitle>
+        </DialogHeader>
         <form.AppForm>
           <form
+            id={form.formId}
             onSubmit={event => {
               event.preventDefault();
               event.stopPropagation();
               void form.handleSubmit();
             }}>
-            <DialogHeader>
-              <DialogTitle>Assign unassigned puzzles</DialogTitle>
-            </DialogHeader>
             <div className="grid gap-4 py-4">
               <form.AppField
                 name="parentPuzzleId"
@@ -79,10 +80,10 @@ export function AssignUnassignedPuzzlesDialog({
                 )}
               />
             </div>
-            <DialogFooter>
-              <form.SubmitButton>Save</form.SubmitButton>
-            </DialogFooter>
           </form>
+          <DialogFooter>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </DialogFooter>
         </form.AppForm>
       </DialogContent>
     </Dialog>
