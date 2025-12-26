@@ -22,11 +22,11 @@ function RouteComponent() {
   }).data.members;
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Members ({members.length})</CardTitle>
         <CardDescription>Members of this workspace.</CardDescription>
       </CardHeader>
-      <CardContent className="px-7 flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-3">
         {members.map(member => (
           <div key={member.user.id} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

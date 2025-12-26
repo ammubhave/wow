@@ -74,7 +74,7 @@ export function GoogleDriveCardContents({
 
   return (
     <>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Google Drive Connection</CardTitle>
         <CardDescription>
           You can connect your Google Drive account to this workspace. This allows your workspace to
@@ -225,7 +225,7 @@ export function GoogleDriveCardContents({
               )}
             </li>
 
-            <li className="relative pb-10">
+            <li className="relative">
               {state.data.state === 3 ? (
                 <>
                   <div className="group relative flex items-start">

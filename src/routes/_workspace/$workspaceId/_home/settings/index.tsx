@@ -51,7 +51,7 @@ function UpdateLinksCard() {
 
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Links</CardTitle>
         <CardDescription>
           Add links to this workspace to be displayed in the navigation bar. For example, you can
@@ -65,7 +65,7 @@ function UpdateLinksCard() {
             e.stopPropagation();
             void form.handleSubmit();
           }}>
-          <CardContent className="space-y-4">
+          <CardContent>
             <form.Field name="links" mode="array">
               {field => (
                 <>
@@ -124,12 +124,12 @@ function UpdateLinksCard() {
                       <PlusIcon className="size-4" />
                       Add link
                     </Button>
-                  </div>{" "}
+                  </div>
                 </>
               )}
             </form.Field>
           </CardContent>
-          <CardFooter className="border-t px-6 py-4">
+          <CardFooter>
             <Button type="submit">Save</Button>
           </CardFooter>
         </form>
@@ -144,14 +144,15 @@ function LeaveWorkspaceCard() {
   const leaveMutation = useMutation(orpc.workspaces.leave.mutationOptions());
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Leave Workspace</CardTitle>
         <CardDescription>
           Leave this workspace. You will no longer be able to access it.
         </CardDescription>
       </CardHeader>
-      <CardFooter className="border-t px-6 py-4">
+      <CardFooter>
         <Button
+          variant="destructive"
           onClick={() => {
             toast.promise(
               leaveMutation.mutateAsync(
@@ -195,18 +196,18 @@ function DetailsCard() {
 
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Details</CardTitle>
         <CardDescription>General information about this workspace.</CardDescription>
       </CardHeader>
       <form.AppForm>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            void form.handleSubmit();
-          }}>
-          <CardContent className="space-y-8">
+        <CardContent>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              void form.handleSubmit();
+            }}>
             <form.AppField
               name="teamName"
               children={field => <field.TextField label="Team Name" />}
@@ -239,11 +240,13 @@ function DetailsCard() {
                 </Button>
               </p>
             </div>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-4">
-            <Button type="submit">Save</Button>
-          </CardFooter>
-        </form>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <form.AppForm>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </form.AppForm>
+        </CardFooter>
       </form.AppForm>
     </Card>
   );
@@ -266,7 +269,7 @@ function UpdateTagsCard() {
 
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Tags</CardTitle>
         <CardDescription>
           Add tags to this workspace to help categorize and organize the puzzles.
@@ -329,7 +332,7 @@ function UpdateTagsCard() {
               )}
             </form.Field>
           </CardContent>
-          <CardFooter className="border-t px-6 py-4">
+          <CardFooter>
             <Button type="submit">Save</Button>
           </CardFooter>
         </form>

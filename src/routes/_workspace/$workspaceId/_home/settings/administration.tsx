@@ -44,13 +44,13 @@ function DeleteWorkspaceCard() {
 
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Delete Workspace</CardTitle>
         <CardDescription>
           This will delete the workspace and all its data. This action is irreversible.
         </CardDescription>
       </CardHeader>
-      <CardFooter className="border-t px-6 py-4">
+      <CardFooter>
         <Button
           variant="destructive"
           disabled
@@ -73,7 +73,7 @@ function DeleteWorkspaceCard() {
 function ArchiveWorkspaceCard() {
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Archive Workspace</CardTitle>
         <CardDescription>
           This will archive the workspace and all its data. It will not show up in the list of
@@ -81,7 +81,7 @@ function ArchiveWorkspaceCard() {
           at any time.
         </CardDescription>
       </CardHeader>
-      <CardFooter className="gap-2 border-t px-6 py-4">
+      <CardFooter>
         <Button variant="secondary" disabled>
           Coming Soon
         </Button>
@@ -106,7 +106,7 @@ function WorkspacePasswordCard() {
 
   return (
     <Card>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Workspace Password</CardTitle>
         <CardDescription>The workspace password is used to join the workspace.</CardDescription>
       </CardHeader>
@@ -117,10 +117,10 @@ function WorkspacePasswordCard() {
             e.stopPropagation();
             void form.handleSubmit();
           }}>
-          <CardContent className="space-y-8">
+          <CardContent>
             <form.AppField name="password">{field => <field.TextField />}</form.AppField>
           </CardContent>
-          <CardFooter className="border-t px-6 py-4">
+          <CardFooter>
             <form.SubmitButton>Save</form.SubmitButton>
           </CardFooter>
         </form>

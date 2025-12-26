@@ -47,7 +47,7 @@ export function DiscordCardContents({
   const discordInfo = useQuery(orpc.workspaces.getDiscordInfo.queryOptions({input: workspaceId}));
   return (
     <>
-      <CardHeader className="px-7">
+      <CardHeader>
         <CardTitle>Discord</CardTitle>
         <CardDescription>
           You can connect your Discord account to this workspace. This allows the workspace to
@@ -57,7 +57,7 @@ export function DiscordCardContents({
       <CardContent>
         {!discordInfo.isLoading ? (
           discordInfo.data?.ok !== undefined ? (
-            <div className="pb-8">
+            <div>
               <div className="group relative flex items-start">
                 <span className="flex h-9 items-center">
                   {discordInfo.data.ok ? (
@@ -109,7 +109,7 @@ export function DiscordCardContents({
               </div>
             </div>
           ) : (
-            <div className="pb-8">
+            <div>
               <div className="group relative flex items-start">
                 <span aria-hidden="true" className="flex h-9 items-center">
                   <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-indigo-600 bg-white">
@@ -136,7 +136,7 @@ export function DiscordCardContents({
             </div>
           )
         ) : (
-          <Skeleton className="mb-8 h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         )}
       </CardContent>
     </>
