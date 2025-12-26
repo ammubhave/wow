@@ -228,6 +228,7 @@ export function CommentBox({
         ) : (
           <form.AppForm>
             <form
+              id={form.formId}
               className="space-y-2"
               onSubmit={e => {
                 e.preventDefault();

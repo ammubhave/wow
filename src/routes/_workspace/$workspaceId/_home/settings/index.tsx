@@ -14,6 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {Field, FieldGroup, FieldLabel} from "@/components/ui/field";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {Separator} from "@/components/ui/separator";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
 import {orpc} from "@/lib/orpc";
@@ -70,64 +77,51 @@ function UpdateLinksCard() {
             }}>
             <form.Field name="links" mode="array">
               {field => (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>URL</TableHead>
-                        <TableHead className="w-0">
-                          <span className="sr-only">Actions</span>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {field.state.value.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={3}>
-                            <p className="text-muted-foreground">No links added yet.</p>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {field.state.value.map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <form.AppField
-                              name={`links[${i}].name`}
-                              children={field => <field.TextField className="bg-background" />}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <form.AppField
-                              name={`links[${i}].url`}
-                              children={field => <field.TextField className="bg-background" />}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => field.removeValue(i)}>
-                              <TrashIcon className="size-4" />
-                              <span className="sr-only">Remove link</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="gap-2"
-                      onClick={() => field.pushValue({name: "", url: "about:blank"})}>
-                      <PlusIcon className="size-4" />
-                      Add link
-                    </Button>
-                  </div>
-                </>
+                <div className="flex flex-col gap-1">
+                  {field.state.value.map((_, i) => (
+                    <InputGroup key={i}>
+                      <form.AppField
+                        name={`links[${i}].name`}
+                        children={field => (
+                          <InputGroupInput
+                            value={field.state.value}
+                            onChange={e => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                            placeholder="Name"
+                          />
+                        )}
+                      />
+                      <Separator orientation="vertical" />
+                      <form.AppField
+                        name={`links[${i}].url`}
+                        children={field => (
+                          <InputGroupInput
+                            value={field.state.value}
+                            onChange={e => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                            placeholder="URL"
+                          />
+                        )}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          variant="secondary"
+                          size="icon-xs"
+                          onClick={() => field.removeValue(i)}>
+                          <TrashIcon />
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                  ))}
+                  <Button
+                    className="w-fit"
+                    type="button"
+                    variant="ghost"
+                    onClick={() => field.pushValue({name: "", url: ""})}>
+                    <PlusIcon />
+                    Add link
+                  </Button>
+                </div>
               )}
             </form.Field>
           </form>
@@ -287,50 +281,38 @@ function UpdateTagsCard() {
             }}>
             <form.Field name="tags" mode="array">
               {field => (
-                <>
-                  <Table>
-                    <TableBody>
-                      {field.state.value.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={2}>
-                            <p className="text-muted-foreground">No tags added yet.</p>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {field.state.value.map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <form.AppField
-                              name={`tags[${i}]`}
-                              children={field => <field.TextField className="bg-background" />}
-                            />
-                          </TableCell>
-
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => field.removeValue(i)}>
-                              <TrashIcon className="size-4" />
-                              <span className="sr-only">Remove tag</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="gap-2"
-                      onClick={() => field.pushValue("")}>
-                      <PlusIcon className="size-4" />
-                      Add tag
-                    </Button>
-                  </div>{" "}
-                </>
+                <div className="flex flex-col gap-1">
+                  {field.state.value.map((_, i) => (
+                    <InputGroup key={i}>
+                      <form.AppField
+                        name={`tags[${i}]`}
+                        children={field => (
+                          <InputGroupInput
+                            value={field.state.value}
+                            onChange={e => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                          />
+                        )}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          variant="secondary"
+                          size="icon-xs"
+                          onClick={() => field.removeValue(i)}>
+                          <TrashIcon />
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                  ))}
+                  <Button
+                    className="w-fit"
+                    type="button"
+                    variant="ghost"
+                    onClick={() => field.pushValue("")}>
+                    <PlusIcon />
+                    Add tag
+                  </Button>
+                </div>
               )}
             </form.Field>
           </form>

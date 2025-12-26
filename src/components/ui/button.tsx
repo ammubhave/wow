@@ -3,8 +3,10 @@ import {cva, type VariantProps} from "class-variance-authority";
 
 import {cn} from "@/lib/utils";
 
+import {Spinner} from "./spinner";
+
 const buttonVariants = cva(
-  "focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-md border border-transparent bg-clip-padding text-xs/relaxed font-medium focus-visible:ring-[2px] aria-invalid:ring-[2px] [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
+  "focus-visible:border-ring relative focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-md border border-transparent bg-clip-padding text-xs/relaxed font-medium focus-visible:ring-2 aria-invalid:ring-2 [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
   {
     variants: {
       variant: {
@@ -35,18 +37,50 @@ const buttonVariants = cva(
   }
 );
 
+const buttonContentVariants = cva(
+  "inline-flex transition-inherit-all items-center justify-center",
+  {
+    variants: {
+      size: {
+        default: "gap-1",
+        xs: "gap-1",
+        sm: "gap-1",
+        lg: "gap-1",
+        icon: "",
+        "icon-xs": "",
+        "icon-sm": "",
+        "icon-lg": "",
+      },
+    },
+  }
+);
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  children,
+  isPending,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & {isPending?: boolean}) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({variant, size, className}))}
-      {...props}
-    />
+      className={cn(
+        buttonVariants({variant, size, className}),
+        isPending && "[&>*:not([data-icon=loading])]:invisible"
+      )}
+      {...props}>
+      {isPending && (
+        <Spinner
+          data-icon="loading"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
+      )}
+      <span data-text className={buttonContentVariants({size})}>
+        {children}
+      </span>
+    </ButtonPrimitive>
   );
 }
 

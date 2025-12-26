@@ -159,7 +159,7 @@ function SubmitButton({children}: React.ComponentProps<typeof Button>) {
   return (
     <form.Subscribe selector={state => state.isSubmitting}>
       {isSubmitting => (
-        <Button type="submit" disabled={isSubmitting} form={form.formId}>
+        <Button type="submit" isPending={isSubmitting} disabled={isSubmitting} form={form.formId}>
           {children}
         </Button>
       )}
@@ -167,9 +167,24 @@ function SubmitButton({children}: React.ComponentProps<typeof Button>) {
   );
 }
 
+function Form({children}: {children: React.ReactNode}) {
+  const form = useFormContext();
+  return (
+    <form
+      id={form.formId}
+      onSubmit={e => {
+        e.preventDefault();
+        e.stopPropagation();
+        void form.handleSubmit();
+      }}>
+      {children}
+    </form>
+  );
+}
+
 const {useAppForm} = createFormHook({
   fieldComponents: {TextField, TextareaField, CheckboxField, SelectField, ComboboxMultipleField},
-  formComponents: {SubmitButton},
+  formComponents: {SubmitButton, Form},
   fieldContext,
   formContext,
 });
