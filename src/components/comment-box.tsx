@@ -240,7 +240,9 @@ export function CommentBox({
               />
               <span className="gap-2 flex">
                 <form.SubmitButton>Save</form.SubmitButton>
-                <Button onClick={() => onCancel()}>Cancel</Button>
+                <Button variant="secondary" onClick={() => onCancel()}>
+                  Cancel
+                </Button>
               </span>
             </form>
           </form.AppForm>
