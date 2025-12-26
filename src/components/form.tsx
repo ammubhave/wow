@@ -28,13 +28,15 @@ function TextField({
   ...props
 }: {label?: string; description?: string} & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
+  const isInvalid = field.state.meta.errors.length > 0;
   return (
-    <Field>
+    <Field data-invalid={isInvalid}>
       {label && <FieldLabel>{label}</FieldLabel>}
       <Input
         value={field.state.value}
         onChange={e => field.handleChange(e.target.value)}
         onBlur={() => field.handleBlur()}
+        aria-invalid={isInvalid}
         {...props}
       />
       {description && <FieldDescription>{description}</FieldDescription>}
@@ -49,13 +51,15 @@ function TextareaField({
   ...props
 }: {label: string; description?: string} & React.ComponentProps<"textarea">) {
   const field = useFieldContext<string>();
+  const isInvalid = field.state.meta.errors.length > 0;
   return (
-    <Field>
+    <Field data-invalid={isInvalid}>
       <FieldLabel htmlFor="name">{label}</FieldLabel>
       <Textarea
         value={field.state.value}
         onChange={e => field.handleChange(e.target.value)}
         onBlur={() => field.handleBlur()}
+        aria-invalid={isInvalid}
         {...props}
       />
       {description && <FieldDescription>{description}</FieldDescription>}
