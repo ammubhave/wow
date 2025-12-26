@@ -51,7 +51,7 @@ export function WorkspaceHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="bg-sidebar fixed top-0 z-50 flex w-full items-center border-b">
+    <header className="bg-sidebar top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
