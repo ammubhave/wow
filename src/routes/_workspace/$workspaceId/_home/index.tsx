@@ -576,7 +576,15 @@ function BlackboardMetaPuzzle({
             </SelectContent>
           </Select>
         </TableCell>
-        <TableCell></TableCell>
+        <TableCell>
+          <div className="flex gap-1 flex-wrap items-center">
+            {metaPuzzle.tags.map(tag => (
+              <Badge key={tag} className={getTagColor(tag)}>
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(name => (

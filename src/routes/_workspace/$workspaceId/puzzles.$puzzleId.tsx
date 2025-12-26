@@ -89,6 +89,7 @@ function PuzzleInfoPanel({
     status: string | null;
     childPuzzles: {answer: string | null; name: string}[];
     isMetaPuzzle: boolean;
+    tags: string[];
   };
 }) {
   const workspace = useWorkspace({workspaceId});

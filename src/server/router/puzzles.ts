@@ -176,6 +176,7 @@ export const puzzlesRouter = {
         link: z.string().nullable().optional(),
         comment: z.string().optional(),
         isMetaPuzzle: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
       })
     )
     .handler(async ({context, input}) => {
@@ -253,6 +254,7 @@ export const puzzlesRouter = {
           link: input.link,
           comment: input.comment,
           isMetaPuzzle: input.isMetaPuzzle,
+          tags: input.tags,
         })
         .where(eq(schema.puzzle.id, input.id));
 

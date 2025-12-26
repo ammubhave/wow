@@ -24,7 +24,7 @@ export function AddNewPuzzleDialog({
   parentPuzzleId,
 }: {
   workspaceId: string;
-  children?: React.ReactNode;
+  children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
   roundId: string;
@@ -70,7 +70,7 @@ export function AddNewPuzzleDialog({
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-[425px]">
         <form.AppForm>
           <form

@@ -32,8 +32,9 @@ export function EditPuzzleDialog({
     googleSpreadsheetId: string | null;
     googleDrawingId: string | null;
     isMetaPuzzle: boolean;
+    tags: string[];
   };
-  children?: React.ReactNode;
+  children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
@@ -58,6 +59,7 @@ export function EditPuzzleDialog({
       link: puzzle.link ?? "",
       status: puzzle.status ?? "none",
       isMetaPuzzle: puzzle.isMetaPuzzle,
+      tags: puzzle.tags,
     },
     onSubmit: ({value}) =>
       toast.promise(
@@ -72,6 +74,7 @@ export function EditPuzzleDialog({
             answer: value.answer === "" ? null : value.answer.toUpperCase(),
             status: value.status === "none" ? null : value.status,
             link: value.link === "" ? null : value.link,
+            tags: value.tags,
           },
           {
             onSuccess: () => {
@@ -90,7 +93,7 @@ export function EditPuzzleDialog({
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-106.25">
         <form.AppForm>
           <form
@@ -143,6 +146,15 @@ export function EditPuzzleDialog({
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="very_stuck">Very Stuck</SelectItem>
                   </field.SelectField>
+                )}
+              />
+              <form.AppField
+                name="tags"
+                children={field => (
+                  <field.ComboboxMultipleField
+                    label="Tags"
+                    items={["crossword", "sound", "image IDs"]}
+                  />
                 )}
               />
               <form.AppField

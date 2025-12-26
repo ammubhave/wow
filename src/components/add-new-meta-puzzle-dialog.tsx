@@ -23,7 +23,7 @@ export function AddNewMetaPuzzleDialog({
 }: {
   workspaceId: string;
   roundId: string;
-  children?: React.ReactNode;
+  children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
@@ -51,7 +51,7 @@ export function AddNewMetaPuzzleDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger render={children} />}
       <DialogContent aria-describedby={undefined} className="sm:max-w-[425px]">
         <form.AppForm>
           <form

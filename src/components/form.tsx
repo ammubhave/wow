@@ -3,6 +3,18 @@ import React, {useId} from "react";
 
 import {Button} from "./ui/button";
 import {Checkbox} from "./ui/checkbox";
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+  useComboboxAnchor,
+} from "./ui/combobox";
 import {Field, FieldContent, FieldDescription, FieldError, FieldLabel} from "./ui/field";
 import {Input} from "./ui/input";
 import {Select, SelectContent, SelectTrigger, SelectValue} from "./ui/select";
@@ -108,6 +120,49 @@ function SelectField({
   );
 }
 
+function ComboboxMultipleField({
+  label,
+  items,
+}: {label: string; items: any[]} & React.ComponentProps<typeof Select>) {
+  const anchor = useComboboxAnchor();
+  const field = useFieldContext<any[]>();
+  return (
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <Combobox
+        multiple
+        autoHighlight
+        items={items}
+        defaultValue={[]}
+        value={field.state.value}
+        onValueChange={value => field.handleChange(value)}>
+        <ComboboxChips ref={anchor}>
+          <ComboboxValue>
+            {values => (
+              <React.Fragment>
+                {values.map((value: string) => (
+                  <ComboboxChip key={value}>{value}</ComboboxChip>
+                ))}
+                <ComboboxChipsInput onBlur={field.handleBlur} />
+              </React.Fragment>
+            )}
+          </ComboboxValue>
+        </ComboboxChips>
+        <ComboboxContent anchor={anchor}>
+          <ComboboxEmpty>No items found.</ComboboxEmpty>
+          <ComboboxList>
+            {item => (
+              <ComboboxItem key={item} value={item}>
+                {item}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </Field>
+  );
+}
+
 function SubmitButton({children}: React.ComponentProps<typeof Button>) {
   const form = useFormContext();
   return (
@@ -122,7 +177,7 @@ function SubmitButton({children}: React.ComponentProps<typeof Button>) {
 }
 
 const {useAppForm} = createFormHook({
-  fieldComponents: {TextField, TextareaField, CheckboxField, SelectField},
+  fieldComponents: {TextField, TextareaField, CheckboxField, SelectField, ComboboxMultipleField},
   formComponents: {SubmitButton},
   fieldContext,
   formContext,
