@@ -85,8 +85,8 @@ export function ActivityLog({workspaceId}: {workspaceId: string}) {
                     </div>
                     <p className="flex-auto py-0.5 text-xs/5 text-gray-500">
                       {activityItem.user && (
-                        <HoverCard openDelay={200}>
-                          <HoverCardTrigger>
+                        <HoverCard>
+                          <HoverCardTrigger delay={200}>
                             <span className="cursor-default hover:text-gray-500 dark:hover:text-gray-300 font-medium text-gray-900 dark:text-gray-100">
                               {activityItem.user.name}
                             </span>
