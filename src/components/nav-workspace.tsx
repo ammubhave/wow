@@ -73,42 +73,52 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
           {workspaces.data
             .filter(ws => ws.slug !== workspaceId)
             .map(ws => (
-              <DropdownMenuItem key={ws.id} asChild className="gap-2 p-2">
-                <Link to="/$workspaceId" params={{workspaceId: ws.slug}}>
-                  <Avatar className="size-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">
-                      {ws.eventName
-                        ?.split(" ")
-                        .map(word => word[0]?.toLocaleUpperCase())
-                        .filter(c => !!c)
-                        .slice(0, 2)
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{ws.eventName}</span>
-                    <span className="truncate text-xs">{ws.teamName}</span>
-                  </div>
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                key={ws.id}
+                className="gap-2 p-2"
+                render={
+                  <Link to="/$workspaceId" params={{workspaceId: ws.slug}}>
+                    <Avatar className="size-8 rounded-lg">
+                      <AvatarFallback className="rounded-lg">
+                        {ws.eventName
+                          ?.split(" ")
+                          .map(word => word[0]?.toLocaleUpperCase())
+                          .filter(c => !!c)
+                          .slice(0, 2)
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-medium">{ws.eventName}</span>
+                      <span className="truncate text-xs">{ws.teamName}</span>
+                    </div>
+                  </Link>
+                }
+              />
             ))}
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="gap-2 p-2" asChild>
-            <Link to="/workspaces">
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <GalleryVerticalEndIcon className="size-4" />
-              </div>
-              <div className="text-muted-foreground font-medium">All workspaces</div>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 p-2" asChild>
-            <Link to="/workspaces/create">
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <PlusIcon className="size-4" />
-              </div>
-              <div className="text-muted-foreground font-medium">Add workspace</div>
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="gap-2 p-2"
+            render={
+              <Link to="/workspaces">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                  <GalleryVerticalEndIcon className="size-4" />
+                </div>
+                <div className="text-muted-foreground font-medium">All workspaces</div>
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            className="gap-2 p-2"
+            render={
+              <Link to="/workspaces/create">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                  <PlusIcon className="size-4" />
+                </div>
+                <div className="text-muted-foreground font-medium">Add workspace</div>
+              </Link>
+            }
+          />
         </DropdownMenuSubContent>
       </DropdownMenuSub>
     </DropdownMenuGroup>

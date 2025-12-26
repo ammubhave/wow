@@ -202,12 +202,14 @@ export function CommentBox({
             </div>
             <span className="absolute top-0 -right-4">
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="-my-3">
-                    <PencilIcon className="size-4" />
-                    <span className="sr-only">Toggle comment settings</span>
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="ghost" size="icon" className="-my-3">
+                      <PencilIcon className="size-4" />
+                      <span className="sr-only">Toggle comment settings</span>
+                    </Button>
+                  }
+                />
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={() => {

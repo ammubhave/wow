@@ -92,12 +92,14 @@ function RouteComponent() {
                       <TableHead className="w-0">
                         <div className="-my-1 flex items-center justify-end">
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="-my-3">
-                                <EllipsisIcon className="size-4" />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button variant="ghost" size="icon" className="-my-3">
+                                  <EllipsisIcon className="size-4" />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              }
+                            />
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
                                 Add new round
@@ -236,12 +238,14 @@ function BlackboardRound({
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button disabled={round.id === ""} variant="ghost" size="icon">
-                  <EllipsisIcon className="size-4" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button disabled={round.id === ""} variant="ghost" size="icon">
+                    <EllipsisIcon className="size-4" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
                   Add new meta puzzle
@@ -337,12 +341,14 @@ function BlackboardRound({
             <TableCell>
               <div className="-my-3 flex items-center justify-end">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button disabled={round.id === ""} variant="ghost" size="icon">
-                      <EllipsisIcon className="size-4" />
-                      <span className="sr-only">Toggle menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button disabled={round.id === ""} variant="ghost" size="icon">
+                        <EllipsisIcon className="size-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    }
+                  />
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setIsAssignUnassignedPuzzlesDialogOpen(true)}>
                       Assign all unassigned puzzles
@@ -603,12 +609,14 @@ function BlackboardMetaPuzzle({
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <EllipsisIcon className="size-4" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="icon">
+                    <EllipsisIcon className="size-4" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
                   Add new puzzle feeding this meta puzzle
@@ -873,12 +881,14 @@ function BlackboardPuzzle({
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <EllipsisIcon className="size-4" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="icon">
+                    <EllipsisIcon className="size-4" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setIsEditPuzzleDialogOpen(true)}>
                   Edit this puzzle

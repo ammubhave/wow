@@ -51,7 +51,7 @@ export function WorkspaceHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="bg-background fixed top-0 z-50 flex w-full items-center border-b">
+    <header className="bg-sidebar fixed top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
@@ -182,15 +182,18 @@ export function WorkspaceHeader() {
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 {workspace.links.list.data.map((link, index) => (
-                  <DropdownMenuItem key={index} asChild>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gap-2 justify-between">
-                      {link.name} <ExternalLinkIcon className="size-4" />
-                    </a>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    key={index}
+                    render={
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="gap-2 justify-between">
+                        {link.name} <ExternalLinkIcon className="size-4" />
+                      </a>
+                    }
+                  />
                 ))}
               </DropdownMenuGroup>
             </>

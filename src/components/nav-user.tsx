@@ -2,7 +2,7 @@
 
 import {QueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
-import {BellRingIcon, ChevronsUpDown, LogOut, SunMoonIcon} from "lucide-react";
+import {BellRingIcon, ChevronsUpDown, ChevronsUpDownIcon, LogOut, SunMoonIcon} from "lucide-react";
 
 import {useTheme} from "@/components/theme-provider";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
@@ -26,26 +26,28 @@ export function NavUser({children}: {children?: React.ReactNode}) {
   const queryClient = new QueryClient();
   const user = authClient.useSession().data?.user;
   if (!user) {
-    return <div className="min-w-59.75 rounded-md h-12 bg-secondary animate-pulse"></div>;
+    return <div className="min-w-59.75 rounded-md h-12 animate-pulse"></div>;
   }
   return (
     <div className="w-59.75">
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuButton
-            size="lg"
-            className="w-59.75 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-            <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarImage src={user.image ?? undefined} alt={user.name ?? user.email} />
-              <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-            </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs">{user.email}</span>
-            </div>
-            <ChevronsUpDown className="ml-auto size-4" />
-          </SidebarMenuButton>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <SidebarMenuButton
+              size="lg"
+              className="w-59.75 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground">
+              <Avatar>
+                <AvatarImage src={user.image ?? undefined} alt={user.name ?? user.email} />
+                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{user.name}</span>
+                <span className="truncate text-xs">{user.email}</span>
+              </div>
+              <ChevronsUpDownIcon />
+            </SidebarMenuButton>
+          }
+        />
         <DropdownMenuContent
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
           side="bottom"
