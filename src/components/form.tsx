@@ -93,25 +93,20 @@ function SelectField({
   label,
   description,
   children,
-  placeholder,
-  onBlur,
   className,
+  onBlur,
   ...props
 }: React.ComponentProps<typeof Select> & {label: string; description?: string} & Pick<
     React.ComponentProps<typeof SelectValue>,
-    "onBlur" | "placeholder" | "className"
+    "className" | "onBlur"
   >) {
-  const field = useFieldContext<string>();
+  const field = useFieldContext<unknown>();
   return (
     <Field>
       <FieldLabel>{label}</FieldLabel>
-      <Select {...props} onValueChange={field.handleChange} defaultValue={field.state.value}>
+      <Select {...props} onValueChange={field.handleChange} value={field.state.value}>
         <SelectTrigger>
-          <SelectValue
-            placeholder={placeholder}
-            onBlur={e => (onBlur ?? field.handleBlur)(e)}
-            className={className}
-          />
+          <SelectValue onBlur={onBlur ?? field.handleBlur} className={className} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>
       </Select>
@@ -120,10 +115,7 @@ function SelectField({
   );
 }
 
-function ComboboxMultipleField({
-  label,
-  items,
-}: {label: string; items: any[]} & React.ComponentProps<typeof Select>) {
+function ComboboxMultipleField({label, items}: {label: string; items: any[]}) {
   const anchor = useComboboxAnchor();
   const field = useFieldContext<any[]>();
   return (

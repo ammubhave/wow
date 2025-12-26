@@ -180,10 +180,9 @@ function BlackboardRound({
     puzzle => !hideSolved || (puzzle.status !== "solved" && puzzle.status !== "backsolved")
   );
 
-  function onStatusChange(value: string) {
-    const newValue = value === "none" ? null : value;
-    if (round.status !== newValue) {
-      toast.promise(workspace.rounds.update.mutateAsync({id: round.id, status: newValue}), {
+  function onStatusChange(value: string | null) {
+    if (round.status !== value) {
+      toast.promise(workspace.rounds.update.mutateAsync({id: round.id, status: value}), {
         loading: "Updating round status...",
         success: "Success! Round status updated.",
         error: "Oops! Something went wrong.",
@@ -224,12 +223,18 @@ function BlackboardRound({
           {round.name}
         </TableCell>
         <TableCell>
-          <Select onValueChange={onStatusChange} value={round.status ?? "none"}>
+          <Select
+            onValueChange={onStatusChange}
+            value={round.status}
+            items={[
+              {value: null, label: "None"},
+              {value: "solved", label: "Solved"},
+            ]}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value={null}>None</SelectItem>
               <SelectItem value="solved">Solved</SelectItem>
             </SelectContent>
           </Select>
@@ -433,27 +438,22 @@ function BlackboardMetaPuzzle({
       }
     },
   });
-  function onStatusChange(value: string) {
-    const newValue = value === "none" ? null : value;
-    if (metaPuzzle.status !== newValue) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, status: newValue}), {
+  function onStatusChange(value: string | null) {
+    if (metaPuzzle.status !== value) {
+      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, status: value}), {
         loading: "Updating meta puzzle status...",
         success: "Success! Meta puzzle status updated.",
         error: "Oops! Something went wrong.",
       });
     }
   }
-  function onImportanceChange(value: string) {
-    const newValue = value === "none" ? null : value;
-    if (metaPuzzle.importance !== newValue) {
-      toast.promise(
-        workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, importance: newValue}),
-        {
-          loading: "Updating meta puzzle importance...",
-          success: "Success! Meta puzzle importance updated.",
-          error: "Oops! Something went wrong.",
-        }
-      );
+  function onImportanceChange(value: string | null) {
+    if (metaPuzzle.importance !== value) {
+      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, importance: value}), {
+        loading: "Updating meta puzzle importance...",
+        success: "Success! Meta puzzle importance updated.",
+        error: "Oops! Something went wrong.",
+      });
     }
   }
 
@@ -553,12 +553,24 @@ function BlackboardMetaPuzzle({
           </form.AppField>
         </TableCell>
         <TableCell>
-          <Select onValueChange={onStatusChange} value={metaPuzzle.status ?? "none"}>
+          <Select
+            onValueChange={onStatusChange}
+            value={metaPuzzle.status}
+            items={[
+              {value: null, label: "None"},
+              {value: "solved", label: "Solved"},
+              {value: "backsolved", label: "Backsolved"},
+              {value: "needs_eyes", label: "Needs Eyes"},
+              {value: "extraction", label: "Extraction"},
+              {value: "stuck", label: "Stuck"},
+              {value: "pending", label: "Pending"},
+              {value: "very_stuck", label: "Very Stuck"},
+            ]}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value={null}>None</SelectItem>
               <SelectItem value="solved">Solved</SelectItem>
               <SelectItem value="backsolved">Backsolved</SelectItem>
               <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
@@ -570,12 +582,20 @@ function BlackboardMetaPuzzle({
           </Select>
         </TableCell>
         <TableCell>
-          <Select onValueChange={onImportanceChange} value={metaPuzzle.importance ?? "none"}>
+          <Select
+            onValueChange={onImportanceChange}
+            value={metaPuzzle.importance}
+            items={[
+              {value: null, label: "None"},
+              {value: "vip", label: "VIP"},
+              {value: "important", label: "Important"},
+              {value: "obsolete", label: "Obsolete"},
+            ]}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value={null}>None</SelectItem>
               <SelectItem value="vip">VIP</SelectItem>
               <SelectItem value="important">Important</SelectItem>
               <SelectItem value="obsolete">Obsolete</SelectItem>
@@ -719,20 +739,18 @@ function BlackboardPuzzle({
     },
   });
 
-  function onStatusChange(value: string) {
-    const newValue = value === "none" ? null : value;
-    if (puzzle.status !== newValue) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, status: newValue}), {
+  function onStatusChange(value: string | null) {
+    if (puzzle.status !== value) {
+      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, status: value}), {
         loading: "Updating puzzle status...",
         success: "Success! Puzzle status updated.",
         error: "Oops! Something went wrong.",
       });
     }
   }
-  function onImportanceChange(value: string) {
-    const newValue = value === "none" ? null : value;
-    if (puzzle.importance !== newValue) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, importance: newValue}));
+  function onImportanceChange(value: string | null) {
+    if (puzzle.importance !== value) {
+      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, importance: value}));
     }
   }
 
@@ -824,12 +842,25 @@ function BlackboardPuzzle({
           </form.AppField>
         </TableCell>
         <TableCell>
-          <Select onValueChange={onStatusChange} value={puzzle.status ?? "none"}>
+          <Select
+            onValueChange={onStatusChange}
+            value={puzzle.status}
+            items={[
+              {value: null, label: "None"},
+              {value: "solved", label: "Solved"},
+              {value: "backsolved", label: "Backsolved"},
+              {value: "obsolete", label: "Obsolete"},
+              {value: "needs_eyes", label: "Needs Eyes"},
+              {value: "extraction", label: "Extraction"},
+              {value: "stuck", label: "Stuck"},
+              {value: "pending", label: "Pending"},
+              {value: "very_stuck", label: "Very Stuck"},
+            ]}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value={null}>None</SelectItem>
 
               <SelectItem value="solved">Solved</SelectItem>
               <SelectItem value="backsolved">Backsolved</SelectItem>
@@ -845,12 +876,20 @@ function BlackboardPuzzle({
           </Select>
         </TableCell>
         <TableCell>
-          <Select onValueChange={onImportanceChange} value={puzzle.importance ?? "none"}>
+          <Select
+            onValueChange={onImportanceChange}
+            value={puzzle.importance}
+            items={[
+              {value: null, label: "None"},
+              {value: "vip", label: "VIP"},
+              {value: "important", label: "Important"},
+              {value: "obsolete", label: "Obsolete"},
+            ]}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value={null}>None</SelectItem>
               <SelectItem value="vip">VIP</SelectItem>
               <SelectItem value="important">Important</SelectItem>
               <SelectItem value="obsolete">Obsolete</SelectItem>

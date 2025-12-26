@@ -94,7 +94,7 @@ function PuzzleInfoPanel({
 }) {
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
-    defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status ?? "none"},
+    defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status},
     onSubmit: ({value}) => {
       const answer = value.answer.length === 0 ? null : value.answer.toUpperCase();
       if (answer !== puzzle.answer || value.status !== puzzle.status) {
@@ -197,25 +197,35 @@ function PuzzleInfoPanel({
             />
             <form.AppField
               name="status"
-              children={field => (
-                <field.SelectField
-                  label="Status"
-                  onBlur={() => {
-                    field.handleBlur();
-                    void form.handleSubmit();
-                  }}
-                  className="bg-background">
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="solved">Solved</SelectItem>
-                  <SelectItem value="backsolved">Backsolved</SelectItem>
-                  <SelectItem value="obsolete">Obsolete</SelectItem>
-                  <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
-                  <SelectItem value="extraction">Extraction</SelectItem>
-                  <SelectItem value="stuck">Stuck</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="very_stuck">Very Stuck</SelectItem>
-                </field.SelectField>
-              )}
+              children={field => {
+                const items = [
+                  {value: null, label: "None"},
+                  {value: "solved", label: "Solved"},
+                  {value: "backsolved", label: "Backsolved"},
+                  {value: "obsolete", label: "Obsolete"},
+                  {value: "needs_eyes", label: "Needs Eyes"},
+                  {value: "extraction", label: "Extraction"},
+                  {value: "stuck", label: "Stuck"},
+                  {value: "pending", label: "Pending"},
+                  {value: "very_stuck", label: "Very Stuck"},
+                ];
+                return (
+                  <field.SelectField
+                    label="Status"
+                    onBlur={() => {
+                      field.handleBlur();
+                      void form.handleSubmit();
+                    }}
+                    className="bg-background"
+                    items={items}>
+                    {items.map(item => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </field.SelectField>
+                );
+              }}
             />
             {puzzle.childPuzzles.length > 0 && (
               <div className="space-y-2">

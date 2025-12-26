@@ -100,15 +100,24 @@ export function AddNewPuzzleDialog({
               />
               <form.AppField
                 name="worksheetType"
-                children={field => (
-                  <field.SelectField
-                    label="Worksheet Type"
-                    description="The kind of puzzle worksheet you want to use."
-                    placeholder="Select a worksheet type">
-                    <SelectItem value="google_spreadsheet">Google Spreadsheet</SelectItem>
-                    <SelectItem value="google_drawing">Google Drawing</SelectItem>
-                  </field.SelectField>
-                )}
+                children={field => {
+                  const items = [
+                    {value: "google_spreadsheet", label: "Google Spreadsheet"},
+                    {value: "google_drawing", label: "Google Drawing"},
+                  ];
+                  return (
+                    <field.SelectField
+                      label="Worksheet Type"
+                      description="The kind of puzzle worksheet you want to use."
+                      items={items}>
+                      {items.map(item => (
+                        <SelectItem key={item.value} value={item.value!}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </field.SelectField>
+                  );
+                }}
               />
             </div>
           </form>

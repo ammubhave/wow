@@ -42,11 +42,11 @@ export function EditPuzzleDialog({
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
     defaultValues: {
-      parentPuzzleId: puzzle.parentPuzzleId ?? "",
+      parentPuzzleId: puzzle.parentPuzzleId,
       name: puzzle.name,
       answer: puzzle.answer ?? "",
       link: puzzle.link ?? "",
-      status: puzzle.status ?? "none",
+      status: puzzle.status,
       isMetaPuzzle: puzzle.isMetaPuzzle,
       tags: puzzle.tags,
     },
@@ -56,12 +56,9 @@ export function EditPuzzleDialog({
           {
             id: puzzle.id,
             ...value,
-            parentPuzzleId:
-              value.parentPuzzleId === "none" || value.parentPuzzleId === ""
-                ? null
-                : value.parentPuzzleId,
+            parentPuzzleId: value.parentPuzzleId,
             answer: value.answer === "" ? null : value.answer.toUpperCase(),
-            status: value.status === "none" ? null : value.status,
+            status: value.status,
             link: value.link === "" ? null : value.link,
             tags: value.tags,
           },
@@ -103,18 +100,23 @@ export function EditPuzzleDialog({
               />
               <form.AppField
                 name="parentPuzzleId"
-                children={field => (
-                  <field.SelectField label="Feeds Into">
-                    <SelectItem value="none">None</SelectItem>
-                    {workspace.get.data?.rounds
-                      .flatMap(round => round.metaPuzzles)
-                      .map(metaPuzzle => (
-                        <SelectItem key={metaPuzzle.id} value={metaPuzzle.id}>
-                          {metaPuzzle.name}
+                children={field => {
+                  const items = [
+                    {value: null, label: "None"},
+                    ...(workspace.get.data?.rounds
+                      .flatMap(r => r.metaPuzzles)
+                      .map(p => ({value: p.id, label: p.name})) ?? []),
+                  ];
+                  return (
+                    <field.SelectField label="Feeds Into" items={items}>
+                      {items.map(item => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
-                  </field.SelectField>
-                )}
+                    </field.SelectField>
+                  );
+                }}
               />
               <form.AppField
                 name="answer"
@@ -124,19 +126,28 @@ export function EditPuzzleDialog({
               />
               <form.AppField
                 name="status"
-                children={field => (
-                  <field.SelectField label="Status">
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="solved">Solved</SelectItem>
-                    <SelectItem value="backsolved">Backsolved</SelectItem>
-                    <SelectItem value="obsolete">Obsolete</SelectItem>
-                    <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
-                    <SelectItem value="extraction">Extraction</SelectItem>
-                    <SelectItem value="stuck">Stuck</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="very_stuck">Very Stuck</SelectItem>
-                  </field.SelectField>
-                )}
+                children={field => {
+                  const items = [
+                    {value: null, label: "None"},
+                    {value: "solved", label: "Solved"},
+                    {value: "backsolved", label: "Backsolved"},
+                    {value: "obsolete", label: "Obsolete"},
+                    {value: "needs_eyes", label: "Needs Eyes"},
+                    {value: "extraction", label: "Extraction"},
+                    {value: "stuck", label: "Stuck"},
+                    {value: "pending", label: "Pending"},
+                    {value: "very_stuck", label: "Very Stuck"},
+                  ];
+                  return (
+                    <field.SelectField label="Status" items={items}>
+                      {items.map(item => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </field.SelectField>
+                  );
+                }}
               />
               <form.AppField
                 name="tags"
