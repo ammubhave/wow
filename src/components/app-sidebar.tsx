@@ -1,7 +1,9 @@
+import {useLocalStorage} from "@uidotdev/usehooks";
 import {CoffeeIcon} from "lucide-react";
 import * as React from "react";
 
 import {Sidebar, SidebarContent, SidebarFooter, SidebarHeader} from "@/components/ui/sidebar";
+import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
 
 import {CommentBox} from "./comment-box";
 import {Button} from "./ui/button";
@@ -12,6 +14,7 @@ export function AppSidebar({
   ...props
 }: {workspaceId: string} & React.ComponentProps<typeof Sidebar>) {
   const workspace = useWorkspace({workspaceId});
+  const [hideSolved] = useLocalStorage("hideSolved");
   return (
     <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!" {...props}>
       <SidebarHeader>
@@ -28,15 +31,23 @@ export function AppSidebar({
                   <a href={"#" + round.id} className="text-primary underline underline-offset-4">
                     {round.name}
                   </a>
-                  <div className="grid grid-cols-5 gap-2">
-                    {round.puzzles.map((puzzle, puzzleIndex) => (
-                      <a
-                        key={puzzle.id}
-                        className="font-medium text-primary underline underline-offset-4"
-                        href={"#" + puzzle.id}>
-                        {puzzleIndex + 1}
-                      </a>
-                    ))}
+                  <div className="flex flex-wrap">
+                    {round.puzzles
+                      .map((p, puzzleIndex) => ({...p, index: puzzleIndex + 1}))
+                      .filter(
+                        p => !hideSolved || (p.status !== "solved" && p.status !== "backsolved")
+                      )
+                      .map(puzzle => (
+                        <a
+                          key={puzzle.id}
+                          className={cn(
+                            "size-4 text-[8px] flex items-center justify-center text-primary border",
+                            getBgColorClassNamesForPuzzleStatus(puzzle.status)
+                          )}
+                          href={"#" + puzzle.id}>
+                          {puzzle.index}
+                        </a>
+                      ))}
                   </div>
                 </div>
               ))}
