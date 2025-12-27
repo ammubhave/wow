@@ -134,7 +134,7 @@ export function DiscordCardContents({
             </div>
           )
         ) : (
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-8 w-full" />
         )}
       </CardContent>
     </>

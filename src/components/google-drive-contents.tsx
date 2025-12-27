@@ -303,7 +303,7 @@ export function GoogleDriveCardContents({
             </li>
           </ol>
         ) : (
-          <Skeleton className="h-60 w-full" />
+          <Skeleton className="h-[187px] w-full" />
         )}
       </CardContent>
     </>
