@@ -171,7 +171,7 @@ function SubmitButton({children}: React.ComponentProps<typeof Button>) {
   );
 }
 
-function Form({children}: {children: React.ReactNode}) {
+function Form(props: React.ComponentPropsWithRef<"form">) {
   const form = useFormContext();
   return (
     <form
@@ -180,9 +180,9 @@ function Form({children}: {children: React.ReactNode}) {
         e.preventDefault();
         e.stopPropagation();
         void form.handleSubmit();
-      }}>
-      {children}
-    </form>
+      }}
+      {...props}
+    />
   );
 }
 

@@ -56,13 +56,7 @@ export function AddNewMetaPuzzleDialog({
           <DialogTitle>Add new meta puzzle</DialogTitle>
         </DialogHeader>
         <form.AppForm>
-          <form
-            id={form.formId}
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}>
+          <form.Form>
             <div className="grid gap-4 py-4">
               <form.AppField
                 name="name"
@@ -86,7 +80,7 @@ export function AddNewMetaPuzzleDialog({
                 children={field => <field.CheckboxField label="Assign unassigned puzzles" />}
               />
             </div>
-          </form>
+          </form.Form>
           <DialogFooter>
             <form.SubmitButton>Save</form.SubmitButton>
           </DialogFooter>

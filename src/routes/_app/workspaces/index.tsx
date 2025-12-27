@@ -102,13 +102,7 @@ function RouteComponent() {
             <h1 className="text-lg font-semibold tracking-tight">Join an existing workspace</h1>
           </div>
           <form.AppForm>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                e.stopPropagation();
-                void form.handleSubmit();
-              }}
-              className="grid items-stretch space-y-8">
+            <form.Form className="grid items-stretch space-y-8">
               <form.AppField
                 name="workspaceId"
                 children={field => (
@@ -136,7 +130,7 @@ function RouteComponent() {
                 <ArrowRightIcon className="size-4" />
                 Join workspace
               </form.SubmitButton>
-            </form>
+            </form.Form>
           </form.AppForm>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

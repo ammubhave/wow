@@ -41,12 +41,7 @@ function RouteComponent() {
           </CardHeader>
           <CardContent>
             <form.AppForm>
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  void form.handleSubmit();
-                }}>
+              <form.Form>
                 <FieldGroup>
                   <form.AppField name="name">
                     {field => <field.TextField label="Name" />}
@@ -81,7 +76,7 @@ function RouteComponent() {
                     </Field>
                   </FieldGroup>
                 </FieldGroup>
-              </form>
+              </form.Form>
             </form.AppForm>
           </CardContent>
         </Card>

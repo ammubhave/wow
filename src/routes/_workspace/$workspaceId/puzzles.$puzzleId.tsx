@@ -175,13 +175,7 @@ function PuzzleInfoPanel({
       </CardHeader>
       <CardContent className="p-4 text-sm gap-4 flex flex-col">
         <form.AppForm>
-          <form
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}
-            className="space-y-8">
+          <form.Form className="space-y-8">
             <form.AppField
               name="answer"
               children={field => (
@@ -268,7 +262,7 @@ function PuzzleInfoPanel({
                 ))}
               </div>
             </div>
-          </form>
+          </form.Form>
         </form.AppForm>
         <div>
           <CommentBox
