@@ -2,7 +2,15 @@
 
 import {QueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
-import {BellRingIcon, ChevronsUpDownIcon, LogOut, SunMoonIcon} from "lucide-react";
+import {
+  BellRingIcon,
+  ChevronsUpDownIcon,
+  LogOut,
+  MonitorIcon,
+  MoonIcon,
+  PaletteIcon,
+  SunIcon,
+} from "lucide-react";
 
 import {useTheme} from "@/components/theme-provider";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
@@ -10,7 +18,11 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -21,7 +33,7 @@ import {SidebarMenuButton} from "@/components/ui/sidebar";
 import {authClient} from "@/lib/auth-client";
 
 export function NavUser({children}: {children?: React.ReactNode}) {
-  const {setTheme} = useTheme();
+  const {theme, setTheme} = useTheme();
   const router = useRouter();
   const queryClient = new QueryClient();
   const user = authClient.useSession().data?.user;
@@ -68,13 +80,27 @@ export function NavUser({children}: {children?: React.ReactNode}) {
           {children && <DropdownMenuSeparator />}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <SunMoonIcon />
+              <PaletteIcon />
               Theme
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                  <DropdownMenuRadioItem value="light">
+                    <SunIcon />
+                    Light
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">
+                    <MoonIcon />
+                    Dark
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="system">
+                    <MonitorIcon />
+                    System
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSub>
