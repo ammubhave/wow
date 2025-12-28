@@ -10,14 +10,13 @@ import {Resend} from "resend";
 import {db} from "./db";
 import * as schema from "./db/schema";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
   experimental: {joins: true},
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({user, url}) => {
+      const resend = new Resend(process.env.RESEND_API_KEY);
       const username =
         "username" in user && typeof user.username === "string" ? user.username : "UNKNOWN";
       waitUntil(
