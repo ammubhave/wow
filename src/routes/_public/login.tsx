@@ -1,7 +1,9 @@
+import {Turnstile} from "@marsidev/react-turnstile";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
+import {useTheme} from "@/components/theme-provider";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Field, FieldDescription, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
@@ -11,21 +13,24 @@ export const Route = createFileRoute("/_public/login")({component: RouteComponen
 function RouteComponent() {
   const router = useRouter();
   const form = useAppForm({
-    defaultValues: {username: "", password: ""},
+    defaultValues: {username: "", password: "", token: ""},
     onSubmit: async ({value}) => {
-      await authClient.signIn.username(
-        {username: value.username, password: value.password},
-        {
+      await authClient.signIn.username({
+        username: value.username,
+        password: value.password,
+        fetchOptions: {
+          headers: {"x-captcha-response": value.token},
           onSuccess: async () => {
             await router.navigate({to: "/workspaces"});
           },
           onError: async error => {
             toast.error(error.error.message);
           },
-        }
-      );
+        },
+      });
     },
   });
+  const {theme} = useTheme();
   return (
     <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -45,6 +50,11 @@ function RouteComponent() {
                     <form.AppField name="password">
                       {field => <field.TextField label="Password" type="password" />}
                     </form.AppField>
+                    <Turnstile
+                      siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
+                      options={{theme: theme === "system" ? "auto" : theme, size: "flexible"}}
+                      onSuccess={token => form.setFieldValue("token", token)}
+                    />
                     <Field>
                       <form.SubmitButton>Login</form.SubmitButton>
                       <FieldDescription className="text-center">

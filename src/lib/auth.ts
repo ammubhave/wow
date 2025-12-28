@@ -2,6 +2,7 @@ import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {betterAuth} from "better-auth/minimal";
 import {username} from "better-auth/plugins";
 import {organization} from "better-auth/plugins";
+import {captcha} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 
 import {db} from "./db";
@@ -17,6 +18,11 @@ export const auth = betterAuth({
     "https://*-wow-production.panchal-llc.workers.dev",
   ],
   plugins: [
+    captcha({
+      provider: "cloudflare-turnstile",
+      secretKey: process.env.TURNSTILE_SECRET_KEY!,
+      endpoints: ["/sign-in/username", "/sign-up/email"],
+    }),
     organization({
       membershipLimit: 500,
       schema: {

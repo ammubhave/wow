@@ -18,6 +18,7 @@
     "@base-ui/react": "^1.0.0",
     "@cloudflare/vite-plugin": "^1.19.0",
     "@fontsource-variable/noto-sans": "^5.2.10",
+    "@marsidev/react-turnstile": "^1.4.0",
     "@orpc/client": "^1.13.1",
     "@orpc/server": "^1.13.1",
     "@orpc/tanstack-query": "^1.13.1",
