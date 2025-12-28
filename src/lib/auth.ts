@@ -1,6 +1,6 @@
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {betterAuth} from "better-auth/minimal";
-import {username} from "better-auth/plugins";
+import {haveIBeenPwned, username} from "better-auth/plugins";
 import {organization} from "better-auth/plugins";
 import {captcha} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
@@ -35,7 +35,13 @@ export const auth = betterAuth({
     captcha({
       provider: "cloudflare-turnstile",
       secretKey: process.env.TURNSTILE_SECRET_KEY!,
-      endpoints: ["/sign-in/username", "/sign-up/email", "/request-password-reset"],
+      endpoints: [
+        "/sign-in/username",
+        "/sign-in/email",
+        "/sign-up/email",
+        "/forget-password",
+        "/request-password-reset",
+      ],
     }),
     organization({
       membershipLimit: 500,
@@ -58,6 +64,7 @@ export const auth = betterAuth({
       },
     }),
     username(),
+    haveIBeenPwned(),
     tanstackStartCookies(),
   ],
 });

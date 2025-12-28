@@ -28,7 +28,12 @@ export function AppSidebar({
             <div className="flex flex-col gap-2 text-xs">
               {workspace.get.data?.rounds.map(round => (
                 <div key={round.id} className="grid grid-cols-2 items-center justify-center gap-2">
-                  <a href={"#" + round.id} className="text-primary underline underline-offset-4">
+                  <a
+                    href={"#" + round.id}
+                    className={cn(
+                      "text-primary underline underline-offset-4",
+                      getBgColorClassNamesForPuzzleStatus(round.status)
+                    )}>
                     {round.name}
                   </a>
                   <div className="flex flex-wrap">
