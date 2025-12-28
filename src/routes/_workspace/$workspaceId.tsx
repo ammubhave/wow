@@ -18,8 +18,10 @@ function RouteComponent() {
         <div className="[--header-height:calc(--spacing(14))]">
           <SidebarProvider className="flex flex-col">
             <WorkspaceHeader />
-            <div className="flex flex-1">
-              <Outlet />
+            <div className="flex flex-1 relative">
+              <div className="absolute inset-0 flex overflow-auto">
+                <Outlet />
+              </div>
             </div>
           </SidebarProvider>
         </div>
