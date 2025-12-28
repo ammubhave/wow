@@ -9,6 +9,7 @@ import {
   MonitorIcon,
   MoonIcon,
   PaletteIcon,
+  RotateCcwKeyIcon,
   SunIcon,
 } from "lucide-react";
 
@@ -127,6 +128,13 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               </DropdownMenuCheckboxItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+          <DropdownMenuItem
+            onClick={async () => {
+              await router.navigate({to: "/change-password"});
+            }}>
+            <RotateCcwKeyIcon />
+            Change password
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
               await authClient.signOut();
