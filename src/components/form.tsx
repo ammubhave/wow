@@ -26,7 +26,7 @@ function TextField({
   label,
   description,
   ...props
-}: {label?: string; description?: string} & React.ComponentProps<typeof Input>) {
+}: {label?: string; description?: React.ReactNode | string} & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.errors.length > 0;
   return (

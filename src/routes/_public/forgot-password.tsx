@@ -1,27 +1,29 @@
 import {Turnstile} from "@marsidev/react-turnstile";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
+import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
 import {useTheme} from "@/components/theme-provider";
+import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldDescription, FieldGroup} from "@/components/ui/field";
+import {Field, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_public/login")({component: RouteComponent});
+export const Route = createFileRoute("/_public/forgot-password")({component: RouteComponent});
 
 function RouteComponent() {
   const router = useRouter();
   const form = useAppForm({
-    defaultValues: {username: "", password: "", token: ""},
+    defaultValues: {email: "", token: ""},
     onSubmit: async ({value}) => {
-      await authClient.signIn.username({
-        username: value.username,
-        password: value.password,
+      await authClient.requestPasswordReset({
+        email: value.email,
+        redirectTo: "/reset-password",
         fetchOptions: {
           headers: {"x-captcha-response": value.token},
           onSuccess: async () => {
-            await router.navigate({to: "/workspaces"});
+            await router.navigate({to: "/forgot-password-check-email"});
           },
           onError: async error => {
             toast.error(error.error.message);
@@ -34,31 +36,30 @@ function RouteComponent() {
   return (
     <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Go Back"
+              render={
+                <Link to="/login">
+                  <ArrowLeftIcon /> Back
+                </Link>
+              }
+            />
+          </div>
           <Card>
             <CardHeader>
-              <CardTitle>Login to your account</CardTitle>
-              <CardDescription>Enter your username below to login to your account</CardDescription>
+              <CardTitle>Forgot password?</CardTitle>
+              <CardDescription>Enter your email below to send reset instructions</CardDescription>
             </CardHeader>
             <CardContent>
               <form.AppForm>
                 <form.Form>
                   <FieldGroup>
-                    <form.AppField name="username">
-                      {field => <field.TextField label="Username" />}
-                    </form.AppField>
-                    <form.AppField name="password">
-                      {field => (
-                        <field.TextField
-                          label="Password"
-                          type="password"
-                          description={
-                            <Link className="ml-auto table" to="/forgot-password">
-                              Forgot password?
-                            </Link>
-                          }
-                        />
-                      )}
+                    <form.AppField name="email">
+                      {field => <field.TextField label="Email" />}
                     </form.AppField>
                     <Turnstile
                       siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
@@ -66,10 +67,7 @@ function RouteComponent() {
                       onSuccess={token => form.setFieldValue("token", token)}
                     />
                     <Field>
-                      <form.SubmitButton>Login</form.SubmitButton>
-                      <FieldDescription className="text-center">
-                        Don&apos;t have an account? <Link to="/signup">Sign up</Link>
-                      </FieldDescription>
+                      <form.SubmitButton>Reset password</form.SubmitButton>
                     </Field>
                   </FieldGroup>
                 </form.Form>

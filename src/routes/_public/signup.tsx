@@ -13,14 +13,7 @@ export const Route = createFileRoute("/_public/signup")({component: RouteCompone
 function RouteComponent() {
   const router = useRouter();
   const form = useAppForm({
-    defaultValues: {
-      name: "",
-      email: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
-      token: "",
-    },
+    defaultValues: {name: "", email: "", username: "", password: "", token: ""},
     onSubmit: async ({value}) =>
       await authClient.signUp.email({
         name: value.name,
@@ -68,13 +61,7 @@ function RouteComponent() {
                     {field => <field.TextField label="Username" />}
                   </form.AppField>
                   <form.AppField name="password">
-                    {field => (
-                      <field.TextField
-                        label="Password"
-                        description="Password resets not supported"
-                        type="password"
-                      />
-                    )}
+                    {field => <field.TextField label="Password" type="password" />}
                   </form.AppField>
                   <Turnstile
                     siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
