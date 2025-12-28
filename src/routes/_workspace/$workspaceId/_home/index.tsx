@@ -1,7 +1,7 @@
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
-import {CheckIcon, ChevronRightIcon, EllipsisIcon, PuzzleIcon} from "lucide-react";
+import {CheckIcon, ChevronRightIcon, EllipsisIcon, PuzzleIcon, SearchIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
@@ -23,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {
   Select,
@@ -31,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {Skeleton} from "@/components/ui/skeleton";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
 import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
@@ -70,74 +70,106 @@ function RouteComponent() {
   const workspace = useWorkspace({workspaceId});
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
+
+  const [search, setSearch] = useState("");
+
+  const rounds = workspace.get.data.rounds.map(r => ({
+    ...r,
+    metaPuzzles: r.metaPuzzles
+      .map(m => ({
+        ...m,
+        childPuzzles: m.childPuzzles.filter(p =>
+          p.name.toLowerCase().includes(search.toLowerCase())
+        ),
+      }))
+      .filter(
+        m => m.childPuzzles.length > 0 || m.name.toLowerCase().includes(search.toLowerCase())
+      ),
+    unassignedPuzzles: r.unassignedPuzzles.filter(p =>
+      p.name.toLowerCase().includes(search.toLowerCase())
+    ),
+  }));
+
   return (
     <div className="relative flex-1">
       <div className="absolute inset-0 overflow-auto">
         <div className="flex flex-col divide-y flex-1">
-          {workspace.get.isLoading && <Skeleton className="flex-1 m-8" />}
-          {workspace.get.data && (
-            <ScrollArea className="flex-1">
-              <div className="overflow-hidden">
-                <Table className="h-fit">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="p-0 w-8" colSpan={1} />
-                      <TableHead className="p-0 w-8" colSpan={1} />
-                      <TableHead>Name</TableHead>
-                      <TableHead>Solution</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Importance</TableHead>
-                      <TableHead>Tags</TableHead>
-                      <TableHead>Working on this</TableHead>
-                      <TableHead className="w-0">
-                        <div className="-my-1 flex items-center justify-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <Button variant="ghost" size="icon" className="-my-3">
-                                  <EllipsisIcon className="size-4" />
-                                  <span className="sr-only">Toggle menu</span>
-                                </Button>
-                              }
-                            />
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
-                                Add new round
-                              </DropdownMenuItem>
-                              <DropdownMenuCheckboxItem
-                                checked={hideSolved}
-                                onCheckedChange={setHideSolved}>
-                                Hide solved puzzles
-                              </DropdownMenuCheckboxItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <AddNewRoundDialog
-                            workspaceId={workspaceId!}
-                            open={isAddNewRoundDialogOpen}
-                            setOpen={setIsAddNewRoundDialogOpen}
+          <div className="p-2">
+            <InputGroup>
+              <InputGroupInput value={search} onChange={e => setSearch(e.target.value)} />
+              <InputGroupAddon>
+                <SearchIcon className="text-muted-foreground" />
+              </InputGroupAddon>
+              {search.length > 0 && (
+                <InputGroupAddon align="inline-end">
+                  <Button variant="link" onClick={() => setSearch("")}>
+                    Clear
+                  </Button>
+                </InputGroupAddon>
+              )}
+            </InputGroup>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="overflow-hidden">
+              <Table className="h-fit">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="p-0 w-8" colSpan={1} />
+                    <TableHead className="p-0 w-8" colSpan={1} />
+                    <TableHead>Name</TableHead>
+                    <TableHead>Solution</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Importance</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Working on this</TableHead>
+                    <TableHead className="w-0">
+                      <div className="-my-1 flex items-center justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button variant="ghost" size="icon" className="-my-3">
+                                <EllipsisIcon className="size-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            }
                           />
-                        </div>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {workspace.get.data.rounds.map(round => (
-                      <BlackboardRound
-                        key={round.id}
-                        workspaceId={workspaceId!}
-                        round={round}
-                        hideSolved={hideSolved}
-                      />
-                    ))}
-                    {/* Gets rid of the scroll bar when the last row is hidden. */}
-                    <TableRow>
-                      <TableCell colSpan={7} className="py-0" />
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
-          )}
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
+                              Add new round
+                            </DropdownMenuItem>
+                            <DropdownMenuCheckboxItem
+                              checked={hideSolved}
+                              onCheckedChange={setHideSolved}>
+                              Hide solved puzzles
+                            </DropdownMenuCheckboxItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <AddNewRoundDialog
+                          workspaceId={workspaceId!}
+                          open={isAddNewRoundDialogOpen}
+                          setOpen={setIsAddNewRoundDialogOpen}
+                        />
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rounds.map(round => (
+                    <BlackboardRound
+                      key={round.id}
+                      workspaceId={workspaceId!}
+                      round={round}
+                      hideSolved={hideSolved}
+                    />
+                  ))}
+                  {/* Gets rid of the scroll bar when the last row is hidden. */}
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-0" />
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>
