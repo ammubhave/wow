@@ -45,13 +45,14 @@ function RouteComponent() {
                 <form.Form>
                   <FieldGroup>
                     <form.AppField name="username">
-                      {field => <field.TextField label="Username" />}
+                      {field => <field.TextField label="Username" autoComplete="username" />}
                     </form.AppField>
                     <form.AppField name="password">
                       {field => (
                         <field.TextField
                           label="Password"
                           type="password"
+                          autoComplete="current-password"
                           description={
                             <Link className="ml-auto table" to="/forgot-password">
                               Forgot password?

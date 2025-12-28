@@ -59,7 +59,7 @@ function RouteComponent() {
                 <form.Form>
                   <FieldGroup>
                     <form.AppField name="email">
-                      {field => <field.TextField label="Email" />}
+                      {field => <field.TextField label="Email" autoComplete="email" />}
                     </form.AppField>
                     <Turnstile
                       siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}

@@ -40,10 +40,22 @@ function RouteComponent() {
               <form.Form>
                 <FieldGroup>
                   <form.AppField name="currentPassword">
-                    {field => <field.TextField label="Current Password" type="password" />}
+                    {field => (
+                      <field.TextField
+                        label="Current Password"
+                        type="password"
+                        autoComplete="current-password"
+                      />
+                    )}
                   </form.AppField>
                   <form.AppField name="newPassword">
-                    {field => <field.TextField label="New Password" type="password" />}
+                    {field => (
+                      <field.TextField
+                        label="New Password"
+                        type="password"
+                        autoComplete="new-password"
+                      />
+                    )}
                   </form.AppField>
                   <FieldGroup>
                     <Field>

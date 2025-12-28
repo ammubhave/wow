@@ -46,7 +46,13 @@ function RouteComponent() {
               <form.Form>
                 <FieldGroup>
                   <form.AppField name="password">
-                    {field => <field.TextField label="Password" type="password" />}
+                    {field => (
+                      <field.TextField
+                        label="Password"
+                        type="password"
+                        autoComplete="new-password"
+                      />
+                    )}
                   </form.AppField>
                   <FieldGroup>
                     <Field>

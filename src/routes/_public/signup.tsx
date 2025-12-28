@@ -46,7 +46,7 @@ function RouteComponent() {
               <form.Form>
                 <FieldGroup>
                   <form.AppField name="name">
-                    {field => <field.TextField label="Name" />}
+                    {field => <field.TextField label="Name" autoComplete="name" />}
                   </form.AppField>
                   <form.AppField name="email">
                     {field => (
@@ -54,14 +54,21 @@ function RouteComponent() {
                         label="Email"
                         description="Used for Google Drive sharing and password resets"
                         type="email"
+                        autoComplete="email"
                       />
                     )}
                   </form.AppField>
                   <form.AppField name="username">
-                    {field => <field.TextField label="Username" />}
+                    {field => <field.TextField label="Username" autoComplete="username" />}
                   </form.AppField>
                   <form.AppField name="password">
-                    {field => <field.TextField label="Password" type="password" />}
+                    {field => (
+                      <field.TextField
+                        label="Password"
+                        type="password"
+                        autoComplete="new-password"
+                      />
+                    )}
                   </form.AppField>
                   <Turnstile
                     siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
