@@ -84,7 +84,7 @@ export function GoogleDriveCardContents({
       <CardContent>
         {state.data ? (
           <ol role="list" className="overflow-hidden">
-            <li className={"relative pb-10"}>
+            <li className="relative pb-8">
               {state.data.state === 1 || state.data.state === 2 || state.data.state === 3 ? (
                 <>
                   <div
@@ -142,7 +142,7 @@ export function GoogleDriveCardContents({
               )}
             </li>
 
-            <li className="relative pb-10">
+            <li className="relative pb-8">
               {state.data.state === 2 || state.data.state === 3 ? (
                 <>
                   <div

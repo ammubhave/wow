@@ -18,7 +18,7 @@ function RouteComponent() {
   const workspace = useWorkspace({workspaceId});
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center w-full">
       <div className="max-w-3xl flex-1 flex flex-col gap-2">
         <div>
           <Button
