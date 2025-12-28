@@ -33,14 +33,40 @@ export class ChatRoom extends DurableObject {
   async webSocketMessage(ws: WebSocket, message: string) {
     await this.resetAlarm();
     const {name} = z.object({name: z.string()}).parse(ws.deserializeAttachment());
-    const data = {
-      ...z.object({text: z.string()}).parse(JSON.parse(message)),
-      name,
-      timestamp: Date.now(),
-    };
-    this.broadcast(data);
-    const key = `${data.timestamp.toString().padStart(20)}-${crypto.randomUUID()}`;
-    await this.storage.put(key, data);
+
+    const m = z
+      .union([
+        z.object({type: z.literal("send"), text: z.string()}),
+        z.object({
+          type: z.literal("react"),
+          messageId: z.string(),
+          reaction: z.literal(["like", "love", "laugh", "angry"]),
+        }),
+      ])
+      .parse(JSON.parse(message));
+
+    if (m.type === "send") {
+      const now = Date.now();
+      const key = `${now.toString().padStart(20)}-${crypto.randomUUID()}`;
+      const data = {id: key, text: m.text, name, timestamp: now, reactions: {}};
+      this.broadcast(data);
+      await this.storage.put(key, data);
+    } else if (m.type === "react") {
+      const data = (await this.storage.get(m.messageId)) as
+        | {
+            id: string;
+            name: string;
+            text: string;
+            timestamp: number;
+            reactions: Record<string, number>;
+          }
+        | undefined;
+      if (data) {
+        data.reactions[m.reaction] = (data.reactions[m.reaction] || 0) + 1;
+      }
+      this.broadcast(data);
+      await this.storage.put(m.messageId, data);
+    }
   }
 
   broadcast(data: any) {

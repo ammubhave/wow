@@ -5,12 +5,8 @@
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/index.ts",
-  "observability": {
-    "enabled": true,
-    "traces": { "enabled": true },
-    "logs": { "enabled": true }
-  },
-  "placement": { "mode": "smart", "hint": "enam" },
+  "observability": {"enabled": true, "traces": {"enabled": true}, "logs": {"enabled": true}},
+  "placement": {"mode": "smart", "hint": "enam"},
   "upload_source_maps": true,
   "workers_dev": false,
   "preview_urls": true,
@@ -18,8 +14,8 @@
     {
       "binding": "DB",
       "database_name": "wow",
-      "database_id": "33287a33-35b9-47c0-8c7f-2e2d79a73a54"
-    }
+      "database_id": "33287a33-35b9-47c0-8c7f-2e2d79a73a54",
+    },
   ],
   "vars": {
     "VITE_DISCORD_CLIENT_ID": "1282113902745878628",
@@ -30,33 +26,25 @@
     "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXjlC9B02DfnTb",
     "BETTER_AUTH_URL": "http://localhost:3000",
     "BETTER_AUTH_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "PNPM_VERSION": "10.24.0"
+    "PNPM_VERSION": "10.24.0",
   },
   "durable_objects": {
     "bindings": [
-      { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
-      { "name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom" },
-      { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" },
-      { "name": "DISCORD_CLIENT", "class_name": "DiscordClient" }
-    ]
+      {"name": "CHAT_ROOMS", "class_name": "ChatRoom"},
+      {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom"},
+      {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
+      {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
+    ],
   },
   "migrations": [
-    {
-      "tag": "v1",
-      "new_classes": [
-        "ChatRoom",
-        "NotificationRoom",
-        "PresenceRoom",
-        "DiscordClient"
-      ]
-    }
+    {"tag": "v1", "new_classes": ["ChatRoom", "NotificationRoom", "PresenceRoom", "DiscordClient"]},
   ],
   "workflows": [
     {
       "name": "DeleteChannelAfterDelayWorkflow",
       "binding": "DELETE_CHANNEL_AFTER_DELAY_WORKFLOW",
-      "class_name": "DeleteChannelAfterDelayWorkflow"
-    }
+      "class_name": "DeleteChannelAfterDelayWorkflow",
+    },
   ],
   "env": {
     "production": {
@@ -64,8 +52,8 @@
         {
           "binding": "DB",
           "database_name": "wow-production",
-          "database_id": "dbd210d9-5627-4157-aec9-7d6431e68833"
-        }
+          "database_id": "dbd210d9-5627-4157-aec9-7d6431e68833",
+        },
       ],
       "vars": {
         "VITE_DISCORD_CLIENT_ID": "1282113902745878628",
@@ -75,23 +63,23 @@
         "VITE_GOOGLE_API_CLIENT_ID": "933519172272-179lstu86fd5blof9d6las41m1r9mdt7.apps.googleusercontent.com",
         "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXqMR1-nXdolsi",
         "BETTER_AUTH_URL": "https://www.wafflehaus.io",
-        "PNPM_VERSION": "10.26.2"
+        "PNPM_VERSION": "10.26.2",
       },
       "durable_objects": {
         "bindings": [
-          { "name": "CHAT_ROOMS", "class_name": "ChatRoom" },
-          { "name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom" },
-          { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" },
-          { "name": "DISCORD_CLIENT", "class_name": "DiscordClient" }
-        ]
+          {"name": "CHAT_ROOMS", "class_name": "ChatRoom"},
+          {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom"},
+          {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
+          {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
+        ],
       },
       "workflows": [
         {
           "name": "DeleteChannelAfterDelayWorkflow",
           "binding": "DELETE_CHANNEL_AFTER_DELAY_WORKFLOW",
-          "class_name": "DeleteChannelAfterDelayWorkflow"
-        }
-      ]
-    }
-  }
+          "class_name": "DeleteChannelAfterDelayWorkflow",
+        },
+      ],
+    },
+  },
 }
