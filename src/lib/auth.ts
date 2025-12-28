@@ -67,4 +67,5 @@ export const auth = betterAuth({
     haveIBeenPwned(),
     tanstackStartCookies(),
   ],
+  session: {cookieCache: {enabled: true, maxAge: 5 * 60}},
 });
