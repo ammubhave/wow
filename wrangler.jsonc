@@ -75,7 +75,7 @@
         "VITE_GOOGLE_API_CLIENT_ID": "933519172272-179lstu86fd5blof9d6las41m1r9mdt7.apps.googleusercontent.com",
         "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXqMR1-nXdolsi",
         "BETTER_AUTH_URL": "https://www.wafflehaus.io",
-        "PNPM_VERSION": "10.24.0"
+        "PNPM_VERSION": "10.26.2"
       },
       "durable_objects": {
         "bindings": [
