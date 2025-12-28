@@ -16,13 +16,20 @@ import {
 } from "@/components/ui/accordion";
 import {Button} from "@/components/ui/button";
 import {CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {FieldGroup, FieldLabel} from "@/components/ui/field";
+import {Item, ItemActions, ItemContent, ItemTitle} from "@/components/ui/item";
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable";
 import {SelectItem} from "@/components/ui/select";
 import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
 import {usePuzzle} from "@/lib/usePuzzle";
-import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
+import {
+  cn,
+  getBgColorClassNamesForPuzzleStatus,
+  getBgColorClassNamesForPuzzleStatusNoHover,
+} from "@/lib/utils";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
@@ -56,7 +63,7 @@ function RouteComponent() {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={20}>
               <ResizablePanelGroup direction="vertical">
-                <ResizablePanel defaultSize={50} className="flex items-stretch">
+                <ResizablePanel defaultSize={50} className="flex">
                   <PuzzleInfoPanel workspaceId={workspaceId!} puzzle={puzzle.data} />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
@@ -117,6 +124,189 @@ function PuzzleInfoPanel({
   return (
     <div
       className={cn(
+        "flex flex-1 flex-col",
+        getBgColorClassNamesForPuzzleStatusNoHover(puzzle.status)
+      )}>
+      <Item variant="muted">
+        <ItemContent>
+          <ItemTitle>{puzzle.name}</ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          {puzzle.googleSpreadsheetId && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    render={
+                      <a
+                        href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        <TableIcon />
+                      </a>
+                    }
+                  />
+                }
+              />
+              <TooltipContent>Link to the puzzle's Google spreadsheet</TooltipContent>
+            </Tooltip>
+          )}
+          {puzzle.googleDrawingId && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    render={
+                      <a
+                        href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        <BrushIcon />
+                      </a>
+                    }
+                  />
+                }
+              />
+              <TooltipContent>Link to the puzzle's Google drawing</TooltipContent>
+            </Tooltip>
+          )}
+          {puzzle.link && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    render={
+                      <a href={puzzle.link} target="_blank" rel="noopener noreferrer">
+                        <PuzzleIcon />
+                      </a>
+                    }
+                  />
+                }
+              />
+              <TooltipContent>Link to the puzzle page on the hunt website</TooltipContent>
+            </Tooltip>
+          )}
+          <EditPuzzleDialog
+            workspaceId={workspaceId}
+            puzzle={puzzle}
+            open={isEditPuzzleDialogOpen}
+            setOpen={setIsEditPuzzleDialogOpen}>
+            <Button size="icon-sm" variant="ghost">
+              <EditIcon />
+            </Button>
+          </EditPuzzleDialog>
+        </ItemActions>
+      </Item>
+      <div className="p-4 text-sm gap-4 flex flex-col overflow-auto">
+        <form.AppForm>
+          <form.Form>
+            <FieldGroup>
+              <form.AppField
+                name="answer"
+                children={field => (
+                  <field.TextField
+                    label="Answer"
+                    className="whitespace-pre font-mono"
+                    onBlur={() => {
+                      field.handleBlur();
+                      void form.handleSubmit();
+                    }}
+                  />
+                )}
+              />
+              <form.AppField
+                name="status"
+                children={field => {
+                  const items = [
+                    {value: null, label: "None"},
+                    {value: "solved", label: "Solved"},
+                    {value: "backsolved", label: "Backsolved"},
+                    {value: "obsolete", label: "Obsolete"},
+                    {value: "needs_eyes", label: "Needs Eyes"},
+                    {value: "extraction", label: "Extraction"},
+                    {value: "stuck", label: "Stuck"},
+                    {value: "pending", label: "Pending"},
+                    {value: "very_stuck", label: "Very Stuck"},
+                  ];
+                  return (
+                    <field.SelectField
+                      label="Status"
+                      onValueChange={v => {
+                        field.handleChange(v as any);
+                        void form.handleSubmit();
+                      }}
+                      items={items}>
+                      {items.map(item => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </field.SelectField>
+                  );
+                }}
+              />
+              {puzzle.childPuzzles.length > 0 && (
+                <div>
+                  <Accordion>
+                    <AccordionItem>
+                      <AccordionTrigger>Feeder Puzzle Answers</AccordionTrigger>
+                      <AccordionContent>
+                        <Table>
+                          <TableBody>
+                            {puzzle.childPuzzles.map(childPuzzle => (
+                              <TableRow key={childPuzzle.name}>
+                                <TableCell>{childPuzzle.name}</TableCell>
+                                <TableCell className="font-mono">{childPuzzle.answer}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <FieldLabel>Hunters Present</FieldLabel>
+                <div className="flex flex-row flex-wrap gap-2">
+                  {presences.map((name, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 px-1.5 py-0.5 text-xs font-medium text-green-900">
+                      <svg
+                        viewBox="0 0 6 6"
+                        aria-hidden="true"
+                        className="h-1.5 w-1.5 fill-green-500">
+                        <circle r={3} cx={3} cy={3} />
+                      </svg>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </FieldGroup>
+          </form.Form>
+        </form.AppForm>
+        <div>
+          <CommentBox
+            comment={puzzle.comment ?? ""}
+            workspaceId={workspaceId}
+            puzzleId={puzzle.id}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      className={cn(
         "flex-1 overflow-auto border-0 shadow-none rounded-none md:rounded-none",
         getBgColorClassNamesForPuzzleStatus(puzzle.status)
       )}>
@@ -137,141 +327,9 @@ function PuzzleInfoPanel({
               }
             />
           )}
-          {puzzle.googleDrawingId && (
-            <Button
-              size="sm"
-              variant="outline"
-              render={
-                <a
-                  href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
-                  target="_blank"
-                  rel="noopener noreferrer">
-                  <BrushIcon className="size-4" />
-                </a>
-              }
-            />
-          )}
-          {puzzle.link && (
-            <Button
-              size="sm"
-              variant="outline"
-              render={
-                <a href={puzzle.link} target="_blank" rel="noopener noreferrer">
-                  <PuzzleIcon className="h-3.5 w-3.5" />
-                </a>
-              }
-            />
-          )}
-          <EditPuzzleDialog
-            workspaceId={workspaceId}
-            puzzle={puzzle}
-            open={isEditPuzzleDialogOpen}
-            setOpen={setIsEditPuzzleDialogOpen}>
-            <Button size="sm" variant="outline">
-              <EditIcon className="h-3.5 w-3.5" />
-            </Button>
-          </EditPuzzleDialog>
         </div>
       </CardHeader>
-      <CardContent className="p-4 text-sm gap-4 flex flex-col">
-        <form.AppForm>
-          <form.Form className="space-y-8">
-            <form.AppField
-              name="answer"
-              children={field => (
-                <field.TextField
-                  label="Answer"
-                  className="bg-background whitespace-pre font-mono"
-                  onBlur={() => {
-                    field.handleBlur();
-                    void form.handleSubmit();
-                  }}
-                />
-              )}
-            />
-            <form.AppField
-              name="status"
-              children={field => {
-                const items = [
-                  {value: null, label: "None"},
-                  {value: "solved", label: "Solved"},
-                  {value: "backsolved", label: "Backsolved"},
-                  {value: "obsolete", label: "Obsolete"},
-                  {value: "needs_eyes", label: "Needs Eyes"},
-                  {value: "extraction", label: "Extraction"},
-                  {value: "stuck", label: "Stuck"},
-                  {value: "pending", label: "Pending"},
-                  {value: "very_stuck", label: "Very Stuck"},
-                ];
-                return (
-                  <field.SelectField
-                    label="Status"
-                    onValueChange={v => {
-                      field.handleChange(v as any);
-                      void form.handleSubmit();
-                    }}
-                    className="bg-background"
-                    items={items}>
-                    {items.map(item => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </field.SelectField>
-                );
-              }}
-            />
-            {puzzle.childPuzzles.length > 0 && (
-              <div className="space-y-2">
-                <Accordion>
-                  <AccordionItem value="item-1">
-                    <AccordionTrigger>Feeder Puzzle Answers</AccordionTrigger>
-                    <AccordionContent>
-                      <Table>
-                        <TableBody>
-                          {puzzle.childPuzzles.map(childPuzzle => (
-                            <TableRow key={childPuzzle.name}>
-                              <TableCell>{childPuzzle.name}</TableCell>
-                              <TableCell className="font-mono">{childPuzzle.answer}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-            )}
-            <div className="space-y-2">
-              <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Hunters Present
-              </span>
-              <div className="flex flex-row flex-wrap gap-2">
-                {presences.map((name, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 px-1.5 py-0.5 text-xs font-medium text-green-900">
-                    <svg
-                      viewBox="0 0 6 6"
-                      aria-hidden="true"
-                      className="h-1.5 w-1.5 fill-green-500">
-                      <circle r={3} cx={3} cy={3} />
-                    </svg>
-                    {name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </form.Form>
-        </form.AppForm>
-        <div>
-          <CommentBox
-            comment={puzzle.comment ?? ""}
-            workspaceId={workspaceId}
-            puzzleId={puzzle.id}
-          />
-        </div>
-      </CardContent>
+      <CardContent className="p-4 text-sm gap-4 flex flex-col"></CardContent>
     </div>
   );
 }

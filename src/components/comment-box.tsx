@@ -200,12 +200,12 @@ export function CommentBox({
                 {updatedComment}
               </Markdown>
             </div>
-            <span className="absolute top-0 -right-4">
+            <span className="absolute top-0 right-0">
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <Button variant="ghost" size="icon" className="-my-3">
-                      <PencilIcon className="size-4" />
+                    <Button variant="ghost" size="icon">
+                      <PencilIcon />
                       <span className="sr-only">Toggle comment settings</span>
                     </Button>
                   }
