@@ -4,8 +4,8 @@ import useWebSocket from "react-use-websocket";
 
 import {cn} from "@/lib/utils";
 
-import {Button} from "./ui/button";
-import {Textarea} from "./ui/textarea";
+import {Field} from "./ui/field";
+import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea} from "./ui/input-group";
 
 interface Message {
   text: string;
@@ -46,15 +46,14 @@ export function Chat({puzzleId}: {puzzleId: string}) {
   };
 
   return (
-    <>
+    <div className="flex flex-1 flex-col gap-4">
       <div className="flex-1 pr-4 relative">
-        <div className="absolute inset-0 overflow-y-auto">
+        <div className="absolute inset-0 overflow-y-auto text-xs flex flex-col gap-1">
           {messages.map((message, idx) => (
             <div
               key={idx}
               style={{overflowWrap: "anywhere"}}
               className={cn(
-                "max-w-54.25",
                 (idx === messages.length - 1 || messages[idx + 1]!.name !== message.name) && "mb-4"
               )}>
               {(idx === 0 ||
@@ -64,7 +63,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                 <div className="flex items-baseline justify-between space-x-2">
                   <span className="font-semibold">{message.name}</span>
                   <span
-                    className="text-muted-foreground text-[10px]"
+                    className="text-muted-foreground text-xs"
                     title={new Date(message.timestamp).toLocaleString()}>
                     {formatTime(new Date(message.timestamp))}
                   </span>
@@ -76,22 +75,25 @@ export function Chat({puzzleId}: {puzzleId: string}) {
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="mt-4 flex">
-        <div className="relative w-full">
-          <Textarea
+      <Field>
+        <InputGroup>
+          <InputGroupTextarea
+            placeholder="Type your message..."
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder={`Type your message...`}
-            className="mr-2 grow absolute"
             onKeyDown={e => e.key === "Enter" && handleSend()}
           />
-          <div className="invisible mr-2">{input}</div>
-        </div>
-        <Button onClick={handleSend}>
-          <SendIcon className="size-4" />
-          <span className="sr-only">Send</span>
-        </Button>
-      </div>
-    </>
+          <InputGroupAddon align="inline-end" className="self-end">
+            <InputGroupButton
+              size="icon-sm"
+              variant="default"
+              className="rounded-4xl"
+              onClick={handleSend}>
+              <SendIcon />
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+      </Field>
+    </div>
   );
 }

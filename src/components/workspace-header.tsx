@@ -1,4 +1,4 @@
-import {createFileRoute, useChildMatches, useNavigate} from "@tanstack/react-router";
+import {createFileRoute, Link, useChildMatches, useNavigate} from "@tanstack/react-router";
 import {ExternalLinkIcon, Info, Settings, History} from "lucide-react";
 import {useEffect} from "react";
 
@@ -63,8 +63,10 @@ export function WorkspaceHeader() {
           }}
           className="flex-1 flex flex-col">
           <div className="justify-between flex items-center gap-2">
-            <div className="px-2 flex items-center gap-4">
-              <img src="/favicon.ico" className="shrink-0 size-6 rounded-full" />
+            <div className="px-2 flex items-center gap-4 shrink-0">
+              <Link to="/workspaces" className="shrink-0">
+                <img src="/favicon.ico" className="size-6 rounded-full" />
+              </Link>
               <div className="contents flex-1 text-lg font-semibold">
                 <span className="font-semi-bold text-lg text-nowrap">
                   {workspace.get.data.teamName}
