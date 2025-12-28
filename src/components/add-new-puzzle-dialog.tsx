@@ -31,7 +31,7 @@ export function AddNewPuzzleDialog({
 }) {
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
-    defaultValues: {name: "", link: "", worksheetType: "google_spreadsheet"},
+    defaultValues: {name: "", tags: [] as string[], link: "", worksheetType: "google_spreadsheet"},
     onSubmit: ({value}) =>
       toast.promise(
         workspace.puzzles.create.mutateAsync(
@@ -86,6 +86,15 @@ export function AddNewPuzzleDialog({
               <form.AppField
                 name="name"
                 children={field => <field.TextField label="Name" autoFocus autoComplete="off" />}
+              />
+              <form.AppField
+                name="tags"
+                children={field => (
+                  <field.ComboboxMultipleField
+                    label="Tags"
+                    items={(workspace.get.data.tags as string[] | null) ?? []}
+                  />
+                )}
               />
               <form.AppField
                 name="link"

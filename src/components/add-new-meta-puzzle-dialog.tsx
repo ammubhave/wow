@@ -28,7 +28,7 @@ export function AddNewMetaPuzzleDialog({
 }) {
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
-    defaultValues: {name: "", assignUnassignedPuzzles: false, link: ""},
+    defaultValues: {name: "", assignUnassignedPuzzles: false, tags: [] as string[], link: ""},
     onSubmit: ({value}) =>
       toast.promise(
         workspace.puzzles.create.mutateAsync(
@@ -62,6 +62,15 @@ export function AddNewMetaPuzzleDialog({
                 name="name"
                 validators={{onSubmit: z.string().min(1)}}
                 children={field => <field.TextField label="Name" autoFocus autoComplete="off" />}
+              />
+              <form.AppField
+                name="tags"
+                children={field => (
+                  <field.ComboboxMultipleField
+                    label="Tags"
+                    items={(workspace.get.data.tags as string[] | null) ?? []}
+                  />
+                )}
               />
               <form.AppField
                 name="link"

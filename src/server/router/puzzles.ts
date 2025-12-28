@@ -27,6 +27,7 @@ export const puzzlesRouter = {
         ]),
         z.object({
           name: z.string(),
+          tags: z.array(z.string()),
           link: z.url().or(z.string().length(0)),
           worksheetType: z.enum(["google_spreadsheet", "google_drawing"]),
         })
@@ -74,6 +75,7 @@ export const puzzlesRouter = {
         .insert(schema.puzzle)
         .values({
           name: input.name,
+          tags: input.tags,
           link: input.link,
           roundId,
           isMetaPuzzle: input.type === "meta-puzzle",
