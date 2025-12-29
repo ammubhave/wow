@@ -111,6 +111,10 @@ function RouteComponent() {
     ),
   }));
 
+  let filterCount = 0;
+  if (tags.length > 0) filterCount += 1;
+  if (hideSolved) filterCount += 1;
+
   return (
     <div className="relative flex-1">
       <div className="absolute inset-0 overflow-auto">
@@ -135,15 +139,15 @@ function RouteComponent() {
                   <Button variant="outline">
                     <FunnelIcon />
                     Filter
-                    {tags.length > 0 && (
-                      <Badge variant="destructive" className="rounded-full ml-1">
-                        1
+                    {filterCount > 0 && (
+                      <Badge variant="outline" className="rounded-full ml-1">
+                        {filterCount}
                       </Badge>
                     )}
                   </Button>
                 }
               />
-              <DropdownMenuContent>
+              <DropdownMenuContent className="w-fit">
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <TagIcon />
@@ -168,6 +172,9 @@ function RouteComponent() {
                     <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
+                <DropdownMenuCheckboxItem checked={hideSolved} onCheckedChange={setHideSolved}>
+                  Hide solved puzzles
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -195,15 +202,10 @@ function RouteComponent() {
                               </Button>
                             }
                           />
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="w-fit">
                             <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
                               Add new round
                             </DropdownMenuItem>
-                            <DropdownMenuCheckboxItem
-                              checked={hideSolved}
-                              onCheckedChange={setHideSolved}>
-                              Hide solved puzzles
-                            </DropdownMenuCheckboxItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                         <AddNewRoundDialog
@@ -345,7 +347,7 @@ function BlackboardRound({
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-fit">
                 <DropdownMenuItem onClick={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
                   Add new meta puzzle
                 </DropdownMenuItem>
@@ -448,7 +450,7 @@ function BlackboardRound({
                       </Button>
                     }
                   />
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-fit">
                     <DropdownMenuItem onClick={() => setIsAssignUnassignedPuzzlesDialogOpen(true)}>
                       Assign all unassigned puzzles
                     </DropdownMenuItem>
@@ -731,7 +733,7 @@ function BlackboardMetaPuzzle({
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-fit">
                 <DropdownMenuItem onClick={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
                   Add new puzzle feeding this meta puzzle
                 </DropdownMenuItem>
@@ -1022,7 +1024,7 @@ function BlackboardPuzzle({
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-fit">
                 <DropdownMenuItem onClick={() => setIsEditPuzzleDialogOpen(true)}>
                   Edit this puzzle
                 </DropdownMenuItem>
