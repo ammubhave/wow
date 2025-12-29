@@ -165,17 +165,19 @@ export function WorkspaceHeader() {
         </div>
         <PresencesCard id={workspaceId} />
         <div className="flex items-center gap-1">
-          {workspace.links.list.data.map((link, index) => (
-            <Button
-              key={index}
-              variant="ghost"
-              render={
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                  {link.name} <ExternalLinkIcon />
-                </a>
-              }
-            />
-          ))}
+          {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
+            (link, index) => (
+              <Button
+                key={index}
+                variant="ghost"
+                render={
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                    {link.name} <ExternalLinkIcon />
+                  </a>
+                }
+              />
+            )
+          )}
         </div>
         <Separator orientation="vertical" />
         <NavUser>
@@ -183,20 +185,22 @@ export function WorkspaceHeader() {
             <>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {workspace.links.list.data.map((link, index) => (
-                  <DropdownMenuItem
-                    key={index}
-                    render={
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="gap-2 justify-between">
-                        {link.name} <ExternalLinkIcon />
-                      </a>
-                    }
-                  />
-                ))}
+                {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
+                  (link, index) => (
+                    <DropdownMenuItem
+                      key={index}
+                      render={
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="gap-2 justify-between">
+                          {link.name} <ExternalLinkIcon />
+                        </a>
+                      }
+                    />
+                  )
+                )}
               </DropdownMenuGroup>
             </>
           )}

@@ -110,6 +110,7 @@ export const workspacesRouter = {
         password: z.string().min(8).optional(),
         comment: z.string().optional(),
         tags: z.array(z.string()).optional(),
+        links: z.array(z.object({name: z.string(), url: z.url()})).optional(),
       })
     )
     .use(preauthorize)
@@ -122,6 +123,7 @@ export const workspacesRouter = {
           password: input.password,
           comment: input.comment,
           tags: input.tags,
+          links: input.links,
         })
         .where(eq(schema.organization.id, context.workspace.id))
         .returning();
@@ -310,37 +312,6 @@ export const workspacesRouter = {
           .orderBy(desc(schema.activityLogEntry.createdAt));
 
         return activityLogEntries;
-      }),
-  },
-
-  links: {
-    list: procedure
-      .input(z.object({workspaceId: z.string()}))
-      .use(preauthorize)
-      .handler(async ({context}) => {
-        return await db
-          .select()
-          .from(schema.workspaceLinks)
-          .where(eq(schema.workspaceLinks.workspaceId, context.workspace.id));
-      }),
-    update: procedure
-      .input(
-        z.object({
-          workspaceId: z.string(),
-          links: z.array(z.object({name: z.string(), url: z.url()})),
-        })
-      )
-      .use(preauthorize)
-      .handler(async ({context, input}) => {
-        await db
-          .delete(schema.workspaceLinks)
-          .where(eq(schema.workspaceLinks.workspaceId, context.workspace.id));
-        for (const link of input.links) {
-          await db
-            .insert(schema.workspaceLinks)
-            .values({workspaceId: context.workspace.id, name: link.name, url: link.url});
-        }
-        await context.notification.broadcast(input.workspaceId, {type: "invalidate"});
       }),
   },
 };

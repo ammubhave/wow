@@ -63,6 +63,15 @@ export const auth = betterAuth({
             googleTemplateFileId: {type: "string", required: false},
             discordGuildId: {type: "string", required: false},
             tags: {type: "string[]", required: false, default: ["crossword", "physical"]},
+            links: {
+              type: "json",
+              required: false,
+              default: [
+                {name: "Nutrimatic", url: "https://nutrimatic.org"},
+                {name: "Qat", url: "https://www.quinapalus.com/cgi-bin/qat"},
+                {name: "util.in", url: "https://util.in"},
+              ],
+            },
           },
         },
       },

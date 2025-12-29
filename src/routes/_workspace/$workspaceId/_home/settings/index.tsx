@@ -1,4 +1,4 @@
-import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {CopyIcon, PlusIcon, TrashIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -21,7 +21,6 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import {Separator} from "@/components/ui/separator";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
 import {orpc} from "@/lib/orpc";
 
@@ -43,13 +42,15 @@ function RouteComponent() {
 function UpdateLinksCard() {
   const {workspaceId} = Route.useParams();
   const workspace = useWorkspace({workspaceId});
-  const links = useSuspenseQuery(
-    orpc.workspaces.links.list.queryOptions({input: {workspaceId}})
-  ).data;
   const form = useAppForm({
-    defaultValues: {links: links.map(({name, url}) => ({name, url}))},
+    defaultValues: {
+      links:
+        (workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
+          ({name, url}) => ({name, url})
+        ) ?? [],
+    },
     onSubmit: ({value}) => {
-      toast.promise(workspace.links.update.mutateAsync({workspaceId, ...value}), {
+      toast.promise(workspace.update.mutateAsync({workspaceId, ...value}), {
         loading: "Saving...",
         success: "Success! Your changes have been saved.",
         error: "Oops! Something went wrong.",

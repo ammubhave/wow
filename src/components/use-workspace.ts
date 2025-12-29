@@ -79,17 +79,6 @@ export function useWorkspace({workspaceId}: {workspaceId: string}) {
     orpc.workspaces.shareGoogleDriveFolder.mutationOptions()
   );
   const roundsQuery = useSuspenseQuery(orpc.rounds.list.queryOptions({input: {workspaceId}}));
-  const linksQuery = useSuspenseQuery(
-    orpc.workspaces.links.list.queryOptions({input: {workspaceId}})
-  );
-  const linksUpdateMutation = useMutation(
-    orpc.workspaces.links.update.mutationOptions({
-      onSuccess: () => {
-        void query.refetch();
-        void queryClient.invalidateQueries();
-      },
-    })
-  );
   const roundAssignUnassignedPuzzlesMutation = useMutation(
     orpc.rounds.assignUnassignedPuzzles.mutationOptions({
       onSuccess: () => {
@@ -111,7 +100,6 @@ export function useWorkspace({workspaceId}: {workspaceId: string}) {
       update: roundUpdateMutation,
       assignUnassignedPuzzles: roundAssignUnassignedPuzzlesMutation,
     },
-    links: {list: linksQuery, update: linksUpdateMutation},
     puzzles: {
       create: puzzleCreateMutation,
       delete: puzzleDeleteMutation,

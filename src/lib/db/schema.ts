@@ -16,15 +16,6 @@ const base = {
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 };
 
-export const workspaceLinks = sqliteTable("workspace_links", {
-  ...base,
-  workspaceId: text()
-    .notNull()
-    .references(() => auth.organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
-  name: text().notNull(),
-  url: text().notNull(),
-});
-
 export const round = sqliteTable("round", {
   ...base,
   workspaceId: text()

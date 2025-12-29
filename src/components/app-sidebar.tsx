@@ -15,6 +15,7 @@ export function AppSidebar({
 }: {workspaceId: string} & React.ComponentProps<typeof Sidebar>) {
   const workspace = useWorkspace({workspaceId});
   const [hideSolved] = useLocalStorage("hideSolved");
+
   return (
     <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!" {...props}>
       <SidebarHeader>
