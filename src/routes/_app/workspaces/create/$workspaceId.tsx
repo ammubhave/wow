@@ -69,7 +69,7 @@ function RouteComponent() {
               render={
                 <Link to="/$workspaceId" params={{workspaceId}}>
                   Go to blackboard
-                  <ArrowRightIcon className="size-4" />
+                  <ArrowRightIcon />
                 </Link>
               }
             />

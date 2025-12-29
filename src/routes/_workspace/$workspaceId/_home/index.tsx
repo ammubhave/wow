@@ -211,7 +211,7 @@ function RouteComponent() {
                           <DropdownMenuTrigger
                             render={
                               <Button variant="ghost" size="icon" className="-my-3">
-                                <EllipsisIcon className="size-4" />
+                                <EllipsisIcon />
                                 <span className="sr-only">Toggle menu</span>
                               </Button>
                             }
@@ -325,7 +325,7 @@ function BlackboardRound({
           </div>
           {round.status === "solved" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
-              <CheckIcon className="size-4 text-green-500" />
+              <CheckIcon className="size-[14px] text-green-500" />
             </div>
           )}
         </TableCell>
@@ -356,7 +356,7 @@ function BlackboardRound({
               <DropdownMenuTrigger
                 render={
                   <Button disabled={round.id === ""} variant="ghost" size="icon">
-                    <EllipsisIcon className="size-4" />
+                    <EllipsisIcon />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 }
@@ -459,7 +459,7 @@ function BlackboardRound({
                   <DropdownMenuTrigger
                     render={
                       <Button disabled={round.id === ""} variant="ghost" size="icon">
-                        <EllipsisIcon className="size-4" />
+                        <EllipsisIcon />
                         <span className="sr-only">Toggle menu</span>
                       </Button>
                     }
@@ -589,7 +589,7 @@ function BlackboardMetaPuzzle({
               size="icon"
               render={
                 <a href={metaPuzzle.link} target="_blank" rel="noopener noreferrer">
-                  <PuzzleIcon className="size-4 text-blue-600" />
+                  <PuzzleIcon className="text-blue-600" />
                 </a>
               }
             />
@@ -742,7 +742,7 @@ function BlackboardMetaPuzzle({
               <DropdownMenuTrigger
                 render={
                   <Button variant="ghost" size="icon">
-                    <EllipsisIcon className="size-4" />
+                    <EllipsisIcon />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 }
@@ -885,7 +885,7 @@ function BlackboardPuzzle({
                   href={puzzle.link}
                   target="_blank"
                   rel="noopener noreferrer">
-                  <PuzzleIcon className="size-4 text-blue-600" />
+                  <PuzzleIcon className="text-blue-600" />
                 </a>
               }
             />
@@ -1033,7 +1033,7 @@ function BlackboardPuzzle({
               <DropdownMenuTrigger
                 render={
                   <Button variant="ghost" size="icon">
-                    <EllipsisIcon className="size-4" />
+                    <EllipsisIcon />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 }

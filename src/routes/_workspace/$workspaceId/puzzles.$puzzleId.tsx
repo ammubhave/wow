@@ -15,7 +15,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {Button} from "@/components/ui/button";
-import {CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Item, ItemActions, ItemContent, ItemTitle} from "@/components/ui/item";
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable";
@@ -25,11 +24,7 @@ import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
 import {usePuzzle} from "@/lib/usePuzzle";
-import {
-  cn,
-  getBgColorClassNamesForPuzzleStatus,
-  getBgColorClassNamesForPuzzleStatusNoHover,
-} from "@/lib/utils";
+import {cn, getBgColorClassNamesForPuzzleStatusNoHover} from "@/lib/utils";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
@@ -301,35 +296,6 @@ function PuzzleInfoPanel({
           />
         </div>
       </div>
-    </div>
-  );
-
-  return (
-    <div
-      className={cn(
-        "flex-1 overflow-auto border-0 shadow-none rounded-none md:rounded-none",
-        getBgColorClassNamesForPuzzleStatus(puzzle.status)
-      )}>
-      <CardHeader className="bg-muted/50 flex flex-row flex-wrap items-center gap-2 p-4">
-        <CardTitle className="text-md group flex items-center gap-2">{puzzle.name}</CardTitle>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {puzzle.googleSpreadsheetId && (
-            <Button
-              size="sm"
-              variant="outline"
-              render={
-                <a
-                  href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
-                  target="_blank"
-                  rel="noopener noreferrer">
-                  <TableIcon className="size-4" />
-                </a>
-              }
-            />
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 text-sm gap-4 flex flex-col"></CardContent>
     </div>
   );
 }

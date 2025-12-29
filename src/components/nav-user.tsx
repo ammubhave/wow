@@ -78,7 +78,12 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               </div>
             </div>
           </DropdownMenuLabel> */}
-          {children && <DropdownMenuSeparator />}
+          {children && (
+            <>
+              {children}
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <PaletteIcon />

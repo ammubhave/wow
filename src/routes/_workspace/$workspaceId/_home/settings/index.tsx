@@ -232,7 +232,7 @@ function DetailsCard() {
                         }
                       );
                     }}>
-                    <CopyIcon className="size-4" />
+                    <CopyIcon />
                   </Button>
                 </p>
               </Field>

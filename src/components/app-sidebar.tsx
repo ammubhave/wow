@@ -64,10 +64,10 @@ export function AppSidebar({
         <div className="flex flex-col items-center justify-center gap-4 p-4">
           <Button
             variant="secondary"
-            className="gap-2 font-['Cookie'] text-xl"
+            className="font-['Cookie'] text-xl"
             render={
               <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-                <CoffeeIcon className="size-4" />
+                <CoffeeIcon />
                 Buy me a coffee
               </a>
             }

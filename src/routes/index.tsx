@@ -69,7 +69,7 @@ function App() {
                 className="gap-2 font-['Cookie'] text-xl"
                 render={
                   <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-                    <CoffeeIcon className="size-4" />
+                    <CoffeeIcon />
                     Buy me a coffee
                   </a>
                 }

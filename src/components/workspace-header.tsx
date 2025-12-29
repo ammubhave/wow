@@ -78,13 +78,13 @@ export function WorkspaceHeader() {
                 Home
               </TabsTrigger>
               <TabsTrigger value="/$workspaceId/settings" className="px-2">
-                <Settings className="ml-auto size-4" />
+                <Settings className="ml-auto" />
               </TabsTrigger>
               <TabsTrigger value="/$workspaceId/activity-log" className="px-2">
-                <History className="ml-auto size-4" />
+                <History className="ml-auto" />
               </TabsTrigger>
               <TabsTrigger value="/$workspaceId/help-page" className="px-2">
-                <Info className="ml-auto size-4" />
+                <Info className="ml-auto" />
               </TabsTrigger>
               {puzzle && (
                 <div className="w-full h-full px-1">
@@ -171,7 +171,7 @@ export function WorkspaceHeader() {
               variant="ghost"
               render={
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                  {link.name} <ExternalLinkIcon className="size-4" />
+                  {link.name} <ExternalLinkIcon />
                 </a>
               }
             />
@@ -192,7 +192,7 @@ export function WorkspaceHeader() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="gap-2 justify-between">
-                        {link.name} <ExternalLinkIcon className="size-4" />
+                        {link.name} <ExternalLinkIcon />
                       </a>
                     }
                   />

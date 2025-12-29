@@ -127,7 +127,7 @@ function RouteComponent() {
                 )}
               />
               <form.SubmitButton className="gap-2" variant="default">
-                <ArrowRightIcon className="size-4" />
+                <ArrowRightIcon />
                 Join workspace
               </form.SubmitButton>
             </form.Form>
@@ -142,7 +142,7 @@ function RouteComponent() {
             variant="outline"
             render={
               <Link to="/workspaces/create">
-                <PlusIcon className="size-4" />
+                <PlusIcon />
                 Create a new workspace
               </Link>
             }

@@ -25,7 +25,7 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
   const workspace = useWorkspace({workspaceId});
   const user = authClient.useSession().data?.user;
 
-  if (!workspace || !workspaces.data || !user) return null;
+  if (!workspaces.data || !user) return null;
   return (
     <DropdownMenuGroup>
       <DropdownMenuItem
@@ -47,7 +47,7 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
       </DropdownMenuItem>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
-          <GalleryVerticalEndIcon className="size-4" />
+          <GalleryVerticalEndIcon />
           Workspaces
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent
@@ -102,7 +102,7 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
             render={
               <Link to="/workspaces">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <GalleryVerticalEndIcon className="size-4" />
+                  <GalleryVerticalEndIcon />
                 </div>
                 <div className="text-muted-foreground font-medium">All workspaces</div>
               </Link>
@@ -113,7 +113,7 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
             render={
               <Link to="/workspaces/create">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <PlusIcon className="size-4" />
+                  <PlusIcon />
                 </div>
                 <div className="text-muted-foreground font-medium">Add workspace</div>
               </Link>
