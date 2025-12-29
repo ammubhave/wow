@@ -22,6 +22,7 @@ import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
+import {PuzzleStatusOptions} from "@/components/puzzle-status-options";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {
@@ -680,28 +681,16 @@ function BlackboardMetaPuzzle({
           <Select
             onValueChange={onStatusChange}
             value={metaPuzzle.status}
-            items={[
-              {value: null, label: "None"},
-              {value: "solved", label: "Solved"},
-              {value: "backsolved", label: "Backsolved"},
-              {value: "needs_eyes", label: "Needs Eyes"},
-              {value: "extraction", label: "Extraction"},
-              {value: "stuck", label: "Stuck"},
-              {value: "pending", label: "Pending"},
-              {value: "very_stuck", label: "Very Stuck"},
-            ]}>
+            items={PuzzleStatusOptions()}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              <SelectItem value="solved">Solved</SelectItem>
-              <SelectItem value="backsolved">Backsolved</SelectItem>
-              <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
-              <SelectItem value="extraction">Extraction</SelectItem>
-              <SelectItem value="stuck">Stuck</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="very_stuck">Very Stuck</SelectItem>
+              {PuzzleStatusOptions().map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </TableCell>
@@ -969,33 +958,16 @@ function BlackboardPuzzle({
           <Select
             onValueChange={onStatusChange}
             value={puzzle.status}
-            items={[
-              {value: null, label: "None"},
-              {value: "solved", label: "Solved"},
-              {value: "backsolved", label: "Backsolved"},
-              {value: "obsolete", label: "Obsolete"},
-              {value: "needs_eyes", label: "Needs Eyes"},
-              {value: "extraction", label: "Extraction"},
-              {value: "stuck", label: "Stuck"},
-              {value: "pending", label: "Pending"},
-              {value: "very_stuck", label: "Very Stuck"},
-            ]}>
+            items={PuzzleStatusOptions()}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-
-              <SelectItem value="solved">Solved</SelectItem>
-              <SelectItem value="backsolved">Backsolved</SelectItem>
-              <SelectItem value="obsolete">Obsolete</SelectItem>
-
-              <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
-              <SelectItem value="extraction">Extraction</SelectItem>
-
-              <SelectItem value="stuck">Stuck</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="very_stuck">Very Stuck</SelectItem>
+              {PuzzleStatusOptions().map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </TableCell>

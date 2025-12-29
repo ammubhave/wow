@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 
 import {useAppForm} from "./form";
+import {PuzzleStatusOptions} from "./puzzle-status-options";
 import {FieldGroup} from "./ui/field";
 import {SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
@@ -127,22 +128,11 @@ export function EditPuzzleDialog({
               <form.AppField
                 name="status"
                 children={field => {
-                  const items = [
-                    {value: null, label: "None"},
-                    {value: "solved", label: "Solved"},
-                    {value: "backsolved", label: "Backsolved"},
-                    {value: "obsolete", label: "Obsolete"},
-                    {value: "needs_eyes", label: "Needs Eyes"},
-                    {value: "extraction", label: "Extraction"},
-                    {value: "stuck", label: "Stuck"},
-                    {value: "pending", label: "Pending"},
-                    {value: "very_stuck", label: "Very Stuck"},
-                  ];
                   return (
-                    <field.SelectField label="Status" items={items}>
-                      {items.map(item => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
+                    <field.SelectField label="Status" items={PuzzleStatusOptions()}>
+                      {PuzzleStatusOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </field.SelectField>

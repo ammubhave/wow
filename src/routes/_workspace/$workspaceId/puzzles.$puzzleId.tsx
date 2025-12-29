@@ -8,6 +8,7 @@ import {CommentBox} from "@/components/comment-box";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {PresencesWebSocket} from "@/components/presences-websocket";
+import {PuzzleStatusOptions} from "@/components/puzzle-status-options";
 import {
   Accordion,
   AccordionContent,
@@ -218,17 +219,6 @@ function PuzzleInfoPanel({
               <form.AppField
                 name="status"
                 children={field => {
-                  const items = [
-                    {value: null, label: "None"},
-                    {value: "solved", label: "Solved"},
-                    {value: "backsolved", label: "Backsolved"},
-                    {value: "obsolete", label: "Obsolete"},
-                    {value: "needs_eyes", label: "Needs Eyes"},
-                    {value: "extraction", label: "Extraction"},
-                    {value: "stuck", label: "Stuck"},
-                    {value: "pending", label: "Pending"},
-                    {value: "very_stuck", label: "Very Stuck"},
-                  ];
                   return (
                     <field.SelectField
                       label="Status"
@@ -236,10 +226,10 @@ function PuzzleInfoPanel({
                         field.handleChange(v as any);
                         void form.handleSubmit();
                       }}
-                      items={items}>
-                      {items.map(item => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
+                      items={PuzzleStatusOptions()}>
+                      {PuzzleStatusOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </field.SelectField>

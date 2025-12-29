@@ -29,7 +29,11 @@ export function AssignUnassignedPuzzlesDialog({
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
     defaultValues: {parentPuzzleId: ""},
-    onSubmit: ({value}) =>
+    onSubmit: ({value}) => {
+      if (value.parentPuzzleId === "") {
+        toast.info("No action taken -- please select a meta puzzle.");
+        return;
+      }
       toast.promise(
         workspace.rounds.assignUnassignedPuzzles.mutateAsync(
           {...value, workspaceId},
@@ -45,7 +49,8 @@ export function AssignUnassignedPuzzlesDialog({
           success: "Success! Round added.",
           error: "Oops! Something went wrong.",
         }
-      ),
+      );
+    },
   });
 
   return (
@@ -66,18 +71,24 @@ export function AssignUnassignedPuzzlesDialog({
             <div className="grid gap-4 py-4">
               <form.AppField
                 name="parentPuzzleId"
-                children={field => (
-                  <field.SelectField label="Feeds Into">
-                    {workspace.get.data?.rounds
+                children={field => {
+                  const items = [
+                    {value: "", label: "None"},
+                    ...(workspace.get.data?.rounds
                       .filter(round => round.id === roundId)
                       .flatMap(round => round.metaPuzzles)
-                      .map(metaPuzzle => (
-                        <SelectItem key={metaPuzzle.id} value={metaPuzzle.id}>
-                          {metaPuzzle.name}
+                      .map(metaPuzzle => ({value: metaPuzzle.id, label: metaPuzzle.name})) ?? []),
+                  ];
+                  return (
+                    <field.SelectField label="Feeds Into" items={items}>
+                      {items.map(item => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
-                  </field.SelectField>
-                )}
+                    </field.SelectField>
+                  );
+                }}
               />
             </div>
           </form>
