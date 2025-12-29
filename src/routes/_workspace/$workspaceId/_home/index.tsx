@@ -85,7 +85,7 @@ function RouteComponent() {
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
   const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
   const [search, setSearch] = useState("");
-  const [tags, setTags] = useLocalStorage<string[]>("tags", []);
+  const [tags, setTags] = useLocalStorage<(string | null)[]>("tags", []);
 
   const rounds = workspace.get.data.rounds.map(r => ({
     ...r,
@@ -95,7 +95,8 @@ function RouteComponent() {
         childPuzzles: m.childPuzzles.filter(
           p =>
             p.name.toLowerCase().includes(search.toLowerCase()) &&
-            (tags.length === 0 || tags.some(tag => p.tags.includes(tag))) &&
+            (tags.length === 0 ||
+              tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
             (!hideObsolete || p.importance !== "obsolete")
         ),
       }))
@@ -103,14 +104,16 @@ function RouteComponent() {
         m =>
           (m.childPuzzles.length > 0 ||
             (m.name.toLowerCase().includes(search.toLowerCase()) &&
-              (tags.length === 0 || tags.some(tag => m.tags.includes(tag))) &&
+              (tags.length === 0 ||
+                tags.some(tag => (tag === null ? m.tags.length === 0 : m.tags.includes(tag)))) &&
               (!hideObsolete || m.importance !== "obsolete"))) &&
           (!hideSolvedMetas || m.status !== "solved")
       ),
     unassignedPuzzles: r.unassignedPuzzles.filter(
       p =>
         p.name.toLowerCase().includes(search.toLowerCase()) &&
-        (tags.length === 0 || tags.some(tag => p.tags.includes(tag))) &&
+        (tags.length === 0 ||
+          tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
         (!hideObsolete || p.importance !== "obsolete")
     ),
   }));
@@ -174,6 +177,17 @@ function RouteComponent() {
                         {tag}
                       </DropdownMenuCheckboxItem>
                     ))}
+                    <DropdownMenuCheckboxItem
+                      checked={tags.includes(null)}
+                      onClick={() => {
+                        setTags(prevTags =>
+                          prevTags.includes(null)
+                            ? prevTags.filter(t => t !== null)
+                            : [...prevTags, null]
+                        );
+                      }}>
+                      (Untagged)
+                    </DropdownMenuCheckboxItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
                   </DropdownMenuSubContent>
