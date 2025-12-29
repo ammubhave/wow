@@ -83,6 +83,7 @@ function RouteComponent() {
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
+  const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
   const [search, setSearch] = useState("");
   const [tags, setTags] = useLocalStorage<string[]>("tags", []);
 
@@ -100,10 +101,11 @@ function RouteComponent() {
       }))
       .filter(
         m =>
-          m.childPuzzles.length > 0 ||
-          (m.name.toLowerCase().includes(search.toLowerCase()) &&
-            (tags.length === 0 || tags.some(tag => m.tags.includes(tag))) &&
-            (!hideObsolete || m.importance !== "obsolete"))
+          (m.childPuzzles.length > 0 ||
+            (m.name.toLowerCase().includes(search.toLowerCase()) &&
+              (tags.length === 0 || tags.some(tag => m.tags.includes(tag))) &&
+              (!hideObsolete || m.importance !== "obsolete"))) &&
+          (!hideSolvedMetas || m.status !== "solved")
       ),
     unassignedPuzzles: r.unassignedPuzzles.filter(
       p =>
@@ -117,6 +119,7 @@ function RouteComponent() {
   if (tags.length > 0) filterCount += 1;
   if (hideSolved) filterCount += 1;
   if (hideObsolete) filterCount += 1;
+  if (hideSolvedMetas) filterCount += 1;
 
   return (
     <div className="relative flex-1">
@@ -180,6 +183,11 @@ function RouteComponent() {
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem checked={hideObsolete} onCheckedChange={setHideObsolete}>
                   Hide obsolete puzzles
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={hideSolvedMetas}
+                  onCheckedChange={setHideSolvedMetas}>
+                  Hide solved meta puzzles
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
