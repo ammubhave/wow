@@ -129,6 +129,7 @@ export function EditPuzzleDialog({
                 children={field => {
                   const items = [
                     {value: null, label: "None"},
+                    {value: "active", label: "Active"},
                     {value: "solved", label: "Solved"},
                     {value: "backsolved", label: "Backsolved"},
                     {value: "obsolete", label: "Obsolete"},

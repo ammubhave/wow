@@ -682,8 +682,10 @@ function BlackboardMetaPuzzle({
             value={metaPuzzle.status}
             items={[
               {value: null, label: "None"},
+              {value: "active", label: "Active"},
               {value: "solved", label: "Solved"},
               {value: "backsolved", label: "Backsolved"},
+              {value: "obsolete", label: "Obsolete"},
               {value: "needs_eyes", label: "Needs Eyes"},
               {value: "extraction", label: "Extraction"},
               {value: "stuck", label: "Stuck"},
@@ -695,8 +697,10 @@ function BlackboardMetaPuzzle({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={null}>None</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
               <SelectItem value="solved">Solved</SelectItem>
               <SelectItem value="backsolved">Backsolved</SelectItem>
+              <SelectItem value="obsolete">Obsolete</SelectItem>
               <SelectItem value="needs_eyes">Needs Eyes</SelectItem>
               <SelectItem value="extraction">Extraction</SelectItem>
               <SelectItem value="stuck">Stuck</SelectItem>
@@ -971,6 +975,7 @@ function BlackboardPuzzle({
             value={puzzle.status}
             items={[
               {value: null, label: "None"},
+              {value: "active", label: "Active"},
               {value: "solved", label: "Solved"},
               {value: "backsolved", label: "Backsolved"},
               {value: "obsolete", label: "Obsolete"},
@@ -985,6 +990,7 @@ function BlackboardPuzzle({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={null}>None</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
 
               <SelectItem value="solved">Solved</SelectItem>
               <SelectItem value="backsolved">Backsolved</SelectItem>
