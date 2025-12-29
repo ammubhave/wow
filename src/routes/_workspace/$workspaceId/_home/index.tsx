@@ -82,10 +82,9 @@ function RouteComponent() {
   const workspace = useWorkspace({workspaceId});
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
-
+  const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
   const [search, setSearch] = useState("");
-  // const allTags = orpc.workspaces
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useLocalStorage<string[]>("tags", []);
 
   const rounds = workspace.get.data.rounds.map(r => ({
     ...r,
@@ -95,25 +94,29 @@ function RouteComponent() {
         childPuzzles: m.childPuzzles.filter(
           p =>
             p.name.toLowerCase().includes(search.toLowerCase()) &&
-            (tags.length === 0 || tags.some(tag => p.tags.includes(tag)))
+            (tags.length === 0 || tags.some(tag => p.tags.includes(tag))) &&
+            (!hideObsolete || p.importance !== "obsolete")
         ),
       }))
       .filter(
         m =>
           m.childPuzzles.length > 0 ||
           (m.name.toLowerCase().includes(search.toLowerCase()) &&
-            (tags.length === 0 || tags.some(tag => m.tags.includes(tag))))
+            (tags.length === 0 || tags.some(tag => m.tags.includes(tag))) &&
+            (!hideObsolete || m.importance !== "obsolete"))
       ),
     unassignedPuzzles: r.unassignedPuzzles.filter(
       p =>
         p.name.toLowerCase().includes(search.toLowerCase()) &&
-        (tags.length === 0 || tags.some(tag => p.tags.includes(tag)))
+        (tags.length === 0 || tags.some(tag => p.tags.includes(tag))) &&
+        (!hideObsolete || p.importance !== "obsolete")
     ),
   }));
 
   let filterCount = 0;
   if (tags.length > 0) filterCount += 1;
   if (hideSolved) filterCount += 1;
+  if (hideObsolete) filterCount += 1;
 
   return (
     <div className="relative flex-1">
@@ -174,6 +177,9 @@ function RouteComponent() {
                 </DropdownMenuSub>
                 <DropdownMenuCheckboxItem checked={hideSolved} onCheckedChange={setHideSolved}>
                   Hide solved puzzles
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem checked={hideObsolete} onCheckedChange={setHideObsolete}>
+                  Hide obsolete puzzles
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
