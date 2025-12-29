@@ -8,6 +8,11 @@ import {
   FunnelIcon,
   PuzzleIcon,
   SearchIcon,
+  SignalHighIcon,
+  SignalIcon,
+  SignalLowIcon,
+  SignalMediumIcon,
+  SignalZeroIcon,
   TagIcon,
 } from "lucide-react";
 import {useState} from "react";
@@ -88,6 +93,7 @@ function RouteComponent() {
   const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
   const [search, setSearch] = useState("");
   const [tags, setTags] = useLocalStorage<(string | null)[]>("tags", []);
+  const [importances, setImportances] = useLocalStorage<(string | null)[]>("importances", []);
 
   const rounds = workspace.get.data.rounds.map(r => ({
     ...r,
@@ -98,6 +104,7 @@ function RouteComponent() {
           p.name.toLowerCase().includes(search.toLowerCase()) &&
           (tags.length === 0 ||
             tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
+          (importances.length === 0 || importances.includes(p.importance)) &&
           (!hideObsolete || p.importance !== "obsolete") &&
           (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
       ),
@@ -111,6 +118,7 @@ function RouteComponent() {
               p.name.toLowerCase().includes(search.toLowerCase()) &&
               (tags.length === 0 ||
                 tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
+              (importances.length === 0 || importances.includes(p.importance)) &&
               (!hideObsolete || p.importance !== "obsolete") &&
               (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
           ),
@@ -121,6 +129,7 @@ function RouteComponent() {
             (m.name.toLowerCase().includes(search.toLowerCase()) &&
               (tags.length === 0 ||
                 tags.some(tag => (tag === null ? m.tags.length === 0 : m.tags.includes(tag)))) &&
+              (importances.length === 0 || importances.includes(m.importance)) &&
               (!hideObsolete || m.importance !== "obsolete") &&
               (!hideSolved || (m.status !== "solved" && m.status !== "backsolved")))) &&
           (!hideSolvedMetas || m.status !== "solved")
@@ -130,6 +139,7 @@ function RouteComponent() {
         p.name.toLowerCase().includes(search.toLowerCase()) &&
         (tags.length === 0 ||
           tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
+        (importances.length === 0 || importances.includes(p.importance)) &&
         (!hideObsolete || p.importance !== "obsolete") &&
         (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
     ),
@@ -140,6 +150,7 @@ function RouteComponent() {
   if (hideSolved) filterCount += 1;
   if (hideObsolete) filterCount += 1;
   if (hideSolvedMetas) filterCount += 1;
+  if (importances.length > 0) filterCount += 1;
 
   return (
     <div className="flex flex-1">
@@ -208,6 +219,81 @@ function RouteComponent() {
                       </DropdownMenuCheckboxItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <SignalIcon />
+                      Importance
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {[
+                        {
+                          value: "veryhigh",
+                          label: (
+                            <>
+                              <SignalIcon /> Very High
+                            </>
+                          ),
+                        },
+                        {
+                          value: "high",
+                          label: (
+                            <>
+                              <SignalHighIcon /> High
+                            </>
+                          ),
+                        },
+                        {
+                          value: "medium",
+                          label: (
+                            <>
+                              <SignalMediumIcon /> Medium
+                            </>
+                          ),
+                        },
+                        {
+                          value: "low",
+                          label: (
+                            <>
+                              <SignalLowIcon /> Low
+                            </>
+                          ),
+                        },
+                        {
+                          value: "obsolete",
+                          label: (
+                            <>
+                              <SignalZeroIcon /> Obsolete
+                            </>
+                          ),
+                        },
+                        {
+                          value: null,
+                          label: (
+                            <>
+                              <SignalMediumIcon className="text-muted-foreground" />
+                              None
+                            </>
+                          ),
+                        },
+                      ].map(importance => (
+                        <DropdownMenuCheckboxItem
+                          checked={importances.includes(importance.value)}
+                          onClick={() => {
+                            setImportances(prevImportances =>
+                              prevImportances.includes(importance.value)
+                                ? prevImportances.filter(t => t !== importance.value)
+                                : [...prevImportances, importance.value]
+                            );
+                          }}>
+                          {importance.label}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setImportances([])}>
+                        Reset filter
+                      </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
                   <DropdownMenuCheckboxItem checked={hideSolved} onCheckedChange={setHideSolved}>
@@ -694,19 +780,39 @@ function BlackboardMetaPuzzle({
             onValueChange={onImportanceChange}
             value={metaPuzzle.importance}
             items={[
-              {value: null, label: "None"},
-              {value: "vip", label: "VIP"},
-              {value: "important", label: "Important"},
-              {value: "obsolete", label: "Obsolete"},
+              {value: null, label: <SignalMediumIcon />},
+              {value: "high", label: <SignalHighIcon />},
+              {value: "veryhigh", label: <SignalIcon />},
+              {value: "medium", label: <SignalMediumIcon />},
+              {value: "low", label: <SignalLowIcon />},
+              {value: "obsolete", label: <SignalZeroIcon />},
             ]}>
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+            <SelectTrigger
+              showTrigger={false}
+              className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              <SelectItem value="vip">VIP</SelectItem>
-              <SelectItem value="important">Important</SelectItem>
-              <SelectItem value="obsolete">Obsolete</SelectItem>
+              <SelectItem value="veryhigh">
+                <SignalIcon />
+                Very High
+              </SelectItem>
+              <SelectItem value="high">
+                <SignalHighIcon />
+                High
+              </SelectItem>
+              <SelectItem value="medium">
+                <SignalMediumIcon />
+                Medium
+              </SelectItem>
+              <SelectItem value="low">
+                <SignalLowIcon />
+                Low
+              </SelectItem>
+              <SelectItem value="obsolete">
+                <SignalZeroIcon />
+                Obsolete
+              </SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
@@ -971,19 +1077,39 @@ function BlackboardPuzzle({
             onValueChange={onImportanceChange}
             value={puzzle.importance}
             items={[
-              {value: null, label: "None"},
-              {value: "vip", label: "VIP"},
-              {value: "important", label: "Important"},
-              {value: "obsolete", label: "Obsolete"},
+              {value: null, label: <SignalMediumIcon />},
+              {value: "high", label: <SignalHighIcon />},
+              {value: "veryhigh", label: <SignalIcon />},
+              {value: "medium", label: <SignalMediumIcon />},
+              {value: "low", label: <SignalLowIcon />},
+              {value: "obsolete", label: <SignalZeroIcon />},
             ]}>
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+            <SelectTrigger
+              showTrigger={false}
+              className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              <SelectItem value="vip">VIP</SelectItem>
-              <SelectItem value="important">Important</SelectItem>
-              <SelectItem value="obsolete">Obsolete</SelectItem>
+              <SelectItem value="veryhigh">
+                <SignalIcon />
+                Very High
+              </SelectItem>
+              <SelectItem value="high">
+                <SignalHighIcon />
+                High
+              </SelectItem>
+              <SelectItem value="medium">
+                <SignalMediumIcon />
+                Medium
+              </SelectItem>
+              <SelectItem value="low">
+                <SignalLowIcon />
+                Low
+              </SelectItem>
+              <SelectItem value="obsolete">
+                <SignalZeroIcon />
+                Obsolete
+              </SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
