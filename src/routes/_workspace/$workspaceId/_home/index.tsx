@@ -683,6 +683,7 @@ function BlackboardMetaPuzzle({
             <Button
               variant="ghost"
               size="icon"
+              nativeButton={false}
               render={
                 <a href={metaPuzzle.link} target="_blank" rel="noopener noreferrer">
                   <PuzzleIcon className="text-blue-600" />

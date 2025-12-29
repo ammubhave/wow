@@ -40,6 +40,7 @@ export function DeleteRoundDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            variant="destructive"
             onClick={event => {
               toast.promise(
                 workspace.rounds.delete.mutateAsync(roundId, {

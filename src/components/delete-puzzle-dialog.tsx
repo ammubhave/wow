@@ -40,6 +40,7 @@ export function DeletePuzzleDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            variant="destructive"
             onClick={event => {
               toast.promise(
                 workspace.puzzles.delete.mutateAsync(puzzleId, {

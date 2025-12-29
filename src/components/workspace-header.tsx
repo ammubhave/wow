@@ -14,6 +14,7 @@ import {Button} from "./ui/button";
 import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
+import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
   component: WorkspaceHeader,
 });
@@ -52,6 +53,7 @@ export function WorkspaceHeader() {
 
   return (
     <header className="bg-sidebar top-0 z-50 flex w-full items-center border-b">
+      <WorkspaceCommandDialog workspaceId={workspaceId} />
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
@@ -169,6 +171,7 @@ export function WorkspaceHeader() {
             (link, index) => (
               <Button
                 key={index}
+                nativeButton={false}
                 variant="ghost"
                 render={
                   <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">

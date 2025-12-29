@@ -53,9 +53,9 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
         <DropdownMenuSubContent
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
           sideOffset={4}>
-          <DropdownMenuLabel className=" text-xs flex items-center gap-2">
-            <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarFallback className="rounded-lg">
+          <DropdownMenuLabel className="text-xs flex items-center gap-2">
+            <Avatar>
+              <AvatarFallback>
                 {workspace.get.data.eventName
                   ?.split(" ")
                   .map(word => word[0]?.toLocaleUpperCase())
@@ -78,8 +78,8 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
                 className="gap-2 p-2"
                 render={
                   <Link to="/$workspaceId" params={{workspaceId: ws.slug}}>
-                    <Avatar className="size-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg">
+                    <Avatar>
+                      <AvatarFallback>
                         {ws.eventName
                           ?.split(" ")
                           .map(word => word[0]?.toLocaleUpperCase())
@@ -98,24 +98,18 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
             ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="gap-2 p-2"
             render={
               <Link to="/workspaces">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <GalleryVerticalEndIcon />
-                </div>
-                <div className="text-muted-foreground font-medium">All workspaces</div>
+                <GalleryVerticalEndIcon />
+                All workspaces
               </Link>
             }
           />
           <DropdownMenuItem
-            className="gap-2 p-2"
             render={
               <Link to="/workspaces/create">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <PlusIcon />
-                </div>
-                <div className="text-muted-foreground font-medium">Add workspace</div>
+                <PlusIcon />
+                Add workspace
               </Link>
             }
           />
