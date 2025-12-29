@@ -32,17 +32,21 @@ export const auth = betterAuth({
   user: {additionalFields: {notificationsDisabled: {type: "boolean", default: false}}},
   trustedOrigins: ["https://www.wafflehaus.io", "http://localhost:3000"],
   plugins: [
-    captcha({
-      provider: "cloudflare-turnstile",
-      secretKey: process.env.TURNSTILE_SECRET_KEY!,
-      endpoints: [
-        "/sign-in/username",
-        "/sign-in/email",
-        "/sign-up/email",
-        "/forget-password",
-        "/request-password-reset",
-      ],
-    }),
+    ...(process.env.TURNSTILE_SECRET_KEY
+      ? [
+          captcha({
+            provider: "cloudflare-turnstile",
+            secretKey: process.env.TURNSTILE_SECRET_KEY,
+            endpoints: [
+              "/sign-in/username",
+              "/sign-in/email",
+              "/sign-up/email",
+              "/forget-password",
+              "/request-password-reset",
+            ],
+          }),
+        ]
+      : []),
     organization({
       membershipLimit: 500,
       schema: {
