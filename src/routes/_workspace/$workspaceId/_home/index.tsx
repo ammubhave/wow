@@ -1,7 +1,15 @@
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
-import {CheckIcon, ChevronRightIcon, EllipsisIcon, PuzzleIcon, SearchIcon} from "lucide-react";
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  EllipsisIcon,
+  FunnelIcon,
+  PuzzleIcon,
+  SearchIcon,
+  TagIcon,
+} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
@@ -21,6 +29,10 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
@@ -72,21 +84,30 @@ function RouteComponent() {
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
 
   const [search, setSearch] = useState("");
+  // const allTags = orpc.workspaces
+  const [tags, setTags] = useState<string[]>([]);
 
   const rounds = workspace.get.data.rounds.map(r => ({
     ...r,
     metaPuzzles: r.metaPuzzles
       .map(m => ({
         ...m,
-        childPuzzles: m.childPuzzles.filter(p =>
-          p.name.toLowerCase().includes(search.toLowerCase())
+        childPuzzles: m.childPuzzles.filter(
+          p =>
+            p.name.toLowerCase().includes(search.toLowerCase()) &&
+            (tags.length === 0 || tags.some(tag => p.tags.includes(tag)))
         ),
       }))
       .filter(
-        m => m.childPuzzles.length > 0 || m.name.toLowerCase().includes(search.toLowerCase())
+        m =>
+          m.childPuzzles.length > 0 ||
+          (m.name.toLowerCase().includes(search.toLowerCase()) &&
+            (tags.length === 0 || tags.some(tag => m.tags.includes(tag))))
       ),
-    unassignedPuzzles: r.unassignedPuzzles.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase())
+    unassignedPuzzles: r.unassignedPuzzles.filter(
+      p =>
+        p.name.toLowerCase().includes(search.toLowerCase()) &&
+        (tags.length === 0 || tags.some(tag => p.tags.includes(tag)))
     ),
   }));
 
@@ -94,8 +115,8 @@ function RouteComponent() {
     <div className="relative flex-1">
       <div className="absolute inset-0 overflow-auto">
         <div className="flex flex-col divide-y flex-1">
-          <div className="p-2">
-            <InputGroup>
+          <div className="p-2 flex gap-2">
+            <InputGroup className="flex-1">
               <InputGroupInput value={search} onChange={e => setSearch(e.target.value)} />
               <InputGroupAddon>
                 <SearchIcon className="text-muted-foreground" />
@@ -108,6 +129,47 @@ function RouteComponent() {
                 </InputGroupAddon>
               )}
             </InputGroup>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="outline">
+                    <FunnelIcon />
+                    Filter
+                    {tags.length > 0 && (
+                      <Badge variant="destructive" className="rounded-full ml-1">
+                        1
+                      </Badge>
+                    )}
+                  </Button>
+                }
+              />
+              <DropdownMenuContent>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <TagIcon />
+                    Tags
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {(workspace.get.data.tags as string[] | undefined)?.map(tag => (
+                      <DropdownMenuCheckboxItem
+                        key={tag}
+                        checked={tags.includes(tag)}
+                        onClick={() => {
+                          setTags(prevTags =>
+                            prevTags.includes(tag)
+                              ? prevTags.filter(t => t !== tag)
+                              : [...prevTags, tag]
+                          );
+                        }}>
+                        {tag}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <ScrollArea className="flex-1">
             <div className="overflow-hidden">
