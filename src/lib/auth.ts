@@ -1,6 +1,6 @@
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {betterAuth} from "better-auth/minimal";
-import {haveIBeenPwned, username} from "better-auth/plugins";
+import {username} from "better-auth/plugins";
 import {organization} from "better-auth/plugins";
 import {captcha} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
@@ -68,7 +68,6 @@ export const auth = betterAuth({
       },
     }),
     username(),
-    haveIBeenPwned(),
     tanstackStartCookies(),
   ],
   session: {cookieCache: {enabled: true, maxAge: 5 * 60}},
