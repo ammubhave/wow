@@ -1,12 +1,10 @@
 import {createFileRoute, Outlet, useChildMatches} from "@tanstack/react-router";
 
-import {AppSidebar} from "@/components/app-sidebar";
 import {Tabs} from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({component: RouteComponent});
 
 function RouteComponent() {
-  const {workspaceId} = Route.useParams();
   const childMatches = useChildMatches();
   const navigate = Route.useNavigate();
   return (
@@ -19,7 +17,6 @@ function RouteComponent() {
         className="flex-1 flex flex-col overflow-auto">
         <Outlet />
       </Tabs>
-      <AppSidebar side="right" workspaceId={workspaceId} />
     </div>
   );
 }

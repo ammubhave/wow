@@ -16,6 +16,7 @@ import {toast} from "sonner";
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
 import {AddNewRoundDialog} from "@/components/add-new-round-dialog";
+import {AppSidebar} from "@/components/app-sidebar";
 import {AssignUnassignedPuzzlesDialog} from "@/components/assign-unassigned-puzzles-dialog";
 import {DeletePuzzleDialog} from "@/components/delete-puzzle-dialog";
 import {DeleteRoundDialog} from "@/components/delete-round-dialog";
@@ -90,16 +91,29 @@ function RouteComponent() {
 
   const rounds = workspace.get.data.rounds.map(r => ({
     ...r,
+    puzzles: r.puzzles
+      .map((p, puzzleIndex) => ({...p, puzzleIndex: puzzleIndex + 1}))
+      .filter(
+        p =>
+          p.name.toLowerCase().includes(search.toLowerCase()) &&
+          (tags.length === 0 ||
+            tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
+          (!hideObsolete || p.importance !== "obsolete") &&
+          (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
+      ),
     metaPuzzles: r.metaPuzzles
       .map(m => ({
         ...m,
-        childPuzzles: m.childPuzzles.filter(
-          p =>
-            p.name.toLowerCase().includes(search.toLowerCase()) &&
-            (tags.length === 0 ||
-              tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
-            (!hideObsolete || p.importance !== "obsolete")
-        ),
+        childPuzzles: m.childPuzzles
+          .map((p, puzzleIndex) => ({...p, puzzleIndex}))
+          .filter(
+            p =>
+              p.name.toLowerCase().includes(search.toLowerCase()) &&
+              (tags.length === 0 ||
+                tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
+              (!hideObsolete || p.importance !== "obsolete") &&
+              (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
+          ),
       }))
       .filter(
         m =>
@@ -107,7 +121,8 @@ function RouteComponent() {
             (m.name.toLowerCase().includes(search.toLowerCase()) &&
               (tags.length === 0 ||
                 tags.some(tag => (tag === null ? m.tags.length === 0 : m.tags.includes(tag)))) &&
-              (!hideObsolete || m.importance !== "obsolete"))) &&
+              (!hideObsolete || m.importance !== "obsolete") &&
+              (!hideSolved || (m.status !== "solved" && m.status !== "backsolved")))) &&
           (!hideSolvedMetas || m.status !== "solved")
       ),
     unassignedPuzzles: r.unassignedPuzzles.filter(
@@ -115,7 +130,8 @@ function RouteComponent() {
         p.name.toLowerCase().includes(search.toLowerCase()) &&
         (tags.length === 0 ||
           tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
-        (!hideObsolete || p.importance !== "obsolete")
+        (!hideObsolete || p.importance !== "obsolete") &&
+        (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
     ),
   }));
 
@@ -126,145 +142,145 @@ function RouteComponent() {
   if (hideSolvedMetas) filterCount += 1;
 
   return (
-    <div className="relative flex-1">
-      <div className="absolute inset-0 overflow-auto">
-        <div className="flex flex-col divide-y flex-1">
-          <div className="p-2 flex gap-2">
-            <InputGroup className="flex-1">
-              <InputGroupInput value={search} onChange={e => setSearch(e.target.value)} />
-              <InputGroupAddon>
-                <SearchIcon className="text-muted-foreground" />
-              </InputGroupAddon>
-              {search.length > 0 && (
-                <InputGroupAddon align="inline-end">
-                  <Button variant="link" onClick={() => setSearch("")}>
-                    Clear
-                  </Button>
+    <div className="flex flex-1">
+      <div className="relative flex-1">
+        <div className="absolute inset-0 overflow-auto">
+          <div className="flex flex-col divide-y flex-1">
+            <div className="p-2 flex gap-2">
+              <InputGroup className="flex-1">
+                <InputGroupInput value={search} onChange={e => setSearch(e.target.value)} />
+                <InputGroupAddon>
+                  <SearchIcon className="text-muted-foreground" />
                 </InputGroupAddon>
-              )}
-            </InputGroup>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="outline">
-                    <FunnelIcon />
-                    Filter
-                    {filterCount > 0 && (
-                      <Badge variant="outline" className="rounded-full ml-1">
-                        {filterCount}
-                      </Badge>
-                    )}
-                  </Button>
-                }
-              />
-              <DropdownMenuContent className="w-fit">
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <TagIcon />
-                    Tags
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    {(workspace.get.data.tags as string[] | undefined)?.map(tag => (
+                {search.length > 0 && (
+                  <InputGroupAddon align="inline-end">
+                    <Button variant="link" onClick={() => setSearch("")}>
+                      Clear
+                    </Button>
+                  </InputGroupAddon>
+                )}
+              </InputGroup>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline">
+                      <FunnelIcon />
+                      Filter
+                      {filterCount > 0 && (
+                        <Badge variant="outline" className="rounded-full ml-1">
+                          {filterCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent className="w-fit">
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <TagIcon />
+                      Tags
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {(workspace.get.data.tags as string[] | undefined)?.map(tag => (
+                        <DropdownMenuCheckboxItem
+                          key={tag}
+                          checked={tags.includes(tag)}
+                          onClick={() => {
+                            setTags(prevTags =>
+                              prevTags.includes(tag)
+                                ? prevTags.filter(t => t !== tag)
+                                : [...prevTags, tag]
+                            );
+                          }}>
+                          {tag}
+                        </DropdownMenuCheckboxItem>
+                      ))}
                       <DropdownMenuCheckboxItem
-                        key={tag}
-                        checked={tags.includes(tag)}
+                        checked={tags.includes(null)}
                         onClick={() => {
                           setTags(prevTags =>
-                            prevTags.includes(tag)
-                              ? prevTags.filter(t => t !== tag)
-                              : [...prevTags, tag]
+                            prevTags.includes(null)
+                              ? prevTags.filter(t => t !== null)
+                              : [...prevTags, null]
                           );
                         }}>
-                        {tag}
+                        (Untagged)
                       </DropdownMenuCheckboxItem>
-                    ))}
-                    <DropdownMenuCheckboxItem
-                      checked={tags.includes(null)}
-                      onClick={() => {
-                        setTags(prevTags =>
-                          prevTags.includes(null)
-                            ? prevTags.filter(t => t !== null)
-                            : [...prevTags, null]
-                        );
-                      }}>
-                      (Untagged)
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuCheckboxItem checked={hideSolved} onCheckedChange={setHideSolved}>
-                  Hide solved puzzles
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={hideObsolete} onCheckedChange={setHideObsolete}>
-                  Hide obsolete puzzles
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={hideSolvedMetas}
-                  onCheckedChange={setHideSolvedMetas}>
-                  Hide solved meta puzzles
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="overflow-hidden">
-              <Table className="h-fit">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="p-0 w-8" colSpan={1} />
-                    <TableHead className="p-0 w-8" colSpan={1} />
-                    <TableHead>Name</TableHead>
-                    <TableHead>Solution</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Importance</TableHead>
-                    <TableHead>Tags</TableHead>
-                    <TableHead>Working on this</TableHead>
-                    <TableHead className="w-0">
-                      <div className="-my-1 flex items-center justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <Button variant="ghost" size="icon" className="-my-3">
-                                <EllipsisIcon />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            }
-                          />
-                          <DropdownMenuContent align="end" className="w-fit">
-                            <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
-                              Add new round
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <AddNewRoundDialog
-                          workspaceId={workspaceId!}
-                          open={isAddNewRoundDialogOpen}
-                          setOpen={setIsAddNewRoundDialogOpen}
-                        />
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rounds.map(round => (
-                    <BlackboardRound
-                      key={round.id}
-                      workspaceId={workspaceId!}
-                      round={round}
-                      hideSolved={hideSolved}
-                    />
-                  ))}
-                  {/* Gets rid of the scroll bar when the last row is hidden. */}
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-0" />
-                  </TableRow>
-                </TableBody>
-              </Table>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuCheckboxItem checked={hideSolved} onCheckedChange={setHideSolved}>
+                    Hide solved puzzles
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={hideObsolete}
+                    onCheckedChange={setHideObsolete}>
+                    Hide obsolete puzzles
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={hideSolvedMetas}
+                    onCheckedChange={setHideSolvedMetas}>
+                    Hide solved meta puzzles
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </ScrollArea>
+            <ScrollArea className="flex-1">
+              <div className="overflow-hidden">
+                <Table className="h-fit">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="p-0 w-8" colSpan={1} />
+                      <TableHead className="p-0 w-8" colSpan={1} />
+                      <TableHead>Name</TableHead>
+                      <TableHead>Solution</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Importance</TableHead>
+                      <TableHead>Tags</TableHead>
+                      <TableHead>Working on this</TableHead>
+                      <TableHead className="w-0">
+                        <div className="-my-1 flex items-center justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button variant="ghost" size="icon" className="-my-3">
+                                  <EllipsisIcon />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              }
+                            />
+                            <DropdownMenuContent align="end" className="w-fit">
+                              <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
+                                Add new round
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <AddNewRoundDialog
+                            workspaceId={workspaceId!}
+                            open={isAddNewRoundDialogOpen}
+                            setOpen={setIsAddNewRoundDialogOpen}
+                          />
+                        </div>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rounds.map(round => (
+                      <BlackboardRound key={round.id} workspaceId={workspaceId!} round={round} />
+                    ))}
+                    {/* Gets rid of the scroll bar when the last row is hidden. */}
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-0" />
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
+          </div>
         </div>
       </div>
+      <AppSidebar side="right" workspaceId={workspaceId} rounds={rounds} />
     </div>
   );
 }
@@ -272,11 +288,9 @@ function RouteComponent() {
 function BlackboardRound({
   workspaceId,
   round,
-  hideSolved,
 }: {
   workspaceId: string;
   round: RouterOutputs["workspaces"]["get"]["rounds"][0];
-  hideSolved: boolean;
 }) {
   const workspace = useWorkspace({workspaceId});
   const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] = useState(false);
@@ -291,18 +305,6 @@ function BlackboardRound({
   const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useLocalStorage(
     `isUnassignedCollapsed-${round.id}`,
     false
-  );
-
-  const metaPuzzles = round.metaPuzzles.filter(
-    metaPuzzle =>
-      !hideSolved ||
-      (metaPuzzle.status !== "solved" && metaPuzzle.status !== "backsolved") ||
-      metaPuzzle.childPuzzles.some(
-        puzzle => puzzle.status !== "solved" && puzzle.status !== "backsolved"
-      )
-  );
-  const unassignedPuzzles = round.unassignedPuzzles.filter(
-    puzzle => !hideSolved || (puzzle.status !== "solved" && puzzle.status !== "backsolved")
   );
 
   function onStatusChange(value: string | null) {
@@ -418,16 +420,15 @@ function BlackboardRound({
           />
         </TableCell>
       </TableRow>
-      {metaPuzzles.map(metaPuzzle => (
+      {round.metaPuzzles.map(metaPuzzle => (
         <BlackboardMetaPuzzle
           key={metaPuzzle.id}
           workspaceId={workspaceId}
           metaPuzzle={metaPuzzle}
           isParentCollapsed={isCollapsed}
-          hideSolved={hideSolved}
         />
       ))}
-      {unassignedPuzzles.length > 0 && (
+      {round.unassignedPuzzles.length > 0 && (
         <>
           <TableRow className={cn("group", isCollapsed ? "collapse" : "")}>
             <TableCell className="p-0" />
@@ -494,14 +495,14 @@ function BlackboardRound({
               />
             </TableCell>
           </TableRow>
-          {unassignedPuzzles.map(puzzle => (
+          {round.unassignedPuzzles.map(puzzle => (
             <BlackboardPuzzle
               color="grey"
               key={puzzle.id}
               workspaceId={workspaceId}
               puzzle={puzzle}
               isCollapsed={isCollapsed || isUnassignedCollapsed}
-              isLast={puzzle === unassignedPuzzles[unassignedPuzzles.length - 1]}
+              isLast={puzzle === round.unassignedPuzzles[round.unassignedPuzzles.length - 1]}
             />
           ))}
         </>
@@ -514,12 +515,10 @@ function BlackboardMetaPuzzle({
   workspaceId,
   metaPuzzle,
   isParentCollapsed,
-  hideSolved,
 }: {
   workspaceId: string;
   metaPuzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0];
   isParentCollapsed: boolean;
-  hideSolved: boolean;
 }) {
   const workspace = useWorkspace({workspaceId});
   const [isAddNewPuzzleFeedingThisMetaDialogOpen, setIsAddNewPuzzleFeedingThisMetaDialogOpen] =
@@ -583,10 +582,6 @@ function BlackboardMetaPuzzle({
   }
 
   const presences = useAppSelector(state => state.presences.value)[metaPuzzle.id] ?? [];
-
-  const childPuzzles = metaPuzzle.childPuzzles.filter(
-    puzzle => !hideSolved || (puzzle.status !== "solved" && puzzle.status !== "backsolved")
-  );
 
   return (
     <>
@@ -784,17 +779,17 @@ function BlackboardMetaPuzzle({
           />
         </TableCell>
       </TableRow>
-      {childPuzzles.map((puzzle, idx) => (
+      {metaPuzzle.childPuzzles.map((puzzle, idx) => (
         <BlackboardPuzzle
           key={idx}
           workspaceId={workspaceId}
           color={color}
           puzzle={puzzle}
           isCollapsed={isParentCollapsed || isCollapsed}
-          isLast={idx === childPuzzles.length - 1}
+          isLast={idx === metaPuzzle.childPuzzles.length - 1}
         />
       ))}
-      {childPuzzles.length === 0 && !isParentCollapsed && !isCollapsed && (
+      {metaPuzzle.childPuzzles.length === 0 && !isParentCollapsed && !isCollapsed && (
         <TableRow>
           <TableCell colSpan={1} />
           <TableCell className="p-0">
