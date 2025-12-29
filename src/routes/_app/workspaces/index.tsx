@@ -46,14 +46,12 @@ function RouteComponent() {
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-xl font-semibold tracking-tight">My workspaces</h1>
           </div>
-          <ul
-            role="list"
-            className="divide-y divide-gray-100 overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+          <ul role="list" className="divide-y divide-border overflow-hidden ring-1 ring-border">
             {!myWorkspaces.data?.data ? (
               <Skeleton className="flex h-36 justify-between gap-x-6 px-4 py-5 sm:px-6" />
             ) : myWorkspaces.data.data.length === 0 ? (
               <div className="relative block w-full rounded-lg p-12 text-center">
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   You are not a member of any workspaces. Join an existing one or create a new one
                   to get started.
                 </p>
@@ -62,10 +60,10 @@ function RouteComponent() {
               myWorkspaces.data.data.map(workspace => (
                 <li
                   key={workspace.id}
-                  className="relative flex justify-between gap-x-6 px-4 py-5 hover:bg-gray-50 sm:px-6">
+                  className="relative flex justify-between gap-x-6 px-4 py-5 hover:bg-muted sm:px-6">
                   <div className="flex min-w-0 gap-x-4">
                     <div className="min-w-0 flex-auto">
-                      <p className="text-sm leading-6 text-gray-900">
+                      <p className="text-xs/relaxed leading-6">
                         <Link
                           {...(!workspace.googleAccessToken || !workspace.googleFolderId
                             ? ({
@@ -86,7 +84,7 @@ function RouteComponent() {
                   <div className="flex shrink-0 items-center gap-x-4">
                     <ChevronRightIcon
                       aria-hidden="true"
-                      className="h-5 w-5 flex-none text-gray-400"
+                      className="size-4 flex-none text-muted-foreground"
                     />
                   </div>
                 </li>

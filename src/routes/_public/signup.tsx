@@ -1,7 +1,8 @@
-import {Turnstile} from "@marsidev/react-turnstile";
+import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {CheckIcon, XIcon} from "lucide-react";
+import {useRef} from "react";
 import {toast} from "sonner";
 import z from "zod";
 
@@ -31,12 +32,14 @@ function RouteComponent() {
             await router.navigate({to: "/login"});
           },
           onError: error => {
+            turnstileRef.current?.reset();
             toast.error(error.error.message);
           },
         },
       }),
   });
   const {theme} = useTheme();
+  const turnstileRef = useRef<TurnstileInstance>(null);
   return (
     <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -127,6 +130,7 @@ function RouteComponent() {
                     )}
                   </form.AppField>
                   <Turnstile
+                    ref={turnstileRef}
                     siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
                     options={{theme: theme === "system" ? "auto" : theme, size: "flexible"}}
                     onSuccess={token => form.setFieldValue("token", token)}

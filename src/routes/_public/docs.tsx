@@ -91,7 +91,7 @@ function RouteComponent() {
         </nav>
         <div className="flex flex-1 items-stretch justify-center">
           <Card className="flex-1 p-8">
-            <div className="prose prose-sm prose-zinc max-w-full">
+            <div className="prose max-w-full">
               <Outlet />
             </div>
           </Card>
