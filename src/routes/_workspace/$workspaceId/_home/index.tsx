@@ -371,7 +371,7 @@ function RouteComponent() {
           </div>
         </div>
       </div>
-      <AppSidebar side="right" workspaceId={workspaceId} rounds={rounds} />
+      <AppSidebar workspaceId={workspaceId} rounds={rounds} />
     </div>
   );
 }

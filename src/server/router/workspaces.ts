@@ -1,7 +1,6 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
 import {and, desc, eq} from "drizzle-orm";
-import {validate} from "uuid";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
