@@ -17,10 +17,23 @@ import {
 } from "./ui/combobox";
 import {Field, FieldContent, FieldDescription, FieldError, FieldLabel} from "./ui/field";
 import {Input} from "./ui/input";
+import {InputGroupInput} from "./ui/input-group";
 import {Select, SelectContent, SelectTrigger, SelectValue} from "./ui/select";
 import {Textarea} from "./ui/textarea";
 
 const {fieldContext, formContext, useFieldContext, useFormContext} = createFormHookContexts();
+
+function InputGroupInputField(props: React.ComponentProps<typeof InputGroupInput>) {
+  const field = useFieldContext<string>();
+  return (
+    <InputGroupInput
+      value={field.state.value}
+      onChange={e => field.handleChange(e.target.value)}
+      onBlur={() => field.handleBlur()}
+      {...props}
+    />
+  );
+}
 
 function TextField({
   label,
@@ -99,17 +112,17 @@ function SelectField({
   children,
   className,
   ...props
-}: React.ComponentProps<typeof Select> & {label: string; description?: string} & Pick<
+}: React.ComponentProps<typeof Select> & {label?: string; description?: string} & Pick<
     React.ComponentProps<typeof SelectValue>,
     "className"
   >) {
   const field = useFieldContext<unknown>();
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      {label && <FieldLabel>{label}</FieldLabel>}
       <Select onValueChange={field.handleChange} value={field.state.value} {...props}>
-        <SelectTrigger>
-          <SelectValue onBlur={field.handleBlur} className={className} />
+        <SelectTrigger className={className}>
+          <SelectValue onBlur={field.handleBlur} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>
       </Select>
@@ -187,7 +200,14 @@ function Form(props: React.ComponentPropsWithRef<"form">) {
 }
 
 const {useAppForm} = createFormHook({
-  fieldComponents: {TextField, TextareaField, CheckboxField, SelectField, ComboboxMultipleField},
+  fieldComponents: {
+    InputGroupInputField,
+    TextField,
+    TextareaField,
+    CheckboxField,
+    SelectField,
+    ComboboxMultipleField,
+  },
   formComponents: {SubmitButton, Form},
   fieldContext,
   formContext,

@@ -15,7 +15,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {Button} from "@/components/ui/button";
+import {ButtonGroup, ButtonGroupText} from "@/components/ui/button-group";
 import {FieldGroup, FieldLabel} from "@/components/ui/field";
+import {InputGroup} from "@/components/ui/input-group";
 import {Item, ItemActions, ItemContent, ItemTitle} from "@/components/ui/item";
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable";
 import {SelectGroup, SelectItem} from "@/components/ui/select";
@@ -212,39 +214,46 @@ function PuzzleInfoPanel({
               <form.AppField
                 name="answer"
                 children={field => (
-                  <field.TextField
-                    label="Answer"
-                    className="whitespace-pre font-mono"
-                    onBlur={() => {
-                      field.handleBlur();
-                      void form.handleSubmit();
-                    }}
-                  />
+                  <ButtonGroup className="w-full">
+                    <ButtonGroupText>Answer</ButtonGroupText>
+                    <InputGroup>
+                      <field.InputGroupInputField
+                        className="whitespace-pre font-mono"
+                        onBlur={() => {
+                          field.handleBlur();
+                          void form.handleSubmit();
+                        }}
+                      />
+                    </InputGroup>
+                  </ButtonGroup>
                 )}
               />
               <form.AppField
                 name="status"
-                children={field => {
-                  return (
-                    <field.SelectField
-                      label="Status"
-                      onValueChange={v => {
-                        field.handleChange(v as any);
-                        void form.handleSubmit();
-                      }}
-                      items={getPuzzleStatusOptions()}>
-                      {getPuzzleStatusGroups().map(group => (
-                        <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
-                          {group.values.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ))}
-                    </field.SelectField>
-                  );
-                }}
+                children={field => (
+                  <ButtonGroup className="w-full">
+                    <ButtonGroupText>Status</ButtonGroupText>
+                    <InputGroup>
+                      <field.SelectField
+                        className="border-0 bg-transparent"
+                        onValueChange={v => {
+                          field.handleChange(v as any);
+                          void form.handleSubmit();
+                        }}
+                        items={getPuzzleStatusOptions()}>
+                        {getPuzzleStatusGroups().map(group => (
+                          <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                            {group.values.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ))}
+                      </field.SelectField>
+                    </InputGroup>
+                  </ButtonGroup>
+                )}
               />
               {puzzle.childPuzzles.length > 0 && (
                 <div>
