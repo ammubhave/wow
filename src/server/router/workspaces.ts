@@ -1,6 +1,7 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
 import {and, desc, eq} from "drizzle-orm";
+import {validate} from "uuid";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
@@ -108,14 +109,24 @@ export const workspacesRouter = {
         teamName: z.string().min(1).optional(),
         eventName: z.string().min(1).optional(),
         password: z.string().min(8).optional(),
-        comment: z.string().optional(),
-        commentUpdatedBy: z.string().optional(),
+        comment: z
+          .string()
+          .transform(val => (val.length === 0 ? null : val))
+          .nullable()
+          .optional(),
         tags: z.array(z.string()).optional(),
         links: z.array(z.object({name: z.string(), url: z.url()})).optional(),
       })
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
+      let commentUpdatedAt = undefined;
+      let commentUpdatedBy = undefined;
+      if (input.comment !== undefined) {
+        commentUpdatedAt = new Date();
+        commentUpdatedBy = context.session.user.name;
+      }
+
       const [workspace] = await db
         .update(schema.organization)
         .set({
@@ -123,8 +134,8 @@ export const workspacesRouter = {
           eventName: input.eventName,
           password: input.password,
           comment: input.comment,
-          commentUpdatedAt: new Date(),
-          commentUpdatedBy: input.commentUpdatedBy,
+          commentUpdatedAt,
+          commentUpdatedBy,
           tags: input.tags,
           links: input.links,
         })

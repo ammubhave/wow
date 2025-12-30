@@ -290,7 +290,7 @@ function PuzzleInfoPanel({
         </form.AppForm>
         <div>
           <CommentBox
-            comment={puzzle.comment ?? ""}
+            comment={puzzle.comment}
             commentUpdatedAt={puzzle.commentUpdatedAt}
             commentUpdatedBy={puzzle.commentUpdatedBy}
             workspaceId={workspaceId}

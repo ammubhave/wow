@@ -1,5 +1,5 @@
 import {PencilIcon} from "lucide-react";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {toast} from "sonner";
@@ -12,24 +12,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {authClient} from "@/lib/auth-client";
 import {cn} from "@/lib/utils";
 
 import {useAppForm} from "./form";
+import {FieldGroup} from "./ui/field";
 import {useWorkspace} from "./use-workspace";
 
 const DEFAULT_MESSAGE = "No pinned comment.";
 
 export function CommentBox({
   comment,
-  commentUpdatedAt,
-  commentUpdatedBy,
   workspaceId,
   puzzleId,
+  commentUpdatedAt,
+  commentUpdatedBy,
 }: {
-  comment?: string;
-  commentUpdatedAt?: Date;
-  commentUpdatedBy?: string;
+  comment: string | null;
+  commentUpdatedAt: Date | null;
+  commentUpdatedBy: string | null;
   workspaceId: string;
   puzzleId?: string;
 }) {
@@ -37,41 +37,21 @@ export function CommentBox({
   const format = useFormatter();
 
   const [isEditingComment, setIsEditingComment] = useState(false);
-  const [updatedComment, setComment] = useState(comment || DEFAULT_MESSAGE);
   const [undoComment, setUndoComment] = useState(null as string | null);
-  const [updatedAt, setUpdatedAt] = useState(commentUpdatedAt || null);
-  const [updatedBy, setUpdatedBy] = useState(commentUpdatedBy || null);
-  useEffect(() => setComment(comment || DEFAULT_MESSAGE), [comment]);
-  useEffect(() => setUpdatedAt(commentUpdatedAt || null), [commentUpdatedAt]);
-  useEffect(() => setUpdatedBy(commentUpdatedBy || null), [commentUpdatedBy]);
-  const user = authClient.useSession().data?.user;
 
   const workspace = useWorkspace({workspaceId});
 
-  const updateComment = (text: string) => {
-    if (text === updatedComment || (text === "" && updatedComment === DEFAULT_MESSAGE)) {
-      return;
-    }
-    if (text === "") {
-      text = DEFAULT_MESSAGE;
-    }
-    var oldComment = updatedComment;
+  const updateComment = (comment: string | null) => {
+    var oldComment = comment;
     toast.promise(
       puzzleId === undefined
-        ? workspace.update.mutateAsync({workspaceId, comment: text, commentUpdatedBy: user?.name})
-        : workspace.puzzles.update.mutateAsync({
-            id: puzzleId,
-            comment: text,
-            commentUpdatedBy: user?.name,
-          }),
+        ? workspace.update.mutateAsync({workspaceId, comment})
+        : workspace.puzzles.update.mutateAsync({id: puzzleId, comment}),
       {
         loading: "Saving comment...",
         success: _data => {
-          setComment(text);
           setIsEditingComment(false);
           setUndoComment(oldComment);
-          setUpdatedBy(user?.name ?? user?.email ?? "Unknown user");
-          setUpdatedAt(new Date());
           return "Comment updated!";
         },
         error: "Oops! Something went wrong.",
@@ -80,7 +60,7 @@ export function CommentBox({
   };
 
   const form = useAppForm({
-    defaultValues: {comment: updatedComment},
+    defaultValues: {comment},
     onSubmit: ({value}) => updateComment(value.comment),
   });
 
@@ -223,7 +203,7 @@ export function CommentBox({
                     </a>
                   ),
                 }}>
-                {updatedComment}
+                {comment || DEFAULT_MESSAGE}
               </Markdown>
             </div>
             <span className="absolute top-0 right-0">
@@ -239,10 +219,6 @@ export function CommentBox({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={() => {
-                      form.setFieldValue(
-                        "comment",
-                        updatedComment === DEFAULT_MESSAGE ? "" : updatedComment
-                      );
                       setIsEditingComment(true);
                     }}>
                     Edit
@@ -251,7 +227,7 @@ export function CommentBox({
                     Clear
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => updateComment(undoComment || "")}
+                    onClick={() => updateComment(undoComment || null)}
                     disabled={undoComment === null}>
                     Undo
                   </DropdownMenuItem>
@@ -261,32 +237,27 @@ export function CommentBox({
           </span>
         ) : (
           <form.AppForm>
-            <form
-              id={form.formId}
-              className="space-y-2"
-              onSubmit={e => {
-                e.preventDefault();
-                e.stopPropagation();
-                void form.handleSubmit();
-              }}>
-              <form.AppField
-                name="comment"
-                children={field => <field.TextareaField label="Comment" rows={10} />}
-              />
-              <span className="gap-2 flex">
-                <form.SubmitButton>Save</form.SubmitButton>
-                <Button variant="secondary" onClick={() => onCancel()}>
-                  Cancel
-                </Button>
-              </span>
-            </form>
+            <form.Form>
+              <FieldGroup>
+                <form.AppField
+                  name="comment"
+                  children={field => <field.TextareaField label="Comment" rows={10} />}
+                />
+                <span className="gap-2 flex">
+                  <form.SubmitButton>Save</form.SubmitButton>
+                  <Button variant="secondary" onClick={() => onCancel()}>
+                    Cancel
+                  </Button>
+                </span>
+              </FieldGroup>
+            </form.Form>
           </form.AppForm>
         )}
       </span>
-      {(updatedAt && !isNaN(updatedAt.getTime())) || updatedBy ? (
+      {commentUpdatedAt || commentUpdatedBy ? (
         <span className="mt-2 block text-xs text-muted-foreground">
-          Updated {updatedAt ? format.relativeTime(updatedAt, now) : ""}{" "}
-          {updatedBy ? "by " + updatedBy : ""}
+          Updated {commentUpdatedAt ? format.relativeTime(commentUpdatedAt, now) : ""}{" "}
+          {commentUpdatedBy ? "by " + commentUpdatedBy : ""}
         </span>
       ) : null}
     </div>

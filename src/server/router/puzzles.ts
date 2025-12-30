@@ -176,8 +176,11 @@ export const puzzlesRouter = {
         status: z.string().nullable().optional(),
         importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
-        comment: z.string().optional(),
-        commentUpdatedBy: z.string().optional(),
+        comment: z
+          .string()
+          .transform(val => (val.length === 0 ? null : val))
+          .nullable()
+          .optional(),
         isMetaPuzzle: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
       })
@@ -245,6 +248,12 @@ export const puzzlesRouter = {
         invariant(roundId);
       }
 
+      let commentUpdatedAt = undefined;
+      let commentUpdatedBy = undefined;
+      if (input.comment !== undefined) {
+        commentUpdatedAt = new Date();
+        commentUpdatedBy = context.session.user.name;
+      }
       await db
         .update(schema.puzzle)
         .set({
@@ -256,8 +265,8 @@ export const puzzlesRouter = {
           importance: input.importance,
           link: input.link,
           comment: input.comment,
-          commentUpdatedAt: new Date(),
-          commentUpdatedBy: input.commentUpdatedBy,
+          commentUpdatedAt,
+          commentUpdatedBy,
           isMetaPuzzle: input.isMetaPuzzle,
           tags: input.tags,
         })

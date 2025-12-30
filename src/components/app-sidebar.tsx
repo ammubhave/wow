@@ -25,9 +25,9 @@ export function AppSidebar({
         <div className="p-4 flex-1 overflow-y-auto">
           <CommentBox
             workspaceId={workspaceId}
-            comment={workspace.get.data?.comment ?? ""}
-            commentUpdatedAt={workspace.get.data?.commentUpdatedAt}
-            commentUpdatedBy={workspace.get.data?.commentUpdatedBy}
+            comment={workspace.get.data.comment}
+            commentUpdatedAt={workspace.get.data.commentUpdatedAt}
+            commentUpdatedBy={workspace.get.data.commentUpdatedBy}
           />
         </div>
       </SidebarHeader>
