@@ -29,7 +29,7 @@ export function CommentBox({
 }) {
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [updatedComment, setComment] = useState(comment || DEFAULT_MESSAGE);
-  const [revertComment, setRevertComment] = useState(null as string | null);
+  const [undoComment, setUndoComment] = useState(null as string | null);
   useEffect(() => setComment(comment || DEFAULT_MESSAGE), [comment]);
 
   const workspace = useWorkspace({workspaceId});
@@ -51,7 +51,7 @@ export function CommentBox({
         success: _data => {
           setComment(text);
           setIsEditingComment(false);
-          setRevertComment(oldComment);
+          setUndoComment(oldComment);
           return "Comment updated!";
         },
         error: "Oops! Something went wrong.",
@@ -231,9 +231,9 @@ export function CommentBox({
                     Clear
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => updateComment(revertComment || "")}
-                    disabled={revertComment === null}>
-                    Revert
+                    onClick={() => updateComment(undoComment || "")}
+                    disabled={undoComment === null}>
+                    Undo
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
