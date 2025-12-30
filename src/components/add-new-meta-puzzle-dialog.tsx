@@ -28,7 +28,7 @@ export function AddNewMetaPuzzleDialog({
 }) {
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
-    defaultValues: {name: "", assignUnassignedPuzzles: false, tags: [] as string[], link: ""},
+    defaultValues: {name: "", assignUnassignedPuzzles: true, tags: [] as string[], link: ""},
     onSubmit: ({value}) =>
       toast.promise(
         workspace.puzzles.create.mutateAsync(
