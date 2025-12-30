@@ -6,6 +6,7 @@ import {
   ChevronRightIcon,
   EllipsisIcon,
   FunnelIcon,
+  InfoIcon,
   PuzzleIcon,
   SearchIcon,
   SignalHighIcon,
@@ -36,6 +37,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -52,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
 import {
   getBgColorClassNamesForPuzzleStatus,
@@ -494,9 +497,31 @@ function BlackboardRound({
                 <DropdownMenuItem onClick={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
                   Add new meta puzzle
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
-                  Add new unassigned puzzle
-                </DropdownMenuItem>
+                {round.metaPuzzles.length > 0 ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <DropdownMenuItem className="opacity-50" closeOnClick={false}>
+                          Add new unassigned puzzle
+                          <DropdownMenuShortcut>
+                            <InfoIcon />
+                          </DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      }
+                    />
+                    <TooltipContent side="left">
+                      You can only add unassigned puzzles when there are no meta puzzles in the
+                      round.
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <DropdownMenuItem onClick={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                    Add new unassigned puzzle
+                    <DropdownMenuShortcut>
+                      <InfoIcon />
+                    </DropdownMenuShortcut>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => setIsEditRoundDialogOpen(true)}>
                   Edit round
                 </DropdownMenuItem>
