@@ -16,7 +16,7 @@ import {cn} from "@/lib/utils";
 import {useAppForm} from "./form";
 import {useWorkspace} from "./use-workspace";
 
-const DEFAULT_MESSAGE = "No comment set.";
+const DEFAULT_MESSAGE = "No pinned comment.";
 
 export function CommentBox({
   comment,
