@@ -664,9 +664,6 @@ function BlackboardMetaPuzzle({
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${metaPuzzle.id}`, false);
-  // const { isDarkModeEnabled } = useAppSelector(
-  //   (state) => state.isDarkModeEnabled,
-  // );
   const color = ((id: string) => {
     const hash = sha256(id);
     let hue = parseInt(hash.substring(0, 4), 16) % (360 - 150);
@@ -674,50 +671,33 @@ function BlackboardMetaPuzzle({
       hue += 150;
     }
     let saturation, lightness;
-    // if (isDarkModeEnabled) {
-    //   saturation =
-    //     (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 60 + 40;
-    //   lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.3 * 50 + 50;
-    // } else {
     saturation = (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 80 + 50;
     lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.5 * 70;
-    // }
-
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   })(metaPuzzle.id);
 
   const form = useAppForm({
-    defaultValues: {answer: metaPuzzle.answer ?? ""},
+    defaultValues: {
+      answer: metaPuzzle.answer ?? "",
+      status: metaPuzzle.status,
+      importance: metaPuzzle.importance,
+    },
     onSubmit: ({value}) => {
-      const answer = value.answer.length === 0 ? null : value.answer.toUpperCase();
-      if (answer !== metaPuzzle.answer) {
-        toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, answer}), {
-          loading: "Updating meta puzzle answer...",
-          success: "Success! Meta puzzle answer updated.",
-          error: "Oops! Something went wrong.",
-        });
-      }
+      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, ...value}), {
+        loading: "Updating meta puzzle answer...",
+        success: "Success! Meta puzzle answer updated.",
+        error: "Oops! Something went wrong.",
+      });
+    },
+    listeners: {
+      onChange: async ({formApi}) => {
+        if (formApi.state.isValid) {
+          await formApi.handleSubmit();
+        }
+      },
+      onChangeDebounceMs: 500,
     },
   });
-  function onStatusChange(value: string | null) {
-    if (metaPuzzle.status !== value) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, status: value}), {
-        loading: "Updating meta puzzle status...",
-        success: "Success! Meta puzzle status updated.",
-        error: "Oops! Something went wrong.",
-      });
-    }
-  }
-  function onImportanceChange(value: string | null) {
-    if (metaPuzzle.importance !== value) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, importance: value}), {
-        loading: "Updating meta puzzle importance...",
-        success: "Success! Meta puzzle importance updated.",
-        error: "Oops! Something went wrong.",
-      });
-    }
-  }
-
   const presences = useAppSelector(state => state.presences.value)[metaPuzzle.id] ?? [];
 
   return (
@@ -789,88 +769,86 @@ function BlackboardMetaPuzzle({
           <form.AppField name="answer">
             {field => (
               <input
-                className="px-2 absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
-                contentEditable={metaPuzzle.id !== ""}
-                suppressContentEditableWarning={true}
-                onInput={e => {
-                  field.setValue(e.currentTarget.value.toLocaleUpperCase());
-                }}
-                onBlur={() => {
+                className="uppercase px-2 absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
+                onBlur={e => {
+                  field.handleChange(e.target.value.toUpperCase());
                   field.handleBlur();
-                  void form.handleSubmit();
                 }}
-                onKeyDown={e => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    e.currentTarget.blur();
-                  }
-                }}
+                onChange={e => field.handleChange(e.target.value)}
                 value={field.state.value}
               />
             )}
           </form.AppField>
         </TableCell>
         <TableCell>
-          <Select
-            onValueChange={onStatusChange}
-            value={metaPuzzle.status}
-            items={getPuzzleStatusOptions()}>
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {getPuzzleStatusGroups().map(group => (
-                <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
-                  {group.values.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+          <form.AppField name="status">
+            {field => (
+              <Select
+                onValueChange={field.handleChange}
+                value={field.state.value}
+                items={getPuzzleStatusOptions()}>
+                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+                  <SelectValue onBlur={field.handleBlur} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getPuzzleStatusGroups().map(group => (
+                    <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                      {group.values.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
+                </SelectContent>
+              </Select>
+            )}
+          </form.AppField>
         </TableCell>
         <TableCell>
-          <Select
-            onValueChange={onImportanceChange}
-            value={metaPuzzle.importance}
-            items={[
-              {value: null, label: <SignalMediumIcon />},
-              {value: "high", label: <SignalHighIcon />},
-              {value: "veryhigh", label: <SignalIcon />},
-              {value: "medium", label: <SignalMediumIcon />},
-              {value: "low", label: <SignalLowIcon />},
-              {value: "obsolete", label: <SignalZeroIcon />},
-            ]}>
-            <SelectTrigger
-              showTrigger={false}
-              className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="veryhigh">
-                <SignalIcon />
-                Very High
-              </SelectItem>
-              <SelectItem value="high">
-                <SignalHighIcon />
-                High
-              </SelectItem>
-              <SelectItem value="medium">
-                <SignalMediumIcon />
-                Medium
-              </SelectItem>
-              <SelectItem value="low">
-                <SignalLowIcon />
-                Low
-              </SelectItem>
-              <SelectItem value="obsolete">
-                <SignalZeroIcon />
-                Obsolete
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <form.AppField name="importance">
+            {field => (
+              <Select
+                onValueChange={field.handleChange}
+                value={field.state.value}
+                items={[
+                  {value: null, label: <SignalMediumIcon />},
+                  {value: "high", label: <SignalHighIcon />},
+                  {value: "veryhigh", label: <SignalIcon />},
+                  {value: "medium", label: <SignalMediumIcon />},
+                  {value: "low", label: <SignalLowIcon />},
+                  {value: "obsolete", label: <SignalZeroIcon />},
+                ]}>
+                <SelectTrigger
+                  showTrigger={false}
+                  className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+                  <SelectValue onBlur={field.handleBlur} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="veryhigh">
+                    <SignalIcon />
+                    Very High
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <SignalHighIcon />
+                    High
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <SignalMediumIcon />
+                    Medium
+                  </SelectItem>
+                  <SelectItem value="low">
+                    <SignalLowIcon />
+                    Low
+                  </SelectItem>
+                  <SelectItem value="obsolete">
+                    <SignalZeroIcon />
+                    Obsolete
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </form.AppField>
         </TableCell>
         <TableCell>
           <div className="flex gap-1 flex-wrap items-center">
@@ -996,34 +974,28 @@ function BlackboardPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const form = useAppForm({
-    defaultValues: {answer: puzzle.answer ?? ""},
-    onSubmit: ({value}) => {
-      const answer = value.answer.length === 0 ? null : value.answer.toUpperCase();
-      if (answer !== puzzle.answer) {
-        toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, answer}), {
-          loading: "Updating puzzle answer...",
-          success: "Success! Puzzle answer updated.",
-          error: "Oops! Something went wrong.",
-        });
-      }
+    defaultValues: {
+      answer: puzzle.answer ?? "",
+      status: puzzle.status,
+      importance: puzzle.importance,
+      tags: puzzle.tags,
     },
-  });
-
-  function onStatusChange(value: string | null) {
-    if (puzzle.status !== value) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, status: value}), {
-        loading: "Updating puzzle status...",
-        success: "Success! Puzzle status updated.",
+    onSubmit: ({value}) => {
+      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, ...value}), {
+        loading: "Updating puzzle answer...",
+        success: "Success! Puzzle answer updated.",
         error: "Oops! Something went wrong.",
       });
-    }
-  }
-  function onImportanceChange(value: string | null) {
-    if (puzzle.importance !== value) {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, importance: value}));
-    }
-  }
-
+    },
+    listeners: {
+      onChange: async ({formApi}) => {
+        if (formApi.state.isValid) {
+          await formApi.handleSubmit();
+        }
+      },
+      onChangeDebounceMs: 500,
+    },
+  });
   const presences = useAppSelector(state => state.presences.value[puzzle.id] ?? []);
 
   return (
@@ -1090,88 +1062,86 @@ function BlackboardPuzzle({
           <form.AppField name="answer">
             {field => (
               <input
-                className="px-2 absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
-                contentEditable={puzzle.id !== ""}
-                suppressContentEditableWarning={true}
-                onInput={e => {
-                  field.setValue(e.currentTarget.value.toLocaleUpperCase());
-                }}
-                onBlur={() => {
+                className="px-2 uppercase absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
+                onBlur={e => {
+                  field.handleChange(e.target.value.toUpperCase());
                   field.handleBlur();
-                  void form.handleSubmit();
                 }}
-                onKeyDown={e => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    e.currentTarget.blur();
-                  }
-                }}
+                onChange={e => field.handleChange(e.target.value)}
                 value={field.state.value}
               />
             )}
           </form.AppField>
         </TableCell>
         <TableCell>
-          <Select
-            onValueChange={onStatusChange}
-            value={puzzle.status}
-            items={getPuzzleStatusOptions()}>
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {getPuzzleStatusGroups().map(group => (
-                <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
-                  {group.values.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+          <form.AppField name="status">
+            {field => (
+              <Select
+                onValueChange={field.handleChange}
+                value={field.state.value}
+                items={getPuzzleStatusOptions()}>
+                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+                  <SelectValue onBlur={field.handleBlur} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getPuzzleStatusGroups().map(group => (
+                    <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                      {group.values.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
+                </SelectContent>
+              </Select>
+            )}
+          </form.AppField>
         </TableCell>
         <TableCell>
-          <Select
-            onValueChange={onImportanceChange}
-            value={puzzle.importance}
-            items={[
-              {value: null, label: <SignalMediumIcon />},
-              {value: "high", label: <SignalHighIcon />},
-              {value: "veryhigh", label: <SignalIcon />},
-              {value: "medium", label: <SignalMediumIcon />},
-              {value: "low", label: <SignalLowIcon />},
-              {value: "obsolete", label: <SignalZeroIcon />},
-            ]}>
-            <SelectTrigger
-              showTrigger={false}
-              className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="veryhigh">
-                <SignalIcon />
-                Very High
-              </SelectItem>
-              <SelectItem value="high">
-                <SignalHighIcon />
-                High
-              </SelectItem>
-              <SelectItem value="medium">
-                <SignalMediumIcon />
-                Medium
-              </SelectItem>
-              <SelectItem value="low">
-                <SignalLowIcon />
-                Low
-              </SelectItem>
-              <SelectItem value="obsolete">
-                <SignalZeroIcon />
-                Obsolete
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <form.AppField name="importance">
+            {field => (
+              <Select
+                onValueChange={field.handleChange}
+                value={field.state.value}
+                items={[
+                  {value: null, label: <SignalMediumIcon />},
+                  {value: "high", label: <SignalHighIcon />},
+                  {value: "veryhigh", label: <SignalIcon />},
+                  {value: "medium", label: <SignalMediumIcon />},
+                  {value: "low", label: <SignalLowIcon />},
+                  {value: "obsolete", label: <SignalZeroIcon />},
+                ]}>
+                <SelectTrigger
+                  showTrigger={false}
+                  className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+                  <SelectValue onBlur={field.handleBlur} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="veryhigh">
+                    <SignalIcon />
+                    Very High
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <SignalHighIcon />
+                    High
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <SignalMediumIcon />
+                    Medium
+                  </SelectItem>
+                  <SelectItem value="low">
+                    <SignalLowIcon />
+                    Low
+                  </SelectItem>
+                  <SelectItem value="obsolete">
+                    <SignalZeroIcon />
+                    Obsolete
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </form.AppField>
         </TableCell>
         <TableCell>
           <div className="flex gap-1 flex-wrap items-center">
