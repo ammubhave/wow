@@ -5,6 +5,7 @@ import {createRootRoute, HeadContent, Scripts} from "@tanstack/react-router";
 import {TanStackRouterDevtoolsPanel} from "@tanstack/react-router-devtools";
 import {PostHogProvider} from "posthog-js/react";
 import {Provider as ReactReduxProvider} from "react-redux";
+import {IntlProvider} from "use-intl";
 
 import {ThemeProvider} from "@/components/theme-provider";
 import {Toaster} from "@/components/ui/sonner";
@@ -49,7 +50,9 @@ function RootDocument({children}: {children: React.ReactNode}) {
                 capture_exceptions: import.meta.env.MODE !== "development",
                 debug: import.meta.env.MODE === "development",
               }}>
-              <ReactReduxProvider store={store}>{children}</ReactReduxProvider>
+              <ReactReduxProvider store={store}>
+                <IntlProvider locale="en">{children}</IntlProvider>
+              </ReactReduxProvider>
             </PostHogProvider>
           </ThemeProvider>
           <TanStackDevtools

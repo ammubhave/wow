@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {toast} from "sonner";
+import {useFormatter, useNow} from "use-intl";
 
 import {Button} from "@/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {authClient} from "@/lib/auth-client";
-import {cn, formatRelativeTime} from "@/lib/utils";
+import {cn} from "@/lib/utils";
 
 import {useAppForm} from "./form";
 import {useWorkspace} from "./use-workspace";
@@ -32,6 +33,9 @@ export function CommentBox({
   workspaceId: string;
   puzzleId?: string;
 }) {
+  const now = useNow({updateInterval: 1000});
+  const format = useFormatter();
+
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [updatedComment, setComment] = useState(comment || DEFAULT_MESSAGE);
   const [undoComment, setUndoComment] = useState(null as string | null);
@@ -281,7 +285,7 @@ export function CommentBox({
       </span>
       {(updatedAt && !isNaN(updatedAt.getTime())) || updatedBy ? (
         <span className="mt-2 block text-xs text-muted-foreground">
-          Updated {updatedAt ? formatRelativeTime(updatedAt) : ""}{" "}
+          Updated {updatedAt ? format.relativeTime(updatedAt, now) : ""}{" "}
           {updatedBy ? "by " + updatedBy : ""}
         </span>
       ) : null}
