@@ -17,7 +17,7 @@ import {
 } from "./ui/combobox";
 import {Field, FieldContent, FieldDescription, FieldError, FieldLabel} from "./ui/field";
 import {Input} from "./ui/input";
-import {InputGroupInput} from "./ui/input-group";
+import {InputGroupInput, InputGroupTextarea} from "./ui/input-group";
 import {Select, SelectContent, SelectTrigger, SelectValue} from "./ui/select";
 import {Textarea} from "./ui/textarea";
 
@@ -27,6 +27,18 @@ function InputGroupInputField(props: React.ComponentProps<typeof InputGroupInput
   const field = useFieldContext<string>();
   return (
     <InputGroupInput
+      value={field.state.value}
+      onChange={e => field.handleChange(e.target.value)}
+      onBlur={() => field.handleBlur()}
+      {...props}
+    />
+  );
+}
+
+function InputGroupTextareaField(props: React.ComponentProps<typeof InputGroupTextarea>) {
+  const field = useFieldContext<string>();
+  return (
+    <InputGroupTextarea
       value={field.state.value}
       onChange={e => field.handleChange(e.target.value)}
       onBlur={() => field.handleBlur()}
@@ -206,6 +218,7 @@ function Form(props: React.ComponentPropsWithRef<"form">) {
 const {useAppForm} = createFormHook({
   fieldComponents: {
     InputGroupInputField,
+    InputGroupTextareaField,
     TextField,
     TextareaField,
     CheckboxField,

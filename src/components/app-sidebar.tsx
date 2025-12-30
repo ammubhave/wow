@@ -1,7 +1,6 @@
 import {CoffeeIcon} from "lucide-react";
 import * as React from "react";
 
-import {Sidebar, SidebarContent, SidebarFooter, SidebarHeader} from "@/components/ui/sidebar";
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
 import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
@@ -17,12 +16,14 @@ export function AppSidebar({
 }: {
   workspaceId: string;
   rounds: RouterOutputs["workspaces"]["get"]["rounds"];
-} & React.ComponentProps<typeof Sidebar>) {
+} & React.ComponentProps<"div">) {
   const workspace = useWorkspace({workspaceId});
   return (
-    <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!" {...props}>
-      <SidebarHeader>
-        <div className="p-4 flex-1 overflow-y-auto">
+    <div
+      className="relative w-full max-w-[16rem] bg-sidebar border-l border-sidebar-border"
+      {...props}>
+      <div className="absolute inset-0 overflow-y-auto flex flex-col">
+        <div className="p-2 overflow-y-auto">
           <CommentBox
             workspaceId={workspaceId}
             comment={workspace.get.data.comment}
@@ -30,45 +31,35 @@ export function AppSidebar({
             commentUpdatedBy={workspace.get.data.commentUpdatedBy}
           />
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <div className="overflow-y-auto flex-1 p-2">
-          <nav>
-            <div className="flex flex-col gap-2 text-xs">
-              {rounds
-                .map(round => (
-                  <div
-                    key={round.id}
-                    className="grid grid-cols-2 items-center justify-center gap-2">
+        <div className="flex flex-1 p-2 flex-col gap-2 text-xs">
+          {rounds
+            .map(round => (
+              <div key={round.id} className="grid grid-cols-2 items-center justify-center gap-2">
+                <a
+                  href={"#" + round.id}
+                  className={cn(
+                    "text-primary underline underline-offset-4",
+                    getBgColorClassNamesForPuzzleStatus(round.status)
+                  )}>
+                  {round.name}
+                </a>
+                <div className="flex flex-wrap">
+                  {round.puzzles.map(puzzle => (
                     <a
-                      href={"#" + round.id}
+                      key={puzzle.id}
                       className={cn(
-                        "text-primary underline underline-offset-4",
-                        getBgColorClassNamesForPuzzleStatus(round.status)
-                      )}>
-                      {round.name}
+                        "size-4 text-[8px] flex items-center justify-center text-primary border",
+                        getBgColorClassNamesForPuzzleStatus(puzzle.status)
+                      )}
+                      href={"#" + puzzle.id}>
+                      {(puzzle as any).puzzleIndex}
                     </a>
-                    <div className="flex flex-wrap">
-                      {round.puzzles.map(puzzle => (
-                        <a
-                          key={puzzle.id}
-                          className={cn(
-                            "size-4 text-[8px] flex items-center justify-center text-primary border",
-                            getBgColorClassNamesForPuzzleStatus(puzzle.status)
-                          )}
-                          href={"#" + puzzle.id}>
-                          {(puzzle as any).puzzleIndex}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ))
-                .reverse()}
-            </div>
-          </nav>
+                  ))}
+                </div>
+              </div>
+            ))
+            .reverse()}
         </div>
-      </SidebarContent>
-      <SidebarFooter>
         <div className="flex flex-col items-center justify-center gap-4 p-4">
           <Button
             variant="secondary"
@@ -84,7 +75,7 @@ export function AppSidebar({
             Help support the hosting and development costs for WOW!
           </p>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </div>
   );
 }
