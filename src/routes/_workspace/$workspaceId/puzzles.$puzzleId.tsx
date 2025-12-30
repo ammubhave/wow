@@ -86,6 +86,8 @@ function PuzzleInfoPanel({
   workspaceId: string;
   puzzle: {
     comment: string | null;
+    commentUpdatedAt: Date | null;
+    commentUpdatedBy: string | null;
     id: string;
     parentPuzzleId: string | null;
     name: string;
@@ -289,6 +291,8 @@ function PuzzleInfoPanel({
         <div>
           <CommentBox
             comment={puzzle.comment ?? ""}
+            commentUpdatedAt={puzzle.commentUpdatedAt}
+            commentUpdatedBy={puzzle.commentUpdatedBy}
             workspaceId={workspaceId}
             puzzleId={puzzle.id}
           />

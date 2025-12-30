@@ -177,6 +177,7 @@ export const puzzlesRouter = {
         importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
         comment: z.string().optional(),
+        commentUpdatedBy: z.string().optional(),
         isMetaPuzzle: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
       })
@@ -255,6 +256,8 @@ export const puzzlesRouter = {
           importance: input.importance,
           link: input.link,
           comment: input.comment,
+          commentUpdatedAt: new Date(),
+          commentUpdatedBy: input.commentUpdatedBy,
           isMetaPuzzle: input.isMetaPuzzle,
           tags: input.tags,
         })

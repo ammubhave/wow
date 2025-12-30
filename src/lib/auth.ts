@@ -56,6 +56,8 @@ export const auth = betterAuth({
             eventName: {type: "string"},
             password: {type: "string"},
             comment: {type: "string", required: false},
+            commentUpdatedAt: {type: "date", required: false},
+            commentUpdatedBy: {type: "string", required: false},
             googleAccessToken: {type: "string", required: false},
             googleRefreshToken: {type: "string", required: false},
             googleTokenExpiresAt: {type: "date", required: false},

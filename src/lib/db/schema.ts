@@ -9,9 +9,7 @@ const base = {
   id: text()
     .primaryKey()
     .$defaultFn(() => uuid7()),
-  createdAt: text()
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: text().notNull().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text()
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`)
@@ -42,6 +40,8 @@ export const puzzle = sqliteTable("puzzle", {
   status: text(),
   importance: text(),
   comment: text(),
+  commentUpdatedAt: integer({mode: "timestamp"}),
+  commentUpdatedBy: text(),
   isMetaPuzzle: integer({mode: "boolean"}).default(false).notNull(),
   parentPuzzleId: text().references((): AnySQLiteColumn => puzzle.id, {
     onDelete: "set null",

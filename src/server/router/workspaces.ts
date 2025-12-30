@@ -109,6 +109,7 @@ export const workspacesRouter = {
         eventName: z.string().min(1).optional(),
         password: z.string().min(8).optional(),
         comment: z.string().optional(),
+        commentUpdatedBy: z.string().optional(),
         tags: z.array(z.string()).optional(),
         links: z.array(z.object({name: z.string(), url: z.url()})).optional(),
       })
@@ -122,6 +123,8 @@ export const workspacesRouter = {
           eventName: input.eventName,
           password: input.password,
           comment: input.comment,
+          commentUpdatedAt: new Date(),
+          commentUpdatedBy: input.commentUpdatedBy,
           tags: input.tags,
           links: input.links,
         })

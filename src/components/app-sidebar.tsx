@@ -23,7 +23,12 @@ export function AppSidebar({
     <Sidebar className="top-(--header-height) h-[calc(100svh-var(--header-height))]!" {...props}>
       <SidebarHeader>
         <div className="p-4 flex-1 overflow-y-auto">
-          <CommentBox workspaceId={workspaceId} comment={workspace.get.data?.comment ?? ""} />
+          <CommentBox
+            workspaceId={workspaceId}
+            comment={workspace.get.data?.comment ?? ""}
+            commentUpdatedAt={workspace.get.data?.commentUpdatedAt}
+            commentUpdatedBy={workspace.get.data?.commentUpdatedBy}
+          />
         </div>
       </SidebarHeader>
       <SidebarContent>

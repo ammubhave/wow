@@ -11,7 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {cn} from "@/lib/utils";
+import {authClient} from "@/lib/auth-client";
+import {cn, formatRelativeTime} from "@/lib/utils";
 
 import {useAppForm} from "./form";
 import {useWorkspace} from "./use-workspace";
@@ -20,17 +21,26 @@ const DEFAULT_MESSAGE = "No pinned comment.";
 
 export function CommentBox({
   comment,
+  commentUpdatedAt,
+  commentUpdatedBy,
   workspaceId,
   puzzleId,
 }: {
   comment?: string;
+  commentUpdatedAt?: Date;
+  commentUpdatedBy?: string;
   workspaceId: string;
   puzzleId?: string;
 }) {
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [updatedComment, setComment] = useState(comment || DEFAULT_MESSAGE);
   const [undoComment, setUndoComment] = useState(null as string | null);
+  const [updatedAt, setUpdatedAt] = useState(commentUpdatedAt || null);
+  const [updatedBy, setUpdatedBy] = useState(commentUpdatedBy || null);
   useEffect(() => setComment(comment || DEFAULT_MESSAGE), [comment]);
+  useEffect(() => setUpdatedAt(commentUpdatedAt || null), [commentUpdatedAt]);
+  useEffect(() => setUpdatedBy(commentUpdatedBy || null), [commentUpdatedBy]);
+  const user = authClient.useSession().data?.user;
 
   const workspace = useWorkspace({workspaceId});
 
@@ -44,14 +54,20 @@ export function CommentBox({
     var oldComment = updatedComment;
     toast.promise(
       puzzleId === undefined
-        ? workspace.update.mutateAsync({workspaceId, comment: text})
-        : workspace.puzzles.update.mutateAsync({id: puzzleId, comment: text}),
+        ? workspace.update.mutateAsync({workspaceId, comment: text, commentUpdatedBy: user?.name})
+        : workspace.puzzles.update.mutateAsync({
+            id: puzzleId,
+            comment: text,
+            commentUpdatedBy: user?.name,
+          }),
       {
         loading: "Saving comment...",
         success: _data => {
           setComment(text);
           setIsEditingComment(false);
           setUndoComment(oldComment);
+          setUpdatedBy(user?.name ?? user?.email ?? "Unknown user");
+          setUpdatedAt(new Date());
           return "Comment updated!";
         },
         error: "Oops! Something went wrong.",
@@ -263,6 +279,12 @@ export function CommentBox({
           </form.AppForm>
         )}
       </span>
+      {(updatedAt && !isNaN(updatedAt.getTime())) || updatedBy ? (
+        <span className="mt-2 block text-xs text-muted-foreground">
+          Updated {updatedAt ? formatRelativeTime(updatedAt) : ""}{" "}
+          {updatedBy ? "by " + updatedBy : ""}
+        </span>
+      ) : null}
     </div>
   );
 }
