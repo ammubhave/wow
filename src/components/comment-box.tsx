@@ -29,6 +29,7 @@ export function CommentBox({
 }) {
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [updatedComment, setComment] = useState(comment || DEFAULT_MESSAGE);
+  const [revertComment, setRevertComment] = useState(null as string | null);
   useEffect(() => setComment(comment || DEFAULT_MESSAGE), [comment]);
 
   const workspace = useWorkspace({workspaceId});
@@ -40,6 +41,7 @@ export function CommentBox({
     if (text === "") {
       text = DEFAULT_MESSAGE;
     }
+    var oldComment = updatedComment;
     toast.promise(
       puzzleId === undefined
         ? workspace.update.mutateAsync({workspaceId, comment: text})
@@ -49,6 +51,7 @@ export function CommentBox({
         success: _data => {
           setComment(text);
           setIsEditingComment(false);
+          setRevertComment(oldComment);
           return "Comment updated!";
         },
         error: "Oops! Something went wrong.",
@@ -226,6 +229,11 @@ export function CommentBox({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => updateComment(DEFAULT_MESSAGE)}>
                     Clear
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => updateComment(revertComment || "")}
+                    disabled={revertComment === null}>
+                    Revert
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
