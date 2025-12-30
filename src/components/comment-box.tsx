@@ -34,8 +34,11 @@ export function CommentBox({
   const workspace = useWorkspace({workspaceId});
 
   const updateComment = (text: string) => {
-    if (text == updatedComment) {
+    if (text === updatedComment || (text === "" && updatedComment === DEFAULT_MESSAGE)) {
       return;
+    }
+    if (text === "") {
+      text = DEFAULT_MESSAGE;
     }
     toast.promise(
       puzzleId === undefined
@@ -213,7 +216,10 @@ export function CommentBox({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={() => {
-                      form.setFieldValue("comment", updatedComment);
+                      form.setFieldValue(
+                        "comment",
+                        updatedComment === DEFAULT_MESSAGE ? "" : updatedComment
+                      );
                       setIsEditingComment(true);
                     }}>
                     Edit
