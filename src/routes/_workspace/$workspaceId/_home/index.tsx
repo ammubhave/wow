@@ -223,7 +223,19 @@ function RouteComponent() {
                         (Untagged)
                       </DropdownMenuCheckboxItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setTags([])}>Reset filter</DropdownMenuItem>
+                      <DropdownMenuItem
+                        closeOnClick={false}
+                        onClick={() =>
+                          setTags([
+                            ...((workspace.get.data.tags as string[] | undefined) ?? []),
+                            null,
+                          ])
+                        }>
+                        Select all
+                      </DropdownMenuItem>
+                      <DropdownMenuItem closeOnClick={false} onClick={() => setTags([])}>
+                        Reset filter
+                      </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
                   <DropdownMenuSub>
@@ -296,7 +308,14 @@ function RouteComponent() {
                         </DropdownMenuCheckboxItem>
                       ))}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setImportances([])}>
+                      <DropdownMenuItem
+                        closeOnClick={false}
+                        onClick={() =>
+                          setImportances(["veryhigh", "high", "medium", "low", "obsolete", null])
+                        }>
+                        Select all
+                      </DropdownMenuItem>
+                      <DropdownMenuItem closeOnClick={false} onClick={() => setImportances([])}>
                         Reset filter
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
