@@ -686,8 +686,8 @@ function BlackboardMetaPuzzle({
     },
     onSubmit: ({value}) => {
       toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, ...value}), {
-        loading: "Updating meta puzzle answer...",
-        success: "Success! Meta puzzle answer updated.",
+        loading: "Updating meta puzzle...",
+        success: "Success! Meta puzzle updated.",
         error: "Oops! Something went wrong.",
       });
     },
@@ -1010,8 +1010,8 @@ function BlackboardPuzzle({
     },
     onSubmit: ({value}) => {
       toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, ...value}), {
-        loading: "Updating puzzle answer...",
-        success: "Success! Puzzle answer updated.",
+        loading: "Updating puzzle...",
+        success: "Success! Puzzle updated.",
         error: "Oops! Something went wrong.",
       });
     },
