@@ -95,7 +95,11 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
           </CommandGroup>
           <CommandGroup heading="Links">
             {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(link => (
-              <CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  window.open(link.url);
+                  setOpen(false);
+                }}>
                 <LinkIcon />
                 <span>{link.name}</span>
               </CommandItem>
