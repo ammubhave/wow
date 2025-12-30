@@ -36,6 +36,10 @@ const puzzleStatuses = [
   },
 ];
 
+export function getPuzzleStatusGroups() {
+  return puzzleStatuses;
+}
+
 export function getPuzzleStatusOptions() {
   return puzzleStatuses.flatMap(group => group.values);
 }

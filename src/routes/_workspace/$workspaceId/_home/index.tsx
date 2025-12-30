@@ -46,14 +46,18 @@ import {ScrollArea} from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
-import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
-import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
+import {
+  getBgColorClassNamesForPuzzleStatus,
+  getPuzzleStatusGroups,
+  getPuzzleStatusOptions,
+} from "@/lib/puzzleStatuses";
 import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
@@ -449,7 +453,9 @@ function BlackboardRound({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={null}>None</SelectItem>
-              <SelectItem value="solved">Solved</SelectItem>
+              <SelectItem value="solved" className={getBgColorClassNamesForPuzzleStatus("solved")}>
+                Solved
+              </SelectItem>
             </SelectContent>
           </Select>
         </TableCell>
@@ -769,10 +775,14 @@ function BlackboardMetaPuzzle({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {getPuzzleStatusOptions().map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
+              {getPuzzleStatusGroups().map(group => (
+                <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                  {group.values.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -1066,10 +1076,14 @@ function BlackboardPuzzle({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {getPuzzleStatusOptions().map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
+              {getPuzzleStatusGroups().map(group => (
+                <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                  {group.values.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>

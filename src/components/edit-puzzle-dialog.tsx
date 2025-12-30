@@ -9,11 +9,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
+import {getPuzzleStatusGroups, getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
 
 import {useAppForm} from "./form";
 import {FieldGroup} from "./ui/field";
-import {SelectItem} from "./ui/select";
+import {SelectGroup, SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
 
 export function EditPuzzleDialog({
@@ -130,10 +130,14 @@ export function EditPuzzleDialog({
                 children={field => {
                   return (
                     <field.SelectField label="Status" items={getPuzzleStatusOptions()}>
-                      {getPuzzleStatusOptions().map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
+                      {getPuzzleStatusGroups().map(group => (
+                        <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                          {group.values.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       ))}
                     </field.SelectField>
                   );

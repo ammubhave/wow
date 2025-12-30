@@ -18,13 +18,16 @@ import {Button} from "@/components/ui/button";
 import {FieldGroup, FieldLabel} from "@/components/ui/field";
 import {Item, ItemActions, ItemContent, ItemTitle} from "@/components/ui/item";
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable";
-import {SelectItem} from "@/components/ui/select";
+import {SelectGroup, SelectItem} from "@/components/ui/select";
 import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
-import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
-import {getBgColorClassNamesForPuzzleStatusNoHover} from "@/lib/puzzleStatuses";
+import {
+  getBgColorClassNamesForPuzzleStatusNoHover,
+  getPuzzleStatusGroups,
+  getPuzzleStatusOptions,
+} from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
 import {cn} from "@/lib/utils";
 import {useAppSelector} from "@/store";
@@ -228,10 +231,14 @@ function PuzzleInfoPanel({
                         void form.handleSubmit();
                       }}
                       items={getPuzzleStatusOptions()}>
-                      {getPuzzleStatusOptions().map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
+                      {getPuzzleStatusGroups().map(group => (
+                        <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                          {group.values.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       ))}
                     </field.SelectField>
                   );
