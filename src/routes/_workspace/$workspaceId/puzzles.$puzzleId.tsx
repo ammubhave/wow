@@ -8,7 +8,6 @@ import {CommentBox} from "@/components/comment-box";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {PresencesWebSocket} from "@/components/presences-websocket";
-import {PuzzleStatusOptions} from "@/components/puzzle-status-options";
 import {
   Accordion,
   AccordionContent,
@@ -24,8 +23,10 @@ import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
+import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
+import {getBgColorClassNamesForPuzzleStatusNoHover} from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
-import {cn, getBgColorClassNamesForPuzzleStatusNoHover} from "@/lib/utils";
+import {cn} from "@/lib/utils";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
@@ -226,8 +227,8 @@ function PuzzleInfoPanel({
                         field.handleChange(v as any);
                         void form.handleSubmit();
                       }}
-                      items={PuzzleStatusOptions()}>
-                      {PuzzleStatusOptions().map(option => (
+                      items={getPuzzleStatusOptions()}>
+                      {getPuzzleStatusOptions().map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>

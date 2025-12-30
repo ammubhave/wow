@@ -9,9 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
 
 import {useAppForm} from "./form";
-import {PuzzleStatusOptions} from "./puzzle-status-options";
 import {FieldGroup} from "./ui/field";
 import {SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
@@ -129,8 +129,8 @@ export function EditPuzzleDialog({
                 name="status"
                 children={field => {
                   return (
-                    <field.SelectField label="Status" items={PuzzleStatusOptions()}>
-                      {PuzzleStatusOptions().map(option => (
+                    <field.SelectField label="Status" items={getPuzzleStatusOptions()}>
+                      {getPuzzleStatusOptions().map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>

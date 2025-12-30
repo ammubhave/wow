@@ -28,7 +28,6 @@ import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
-import {PuzzleStatusOptions} from "@/components/puzzle-status-options";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {
@@ -53,7 +52,9 @@ import {
 } from "@/components/ui/select";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useWorkspace} from "@/components/use-workspace";
-import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
+import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
+import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
+import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
@@ -763,12 +764,12 @@ function BlackboardMetaPuzzle({
           <Select
             onValueChange={onStatusChange}
             value={metaPuzzle.status}
-            items={PuzzleStatusOptions()}>
+            items={getPuzzleStatusOptions()}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PuzzleStatusOptions().map(option => (
+              {getPuzzleStatusOptions().map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -1060,12 +1061,12 @@ function BlackboardPuzzle({
           <Select
             onValueChange={onStatusChange}
             value={puzzle.status}
-            items={PuzzleStatusOptions()}>
+            items={getPuzzleStatusOptions()}>
             <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PuzzleStatusOptions().map(option => (
+              {getPuzzleStatusOptions().map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>

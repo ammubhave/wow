@@ -3,7 +3,8 @@ import {CoffeeIcon} from "lucide-react";
 import * as React from "react";
 
 import {Sidebar, SidebarContent, SidebarFooter, SidebarHeader} from "@/components/ui/sidebar";
-import {cn, getBgColorClassNamesForPuzzleStatus} from "@/lib/utils";
+import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
+import {cn} from "@/lib/utils";
 
 import {CommentBox} from "./comment-box";
 import {Button} from "./ui/button";
