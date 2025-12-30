@@ -5,6 +5,7 @@ import {organization} from "better-auth/plugins";
 import {captcha} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {waitUntil} from "cloudflare:workers";
+import {eq} from "drizzle-orm";
 import {Resend} from "resend";
 
 import {db} from "./db";
@@ -49,6 +50,21 @@ export const auth = betterAuth({
       : []),
     organization({
       membershipLimit: 500,
+      organizationHooks: {
+        afterCreateOrganization: async ({organization}) => {
+          await db
+            .update(schema.organization)
+            .set({
+              tags: ["crossword", "physical"],
+              links: [
+                {name: "Nutrimatic", url: "https://nutrimatic.org"},
+                {name: "Qat", url: "https://www.quinapalus.com/cgi-bin/qat"},
+                {name: "util.in", url: "https://util.in"},
+              ],
+            })
+            .where(eq(schema.organization.id, organization.id));
+        },
+      },
       schema: {
         organization: {
           additionalFields: {
@@ -64,16 +80,8 @@ export const auth = betterAuth({
             googleFolderId: {type: "string", required: false},
             googleTemplateFileId: {type: "string", required: false},
             discordGuildId: {type: "string", required: false},
-            tags: {type: "string[]", required: false, default: ["crossword", "physical"]},
-            links: {
-              type: "json",
-              required: false,
-              default: [
-                {name: "Nutrimatic", url: "https://nutrimatic.org"},
-                {name: "Qat", url: "https://www.quinapalus.com/cgi-bin/qat"},
-                {name: "util.in", url: "https://util.in"},
-              ],
-            },
+            tags: {type: "string[]", required: false},
+            links: {type: "json", required: false},
           },
         },
       },
