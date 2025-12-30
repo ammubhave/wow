@@ -131,12 +131,16 @@ function SelectField({
   );
 }
 
-function ComboboxMultipleField({label, items}: {label: string; items: any[]}) {
+function ComboboxMultipleField({
+  label,
+  items,
+  className,
+}: {label?: string; items: any[]} & Pick<React.ComponentProps<typeof ComboboxChips>, "className">) {
   const anchor = useComboboxAnchor();
   const field = useFieldContext<any[]>();
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      {label && <FieldLabel>{label}</FieldLabel>}
       <Combobox
         multiple
         autoHighlight
@@ -144,7 +148,7 @@ function ComboboxMultipleField({label, items}: {label: string; items: any[]}) {
         defaultValue={[]}
         value={field.state.value}
         onValueChange={value => field.handleChange(value)}>
-        <ComboboxChips ref={anchor}>
+        <ComboboxChips ref={anchor} className={className}>
           <ComboboxValue>
             {values => (
               <React.Fragment>

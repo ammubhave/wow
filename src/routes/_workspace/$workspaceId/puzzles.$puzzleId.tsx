@@ -105,19 +105,30 @@ function PuzzleInfoPanel({
 }) {
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
-    defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status},
+    defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status, tags: puzzle.tags},
     onSubmit: ({value}) => {
       const answer = value.answer.length === 0 ? null : value.answer.toUpperCase();
-      if (answer !== puzzle.answer || value.status !== puzzle.status) {
-        toast.promise(
-          workspace.puzzles.update.mutateAsync({id: puzzle.id, answer, status: value.status}),
-          {
-            loading: "Updating puzzle...",
-            success: "Success! Puzzle updated.",
-            error: "Oops! Something went wrong.",
-          }
-        );
-      }
+      toast.promise(
+        workspace.puzzles.update.mutateAsync({
+          id: puzzle.id,
+          answer,
+          status: value.status,
+          tags: value.tags,
+        }),
+        {
+          loading: "Updating puzzle...",
+          success: "Success! Puzzle updated.",
+          error: "Oops! Something went wrong.",
+        }
+      );
+    },
+    listeners: {
+      onChange: async ({formApi}) => {
+        if (formApi.state.isValid) {
+          await formApi.handleSubmit();
+        }
+      },
+      onChangeDebounceMs: 500,
     },
   });
 
@@ -217,13 +228,7 @@ function PuzzleInfoPanel({
                   <ButtonGroup className="w-full">
                     <ButtonGroupText>Answer</ButtonGroupText>
                     <InputGroup>
-                      <field.InputGroupInputField
-                        className="whitespace-pre font-mono"
-                        onBlur={() => {
-                          field.handleBlur();
-                          void form.handleSubmit();
-                        }}
-                      />
+                      <field.InputGroupInputField className="whitespace-pre font-mono" />
                     </InputGroup>
                   </ButtonGroup>
                 )}
@@ -236,10 +241,6 @@ function PuzzleInfoPanel({
                     <InputGroup>
                       <field.SelectField
                         className="border-0 bg-transparent"
-                        onValueChange={v => {
-                          field.handleChange(v as any);
-                          void form.handleSubmit();
-                        }}
                         items={getPuzzleStatusOptions()}>
                         {getPuzzleStatusGroups().map(group => (
                           <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
@@ -251,6 +252,20 @@ function PuzzleInfoPanel({
                           </SelectGroup>
                         ))}
                       </field.SelectField>
+                    </InputGroup>
+                  </ButtonGroup>
+                )}
+              />
+              <form.AppField
+                name="tags"
+                children={field => (
+                  <ButtonGroup className="w-full">
+                    <ButtonGroupText>Tags</ButtonGroupText>
+                    <InputGroup>
+                      <field.ComboboxMultipleField
+                        className="border-0 bg-transparent"
+                        items={(workspace.get.data.tags as string[] | null) ?? []}
+                      />
                     </InputGroup>
                   </ButtonGroup>
                 )}
