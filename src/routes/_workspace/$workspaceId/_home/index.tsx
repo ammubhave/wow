@@ -16,7 +16,7 @@ import {
   SignalZeroIcon,
   TagIcon,
 } from "lucide-react";
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {toast} from "sonner";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
@@ -662,6 +662,7 @@ function BlackboardMetaPuzzle({
     useState(false);
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
+  const [isTagsEditing, setIsTagsEditing] = useState(false);
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${metaPuzzle.id}`, false);
   const color = ((id: string) => {
@@ -681,6 +682,7 @@ function BlackboardMetaPuzzle({
       answer: metaPuzzle.answer ?? "",
       status: metaPuzzle.status,
       importance: metaPuzzle.importance,
+      tags: metaPuzzle.tags,
     },
     onSubmit: ({value}) => {
       toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, ...value}), {
@@ -699,6 +701,7 @@ function BlackboardMetaPuzzle({
     },
   });
   const presences = useAppSelector(state => state.presences.value)[metaPuzzle.id] ?? [];
+  const tagsRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <>
@@ -850,14 +853,38 @@ function BlackboardMetaPuzzle({
             )}
           </form.AppField>
         </TableCell>
-        <TableCell>
-          <div className="flex gap-1 flex-wrap items-center">
-            {metaPuzzle.tags.map(tag => (
-              <Badge key={tag} className={getTagColor(tag)}>
-                {tag}
-              </Badge>
-            ))}
-          </div>
+        <TableCell className="p-0">
+          {!isTagsEditing ? (
+            <button
+              onClick={() => {
+                setIsTagsEditing(true);
+                setTimeout(() => tagsRef.current?.focus(), 0);
+              }}
+              className="w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
+              {metaPuzzle.tags.map(tag => (
+                <Badge key={tag} className={getTagColor(tag)}>
+                  {tag}
+                </Badge>
+              ))}
+            </button>
+          ) : (
+            <form.AppField
+              name="tags"
+              listeners={{
+                onBlur: () => {
+                  setIsTagsEditing(false);
+                },
+              }}
+              children={field => (
+                <field.ComboboxMultipleField
+                  defaultOpen
+                  ref={tagsRef}
+                  className="bg-amber-100 dark:bg-amber-950 border-0"
+                  items={(workspace.get.data.tags as string[] | null) ?? []}
+                />
+              )}
+            />
+          )}
         </TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
@@ -973,6 +1000,7 @@ function BlackboardPuzzle({
   const workspace = useWorkspace({workspaceId});
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
+  const [isTagsEditing, setIsTagsEditing] = useState(false);
   const form = useAppForm({
     defaultValues: {
       answer: puzzle.answer ?? "",
@@ -997,6 +1025,7 @@ function BlackboardPuzzle({
     },
   });
   const presences = useAppSelector(state => state.presences.value[puzzle.id] ?? []);
+  const tagsRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <>
@@ -1143,14 +1172,38 @@ function BlackboardPuzzle({
             )}
           </form.AppField>
         </TableCell>
-        <TableCell>
-          <div className="flex gap-1 flex-wrap items-center">
-            {puzzle.tags.map(tag => (
-              <Badge key={tag} className={getTagColor(tag)}>
-                {tag}
-              </Badge>
-            ))}
-          </div>
+        <TableCell className="p-0">
+          {!isTagsEditing ? (
+            <button
+              onClick={() => {
+                setIsTagsEditing(true);
+                setTimeout(() => tagsRef.current?.focus(), 0);
+              }}
+              className="w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
+              {puzzle.tags.map(tag => (
+                <Badge key={tag} className={getTagColor(tag)}>
+                  {tag}
+                </Badge>
+              ))}
+            </button>
+          ) : (
+            <form.AppField
+              name="tags"
+              listeners={{
+                onBlur: () => {
+                  setIsTagsEditing(false);
+                },
+              }}
+              children={field => (
+                <field.ComboboxMultipleField
+                  defaultOpen
+                  ref={tagsRef}
+                  className="bg-amber-100 dark:bg-amber-950 border-0"
+                  items={(workspace.get.data.tags as string[] | null) ?? []}
+                />
+              )}
+            />
+          )}
         </TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">

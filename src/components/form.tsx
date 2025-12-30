@@ -145,9 +145,14 @@ function SelectField({
 
 function ComboboxMultipleField({
   label,
+  ref,
   items,
   className,
-}: {label?: string; items: any[]} & Pick<React.ComponentProps<typeof ComboboxChips>, "className">) {
+  defaultOpen,
+}: {label?: string; items: any[]; defaultOpen?: boolean} & Pick<
+  React.ComponentProps<typeof ComboboxChips>,
+  "className"
+> & {ref?: React.RefObject<HTMLInputElement | null>}) {
   const anchor = useComboboxAnchor();
   const field = useFieldContext<any[]>();
   return (
@@ -155,6 +160,7 @@ function ComboboxMultipleField({
       {label && <FieldLabel>{label}</FieldLabel>}
       <Combobox
         multiple
+        defaultOpen={defaultOpen}
         autoHighlight
         items={items}
         defaultValue={[]}
@@ -167,7 +173,7 @@ function ComboboxMultipleField({
                 {values.map((value: string) => (
                   <ComboboxChip key={value}>{value}</ComboboxChip>
                 ))}
-                <ComboboxChipsInput onBlur={field.handleBlur} />
+                <ComboboxChipsInput ref={ref} onBlur={field.handleBlur} />
               </React.Fragment>
             )}
           </ComboboxValue>

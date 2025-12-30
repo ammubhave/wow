@@ -9,7 +9,9 @@ const base = {
   id: text()
     .primaryKey()
     .$defaultFn(() => uuid7()),
-  createdAt: text().notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: text()
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text()
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`)
