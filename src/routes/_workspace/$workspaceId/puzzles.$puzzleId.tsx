@@ -261,7 +261,7 @@ function PuzzleInfoPanel({
                 children={field => (
                   <ButtonGroup className="w-full">
                     <ButtonGroupText>Tags</ButtonGroupText>
-                    <InputGroup>
+                    <InputGroup className="h-auto">
                       <field.ComboboxMultipleField
                         className="border-0 bg-transparent"
                         items={(workspace.get.data.tags as string[] | null) ?? []}
