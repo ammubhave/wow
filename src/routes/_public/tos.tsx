@@ -11,7 +11,7 @@ function RouteComponent() {
       </p>
 
       <p className="mb-6 text-gray-700">
-        Welcome to Wafflehaüs Organized Workspace ("WOW"). By accessing or using our services, you
+        Welcome to Wafflehaüs Organized Workspaces ("WOW"). By accessing or using our services, you
         agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms,
         you may not access or use our services.
       </p>

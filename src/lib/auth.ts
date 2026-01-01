@@ -24,7 +24,7 @@ export const auth = betterAuth({
         resend.emails.send({
           from: "noreply@wafflehaus.io",
           to: user.email,
-          subject: "Change password for Wafflehaüs Organized Workspace (WOW)",
+          subject: "Change password for Wafflehaüs Organized Workspaces (WOW)",
           html: `<h1>Reset password</h1><p>Username: ${username}</p><p>A password reset was requested for your account. If it wasn't you, you can ignore this email. Click <a href='${url}'>here</a> to reset your password.</p>`,
         })
       );
@@ -37,7 +37,7 @@ export const auth = betterAuth({
         resend.emails.send({
           from: "noreply@wafflehaus.io",
           to: user.email,
-          subject: "Verify your email for Wafflehaüs Organized Workspace (WOW)",
+          subject: "Verify your email for Wafflehaüs Organized Workspaces (WOW)",
           html: `<h1>Verify your email</h1><p>Click <a href='${url}'>here</a> to verify your email address.</p>`,
         })
       );

@@ -11,7 +11,7 @@ function RouteComponent() {
       </p>
 
       <p className="mb-6 text-gray-700">
-        Welcome to Wafflehaüs Organized Workspace ("WOW"). Your privacy is of utmost importance to
+        Welcome to Wafflehaüs Organized Workspaces ("WOW"). Your privacy is of utmost importance to
         us. This Privacy Policy outlines how we collect, use, and protect your information when you
         interact with our website and services.
       </p>
