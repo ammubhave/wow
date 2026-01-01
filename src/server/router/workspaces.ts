@@ -123,7 +123,7 @@ export const workspacesRouter = {
       let commentUpdatedBy = undefined;
       if (input.comment !== undefined) {
         commentUpdatedAt = new Date();
-        commentUpdatedBy = context.session.user.name;
+        commentUpdatedBy = context.session.user.displayUsername;
       }
 
       const [workspace] = await db
@@ -325,6 +325,27 @@ export const workspacesRouter = {
           .orderBy(desc(schema.activityLogEntry.createdAt));
 
         return activityLogEntries;
+      }),
+  },
+  members: {
+    list: procedure
+      .input(z.object({workspaceId: z.string()}))
+      .use(preauthorize)
+      .handler(async ({context}) => {
+        const members = await db
+          .select({
+            user: {
+              id: schema.user.id,
+              name: schema.user.name,
+              email: schema.user.email,
+              image: schema.user.image,
+              displayUsername: schema.user.displayUsername,
+            },
+          })
+          .from(schema.member)
+          .innerJoin(schema.user, eq(schema.member.userId, schema.user.id))
+          .where(eq(schema.member.organizationId, context.workspace.id));
+        return members;
       }),
   },
 };

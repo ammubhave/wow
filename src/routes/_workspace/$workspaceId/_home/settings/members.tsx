@@ -3,7 +3,8 @@ import {createFileRoute} from "@tanstack/react-router";
 
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {authClient} from "@/lib/auth-client";
+import {gravatarUrl} from "@/components/user-hover-card";
+import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/members")({
   component: RouteComponent,
@@ -11,15 +12,9 @@ export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/me
 
 function RouteComponent() {
   const {workspaceId} = Route.useParams();
-  const members = useSuspenseQuery({
-    queryKey: ["workspaceMembers", workspaceId],
-    queryFn: async () => {
-      return await authClient.organization.getFullOrganization({
-        query: {organizationSlug: workspaceId, membersLimit: 500},
-        fetchOptions: {throw: true},
-      });
-    },
-  }).data.members;
+  const members = useSuspenseQuery(
+    orpc.workspaces.members.list.queryOptions({input: {workspaceId}})
+  ).data;
   return (
     <Card>
       <CardHeader>
@@ -30,12 +25,15 @@ function RouteComponent() {
         {members.map(member => (
           <div key={member.user.id} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Avatar className="size-6 mr-2">
-                <AvatarImage src={member.user.image ?? undefined} />
+              <Avatar>
+                <AvatarImage src={member.user.image ?? gravatarUrl(member.user.email)} />
                 <AvatarFallback>{member.user.name?.[0]}</AvatarFallback>
-              </Avatar>{" "}
-              <div className="flex items-baseline gap-2">
+              </Avatar>
+              <div className="flex items-baseline flex-col">
                 <div className="font-medium">{member.user.name}</div>
+                <div className="font-medium text-muted-foreground">
+                  {member.user.displayUsername}
+                </div>
               </div>
             </div>
           </div>
