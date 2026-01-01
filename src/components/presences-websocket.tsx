@@ -25,7 +25,20 @@ export function PresencesWebSocket({
     if (!lastJsonMessage) {
       return;
     }
-    const payload = z.record(z.string(), z.string().array()).parse(lastJsonMessage);
+    const payload = z
+      .record(
+        z.string(),
+        z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            email: z.string(),
+            image: z.string().nullable(),
+            displayUsername: z.string().nullable(),
+          })
+          .array()
+      )
+      .parse(lastJsonMessage);
     dispatch(setPresences(payload));
   }, [lastJsonMessage]);
 

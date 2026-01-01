@@ -9,12 +9,12 @@ import {
 } from "lucide-react";
 import {useFormatter, useNow} from "use-intl";
 
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
-import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card";
 import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
 import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
+
+import {UserHoverCard} from "./user-hover-card";
 
 export function ActivityLogItem({
   activityItem,
@@ -78,24 +78,11 @@ export function ActivityLogItem({
       )}
       <p className="flex-auto py-0.5 text-xs/5 text-muted-foreground line-clamp-1">
         {activityItem.user && (
-          <HoverCard>
-            <HoverCardTrigger delay={200}>
-              <span className="cursor-default hover:text-muted-foreground font-medium text-foreground">
-                {activityItem.user.name}
-              </span>
-            </HoverCardTrigger>
-            <HoverCardContent className="flex items-center justify-center p-2 px-4 w-fit">
-              <div className="flex items-center gap-2">
-                <Avatar className="size-8 mr-2">
-                  <AvatarImage src={activityItem.user.image ?? undefined} />
-                  <AvatarFallback>{activityItem.user.name?.[0]}</AvatarFallback>
-                </Avatar>
-                <div className="flex items-baseline flex-col">
-                  <div className="font-medium">{activityItem.user.name}</div>
-                </div>
-              </div>
-            </HoverCardContent>
-          </HoverCard>
+          <UserHoverCard user={activityItem.user}>
+            <span className="cursor-default hover:text-muted-foreground font-medium text-foreground">
+              {activityItem.user.displayUsername}
+            </span>
+          </UserHoverCard>
         )}{" "}
         {activityItem.workspace_activity_log_entry?.subType === "join" && "joined the workspace"}
         {activityItem.puzzle_activity_log_entry && (

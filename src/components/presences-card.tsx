@@ -21,8 +21,8 @@ export function PresencesCard({id}: {id: string}) {
         }
       />
       <HoverCardContent className="flex flex-col gap-1 text-sm font-normal w-fit">
-        {presences.map(presence => (
-          <div key={presence}>{presence}</div>
+        {presences.map(user => (
+          <div key={user.id}>{user.displayUsername ?? user.name}</div>
         ))}
       </HoverCardContent>
     </HoverCard>

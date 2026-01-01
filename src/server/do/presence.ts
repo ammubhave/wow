@@ -19,11 +19,7 @@ export class PresenceRoom extends DurableObject<Env> {
       const puzzleId = z.string().nullable().parse(url.searchParams.get("puzzleId"));
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
-      server.serializeAttachment({
-        name: c.var.session!.user.name ?? "Anonymous",
-        puzzleId,
-        workspaceId,
-      });
+      server.serializeAttachment({user: c.var.session!.user, puzzleId, workspaceId});
       this.broadcast();
       return new Response(null, {status: 101, webSocket: client});
     });
@@ -35,21 +31,29 @@ export class PresenceRoom extends DurableObject<Env> {
   }
 
   broadcast(excludeWs?: WebSocket) {
-    const participants: Record<string, string[]> = {};
+    const participants: Record<
+      string,
+      {
+        id: string;
+        name: string;
+        email: string;
+        image: string | null;
+        displayUsername: string | null;
+      }[]
+    > = {};
     this.ctx.getWebSockets().forEach(ws => {
       if (excludeWs === ws) {
         return;
       }
       const data = ws.deserializeAttachment();
       if (data) {
-        const {name, puzzleId, workspaceId} = data;
-        if (puzzleId) {
-          participants[puzzleId] = [...new Set([...(participants[puzzleId] ?? []), name])].sort();
+        const {user, puzzleId, workspaceId} = data;
+        const id = puzzleId ?? workspaceId;
+        if (!participants[id]) {
+          participants[id] = [];
         }
-        if (workspaceId) {
-          participants[workspaceId] = [
-            ...new Set([...(participants[workspaceId] ?? []), name]),
-          ].sort();
+        if (participants[id].findIndex(u => u.id === user.id) === -1) {
+          participants[id].push(user);
         }
       }
     });

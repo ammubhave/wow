@@ -56,6 +56,7 @@ import {
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
+import {UserHoverCard} from "@/components/user-hover-card";
 import {
   getBgColorClassNamesForPuzzleStatus,
   getPuzzleStatusGroups,
@@ -888,7 +889,7 @@ function BlackboardMetaPuzzle({
         </TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
-            {presences.map(name => (
+            {presences.map(user => (
               <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
                 <svg
                   viewBox="0 0 6 6"
@@ -896,7 +897,7 @@ function BlackboardMetaPuzzle({
                   className="h-1.5 w-1.5 fill-green-500 shrink-0">
                   <circle r={3} cx={3} cy={3} />
                 </svg>
-                {name}
+                {user.displayUsername}
               </span>
             ))}
           </div>
@@ -1207,13 +1208,15 @@ function BlackboardPuzzle({
         </TableCell>
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
-            {presences.map(name => (
-              <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 px-1.5 py-0.5 text-xs font-medium text-green-900">
-                <svg viewBox="0 0 6 6" aria-hidden="true" className="h-1.5 w-1.5 fill-green-500">
-                  <circle r={3} cx={3} cy={3} />
-                </svg>
-                {name}
-              </span>
+            {presences.map(user => (
+              <UserHoverCard key={user.id} user={user}>
+                <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 px-1.5 py-0.5 text-xs font-medium text-green-900">
+                  <svg viewBox="0 0 6 6" aria-hidden="true" className="h-1.5 w-1.5 fill-green-500">
+                    <circle r={3} cx={3} cy={3} />
+                  </svg>
+                  {user.displayUsername}
+                </span>
+              </UserHoverCard>
             ))}
           </div>
         </TableCell>
