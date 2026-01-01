@@ -1,5 +1,5 @@
 import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
-import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
+import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
 import {useRef} from "react";
 import {toast} from "sonner";
 import z from "zod";
@@ -9,10 +9,15 @@ import {useTheme} from "@/components/theme-provider";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Field, FieldDescription, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
+import {getSession} from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_public/login")({
   component: RouteComponent,
   validateSearch: z.object({redirectTo: z.string().optional().default("/workspaces")}),
+  loader: async () => {
+    const session = await getSession();
+    if (session) throw redirect({to: "/workspaces"});
+  },
 });
 
 function RouteComponent() {
