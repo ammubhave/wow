@@ -887,7 +887,7 @@ function BlackboardMetaPuzzle({
             />
           )}
         </TableCell>
-        <TableCell>
+        <TableCell className="py-1">
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
@@ -1206,7 +1206,7 @@ function BlackboardPuzzle({
             />
           )}
         </TableCell>
-        <TableCell>
+        <TableCell className="py-1">
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
