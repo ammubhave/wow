@@ -207,6 +207,9 @@ importers:
       oxlint-tsgolint:
         specifier: ^0.10.1
         version: 0.10.1
+      prettier:
+        specifier: ^3.7.4
+        version: 3.7.4
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0

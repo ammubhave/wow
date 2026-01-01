@@ -456,7 +456,7 @@ function BlackboardRound({
           </div>
           {round.status === "solved" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
-              <CheckIcon className="size-[14px] text-green-500" />
+              <CheckIcon className="size-3.5 text-green-500" />
             </div>
           )}
         </TableCell>
@@ -890,13 +890,15 @@ function BlackboardMetaPuzzle({
         <TableCell>
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(user => (
-              <span className="inline-flex items-center gap-x-1 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-xs font-medium text-green-900">
-                <img
-                  src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
-                  className="size-4 rounded-full"
-                />
-                {user.displayUsername}
-              </span>
+              <UserHoverCard key={user.id} user={user}>
+                <span className="inline-flex cursor-default items-center gap-x-1 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-xs font-medium text-green-900">
+                  <img
+                    src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
+                    className="size-4 rounded-full"
+                  />
+                  {user.displayUsername}
+                </span>
+              </UserHoverCard>
             ))}
           </div>
         </TableCell>
@@ -1208,7 +1210,7 @@ function BlackboardPuzzle({
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex items-center gap-x-1 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-xs font-medium text-green-900">
+                <span className="inline-flex cursor-default items-center gap-x-1 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-xs font-medium text-green-900">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                     className="size-4 rounded-full"
