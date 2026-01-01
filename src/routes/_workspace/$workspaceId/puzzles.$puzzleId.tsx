@@ -25,7 +25,7 @@ import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
-import {UserHoverCard} from "@/components/user-hover-card";
+import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
 import {
   getBgColorClassNamesForPuzzleStatusNoHover,
   getPuzzleStatusGroups,
@@ -297,13 +297,13 @@ function PuzzleInfoPanel({
                 <div className="flex flex-row flex-wrap gap-2">
                   {presences.map(user => (
                     <UserHoverCard key={user.id} user={user}>
-                      <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 px-1.5 py-0.5 text-xs font-medium text-green-900">
-                        <svg
-                          viewBox="0 0 6 6"
-                          aria-hidden="true"
-                          className="h-1.5 w-1.5 fill-green-500">
-                          <circle r={3} cx={3} cy={3} />
-                        </svg>
+                      <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1.5 py-0.5 text-xs font-medium text-green-900">
+                        <img
+                          src={
+                            user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})
+                          }
+                          className="size-4 rounded-full"
+                        />
                         {user.displayUsername ?? user.name}
                       </span>
                     </UserHoverCard>

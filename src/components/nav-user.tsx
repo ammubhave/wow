@@ -11,6 +11,7 @@ import {
   PaletteIcon,
   RotateCcwKeyIcon,
   SunIcon,
+  UserCogIcon,
 } from "lucide-react";
 
 import {useTheme} from "@/components/theme-provider";
@@ -33,6 +34,8 @@ import {
 import {SidebarMenuButton} from "@/components/ui/sidebar";
 import {authClient} from "@/lib/auth-client";
 
+import {gravatarUrl} from "./user-hover-card";
+
 export function NavUser({children}: {children?: React.ReactNode}) {
   const {theme, setTheme} = useTheme();
   const router = useRouter();
@@ -41,6 +44,8 @@ export function NavUser({children}: {children?: React.ReactNode}) {
   if (!user) {
     return <div className="min-w-59.75 rounded-md h-12 animate-pulse"></div>;
   }
+  const src =
+    user.image ?? (user.email ? gravatarUrl(user.email, {size: 96, d: "identicon"}) : undefined);
   return (
     <div className="w-59.75">
       <DropdownMenu>
@@ -50,12 +55,19 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               size="lg"
               className="w-59.75 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground">
               <Avatar>
-                <AvatarImage src={user.image ?? undefined} alt={user.name ?? user.email} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage src={src} alt={user.name ?? user.email} />
+                <AvatarFallback className="rounded-lg">
+                  {user.name
+                    .trim()
+                    .split(" ")
+                    .map(n => n[0]?.toUpperCase())
+                    .join("")
+                    .slice(0, 2)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-medium text-accent-foreground">{user.name}</span>
+                <span className="truncate text-muted-foreground">{user.displayUsername}</span>
               </div>
               <ChevronsUpDownIcon />
             </SidebarMenuButton>
@@ -133,6 +145,13 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               </DropdownMenuCheckboxItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+          <DropdownMenuItem
+            onClick={async () => {
+              await router.navigate({to: "/profile"});
+            }}>
+            <UserCogIcon />
+            Profile
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
               await router.navigate({to: "/change-password"});

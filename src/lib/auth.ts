@@ -30,7 +30,23 @@ export const auth = betterAuth({
       );
     },
   },
-  user: {additionalFields: {notificationsDisabled: {type: "boolean", default: false}}},
+  emailVerification: {
+    sendVerificationEmail: async ({user, url}) => {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      waitUntil(
+        resend.emails.send({
+          from: "noreply@wafflehaus.io",
+          to: user.email,
+          subject: "Verify your email for Wafflehaüs Organized Workspace (WOW)",
+          html: `<h1>Verify your email</h1><p>Click <a href='${url}'>here</a> to verify your email address.</p>`,
+        })
+      );
+    },
+  },
+  user: {
+    additionalFields: {notificationsDisabled: {type: "boolean", defaultValue: false}},
+    changeEmail: {enabled: true},
+  },
   trustedOrigins: ["https://www.wafflehaus.io", "http://localhost:3000"],
   plugins: [
     ...(process.env.TURNSTILE_SECRET_KEY

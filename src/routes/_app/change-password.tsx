@@ -3,7 +3,7 @@ import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldGroup} from "@/components/ui/field";
+import {FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_app/change-password")({component: RouteComponent});
@@ -58,9 +58,7 @@ function RouteComponent() {
                     )}
                   </form.AppField>
                   <FieldGroup>
-                    <Field>
-                      <form.SubmitButton>Change password</form.SubmitButton>
-                    </Field>
+                    <form.SubmitButton>Change password</form.SubmitButton>
                   </FieldGroup>
                 </FieldGroup>
               </form.Form>

@@ -3,7 +3,7 @@ import MD5 from "crypto-js/md5";
 import {Avatar, AvatarFallback, AvatarImage} from "./ui/avatar";
 import {HoverCard, HoverCardContent, HoverCardTrigger} from "./ui/hover-card";
 
-function gravatarUrl(email: string, opts?: {size?: number; d?: string}) {
+export function gravatarUrl(email: string, opts?: {size?: number; d?: string}) {
   const size = opts?.size ?? 96;
   const d = opts?.d ?? "identicon";
   const hash = MD5(email.trim().toLowerCase()).toString();
@@ -26,7 +26,14 @@ export function UserHoverCard({
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={src} />
-            <AvatarFallback>{user.name?.[0]}</AvatarFallback>
+            <AvatarFallback>
+              {user.name
+                .trim()
+                .split(" ")
+                .map(n => n[0]?.toUpperCase())
+                .join("")
+                .slice(0, 2)}
+            </AvatarFallback>
           </Avatar>
           <div className="flex items-baseline flex-col">
             <div className="font-medium text-accent-foreground">{user.name}</div>
