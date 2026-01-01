@@ -1,4 +1,4 @@
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowRightIcon, ChevronRightIcon, PlusIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -16,13 +16,10 @@ function RouteComponent() {
     queryKey: ["organizations"],
     queryFn: () => authClient.organization.list(),
   });
-
-  const queryClient = useQueryClient();
   const router = useRouter();
   const joinWorkspaceMutation = useMutation(
     orpc.workspaces.join.mutationOptions({
       onSuccess: data => {
-        void queryClient.invalidateQueries();
         form.reset();
         void router.navigate({to: "/$workspaceId", params: {workspaceId: data.slug}});
       },

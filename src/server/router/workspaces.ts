@@ -53,6 +53,17 @@ export const workspacesRouter = {
     };
   }),
 
+  getPublic: procedure.input(z.string()).handler(async ({input}) => {
+    const workspace = await db
+      .select({teamName: schema.organization.teamName, eventName: schema.organization.eventName})
+      .from(schema.organization)
+      .where(eq(schema.organization.slug, input))
+      .get();
+    if (!workspace) {
+      throw new ORPCError("NOT_FOUND");
+    }
+    return workspace;
+  }),
   join: procedure
     .input(z.object({workspaceId: z.string(), password: z.string()}))
     .handler(async ({context, input}) => {
