@@ -1,9 +1,52 @@
 import {DurableObject} from "cloudflare:workers";
 import {Hono} from "hono";
+import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
+
+const chatRoomSentMessageSchema = z.union([
+  z.object({type: z.literal("send"), text: z.string()}),
+  z.object({
+    type: z.literal("react"),
+    messageId: z.string(),
+    reaction: z.literal(["like", "love", "laugh", "angry"]),
+  }),
+  z.object({
+    type: z.literal("connect"),
+    sdp: z.string(),
+    tracks: z.object({trackName: z.string(), mid: z.string()}).array(),
+  }),
+  z.object({type: z.literal("disconnect")}),
+  z.object({type: z.literal("renegotiate"), sdp: z.string().optional()}),
+]);
+export type ChatRoomSentMessage = z.infer<typeof chatRoomSentMessageSchema>;
+
+export type ChatMessage = {
+  id: string;
+  name: string;
+  text: string;
+  timestamp: number;
+  reactions: Record<string, number>;
+};
+export type ChatRoomReceivedMessage =
+  | {type: "snapshot"; messages: ChatMessage[]}
+  | {type: "message"; message: ChatMessage};
+
+function send(ws: WebSocket, message: ChatRoomReceivedMessage) {
+  ws.send(JSON.stringify(message));
+}
+type Attachment = {
+  name: string;
+  rtc?: {tracks: {mid: string; trackName: string}[]; sessionId: string};
+};
+function putAttachment(ws: WebSocket, data: Attachment) {
+  ws.serializeAttachment({...ws.deserializeAttachment(), ...data});
+}
+function getAttachment(ws: WebSocket): Attachment {
+  return ws.deserializeAttachment() as Attachment;
+}
 
 export class ChatRoom extends DurableObject {
   storage: DurableObjectStorage;
@@ -20,11 +63,11 @@ export class ChatRoom extends DurableObject {
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
       await this.resetAlarm();
-      server.serializeAttachment({
-        ...server.deserializeAttachment(),
-        name: c.var.session?.user.name || "User",
+      putAttachment(server, {name: c.var.session?.user.name || "User"});
+      send(server, {
+        type: "snapshot",
+        messages: [...(await this.storage.list<ChatMessage>()).values()],
       });
-      server.send(JSON.stringify([...(await this.storage.list()).values()]));
       return new Response(null, {status: 101, webSocket: client});
     });
     return await app.fetch(request, this.env);
@@ -32,47 +75,33 @@ export class ChatRoom extends DurableObject {
 
   async webSocketMessage(ws: WebSocket, message: string) {
     await this.resetAlarm();
-    const {name} = z.object({name: z.string()}).parse(ws.deserializeAttachment());
-
-    const m = z
-      .union([
-        z.object({type: z.literal("send"), text: z.string()}),
-        z.object({
-          type: z.literal("react"),
-          messageId: z.string(),
-          reaction: z.literal(["like", "love", "laugh", "angry"]),
-        }),
-      ])
-      .parse(JSON.parse(message));
+    const attachment = getAttachment(ws);
+    const m = chatRoomSentMessageSchema.parse(JSON.parse(message));
 
     if (m.type === "send") {
-      const now = Date.now();
-      const key = `${now.toString().padStart(20)}-${crypto.randomUUID()}`;
-      const data = {id: key, text: m.text, name, timestamp: now, reactions: {}};
-      this.broadcast(data);
-      await this.storage.put(key, data);
+      const key = uuidv7();
+      const data: ChatMessage = {
+        id: key,
+        text: m.text,
+        name: attachment.name,
+        timestamp: Date.now(),
+        reactions: {},
+      };
+      this.broadcast({type: "message", message: data});
+      await this.storage.put<ChatMessage>(key, data);
     } else if (m.type === "react") {
-      const data = (await this.storage.get(m.messageId)) as
-        | {
-            id: string;
-            name: string;
-            text: string;
-            timestamp: number;
-            reactions: Record<string, number>;
-          }
-        | undefined;
+      const data = await this.storage.get<ChatMessage>(m.messageId);
       if (data) {
         data.reactions[m.reaction] = (data.reactions[m.reaction] || 0) + 1;
+        this.broadcast({type: "message", message: data});
+        await this.storage.put(m.messageId, data);
       }
-      this.broadcast(data);
-      await this.storage.put(m.messageId, data);
     }
   }
 
-  broadcast(data: any) {
-    const message = JSON.stringify(data);
+  broadcast(data: ChatRoomReceivedMessage) {
     this.ctx.getWebSockets().forEach(ws => {
-      ws.send(message);
+      send(ws, data);
     });
   }
 

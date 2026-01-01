@@ -96,7 +96,7 @@ export function ActivityLog({workspaceId}: {workspaceId: string}) {
                               <Avatar className="size-8 mr-2">
                                 <AvatarImage src={activityItem.user.image ?? undefined} />
                                 <AvatarFallback>{activityItem.user.name?.[0]}</AvatarFallback>
-                              </Avatar>{" "}
+                              </Avatar>
                               <div className="flex items-baseline flex-col">
                                 <div className="font-medium">{activityItem.user.name}</div>
                               </div>

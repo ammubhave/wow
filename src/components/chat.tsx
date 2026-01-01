@@ -3,6 +3,8 @@ import {AngryIcon, HeartIcon, LaughIcon, SendIcon, SmilePlusIcon, ThumbsUpIcon} 
 import {useEffect, useRef, useState} from "react";
 import useWebSocket from "react-use-websocket";
 
+import type {ChatMessage, ChatRoomReceivedMessage, ChatRoomSentMessage} from "@/server/do/chat";
+
 import {cn} from "@/lib/utils";
 
 import {Button} from "./ui/button";
@@ -11,36 +13,35 @@ import {Field} from "./ui/field";
 import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea} from "./ui/input-group";
 import {Popover, PopoverContent, PopoverTrigger} from "./ui/popover";
 
-interface Message {
-  id: string;
-  text: string;
-  name: string;
-  timestamp: number;
-  reactions: Record<string, number>;
-}
-
 function formatTime(date: Date) {
   return date.toLocaleString([], {weekday: "short", hour: "2-digit", minute: "2-digit"});
 }
 
 export function Chat({puzzleId}: {puzzleId: string}) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const {sendJsonMessage, lastJsonMessage} = useWebSocket<Message>(
+  const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(
     `${typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}` : ""}/api/chat/${puzzleId}`,
-    {share: false, shouldReconnect: () => true}
-  );
-  useEffect(() => {
-    if (Array.isArray(lastJsonMessage)) {
-      setMessages(lastJsonMessage);
-    } else if (lastJsonMessage !== null) {
-      if (!messages.find(m => m.id === lastJsonMessage.id))
-        setMessages([...messages, lastJsonMessage]);
-      else setMessages(messages.map(m => (m.id === lastJsonMessage.id ? lastJsonMessage : m)));
+    {
+      share: false,
+      shouldReconnect: () => true,
+      onMessage: async event => {
+        const message = JSON.parse(event.data) as ChatRoomReceivedMessage;
+        if (message.type === "snapshot") {
+          setMessages(message.messages);
+        } else if (message.type === "message") {
+          setMessages(messages => {
+            if (!messages.find(m => m.id === message.message.id)) {
+              return [...messages, message.message];
+            }
+            return messages.map(m => (m.id === message.message.id ? message.message : m));
+          });
+        }
+      },
     }
-  }, [lastJsonMessage]);
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
@@ -48,7 +49,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
 
   const handleSend = () => {
     if (input.trim()) {
-      sendJsonMessage({type: "send", text: input});
+      sendJsonMessage({type: "send", text: input} satisfies ChatRoomSentMessage);
       setInput("");
     }
   };
@@ -103,7 +104,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                   type: "react",
                                   messageId: message.id,
                                   reaction: "like",
-                                });
+                                } satisfies ChatRoomSentMessage);
                               }}>
                               <ThumbsUpIcon className="text-blue-600" />
                             </Button>
@@ -119,7 +120,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                   type: "react",
                                   messageId: message.id,
                                   reaction: "love",
-                                });
+                                } satisfies ChatRoomSentMessage);
                               }}>
                               <HeartIcon className="text-red-600" />
                             </Button>
@@ -135,7 +136,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                   type: "react",
                                   messageId: message.id,
                                   reaction: "laugh",
-                                });
+                                } satisfies ChatRoomSentMessage);
                               }}>
                               <LaughIcon className="text-yellow-600" />
                             </Button>
@@ -151,7 +152,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                   type: "react",
                                   messageId: message.id,
                                   reaction: "angry",
-                                });
+                                } satisfies ChatRoomSentMessage);
                               }}>
                               <AngryIcon className="text-red-800" />
                             </Button>
