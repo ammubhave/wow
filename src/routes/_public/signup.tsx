@@ -1,9 +1,8 @@
 import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
-import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
+import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
 import {CheckIcon, XIcon} from "lucide-react";
 import {useRef} from "react";
 import {toast} from "sonner";
-import z from "zod";
 
 import {useAppForm} from "@/components/form";
 import {useTheme} from "@/components/theme-provider";
@@ -12,8 +11,15 @@ import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel} from "@/com
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {UsernameAvailabilityIndicator} from "@/components/username-availability-indicator";
 import {authClient} from "@/lib/auth-client";
+import {getSession} from "@/lib/auth-server";
 
-export const Route = createFileRoute("/_public/signup")({component: RouteComponent});
+export const Route = createFileRoute("/_public/signup")({
+  component: RouteComponent,
+  loader: async () => {
+    const session = await getSession();
+    if (session) throw redirect({to: "/workspaces"});
+  },
+});
 
 function RouteComponent() {
   const router = useRouter();
@@ -65,9 +71,7 @@ function RouteComponent() {
                       />
                     )}
                   </form.AppField>
-                  <form.AppField
-                    name="username"
-                    validators={{onBlur: z.string().min(3, "Username is too short")}}>
+                  <form.AppField name="username">
                     {field => (
                       <UsernameAvailabilityIndicator username={field.state.value}>
                         {available => (

@@ -1,5 +1,5 @@
 import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
-import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
+import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {useRef} from "react";
 import {toast} from "sonner";
@@ -10,8 +10,15 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Field, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
+import {getSession} from "@/lib/auth-server";
 
-export const Route = createFileRoute("/_public/forgot-password")({component: RouteComponent});
+export const Route = createFileRoute("/_public/forgot-password")({
+  component: RouteComponent,
+  loader: async () => {
+    const session = await getSession();
+    if (session) throw redirect({to: "/workspaces"});
+  },
+});
 
 function RouteComponent() {
   const router = useRouter();

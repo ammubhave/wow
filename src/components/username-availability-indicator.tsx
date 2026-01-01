@@ -16,5 +16,13 @@ export function UsernameAvailabilityIndicator({
     queryKey: ["username-availability", debouncedUsername],
     enabled: debouncedUsername.length > 0,
   });
-  return <>{children(usernameAvailable.data?.data?.available ?? usernameAvailable.isError)}</>;
+  console.log(usernameAvailable);
+  return (
+    <>
+      {children(
+        usernameAvailable.data?.data?.available ??
+          (usernameAvailable.data && "error" in usernameAvailable.data ? false : undefined)
+      )}
+    </>
+  );
 }
