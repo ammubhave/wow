@@ -66,11 +66,11 @@ function RouteComponent() {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={20}>
               <ResizablePanelGroup direction="vertical">
-                <ResizablePanel defaultSize={50} className="flex">
+                <ResizablePanel defaultSize={30} className="flex">
                   <PuzzleInfoPanel workspaceId={workspaceId!} puzzle={puzzle.data} />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={50} className="flex flex-col p-4">
+                <ResizablePanel defaultSize={60} className="flex flex-col">
                   <Chat puzzleId={puzzleId} />
                 </ResizablePanel>
               </ResizablePanelGroup>
@@ -108,11 +108,10 @@ function PuzzleInfoPanel({
   const form = useAppForm({
     defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status, tags: puzzle.tags},
     onSubmit: ({value}) => {
-      const answer = value.answer.length === 0 ? null : value.answer.toUpperCase();
       toast.promise(
         workspace.puzzles.update.mutateAsync({
           id: puzzle.id,
-          answer,
+          answer: value.answer,
           status: value.status,
           tags: value.tags,
         }),
@@ -134,8 +133,6 @@ function PuzzleInfoPanel({
   });
 
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
-
-  const presences = useAppSelector(state => state.presences.value)[puzzle.id] ?? [];
 
   return (
     <div
@@ -219,17 +216,17 @@ function PuzzleInfoPanel({
           </EditPuzzleDialog>
         </ItemActions>
       </Item>
-      <div className="p-4 text-sm gap-4 flex flex-col overflow-auto">
+      <div className="text-sm gap-2 flex flex-col overflow-auto">
         <form.AppForm>
           <form.Form>
-            <FieldGroup>
+            <FieldGroup className="gap-0">
               <form.AppField
                 name="answer"
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText>Answer</ButtonGroupText>
+                    <ButtonGroupText className="min-w-16">Answer</ButtonGroupText>
                     <InputGroup>
-                      <field.InputGroupInputField className="whitespace-pre font-mono" />
+                      <field.InputGroupInputField className="whitespace-pre uppercase font-mono" />
                     </InputGroup>
                   </ButtonGroup>
                 )}
@@ -238,7 +235,7 @@ function PuzzleInfoPanel({
                 name="status"
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText>Status</ButtonGroupText>
+                    <ButtonGroupText className="min-w-16">Status</ButtonGroupText>
                     <InputGroup>
                       <field.SelectField
                         className="border-0 bg-transparent"
@@ -261,7 +258,7 @@ function PuzzleInfoPanel({
                 name="tags"
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText>Tags</ButtonGroupText>
+                    <ButtonGroupText className="min-w-16">Tags</ButtonGroupText>
                     <InputGroup className="h-auto">
                       <field.ComboboxMultipleField
                         className="border-0 bg-transparent"
@@ -292,28 +289,10 @@ function PuzzleInfoPanel({
                   </Accordion>
                 </div>
               )}
-              <div className="flex flex-col gap-2">
-                <FieldLabel>Hunters Present</FieldLabel>
-                <div className="flex flex-row flex-wrap gap-2">
-                  {presences.map(user => (
-                    <UserHoverCard key={user.id} user={user}>
-                      <span className="inline-flex items-center gap-x-1.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1.5 py-0.5 text-xs font-medium text-green-900">
-                        <img
-                          src={
-                            user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})
-                          }
-                          className="size-4 rounded-full"
-                        />
-                        {user.displayUsername ?? user.name}
-                      </span>
-                    </UserHoverCard>
-                  ))}
-                </div>
-              </div>
             </FieldGroup>
           </form.Form>
         </form.AppForm>
-        <div>
+        <div className="px-2 gap-2 flex flex-col">
           <CommentBox
             comment={puzzle.comment}
             commentUpdatedAt={puzzle.commentUpdatedAt}

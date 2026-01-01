@@ -888,13 +888,13 @@ function BlackboardMetaPuzzle({
           )}
         </TableCell>
         <TableCell className="py-1">
-          <div className="flex flex-row flex-wrap gap-2">
+          <div className="flex flex-row flex-wrap gap-1">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex cursor-default items-center gap-x-1 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-xs font-medium text-green-900">
+                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-[10px] font-medium text-green-900">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
-                    className="size-4 rounded-full"
+                    className="size-3 rounded-full"
                   />
                   {user.displayUsername}
                 </span>
@@ -1210,10 +1210,10 @@ function BlackboardPuzzle({
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex cursor-default items-center gap-x-1 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-xs font-medium text-green-900">
+                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-[10px] font-medium text-green-900">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
-                    className="size-4 rounded-full"
+                    className="size-3 rounded-full"
                   />
                   {user.displayUsername}
                 </span>

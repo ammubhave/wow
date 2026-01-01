@@ -1,4 +1,5 @@
 import {useQuery} from "@tanstack/react-query";
+import {Link} from "@tanstack/react-router";
 import {
   CheckIcon,
   FolderMinusIcon,
@@ -103,9 +104,12 @@ export function ActivityLogItem({
                     : activityItem.puzzle_activity_log_entry.subType === "updateAnswer"
                       ? "updated the answer of"
                       : ""}{" "}
-            <span className="font-medium text-foreground">
+            <Link
+              to="/$workspaceId/puzzles/$puzzleId"
+              params={{puzzleId: activityItem.puzzle_activity_log_entry.puzzleId} as any}
+              className="font-medium text-foreground">
               {activityItem.puzzle_activity_log_entry.puzzleName}
-            </span>
+            </Link>
             {activityItem.puzzle_activity_log_entry.field !== null && (
               <>
                 {" "}
@@ -124,6 +128,8 @@ export function ActivityLogItem({
                   ) : (
                     activityItem.puzzle_activity_log_entry.field
                   )
+                ) : activityItem.puzzle_activity_log_entry.subType === "updateAnswer" ? (
+                  <span className="font-mono">{activityItem.puzzle_activity_log_entry.field}</span>
                 ) : (
                   activityItem.puzzle_activity_log_entry.field
                 )}

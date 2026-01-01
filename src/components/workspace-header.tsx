@@ -171,7 +171,7 @@ export function WorkspaceHeader() {
             </TabsList>
           </Tabs> */}
           {activityLogEntries?.[0] && (
-            <div className="overflow-hidden px-3 flex items-center gap-2">
+            <div className="overflow-hidden px-3 flex items-center">
               <Button
                 variant="ghost"
                 render={

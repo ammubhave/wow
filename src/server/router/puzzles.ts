@@ -172,7 +172,11 @@ export const puzzlesRouter = {
         id: z.string(),
         parentPuzzleId: z.string().nullable().optional(),
         name: z.string().min(1).optional(),
-        answer: z.string().nullable().optional(),
+        answer: z
+          .string()
+          .transform(v => v.toUpperCase())
+          .nullable()
+          .optional(),
         status: z.string().nullable().optional(),
         importance: z.string().nullable().optional(),
         link: z.string().nullable().optional(),
