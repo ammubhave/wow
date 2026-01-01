@@ -9,9 +9,9 @@ import {authMiddleware} from "@/middlewares/auth";
 export const Route = createFileRoute("/_workspace")({
   component: RouteComponent,
   server: {middleware: [authMiddleware]},
-  loader: async () => {
+  loader: async ({location}) => {
     const session = await getSession();
-    if (!session) throw redirect({to: "/login"});
+    if (!session) throw redirect({to: "/login", search: {redirectTo: location.pathname}});
   },
 });
 

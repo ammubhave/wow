@@ -1,11 +1,14 @@
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
+import {useEffect} from "react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
+import PixelBlast from "@/components/pixel-blast";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {FieldGroup} from "@/components/ui/field";
 import {Item, ItemContent, ItemDescription, ItemTitle} from "@/components/ui/item";
+import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_app/workspaces/join/$workspaceId")({
@@ -36,9 +39,18 @@ function RouteComponent() {
       },
     })
   );
+  const organizations = authClient.useListOrganizations().data;
+  useEffect(() => {
+    if (organizations && organizations.findIndex(org => org.slug === params.workspaceId) !== -1) {
+      void router.navigate({to: "/$workspaceId", params: {workspaceId: params.workspaceId}});
+    }
+  }, [organizations]);
   return (
-    <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
+    <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10 relative">
+      <div className="absolute inset-0">
+        <PixelBlast color="#f49f1e" pixelSize={3} />
+      </div>
+      <div className="w-full max-w-sm z-10">
         <Card>
           <CardHeader>
             <CardTitle>Join Workspace {params.workspaceId}</CardTitle>

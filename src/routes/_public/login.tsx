@@ -2,6 +2,7 @@ import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {useRef} from "react";
 import {toast} from "sonner";
+import z from "zod";
 
 import {useAppForm} from "@/components/form";
 import {useTheme} from "@/components/theme-provider";
@@ -9,10 +10,14 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {Field, FieldDescription, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_public/login")({component: RouteComponent});
+export const Route = createFileRoute("/_public/login")({
+  component: RouteComponent,
+  validateSearch: z.object({redirectTo: z.string().optional().default("/workspaces")}),
+});
 
 function RouteComponent() {
   const router = useRouter();
+  const searchParams = Route.useSearch();
   const form = useAppForm({
     defaultValues: {username: "", password: "", token: ""},
     onSubmit: async ({value}) => {
@@ -22,7 +27,7 @@ function RouteComponent() {
         fetchOptions: {
           headers: {"x-captcha-response": value.token},
           onSuccess: async () => {
-            await router.navigate({to: "/workspaces"});
+            await router.navigate({to: searchParams.redirectTo});
           },
           onError: async error => {
             turnstileRef.current?.reset();
