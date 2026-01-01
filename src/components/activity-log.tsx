@@ -6,6 +6,11 @@ import {
   LogInIcon,
   OctagonAlertIcon,
   PuzzleIcon,
+  SignalHighIcon,
+  SignalIcon,
+  SignalLowIcon,
+  SignalMediumIcon,
+  SignalZeroIcon,
 } from "lucide-react";
 import {useFormatter, useNow} from "use-intl";
 
@@ -102,7 +107,27 @@ export function ActivityLogItem({
               {activityItem.puzzle_activity_log_entry.puzzleName}
             </span>
             {activityItem.puzzle_activity_log_entry.field !== null && (
-              <> to {activityItem.puzzle_activity_log_entry.field}</>
+              <>
+                {" "}
+                to{" "}
+                {activityItem.puzzle_activity_log_entry.subType === "updateImportance" ? (
+                  activityItem.puzzle_activity_log_entry.field === "veryhigh" ? (
+                    <SignalIcon className="py-1 inline" />
+                  ) : activityItem.puzzle_activity_log_entry.field === "high" ? (
+                    <SignalHighIcon className="py-1 inline" />
+                  ) : activityItem.puzzle_activity_log_entry.field === "medium" ? (
+                    <SignalMediumIcon className="py-1 inline" />
+                  ) : activityItem.puzzle_activity_log_entry.field === "low" ? (
+                    <SignalLowIcon className="py-1 inline" />
+                  ) : activityItem.puzzle_activity_log_entry.field === "obsolete" ? (
+                    <SignalZeroIcon className="py-1 inline" />
+                  ) : (
+                    activityItem.puzzle_activity_log_entry.field
+                  )
+                ) : (
+                  activityItem.puzzle_activity_log_entry.field
+                )}
+              </>
             )}
           </>
         )}
