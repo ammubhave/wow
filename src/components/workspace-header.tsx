@@ -172,7 +172,14 @@ export function WorkspaceHeader() {
           </Tabs> */}
           {activityLogEntries?.[0] && (
             <div className="overflow-hidden px-3 flex items-center gap-2">
-              <History className="size-4 text-muted-foreground shrink-0" />
+              <Button
+                variant="ghost"
+                render={
+                  <Link to="/$workspaceId/activity-log" params={{workspaceId}}>
+                    <History className="size-4 text-muted-foreground shrink-0" />
+                  </Link>
+                }
+              />
               <ActivityLogItem
                 relativeTime
                 showIcon={false}
