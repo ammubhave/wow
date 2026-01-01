@@ -1,5 +1,4 @@
 import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
-import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {CheckIcon, XIcon} from "lucide-react";
 import {useRef} from "react";
@@ -11,6 +10,7 @@ import {useTheme} from "@/components/theme-provider";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
+import {UsernameAvailabilityIndicator} from "@/components/username-availability-indicator";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_public/signup")({component: RouteComponent});
@@ -116,7 +116,6 @@ function RouteComponent() {
                             <FieldError errors={field.state.meta.errors} />
                           </Field>
                         )}
-                        {/* {available => <field.TextField label="Username" autoComplete="username" />} */}
                       </UsernameAvailabilityIndicator>
                     )}
                   </form.AppField>
@@ -151,19 +150,4 @@ function RouteComponent() {
       </div>
     </div>
   );
-}
-
-function UsernameAvailabilityIndicator({
-  username,
-  children,
-}: {
-  username: string;
-  children: (available?: boolean) => React.ReactNode;
-}) {
-  const usernameAvailable = useQuery({
-    queryFn: () => authClient.isUsernameAvailable({username}),
-    queryKey: ["username-availability", username],
-    enabled: username.length > 0,
-  });
-  return <>{children(usernameAvailable.data?.data?.available)}</>;
 }

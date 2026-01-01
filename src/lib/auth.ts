@@ -102,7 +102,10 @@ export const auth = betterAuth({
         },
       },
     }),
-    username(),
+    username({
+      minUsernameLength: 3,
+      displayUsernameValidator: displayUsername => displayUsername.length >= 3,
+    }),
     tanstackStartCookies(),
   ],
   session: {cookieCache: {enabled: true, maxAge: 5 * 60}},
