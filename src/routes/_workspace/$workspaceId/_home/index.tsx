@@ -860,7 +860,7 @@ function BlackboardMetaPuzzle({
                 setIsTagsEditing(true);
                 setTimeout(() => tagsRef.current?.focus(), 0);
               }}
-              className="w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
+              className="h-full w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
               {metaPuzzle.tags.map(tag => (
                 <Badge key={tag} className={getTagColor(tag)}>
                   {tag}
@@ -1179,7 +1179,7 @@ function BlackboardPuzzle({
                 setIsTagsEditing(true);
                 setTimeout(() => tagsRef.current?.focus(), 0);
               }}
-              className="w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
+              className="h-full w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
               {puzzle.tags.map(tag => (
                 <Badge key={tag} className={getTagColor(tag)}>
                   {tag}

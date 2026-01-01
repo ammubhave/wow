@@ -1,3 +1,4 @@
+import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useChildMatches, useNavigate} from "@tanstack/react-router";
 import {ExternalLinkIcon, Info, Settings, History} from "lucide-react";
 import {useEffect} from "react";
@@ -6,8 +7,10 @@ import {PresencesCard} from "@/components/presences-card";
 import {Separator} from "@/components/ui/separator";
 import {SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
+import {orpc} from "@/lib/orpc";
 import {useAppDispatch, useAppSelector} from "@/store";
 
+import {ActivityLogItem} from "./activity-log";
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
@@ -49,6 +52,9 @@ export function WorkspaceHeader() {
   const puzzle = workspace.rounds.list.data
     .flatMap(round => round.puzzles)
     .find(p => p.id === puzzleId);
+  const activityLogEntries = useQuery(
+    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceId}})
+  ).data;
   const navigate = useNavigate();
 
   return (
@@ -63,7 +69,7 @@ export function WorkspaceHeader() {
               params: to === "/$workspaceId/puzzles/$puzzleId" ? {puzzleId} : undefined,
             });
           }}
-          className="flex-1 flex flex-col">
+          className="flex flex-col shrink-0">
           <div className="justify-between flex items-center gap-2">
             <div className="px-2 flex items-center gap-4 shrink-0">
               <Link to="/workspaces" className="shrink-0">
@@ -102,7 +108,7 @@ export function WorkspaceHeader() {
           </div>
         </Tabs>
         {/* <NavWorkspace workspace={workspace.get.data} /> */}
-        <div className="w-full px-3">
+        <div className="flex-1 flex items-center overflow-hidden justify-end">
           {/* <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -164,6 +170,16 @@ export function WorkspaceHeader() {
               ))}
             </TabsList>
           </Tabs> */}
+          {activityLogEntries?.[0] && (
+            <div className="overflow-hidden px-3 flex items-center gap-2">
+              <History className="size-4 text-muted-foreground shrink-0" />
+              <ActivityLogItem
+                relativeTime
+                showIcon={false}
+                activityItem={activityLogEntries?.[0]}
+              />
+            </div>
+          )}
         </div>
         <PresencesCard id={workspaceId} />
         <div className="flex items-center gap-1">
