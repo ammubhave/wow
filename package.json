@@ -44,7 +44,7 @@
     "hono": "^4.11.3",
     "js-sha256": "^0.11.1",
     "lucide-react": "^0.562.0",
-    "posthog-js": "^1.312.0",
+    "posthog-js": "^1.313.0",
     "postprocessing": "^6.38.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
