@@ -37,7 +37,7 @@ export function UserHoverCard({
           </Avatar>
           <div className="flex items-baseline flex-col">
             <div className="font-medium text-accent-foreground">{user.name}</div>
-            <div className="text-muted-foreground">{user.displayUsername}</div>
+            <div className="text-xs text-muted-foreground">{user.displayUsername}</div>
           </div>
         </div>
       </HoverCardContent>

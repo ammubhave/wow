@@ -67,7 +67,9 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium text-accent-foreground">{user.name}</span>
-                <span className="truncate text-muted-foreground">{user.displayUsername}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user.displayUsername}
+                </span>
               </div>
               <ChevronsUpDownIcon />
             </SidebarMenuButton>

@@ -31,7 +31,7 @@ function RouteComponent() {
               </Avatar>
               <div className="flex items-baseline flex-col">
                 <div className="font-medium">{member.user.name}</div>
-                <div className="font-medium text-muted-foreground">
+                <div className="text-xs font-medium text-muted-foreground">
                   {member.user.displayUsername}
                 </div>
               </div>
