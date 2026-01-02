@@ -537,9 +537,6 @@ function BlackboardRound({
                 ) : (
                   <DropdownMenuItem onClick={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
                     Add new unassigned puzzle
-                    <DropdownMenuShortcut>
-                      <InfoIcon />
-                    </DropdownMenuShortcut>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => setIsEditRoundDialogOpen(true)}>

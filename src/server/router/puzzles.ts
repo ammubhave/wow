@@ -245,11 +245,21 @@ export const puzzlesRouter = {
       if (input.parentPuzzleId !== undefined && input.parentPuzzleId !== null) {
         roundId = (
           await db
-            .select({roundId: schema.puzzle.roundId})
-            .from(schema.puzzle)
-            .where(eq(schema.puzzle.id, input.parentPuzzleId))
-        )[0]?.roundId;
-        invariant(roundId);
+            .select({id: schema.round.id})
+            .from(schema.round)
+            .where(eq(schema.round.id, input.parentPuzzleId))
+        )[0]?.id;
+        if (roundId) {
+          input.parentPuzzleId = null;
+        } else {
+          roundId = (
+            await db
+              .select({roundId: schema.puzzle.roundId})
+              .from(schema.puzzle)
+              .where(eq(schema.puzzle.id, input.parentPuzzleId))
+          )[0]?.roundId;
+          invariant(roundId);
+        }
       }
 
       let commentUpdatedAt = undefined;

@@ -26,6 +26,7 @@ export function EditPuzzleDialog({
   workspaceId: string;
   puzzle: {
     id: string;
+    roundId: string;
     parentPuzzleId: string | null;
     name: string;
     answer: string | null;
@@ -43,7 +44,7 @@ export function EditPuzzleDialog({
   const workspace = useWorkspace({workspaceId});
   const form = useAppForm({
     defaultValues: {
-      parentPuzzleId: puzzle.parentPuzzleId,
+      parentPuzzleId: puzzle.parentPuzzleId ?? puzzle.roundId,
       name: puzzle.name,
       answer: puzzle.answer ?? "",
       link: puzzle.link ?? "",
@@ -57,11 +58,8 @@ export function EditPuzzleDialog({
           {
             id: puzzle.id,
             ...value,
-            parentPuzzleId: value.parentPuzzleId,
             answer: value.answer === "" ? null : value.answer.toUpperCase(),
-            status: value.status,
             link: value.link === "" ? null : value.link,
-            tags: value.tags,
           },
           {
             onSuccess: () => {
@@ -103,15 +101,26 @@ export function EditPuzzleDialog({
                 name="parentPuzzleId"
                 children={field => {
                   const items = [
-                    {value: null, label: "None"},
                     ...(workspace.get.data?.rounds
-                      .flatMap(r => r.metaPuzzles)
-                      .map(p => ({value: p.id, label: p.name})) ?? []),
+                      .flatMap(r => [
+                        {
+                          id: r.id,
+                          name:
+                            r.metaPuzzles.length > 0 ? r.name : `${r.name} (Unassigned Puzzles)`,
+                          disabled: r.metaPuzzles.length > 0,
+                        },
+                        ...r.metaPuzzles,
+                      ])
+                      .map(p => ({
+                        value: p.id,
+                        label: p.name,
+                        disabled: "disabled" in p ? p.disabled : false,
+                      })) ?? []),
                   ];
                   return (
                     <field.SelectField label="Feeds Into" items={items}>
                       {items.map(item => (
-                        <SelectItem key={item.value} value={item.value}>
+                        <SelectItem key={item.value} value={item.value} disabled={item.disabled}>
                           {item.label}
                         </SelectItem>
                       ))}

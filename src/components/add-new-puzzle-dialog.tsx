@@ -51,19 +51,19 @@ export function AddNewPuzzleDialog({
         ),
         {
           loading: "Adding puzzle...",
-          success: puzzle => (
+          success: <>Success! Puzzle added.</>,
+          error: "Oops! Something went wrong.",
+          description: puzzle => (
             <>
-              Success! Puzzle added. Go to
+              Go to
               <Link
                 to="/$workspaceId/puzzles/$puzzleId"
                 params={{workspaceId, puzzleId: puzzle.id}}
-                className="-m-2 block p-2 hover:underline">
+                className="ml-1 hover:underline">
                 {puzzle.name}
               </Link>
             </>
           ),
-          error: "Oops! Something went wrong.",
-          description: value.name,
         }
       ),
   });
