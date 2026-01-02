@@ -1,3 +1,4 @@
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
@@ -14,6 +15,7 @@ import {
   SignalLowIcon,
   SignalMediumIcon,
   SignalZeroIcon,
+  StarIcon,
   TagIcon,
 } from "lucide-react";
 import {useRef, useState} from "react";
@@ -54,9 +56,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Toggle} from "@/components/ui/toggle";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
 import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
+import {orpc} from "@/lib/orpc";
 import {
   getBgColorClassNamesForPuzzleStatus,
   getPuzzleStatusGroups,
@@ -100,9 +104,14 @@ function RouteComponent() {
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
   const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
+  const [onlyShowFavorites, setOnlyShowFavorites] = useLocalStorage("onlyShowFavorites", false);
   const [search, setSearch] = useState("");
   const [tags, setTags] = useLocalStorage<(string | null)[]>("tags", []);
   const [importances, setImportances] = useLocalStorage<(string | null)[]>("importances", []);
+
+  const favoritePuzzleIds = (useQuery(
+    orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
+  ).data?.favoritePuzzleIds ?? []) as string[];
 
   const rounds = workspace.get.data.rounds.map(r => ({
     ...r,
@@ -115,7 +124,8 @@ function RouteComponent() {
             tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
           (importances.length === 0 || importances.includes(p.importance)) &&
           (!hideObsolete || p.importance !== "obsolete") &&
-          (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
+          (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
+          (!onlyShowFavorites || favoritePuzzleIds.includes(p.id))
       ),
     metaPuzzles: r.metaPuzzles
       .map(m => ({
@@ -129,7 +139,8 @@ function RouteComponent() {
                 tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
               (importances.length === 0 || importances.includes(p.importance)) &&
               (!hideObsolete || p.importance !== "obsolete") &&
-              (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
+              (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
+              (!onlyShowFavorites || favoritePuzzleIds.includes(p.id))
           ),
       }))
       .filter(
@@ -140,7 +151,8 @@ function RouteComponent() {
                 tags.some(tag => (tag === null ? m.tags.length === 0 : m.tags.includes(tag)))) &&
               (importances.length === 0 || importances.includes(m.importance)) &&
               (!hideObsolete || m.importance !== "obsolete") &&
-              (!hideSolved || (m.status !== "solved" && m.status !== "backsolved")))) &&
+              (!hideSolved || (m.status !== "solved" && m.status !== "backsolved")) &&
+              (!onlyShowFavorites || favoritePuzzleIds.includes(m.id)))) &&
           (!hideSolvedMetas || m.status !== "solved")
       ),
     unassignedPuzzles: r.unassignedPuzzles.filter(
@@ -150,7 +162,8 @@ function RouteComponent() {
           tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
         (importances.length === 0 || importances.includes(p.importance)) &&
         (!hideObsolete || p.importance !== "obsolete") &&
-        (!hideSolved || (p.status !== "solved" && p.status !== "backsolved"))
+        (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
+        (!onlyShowFavorites || favoritePuzzleIds.includes(p.id))
     ),
   }));
 
@@ -160,6 +173,7 @@ function RouteComponent() {
   if (hideObsolete) filterCount += 1;
   if (hideSolvedMetas) filterCount += 1;
   if (importances.length > 0) filterCount += 1;
+  if (onlyShowFavorites) filterCount += 1;
 
   return (
     <div className="flex flex-1">
@@ -336,6 +350,11 @@ function RouteComponent() {
                     checked={hideSolvedMetas}
                     onCheckedChange={setHideSolvedMetas}>
                     Hide solved meta puzzles
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={onlyShowFavorites}
+                    onCheckedChange={setOnlyShowFavorites}>
+                    Only show favorites
                   </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -664,6 +683,10 @@ function BlackboardMetaPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
+  const favoritePuzzles: string[] = (useQuery(
+    orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
+  ).data?.favoritePuzzleIds ?? []) as string[];
+  const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${metaPuzzle.id}`, false);
   const color = ((id: string) => {
@@ -904,6 +927,19 @@ function BlackboardMetaPuzzle({
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
+            <Toggle
+              defaultPressed={favoritePuzzles.includes(metaPuzzle.id)}
+              onPressedChange={async value => {
+                await setFavoritePuzzlesMutation.mutateAsync({
+                  workspaceId,
+                  favoritePuzzleIds: value
+                    ? [...favoritePuzzles, metaPuzzle.id]
+                    : favoritePuzzles.filter(id => id !== metaPuzzle.id),
+                });
+              }}
+              className="group/toggle">
+              <StarIcon className="stroke-muted-foreground group-data-pressed/toggle:fill-primary group-data-pressed/toggle:stroke-primary" />
+            </Toggle>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -1002,6 +1038,10 @@ function BlackboardPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
+  const favoritePuzzles: string[] = (useQuery(
+    orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
+  ).data?.favoritePuzzleIds ?? []) as string[];
+  const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
   const form = useAppForm({
     defaultValues: {
       answer: puzzle.answer ?? "",
@@ -1223,6 +1263,19 @@ function BlackboardPuzzle({
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
+            <Toggle
+              defaultPressed={favoritePuzzles.includes(puzzle.id)}
+              onPressedChange={async value => {
+                await setFavoritePuzzlesMutation.mutateAsync({
+                  workspaceId,
+                  favoritePuzzleIds: value
+                    ? [...favoritePuzzles, puzzle.id]
+                    : favoritePuzzles.filter(id => id !== puzzle.id),
+                });
+              }}
+              className="group/toggle">
+              <StarIcon className="stroke-muted-foreground group-data-pressed/toggle:fill-primary group-data-pressed/toggle:stroke-primary" />
+            </Toggle>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={

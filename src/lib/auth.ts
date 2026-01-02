@@ -100,6 +100,7 @@ export const auth = betterAuth({
             links: {type: "json", required: false},
           },
         },
+        member: {additionalFields: {favoritePuzzleIds: {type: "string[]", required: false}}},
       },
     }),
     username({

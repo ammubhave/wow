@@ -358,5 +358,39 @@ export const workspacesRouter = {
           .where(eq(schema.member.organizationId, context.workspace.id));
         return members;
       }),
+
+    get: procedure
+      .input(z.object({workspaceId: z.string()}))
+      .use(preauthorize)
+      .handler(async ({context}) => {
+        const member = await db
+          .select()
+          .from(schema.member)
+          .where(
+            and(
+              eq(schema.member.organizationId, context.workspace.id),
+              eq(schema.member.userId, context.session.user.id)
+            )
+          )
+          .get();
+        if (!member) {
+          throw new ORPCError("NOT_FOUND");
+        }
+        return member;
+      }),
+    set: procedure
+      .input(z.object({workspaceId: z.string(), favoritePuzzleIds: z.array(z.string())}))
+      .use(preauthorize)
+      .handler(async ({context, input}) => {
+        await db
+          .update(schema.member)
+          .set({favoritePuzzleIds: [...new Set(input.favoritePuzzleIds)]})
+          .where(
+            and(
+              eq(schema.member.organizationId, context.workspace.id),
+              eq(schema.member.userId, context.session.user.id)
+            )
+          );
+      }),
   },
 };
