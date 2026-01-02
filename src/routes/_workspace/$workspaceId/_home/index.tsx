@@ -1,4 +1,4 @@
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
@@ -683,9 +683,9 @@ function BlackboardMetaPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
-  const favoritePuzzles: string[] = (useQuery(
+  const favoritePuzzles: string[] = (useSuspenseQuery(
     orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
-  ).data?.favoritePuzzleIds ?? []) as string[];
+  ).data.favoritePuzzleIds ?? []) as string[];
   const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${metaPuzzle.id}`, false);
@@ -1038,9 +1038,9 @@ function BlackboardPuzzle({
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
-  const favoritePuzzles: string[] = (useQuery(
+  const favoritePuzzles: string[] = (useSuspenseQuery(
     orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
-  ).data?.favoritePuzzleIds ?? []) as string[];
+  ).data.favoritePuzzleIds ?? []) as string[];
   const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
   const form = useAppForm({
     defaultValues: {
