@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/accordion";
 import {Button} from "@/components/ui/button";
 import {ButtonGroup, ButtonGroupText} from "@/components/ui/button-group";
-import {FieldGroup, FieldLabel} from "@/components/ui/field";
+import {FieldGroup} from "@/components/ui/field";
 import {InputGroup} from "@/components/ui/input-group";
 import {Item, ItemActions, ItemContent, ItemTitle} from "@/components/ui/item";
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable";
@@ -25,7 +25,6 @@ import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
-import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
 import {
   getBgColorClassNamesForPuzzleStatusNoHover,
   getPuzzleStatusGroups,
@@ -33,7 +32,6 @@ import {
 } from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
 import {cn} from "@/lib/utils";
-import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
   component: RouteComponent,
@@ -92,6 +90,7 @@ function PuzzleInfoPanel({
     commentUpdatedAt: Date | null;
     commentUpdatedBy: string | null;
     id: string;
+    roundId: string;
     parentPuzzleId: string | null;
     name: string;
     link: string | null;
