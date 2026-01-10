@@ -35,6 +35,7 @@ function RouteComponent() {
             password: value.password,
           },
           {
+            throw: true,
             onSuccess: ({data}) => {
               console.log("Created", data);
               void queryClient.invalidateQueries();

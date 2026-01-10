@@ -11,5 +11,6 @@
   "oxc.typeAware": true,
   "oxc.unusedDisableDirectives": "deny",
   "typescript.experimental.useTsgo": true,
-  "tailwindCSS.classFunctions": ["cn", "cva", "clsx"]
+  "tailwindCSS.classFunctions": ["cn", "cva", "clsx"],
+  "css.lint.unknownAtRules": "ignore"
 }
