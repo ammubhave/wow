@@ -125,7 +125,9 @@ export function CommentBox({
                   </h4>
                 ),
                 p: ({children, className, node: _node, ...rest}) => (
-                  <p {...rest} className={cn(className, "leading-7 not-first:mt-6")}>
+                  <p
+                    {...rest}
+                    className={cn(className, "whitespace-pre-wrap leading-7 not-first:mt-6")}>
                     {children}
                   </p>
                 ),

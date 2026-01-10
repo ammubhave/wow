@@ -9,8 +9,7 @@
     "test": "vitest run",
     "deploy": "wrangler deploy --env production",
     "format": "oxfmt",
-    "lint": "oxlint --type-aware",
-    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --type-check --type-aware",
     "postinstall": "concurrently 'wrangler types --strict-vars=false' 'touch src/lib/db/auth-schema.ts && pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'",
     "prepare": "husky"
   },
