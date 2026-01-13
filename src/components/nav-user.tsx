@@ -3,12 +3,12 @@ import {Link, useRouter} from "@tanstack/react-router";
 import {
   BellRingIcon,
   ChevronsUpDownIcon,
-  CoffeeIcon,
   ExternalLinkIcon,
   LogOut,
   MonitorIcon,
   MoonIcon,
   PaletteIcon,
+  PuzzleIcon,
   RotateCcwKeyIcon,
   SunIcon,
   UserCogIcon,
@@ -155,8 +155,8 @@ export function NavUser({children}: {children?: React.ReactNode}) {
           <DropdownMenuItem
             render={
               <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-                <CoffeeIcon />
-                Buy me a coffee
+                <PuzzleIcon />
+                Buy me a puzzle
                 <ExternalLinkIcon className="absolute right-2" />
               </a>
             }
