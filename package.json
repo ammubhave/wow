@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
-    "@cloudflare/vite-plugin": "^1.20.2",
+    "@cloudflare/vite-plugin": "^1.20.3",
     "@fontsource-variable/noto-sans": "^5.2.10",
     "@marsidev/react-turnstile": "^1.4.1",
     "@orpc/client": "^1.13.4",
@@ -27,11 +27,11 @@
     "@tanstack/react-form": "^1.27.7",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-query-devtools": "^5.91.2",
-    "@tanstack/react-router": "^1.147.3",
-    "@tanstack/react-router-devtools": "^1.149.0",
-    "@tanstack/react-router-ssr-query": "^1.147.3",
-    "@tanstack/react-start": "^1.149.2",
-    "@tanstack/router-plugin": "^1.149.0",
+    "@tanstack/react-router": "^1.149.3",
+    "@tanstack/react-router-devtools": "^1.149.3",
+    "@tanstack/react-router-ssr-query": "^1.149.3",
+    "@tanstack/react-start": "^1.149.4",
+    "@tanstack/router-plugin": "^1.149.3",
     "@uidotdev/usehooks": "^2.4.1",
     "better-auth": "^1.4.12",
     "canvas-confetti": "^1.9.4",
@@ -43,7 +43,7 @@
     "hono": "^4.11.4",
     "js-sha256": "^0.11.1",
     "lucide-react": "^0.562.0",
-    "posthog-js": "^1.319.0",
+    "posthog-js": "^1.319.2",
     "postprocessing": "^6.38.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -71,7 +71,7 @@
     "@testing-library/react": "^16.3.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/crypto-js": "^4.2.2",
-    "@types/node": "^25.0.7",
+    "@types/node": "^25.0.8",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.182.0",
@@ -92,7 +92,7 @@
     "vite": "^7.3.1",
     "vitest": "^4.0.17",
     "web-vitals": "^5.1.0",
-    "wrangler": "^4.59.0"
+    "wrangler": "^4.59.1"
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern"
