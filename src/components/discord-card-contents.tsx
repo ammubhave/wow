@@ -98,7 +98,7 @@ export function DiscordCardContents({
                         <span className="text-xs text-red-500">{discordInfo.data.error}</span>
                       )}
                     </span>
-                  </span>{" "}
+                  </span>
                   <DiscordForm redirectUrl={redirectUrl} workspaceId={workspaceId}>
                     <Button type="submit" variant="secondary" className="gap-2">
                       {/* <DiscordLogoIcon className="size-5" /> */}

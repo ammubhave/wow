@@ -7,7 +7,7 @@ export class DiscordService {
 
   async sync(workspaceId: string) {
     const workspace = await db.query.organization.findFirst({
-      where: (t, {eq}) => eq(t.slug, workspaceId),
+      where: (t, {eq}) => eq(t.id, workspaceId),
     });
     if (!workspace) throw new Error("Workspace not found");
     const rounds = await db.query.round.findMany({
