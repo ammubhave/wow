@@ -393,4 +393,13 @@ export const workspacesRouter = {
           );
       }),
   },
+  announce: procedure
+    .input(z.object({workspaceId: z.string(), message: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      await context.notification.broadcast(context.workspace.id, {
+        type: "announcement",
+        message: input.message,
+      });
+    }),
 };

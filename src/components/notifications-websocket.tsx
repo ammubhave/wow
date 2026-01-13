@@ -5,6 +5,8 @@ import z from "zod";
 
 import {authClient} from "@/lib/auth-client";
 
+import {toastDismissBroadcastChannel} from "./ui/sonner";
+
 let confettiMod: Promise<any> | null = null;
 
 function getConfetti() {
@@ -21,6 +23,7 @@ export function NotificationsWebSocket({
 }) {
   const queryClient = useQueryClient();
   const notificationsEnabled = authClient.useSession().data?.user.notificationsDisabled === false;
+
   useWebSocket(
     `${typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}` : ""}/api/notification/${workspaceId}`,
     {
@@ -31,6 +34,7 @@ export function NotificationsWebSocket({
           .discriminatedUnion("type", [
             z.object({type: z.literal("invalidate")}),
             z.object({type: z.literal("solved"), message: z.string()}),
+            z.object({type: z.literal("announcement"), message: z.string()}),
           ])
           .parse(JSON.parse(data.data));
         if (payload.type === "invalidate") {
@@ -60,6 +64,16 @@ export function NotificationsWebSocket({
               }
             })();
             toast.success(payload.message);
+          }
+        } else if (payload.type === "announcement") {
+          if (notificationsEnabled) {
+            toast.info("Announcement", {
+              description: payload.message,
+              duration: Infinity,
+              onDismiss: t => {
+                toastDismissBroadcastChannel?.postMessage(t.id);
+              },
+            });
           }
         }
       },

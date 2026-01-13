@@ -1,3 +1,4 @@
+import {MegaphoneIcon} from "lucide-react";
 import * as React from "react";
 
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
@@ -5,6 +6,8 @@ import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 
 import {CommentBox} from "./comment-box";
+import {MakeAccouncementDialog} from "./make-announcement-dialog";
+import {Button} from "./ui/button";
 import {useWorkspace} from "./use-workspace";
 
 export function AppSidebar({
@@ -57,6 +60,16 @@ export function AppSidebar({
               </div>
             ))
             .reverse()}
+        </div>
+        <div className="p-2">
+          <MakeAccouncementDialog
+            workspaceId={workspaceId}
+            children={
+              <Button variant="outline">
+                <MegaphoneIcon />
+              </Button>
+            }
+          />
         </div>
       </div>
     </div>

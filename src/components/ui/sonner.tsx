@@ -1,4 +1,4 @@
-import {Toaster as Sonner, ToasterProps} from "sonner";
+import {Toaster as Sonner, toast, ToasterProps} from "sonner";
 
 import {useTheme} from "../theme-provider";
 
@@ -9,6 +9,9 @@ const Toaster = ({...props}: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      expand
+      closeButton
+      swipeDirections={[]}
       style={
         {
           "--normal-bg": "var(--popover)",
@@ -20,5 +23,13 @@ const Toaster = ({...props}: ToasterProps) => {
     />
   );
 };
+
+export const toastDismissBroadcastChannel =
+  typeof window !== "undefined" ? new BroadcastChannel("sonner-dismiss") : null;
+if (toastDismissBroadcastChannel) {
+  toastDismissBroadcastChannel.onmessage = event => {
+    toast.dismiss(event.data);
+  };
+}
 
 export {Toaster};

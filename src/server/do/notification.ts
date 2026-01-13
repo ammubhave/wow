@@ -12,7 +12,11 @@ export class NotificationRoom extends DurableObject<Env> {
   }
 
   broadcast(
-    message: ({type: "invalidate"} | {type: "solved"; message: string}) & {timestamp: number}
+    message: (
+      | {type: "invalidate"}
+      | {type: "solved"; message: string}
+      | {type: "announcement"; message: string}
+    ) & {timestamp: number}
   ) {
     this.ctx.getWebSockets().forEach(ws => {
       ws.send(JSON.stringify(message));
