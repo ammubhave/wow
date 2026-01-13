@@ -9,7 +9,7 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_app/workspaces/")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/_app/workspaces/")({component: RouteComponent});
 
 function RouteComponent() {
   const myWorkspaces = useQuery({

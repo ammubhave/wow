@@ -8,7 +8,9 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_app/change-password")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/_app/change-password")({
+  component: RouteComponent,
+});
 
 function RouteComponent() {
   const router = useRouter();

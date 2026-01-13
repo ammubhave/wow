@@ -9,7 +9,7 @@ import {Card, CardContent} from "@/components/ui/card";
 import {useWorkspace} from "@/components/use-workspace";
 import {cn} from "@/lib/utils";
 
-export const Route = createFileRoute("/_app/workspaces/create/$workspaceId")({
+export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceId")({
   component: RouteComponent,
 });
 

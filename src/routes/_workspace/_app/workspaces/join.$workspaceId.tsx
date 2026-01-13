@@ -11,7 +11,7 @@ import {Item, ItemContent, ItemDescription, ItemTitle} from "@/components/ui/ite
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_app/workspaces/join/$workspaceId")({
+export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspaceId")({
   component: RouteComponent,
 });
 

@@ -8,6 +8,7 @@ import {RouterOutputs} from "@/server/router";
 import {CommentBox} from "./comment-box";
 import {MakeAccouncementDialog} from "./make-announcement-dialog";
 import {Button} from "./ui/button";
+import {Tooltip, TooltipContent, TooltipTrigger} from "./ui/tooltip";
 import {useWorkspace} from "./use-workspace";
 
 export function AppSidebar({
@@ -65,9 +66,16 @@ export function AppSidebar({
           <MakeAccouncementDialog
             workspaceId={workspaceId}
             children={
-              <Button variant="outline">
-                <MegaphoneIcon />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button variant="outline">
+                      <MegaphoneIcon />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Make an announcement</TooltipContent>
+              </Tooltip>
             }
           />
         </div>

@@ -101,7 +101,6 @@ export function DiscordCardContents({
                   </span>
                   <DiscordForm redirectUrl={redirectUrl} workspaceId={workspaceId}>
                     <Button type="submit" variant="secondary" className="gap-2">
-                      {/* <DiscordLogoIcon className="size-5" /> */}
                       Reconnect with Discord
                     </Button>
                   </DiscordForm>
@@ -125,7 +124,6 @@ export function DiscordCardContents({
                   </span>
                   <DiscordForm redirectUrl={redirectUrl} workspaceId={workspaceId}>
                     <Button type="submit" variant="default" className="gap-2">
-                      {/* <DiscordLogoIcon className="size-5" /> */}
                       Connect with Discord
                     </Button>
                   </DiscordForm>

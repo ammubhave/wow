@@ -42,12 +42,6 @@ export function WorkspaceHeader() {
   const lastActivePuzzleId = useAppSelector(state => state.lastActivePuzzle.value);
 
   const puzzleId = newPuzzleId ?? lastActivePuzzleId;
-  // const [openTabs, setOpenTabs] = useLocalStorage<string[]>("openTabs", []);
-  // useEffect(() => {
-  //   if (puzzleId && !openTabs.includes(puzzleId)) {
-  //     setOpenTabs([...openTabs, puzzleId]);
-  //   }
-  // }, [puzzleId]);
 
   const puzzle = workspace.rounds.list.data
     .flatMap(round => round.puzzles)
@@ -107,73 +101,12 @@ export function WorkspaceHeader() {
             </TabsList>
           </div>
         </Tabs>
-        {/* <NavWorkspace workspace={workspace.get.data} /> */}
         <div className="flex-1 flex items-center overflow-hidden justify-end">
-          {/* <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/$workspaceId" params={{workspaceId}}>
-                    Home
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              {puzzle && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>{puzzle.name}</BreadcrumbItem>
-                </>
-              )}
-            </BreadcrumbList>
-          </Breadcrumb> */}
-          {/* <Button variant="ghost" asChild>
-            <ArrowLeftIcon /> Home
-          </Button> */}
-          {/* <Tabs
-            value={puzzleId ?? "home"}
-            onValueChange={(value) => {
-              if (value === "home") {
-                navigate({ to: "/$workspaceId", params: { workspaceId } });
-              } else {
-                navigate({ to: "/$workspaceId/puzzles/$puzzleId", params: { workspaceId, puzzleId: value } });
-              }
-            }}
-          >
-            <TabsList>
-              <TabsTrigger value="home">
-                <HomeIcon /> Home
-              </TabsTrigger>
-              {openTabs.map((tab) => (
-                <div
-                  key={tab}
-                  className="has-data-[state=active]:bg-background dark:has-data-[state=active]:text-foreground has-focus-visible:border-ring has-focus-visible:ring-ring/50 has-focus-visible:outline-ring dark:has-data-[state=active]:border-input dark:has-data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 pr-0.5 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] has-focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 has-data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-                >
-                  <TabsPrimitive.Trigger
-                    value={tab}
-                    data-slot="tabs-trigger"
-                    className="peer inline-flex items-center justify-center gap-1.5"
-                  >
-                    {tab}
-                  </TabsPrimitive.Trigger>
-                  <button
-                    onClick={() => {
-                      setOpenTabs(openTabs.filter((t) => t !== tab));
-                      if (puzzleId === tab) {
-                        navigate({ to: "/$workspaceId", params: { workspaceId } });
-                      }
-                    }}
-                    className="size-6 peer-data-[state=active]:hover:bg-accent hover:bg-background hover:text-accent-foreground dark:peer-data-[state=active]:hover:bg-accent/50 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  >
-                    <XIcon />
-                  </button>
-                </div>
-              ))}
-            </TabsList>
-          </Tabs> */}
           {activityLogEntries?.[0] && (
             <div className="overflow-hidden px-3 flex items-center">
               <Button
                 variant="ghost"
+                nativeButton={false}
                 render={
                   <Link to="/$workspaceId/activity-log" params={{workspaceId}}>
                     <History className="size-4 text-muted-foreground shrink-0" />
@@ -230,7 +163,6 @@ export function WorkspaceHeader() {
               </DropdownMenuGroup>
             </>
           )}
-          {/* <DropdownMenuSeparator /> */}
           <NavWorkspace workspaceId={workspaceId} />
         </NavUser>
         {isMobile && (

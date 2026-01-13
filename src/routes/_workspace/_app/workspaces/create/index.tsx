@@ -17,7 +17,9 @@ import {
 import {FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_app/workspaces/create/")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
+  component: RouteComponent,
+});
 
 function RouteComponent() {
   const router = useRouter();
