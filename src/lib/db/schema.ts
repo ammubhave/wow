@@ -9,13 +9,13 @@ const base = {
   id: text()
     .primaryKey()
     .$defaultFn(() => uuid7()),
-  createdAt: text()
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text()
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`)
-    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer({mode: "timestamp_ms"})
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  updatedAt: integer({mode: "timestamp_ms"})
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .$onUpdate(() => new Date())
+    .notNull(),
 };
 
 export const round = sqliteTable("round", {

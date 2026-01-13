@@ -154,13 +154,8 @@ export function ActivityLogItem({
         dateTime={activityItem.activity_log_entry.createdAt.toString()}
         className="flex-none py-0.5 text-xs/5 text-muted-foreground">
         {relativeTime
-          ? format.relativeTime(
-              new Date(activityItem.activity_log_entry.createdAt.replace(" ", "T") + "Z"),
-              now
-            )
-          : new Date(
-              activityItem.activity_log_entry.createdAt.replace(" ", "T") + "Z"
-            ).toLocaleString("en-US", {
+          ? format.relativeTime(activityItem.activity_log_entry.createdAt, now)
+          : activityItem.activity_log_entry.createdAt.toLocaleString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",
