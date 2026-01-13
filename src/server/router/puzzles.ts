@@ -204,6 +204,18 @@ export const puzzlesRouter = {
         .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
         .then(rows => rows[0]);
       invariant(puzzle);
+      if (input.answer !== undefined && input.answer !== puzzle.answer) {
+        await context.activityLog.createPuzzle({
+          subType: "updateAnswer",
+          puzzleId: puzzle.id,
+          puzzleName: puzzle.name,
+          workspaceId: puzzle.round.workspaceId,
+          field: input.answer ?? "",
+        });
+        if (puzzle.status !== "solved" && puzzle.status !== "backsolved") {
+          input.status = "solved";
+        }
+      }
       if (input.status !== undefined && input.status !== puzzle.status) {
         await context.activityLog.createPuzzle({
           subType: "updateStatus",
@@ -228,15 +240,6 @@ export const puzzlesRouter = {
           puzzleName: puzzle.name,
           workspaceId: puzzle.round.workspaceId,
           field: input.importance ?? "None",
-        });
-      }
-      if (input.answer !== undefined && input.answer !== puzzle.answer) {
-        await context.activityLog.createPuzzle({
-          subType: "updateAnswer",
-          puzzleId: puzzle.id,
-          puzzleName: puzzle.name,
-          workspaceId: puzzle.round.workspaceId,
-          field: input.answer ?? "",
         });
       }
 

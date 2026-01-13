@@ -18,7 +18,7 @@ import {
   StarIcon,
   TagIcon,
 } from "lucide-react";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
@@ -713,14 +713,16 @@ function BlackboardMetaPuzzle({
       });
     },
     listeners: {
-      onChange: async ({formApi}) => {
+      onBlur: async ({formApi}) => {
         if (formApi.state.isValid) {
           await formApi.handleSubmit();
         }
       },
-      onChangeDebounceMs: 500,
     },
   });
+  useEffect(() => {
+    form.reset();
+  }, [metaPuzzle.answer, metaPuzzle.status, metaPuzzle.importance, metaPuzzle.tags]);
   const presences = useAppSelector(state => state.presences.value)[metaPuzzle.id] ?? [];
   const tagsRef = useRef<HTMLInputElement | null>(null);
 
@@ -808,7 +810,10 @@ function BlackboardMetaPuzzle({
           <form.AppField name="status">
             {field => (
               <Select
-                onValueChange={field.handleChange}
+                onValueChange={value => {
+                  field.handleChange(value);
+                  field.handleBlur();
+                }}
                 value={field.state.value}
                 items={getPuzzleStatusOptions()}>
                 <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
@@ -833,7 +838,10 @@ function BlackboardMetaPuzzle({
           <form.AppField name="importance">
             {field => (
               <Select
-                onValueChange={field.handleChange}
+                onValueChange={value => {
+                  field.handleChange(value);
+                  field.handleBlur();
+                }}
                 value={field.state.value}
                 items={[
                   {value: null, label: <SignalMediumIcon />},
@@ -892,8 +900,9 @@ function BlackboardMetaPuzzle({
             <form.AppField
               name="tags"
               listeners={{
-                onBlur: () => {
+                onBlur: ({fieldApi}) => {
                   setIsTagsEditing(false);
+                  fieldApi.handleBlur();
                 },
               }}
               children={field => (
