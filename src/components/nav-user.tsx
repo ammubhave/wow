@@ -1,10 +1,10 @@
-"use client";
-
 import {QueryClient} from "@tanstack/react-query";
-import {useRouter} from "@tanstack/react-router";
+import {Link, useRouter} from "@tanstack/react-router";
 import {
   BellRingIcon,
   ChevronsUpDownIcon,
+  CoffeeIcon,
+  ExternalLinkIcon,
   LogOut,
   MonitorIcon,
   MoonIcon,
@@ -80,18 +80,6 @@ export function NavUser({children}: {children?: React.ReactNode}) {
           side="bottom"
           align="end"
           sideOffset={4}>
-          {/* <DropdownMenuLabel className="p-0 font-normal">
-            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.image ?? undefined} alt={user.name ?? user.email} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
-              </div>
-            </div>
-          </DropdownMenuLabel> */}
           {children && (
             <>
               {children}
@@ -148,19 +136,32 @@ export function NavUser({children}: {children?: React.ReactNode}) {
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuItem
-            onClick={async () => {
-              await router.navigate({to: "/profile"});
-            }}>
-            <UserCogIcon />
-            Profile
-          </DropdownMenuItem>
+            render={
+              <Link to="/profile">
+                <UserCogIcon />
+                Profile
+              </Link>
+            }
+          />
           <DropdownMenuItem
-            onClick={async () => {
-              await router.navigate({to: "/change-password"});
-            }}>
-            <RotateCcwKeyIcon />
-            Change password
-          </DropdownMenuItem>
+            render={
+              <Link to="/change-password">
+                <RotateCcwKeyIcon />
+                Change password
+              </Link>
+            }
+          />
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            render={
+              <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
+                <CoffeeIcon />
+                Buy me a coffee
+                <ExternalLinkIcon className="absolute right-2" />
+              </a>
+            }
+          />
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={async () => {
               await authClient.signOut();

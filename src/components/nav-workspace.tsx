@@ -1,5 +1,3 @@
-"use client";
-
 import {useQuery} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
 import {GalleryVerticalEndIcon, Share2Icon, PlusIcon} from "lucide-react";

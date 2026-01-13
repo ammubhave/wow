@@ -1,4 +1,3 @@
-import {CoffeeIcon} from "lucide-react";
 import * as React from "react";
 
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
@@ -6,7 +5,6 @@ import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 
 import {CommentBox} from "./comment-box";
-import {Button} from "./ui/button";
 import {useWorkspace} from "./use-workspace";
 
 export function AppSidebar({
@@ -59,21 +57,6 @@ export function AppSidebar({
               </div>
             ))
             .reverse()}
-        </div>
-        <div className="flex flex-col items-center justify-center gap-4 p-4">
-          <Button
-            variant="secondary"
-            className="font-['Cookie'] text-xl"
-            render={
-              <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-                <CoffeeIcon />
-                Buy me a coffee
-              </a>
-            }
-          />
-          <p className="text-muted-foreground text-xs text-center">
-            Help support the hosting and development costs for WOW!
-          </p>
         </div>
       </div>
     </div>
