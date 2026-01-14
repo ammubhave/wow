@@ -25,7 +25,7 @@ export function AppSidebar({
       className="relative w-full max-w-[16rem] bg-sidebar border-l border-sidebar-border"
       {...props}>
       <div className="absolute inset-0 overflow-y-auto flex flex-col">
-        <div className="p-2 overflow-y-auto">
+        <div className="p-2 overflow-y-auto min-h-50">
           <CommentBox
             workspaceId={workspaceId}
             comment={workspace.get.data.comment}

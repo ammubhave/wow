@@ -70,10 +70,9 @@ export function WorkspaceHeader() {
               <Link to="/workspaces" className="shrink-0">
                 <img src="/favicon.ico" className="size-6 rounded-full" />
               </Link>
-              <div className="contents flex-1 text-lg font-semibold">
-                <span className="font-semi-bold text-lg text-nowrap">
-                  {workspace.get.data.teamName}
-                </span>
+              <div className="flex-1 font-semibold flex-col flex">
+                <span className="text-sm text-nowrap">{workspace.get.data.eventName}</span>
+                <span className="text-xs text-nowrap">{workspace.get.data.teamName}</span>
               </div>
             </div>
             <TabsList>
