@@ -63,10 +63,10 @@ export function AppSidebar({
             .reverse()}
         </div>
         <div className="p-2">
-          <MakeAccouncementDialog
-            workspaceId={workspaceId}
-            children={
-              <Tooltip>
+          <Tooltip>
+            <MakeAccouncementDialog
+              workspaceId={workspaceId}
+              children={
                 <TooltipTrigger
                   render={
                     <Button variant="outline">
@@ -74,10 +74,10 @@ export function AppSidebar({
                     </Button>
                   }
                 />
-                <TooltipContent>Make an announcement</TooltipContent>
-              </Tooltip>
-            }
-          />
+              }
+            />
+            <TooltipContent>Make an announcement</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
