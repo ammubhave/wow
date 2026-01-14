@@ -7,23 +7,27 @@ import {
 } from "cloudflare:workers";
 import {z} from "zod";
 
-export class DiscordClient extends DurableObject {
-  private async fetchDiscord(
-    url: string,
-    init?: Omit<RequestInit<RequestInitCfProperties>, "body"> & {body?: any}
-  ) {
-    const headers = new Headers(init?.headers);
-    if (init?.body) {
-      headers.set("content-type", "application/json");
-    }
-    headers.set("authorization", `Bot ${env.DISCORD_BOT_TOKEN}`);
-    return await fetch(`https://discord.com/api/v10${url}`, {
-      ...init,
-      headers,
-      body: init?.body ? JSON.stringify(init.body) : undefined,
-    });
+export async function fetchDiscord(
+  url: string,
+  init?: Omit<RequestInit<RequestInitCfProperties>, "body"> & {body?: any}
+) {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !(init.body instanceof FormData)) {
+    headers.set("content-type", "application/json");
   }
+  headers.set("authorization", `Bot ${env.DISCORD_BOT_TOKEN}`);
+  return await fetch(`https://discord.com/api/v10${url}`, {
+    ...init,
+    headers,
+    body: init?.body
+      ? init.body instanceof FormData
+        ? init.body
+        : JSON.stringify(init.body)
+      : undefined,
+  });
+}
 
+export class DiscordClient extends DurableObject {
   public async sync(workspace: {
     discordGuildId: string;
     rounds: {
@@ -146,7 +150,7 @@ export class DiscordClient extends DurableObject {
     parentId?: string;
   }) {
     const response = await (
-      await this.fetchDiscord(`/guilds/${guildId}/channels`, {
+      await fetchDiscord(`/guilds/${guildId}/channels`, {
         method: "POST",
         body: {name: `🧩 ${name}`, type, parent_id: parentId ?? null},
       })
@@ -156,7 +160,7 @@ export class DiscordClient extends DurableObject {
 
   public async updateChannel(channelId: string, data: {parentId?: string | null; name?: string}) {
     return await (
-      await this.fetchDiscord(`/channels/${channelId}`, {
+      await fetchDiscord(`/channels/${channelId}`, {
         method: "PATCH",
         body: {parent_id: data.parentId, name: data.name},
       })
@@ -164,11 +168,11 @@ export class DiscordClient extends DurableObject {
   }
 
   public async deleteChannel(channelId: string) {
-    return await this.fetchDiscord(`/channels/${channelId}`, {method: "DELETE"});
+    return await fetchDiscord(`/channels/${channelId}`, {method: "DELETE"});
   }
 
   public async listChannels(workspaceId: string) {
-    const response = await this.fetchDiscord(`/guilds/${workspaceId}/channels`);
+    const response = await fetchDiscord(`/guilds/${workspaceId}/channels`);
     if (response.status !== 200) {
       return undefined;
     }

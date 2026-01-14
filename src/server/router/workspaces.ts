@@ -7,6 +7,7 @@ import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
+import {fetchDiscord} from "../do/discord-client";
 import {preauthorize, procedure} from "./base";
 
 export const workspacesRouter = {
@@ -394,12 +395,38 @@ export const workspacesRouter = {
       }),
   },
   announce: procedure
-    .input(z.object({workspaceId: z.string(), message: z.string()}))
+    .input(
+      z.object({workspaceId: z.string(), message: z.string(), channelId: z.string().nullable()})
+    )
     .use(preauthorize)
     .handler(async ({context, input}) => {
       await context.notification.broadcast(context.workspace.id, {
         type: "announcement",
         message: input.message,
       });
+      if (context.workspace.discordGuildId && input.channelId) {
+        const channel: {guild_id?: string} = await (
+          await fetchDiscord(`/channels/${input.channelId}`)
+        ).json();
+        if (channel.guild_id !== context.workspace.discordGuildId) throw new ORPCError("NOT_FOUND");
+        const formData = new FormData();
+        formData.append("content", input.message);
+        await fetchDiscord(`/channels/${input.channelId}/messages`, {
+          method: "POST",
+          body: formData,
+        });
+      }
     }),
+  discord: {
+    listTextChannels: procedure
+      .input(z.object({workspaceId: z.string()}))
+      .use(preauthorize)
+      .handler(async ({context}) => {
+        if (!context.workspace.discordGuildId) return null;
+        const data: {id: string; type: number; name?: string}[] = await (
+          await fetchDiscord(`/guilds/${context.workspace.discordGuildId}/channels`)
+        ).json();
+        return data.filter(c => c.type === 0);
+      }),
+  },
 };

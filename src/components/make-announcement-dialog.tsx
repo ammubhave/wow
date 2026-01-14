@@ -1,4 +1,4 @@
-import {useMutation} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {useState} from "react";
 import {z} from "zod";
 
@@ -14,6 +14,7 @@ import {orpc} from "@/lib/orpc";
 
 import {useAppForm} from "./form";
 import {FieldGroup} from "./ui/field";
+import {SelectItem} from "./ui/select";
 
 export function MakeAccouncementDialog({
   workspaceId,
@@ -23,12 +24,19 @@ export function MakeAccouncementDialog({
   children: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
+  const discordTextChannels = useQuery(
+    orpc.workspaces.discord.listTextChannels.queryOptions({input: {workspaceId}, enabled: open})
+  );
   const mutation = useMutation(orpc.workspaces.announce.mutationOptions());
   const form = useAppForm({
-    defaultValues: {message: ""},
+    defaultValues: {message: "", channelId: ""},
     onSubmit: ({value}) =>
       mutation.mutateAsync(
-        {workspaceId, message: value.message},
+        {
+          workspaceId,
+          message: value.message,
+          channelId: value.channelId.length > 0 ? value.channelId : null,
+        },
         {
           onSuccess: () => {
             form.reset();
@@ -55,6 +63,29 @@ export function MakeAccouncementDialog({
                   <field.TextareaField label="Message" autoFocus autoComplete="off" />
                 )}
               />
+              {discordTextChannels.data && (
+                <form.AppField
+                  name="channelId"
+                  children={field => {
+                    const items = [
+                      {value: "", label: "None"},
+                      ...discordTextChannels.data!.map(c => ({
+                        value: c.id,
+                        label: `#${c.name ?? c.id}`,
+                      })),
+                    ];
+                    return (
+                      <field.SelectField label="Discord Channel" items={items}>
+                        {items.map(item => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </field.SelectField>
+                    );
+                  }}
+                />
+              )}
             </FieldGroup>
           </form.Form>
         </form.AppForm>

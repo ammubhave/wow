@@ -5,7 +5,7 @@ import {useEffect} from "react";
 
 import {PresencesCard} from "@/components/presences-card";
 import {Separator} from "@/components/ui/separator";
-import {SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
+import {useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {orpc} from "@/lib/orpc";
 import {useAppDispatch, useAppSelector} from "@/store";
@@ -165,12 +165,6 @@ export function WorkspaceHeader() {
           )}
           <NavWorkspace workspaceId={workspaceId} />
         </NavUser>
-        {isMobile && (
-          <>
-            <Separator orientation="vertical" className="mr-2" />
-            <SidebarTrigger className="size-8" />
-          </>
-        )}
       </div>
     </header>
   );
