@@ -1,6 +1,6 @@
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useChildMatches, useNavigate} from "@tanstack/react-router";
-import {ExternalLinkIcon, Info, Settings, History} from "lucide-react";
+import {ExternalLinkIcon, InfoIcon, SettingsIcon, HistoryIcon} from "lucide-react";
 import {useEffect} from "react";
 
 import {PresencesCard} from "@/components/presences-card";
@@ -18,6 +18,7 @@ import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/d
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
+
 export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
   component: WorkspaceHeader,
 });
@@ -79,24 +80,22 @@ export function WorkspaceHeader() {
               <TabsTrigger value="/$workspaceId/" className="px-2 flex items-center gap-4">
                 Home
               </TabsTrigger>
-              <TabsTrigger value="/$workspaceId/settings" className="px-2">
-                <Settings className="ml-auto" />
+              <TabsTrigger value="/$workspaceId/settings">
+                <SettingsIcon />
               </TabsTrigger>
-              <TabsTrigger value="/$workspaceId/activity-log" className="px-2">
-                <History className="ml-auto" />
+              <TabsTrigger value="/$workspaceId/activity-log">
+                <HistoryIcon />
               </TabsTrigger>
-              <TabsTrigger value="/$workspaceId/help-page" className="px-2">
-                <Info className="ml-auto" />
+              <TabsTrigger value="/$workspaceId/help-page">
+                <InfoIcon />
               </TabsTrigger>
               {puzzle && (
-                <div className="w-full h-full px-1">
-                  <Separator orientation="vertical" />
-                </div>
-              )}
-              {puzzle && (
-                <TabsTrigger value="/$workspaceId/puzzles/$puzzleId" className="px-2">
-                  {puzzle.name}
-                </TabsTrigger>
+                <>
+                  <div className="w-full h-full px-1">
+                    <Separator orientation="vertical" />
+                  </div>
+                  <TabsTrigger value="/$workspaceId/puzzles/$puzzleId">{puzzle.name}</TabsTrigger>
+                </>
               )}
             </TabsList>
           </div>
@@ -109,7 +108,7 @@ export function WorkspaceHeader() {
                 nativeButton={false}
                 render={
                   <Link to="/$workspaceId/activity-log" params={{workspaceId}}>
-                    <History className="size-4 text-muted-foreground shrink-0" />
+                    <HistoryIcon className="text-muted-foreground shrink-0" />
                   </Link>
                 }
               />

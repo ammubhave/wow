@@ -60,9 +60,7 @@ export const workspacesRouter = {
       .from(schema.organization)
       .where(eq(schema.organization.slug, input))
       .get();
-    if (!workspace) {
-      throw new ORPCError("NOT_FOUND");
-    }
+    if (!workspace) throw new ORPCError("NOT_FOUND");
     return workspace;
   }),
   join: procedure
