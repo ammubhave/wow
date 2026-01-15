@@ -38,8 +38,9 @@ export const preauthorize = base.middleware(
     const workspace = await auth.api.getFullOrganization({
       headers: context.headers,
       query: {organizationSlug: input.workspaceId},
+      returnStatus: true,
     });
-    if (!workspace) throw new ORPCError("NOT_FOUND");
-    return next({context: {workspace}});
+    if (!workspace.response) throw new ORPCError("NOT_FOUND");
+    return next({context: {workspace: workspace.response}});
   }
 );

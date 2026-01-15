@@ -4,7 +4,7 @@ import {orpc} from "@/lib/orpc";
 
 export function useWorkspace({workspaceId}: {workspaceId: string}) {
   const queryClient = useQueryClient();
-  const query = useSuspenseQuery(orpc.workspaces.get.queryOptions({input: workspaceId}));
+  const query = useSuspenseQuery(orpc.workspaces.get.queryOptions({input: {workspaceId}}));
   const updateMutation = useMutation(
     orpc.workspaces.update.mutationOptions({
       onSuccess: () => {

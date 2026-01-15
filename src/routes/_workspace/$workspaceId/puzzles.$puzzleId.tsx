@@ -57,7 +57,7 @@ function RouteComponent() {
     <SidebarInset>
       <PresencesWebSocket workspaceId={workspaceId!} puzzleId={puzzleId!}>
         <div className="flex flex-1">
-          <ResizablePanelGroup direction="horizontal">
+          <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={80}>
               <iframe
                 src={
@@ -71,7 +71,7 @@ function RouteComponent() {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={20}>
-              <ResizablePanelGroup direction="vertical">
+              <ResizablePanelGroup orientation="vertical">
                 <ResizablePanel defaultSize={30} className="flex">
                   <PuzzleInfoPanel workspaceId={workspaceId!} puzzle={puzzle.data} />
                 </ResizablePanel>

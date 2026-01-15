@@ -1,16 +1,24 @@
-import {createFileRoute, Outlet} from "@tanstack/react-router";
+import {createFileRoute, Outlet, useNavigate} from "@tanstack/react-router";
+import {useEffect} from "react";
 
 import {NotificationsWebSocket} from "@/components/notifications-websocket";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {SidebarProvider} from "@/components/ui/sidebar";
 import {WorkspaceHeader} from "@/components/workspace-header";
 import {authClient} from "@/lib/auth-client";
+import {client} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceId")({component: RouteComponent});
 
 function RouteComponent() {
   const {workspaceId} = Route.useParams();
   const {data: session} = authClient.useSession();
+  const navigate = useNavigate();
+  useEffect(() => {
+    void client.workspaces.get({workspaceId}).catch(() => {
+      void navigate({to: "/workspaces/join/$workspaceId", params: {workspaceId}});
+    });
+  });
   if (!session) return null;
   return (
     <NotificationsWebSocket workspaceId={workspaceId}>

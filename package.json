@@ -47,7 +47,7 @@
     "react-google-drive-picker": "^1.2.2",
     "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
-    "react-resizable-panels": "^3.0.6",
+    "react-resizable-panels": "^4.4.1",
     "react-use-websocket": "^4.13.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.7.0",

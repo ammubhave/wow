@@ -19,40 +19,40 @@ export const workspacesRouter = {
     }));
   }),
 
-  get: procedure.input(z.string()).handler(async ({context, input}) => {
-    const workspace = await db
-      .select()
-      .from(schema.organization)
-      .where(eq(schema.organization.slug, input))
-      .get();
-    if (!workspace) {
-      throw new ORPCError("NOT_FOUND");
-    }
+  get: procedure
+    .input(z.object({workspaceId: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}) => {
+      const workspace = await db
+        .select()
+        .from(schema.organization)
+        .where(eq(schema.organization.id, context.workspace.id))
+        .get();
+      if (!workspace) throw new ORPCError("NOT_FOUND");
+      let googleAccessToken = null;
+      try {
+        googleAccessToken = await context.google.getAccessToken(context.workspace.id);
+      } catch (e) {
+        console.error(e);
+      }
 
-    let googleAccessToken = null;
-    try {
-      googleAccessToken = await context.google.getAccessToken(workspace.id);
-    } catch (e) {
-      console.error(e);
-    }
+      const rounds = await db.query.round.findMany({
+        where: (t, {eq}) => eq(t.workspaceId, workspace.id),
+        with: {puzzles: {with: {childPuzzles: true}}},
+      });
 
-    const rounds = await db.query.round.findMany({
-      where: (t, {eq}) => eq(t.workspaceId, workspace.id),
-      with: {puzzles: {with: {childPuzzles: true}}},
-    });
-
-    return {
-      ...workspace,
-      rounds: rounds.map(round => ({
-        ...round,
-        unassignedPuzzles: round.puzzles.filter(
-          puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
-        ),
-        metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
-      })),
-      isOnboarding: googleAccessToken === null || workspace.googleFolderId === null,
-    };
-  }),
+      return {
+        ...workspace,
+        rounds: rounds.map(round => ({
+          ...round,
+          unassignedPuzzles: round.puzzles.filter(
+            puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
+          ),
+          metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
+        })),
+        isOnboarding: googleAccessToken === null || workspace.googleFolderId === null,
+      };
+    }),
 
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
     const workspace = await db
