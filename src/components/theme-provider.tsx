@@ -1,5 +1,5 @@
-import {useLocalStorage} from "@uidotdev/usehooks";
 import {createContext, useContext, useEffect} from "react";
+import {useLocalStorage} from "usehooks-ts";
 
 type Theme = "dark" | "light" | "system";
 

@@ -1,6 +1,5 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {useLocalStorage} from "@uidotdev/usehooks";
 import {sha256} from "js-sha256";
 import {
   CheckIcon,
@@ -21,6 +20,7 @@ import {
 import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
+import {useLocalStorage} from "usehooks-ts";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";

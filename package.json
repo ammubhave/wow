@@ -32,7 +32,6 @@
     "@tanstack/react-router-ssr-query": "^1.150.0",
     "@tanstack/react-start": "^1.150.0",
     "@tanstack/router-plugin": "^1.150.0",
-    "@uidotdev/usehooks": "^2.4.1",
     "better-auth": "^1.4.12",
     "canvas-confetti": "^1.9.4",
     "cmdk": "^1.1.1",
@@ -58,6 +57,7 @@
     "tailwindcss": "^4.1.18",
     "three": "^0.182.0",
     "use-intl": "^4.7.0",
+    "usehooks-ts": "^3.1.1",
     "uuid": "^13.0.0",
     "vite-tsconfig-paths": "^5",
     "zod": "^4.3.5"

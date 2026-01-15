@@ -1,5 +1,5 @@
 import {useQuery} from "@tanstack/react-query";
-import {useDebounce} from "@uidotdev/usehooks";
+import {useDebounceValue} from "usehooks-ts";
 
 import {authClient} from "@/lib/auth-client";
 
@@ -10,7 +10,7 @@ export function UsernameAvailabilityIndicator({
   username: string;
   children: (available?: boolean) => React.ReactNode;
 }) {
-  const debouncedUsername = useDebounce(username, 300);
+  const [debouncedUsername] = useDebounceValue(username, 300);
   const usernameAvailable = useQuery({
     queryFn: () => authClient.isUsernameAvailable({username: debouncedUsername}),
     queryKey: ["username-availability", debouncedUsername],
