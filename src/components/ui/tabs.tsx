@@ -1,5 +1,5 @@
 import {Tabs as TabsPrimitive} from "@base-ui/react/tabs";
-import {cva, type VariantProps} from "class-variance-authority";
+import {tv, type VariantProps} from "tailwind-variants";
 import {cn} from "tailwind-variants";
 
 function Tabs({className, orientation = "horizontal", ...props}: TabsPrimitive.Root.Props) {
@@ -13,13 +13,11 @@ function Tabs({className, orientation = "horizontal", ...props}: TabsPrimitive.R
   );
 }
 
-const tabsListVariants = cva(
-  "rounded-lg p-[3px] group-data-horizontal/tabs:h-8 data-[variant=line]:rounded-none group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
-  {
-    variants: {variant: {default: "bg-muted", line: "gap-1 bg-transparent"}},
-    defaultVariants: {variant: "default"},
-  }
-);
+const tabsListVariants = tv({
+  base: "rounded-lg p-[3px] group-data-horizontal/tabs:h-8 data-[variant=line]:rounded-none group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
+  variants: {variant: {default: "bg-muted", line: "gap-1 bg-transparent"}},
+  defaultVariants: {variant: "default"},
+});
 
 function TabsList({
   className,
@@ -30,7 +28,12 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       data-variant={variant}
-      className={cn(tabsListVariants({variant}), className)}
+      className={state =>
+        tabsListVariants({
+          variant,
+          className: typeof className === "function" ? className(state) : className,
+        })
+      }
       {...props}
     />
   );

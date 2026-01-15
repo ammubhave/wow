@@ -1,7 +1,7 @@
 import {mergeProps} from "@base-ui/react/merge-props";
 import {useRender} from "@base-ui/react/use-render";
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
+import {tv, type VariantProps} from "tailwind-variants";
 import {cn} from "tailwind-variants";
 
 import {Separator} from "@/components/ui/separator";
@@ -31,24 +31,22 @@ function ItemSeparator({className, ...props}: React.ComponentProps<typeof Separa
   );
 }
 
-const itemVariants = cva(
-  "[a]:hover:bg-muted rounded-md border text-xs/relaxed w-full group/item focus-visible:border-ring focus-visible:ring-ring/50 flex items-center flex-wrap outline-none transition-colors duration-100 focus-visible:ring-[3px] [a]:transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "border-transparent",
-        outline: "border-border",
-        muted: "bg-muted/50 border-transparent",
-      },
-      size: {
-        default: "gap-2.5 px-3 py-2.5",
-        sm: "gap-2.5 px-3 py-2.5",
-        xs: "gap-2.5 px-2.5 py-2 [[data-slot=dropdown-menu-content]_&]:p-0",
-      },
+const itemVariants = tv({
+  base: "[a]:hover:bg-muted rounded-md border text-xs/relaxed w-full group/item focus-visible:border-ring focus-visible:ring-ring/50 flex items-center flex-wrap outline-none transition-colors duration-100 focus-visible:ring-[3px] [a]:transition-colors",
+  variants: {
+    variant: {
+      default: "border-transparent",
+      outline: "border-border",
+      muted: "bg-muted/50 border-transparent",
     },
-    defaultVariants: {variant: "default", size: "default"},
-  }
-);
+    size: {
+      default: "gap-2.5 px-3 py-2.5",
+      sm: "gap-2.5 px-3 py-2.5",
+      xs: "gap-2.5 px-2.5 py-2 [[data-slot=dropdown-menu-content]_&]:p-0",
+    },
+  },
+  defaultVariants: {variant: "default", size: "default"},
+});
 
 function Item({
   className,
@@ -59,26 +57,24 @@ function Item({
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>) {
   return useRender({
     defaultTagName: "div",
-    props: mergeProps<"div">({className: cn(itemVariants({variant, size, className}))}, props),
+    props: mergeProps<"div">({className: itemVariants({variant, size, className})}, props),
     render,
     state: {slot: "item", variant, size},
   });
 }
 
-const itemMediaVariants = cva(
-  "gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start flex shrink-0 items-center justify-center [&_svg]:pointer-events-none",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        icon: "[&_svg:not([class*='size-'])]:size-4",
-        image:
-          "size-8 overflow-hidden rounded-sm group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover",
-      },
+const itemMediaVariants = tv({
+  base: "gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start flex shrink-0 items-center justify-center [&_svg]:pointer-events-none",
+  variants: {
+    variant: {
+      default: "bg-transparent",
+      icon: "[&_svg:not([class*='size-'])]:size-4",
+      image:
+        "size-8 overflow-hidden rounded-sm group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover",
     },
-    defaultVariants: {variant: "default"},
-  }
-);
+  },
+  defaultVariants: {variant: "default"},
+});
 
 function ItemMedia({
   className,
@@ -89,7 +85,7 @@ function ItemMedia({
     <div
       data-slot="item-media"
       data-variant={variant}
-      className={cn(itemMediaVariants({variant, className}))}
+      className={itemMediaVariants({variant, className})}
       {...props}
     />
   );

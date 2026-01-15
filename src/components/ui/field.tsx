@@ -1,5 +1,5 @@
-import {cva, type VariantProps} from "class-variance-authority";
 import {useMemo} from "react";
+import {tv, type VariantProps} from "tailwind-variants";
 import {cn} from "tailwind-variants";
 
 import {Label} from "@/components/ui/label";
@@ -49,7 +49,8 @@ function FieldGroup({className, ...props}: React.ComponentProps<"div">) {
   );
 }
 
-const fieldVariants = cva("data-[invalid=true]:text-destructive gap-2 group/field flex w-full", {
+const fieldVariants = tv({
+  base: "data-[invalid=true]:text-destructive gap-2 group/field flex w-full",
   variants: {
     orientation: {
       vertical: "flex-col [&>*]:w-full [&>.sr-only]:w-auto",
@@ -72,7 +73,7 @@ function Field({
       role="group"
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({orientation}), className)}
+      className={fieldVariants({orientation, className})}
       {...props}
     />
   );
