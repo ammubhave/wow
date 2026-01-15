@@ -8,6 +8,7 @@ import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/members")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Members | Workspace Settings | WOW"}]}),
 });
 
 function RouteComponent() {

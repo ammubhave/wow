@@ -11,7 +11,10 @@ import {gravatarUrl} from "@/components/user-hover-card";
 import {UsernameAvailabilityIndicator} from "@/components/username-availability-indicator";
 import {authClient} from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_workspace/_app/profile")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/_app/profile")({
+  component: RouteComponent,
+  head: () => ({meta: [{title: "Profile | WOW"}]}),
+});
 
 function RouteComponent() {
   const {data: user} = authClient.useSession();

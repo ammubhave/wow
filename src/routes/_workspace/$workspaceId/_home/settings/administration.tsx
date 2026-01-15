@@ -17,6 +17,7 @@ import {useWorkspace} from "@/components/use-workspace";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/administration")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Administration | Workspace Settings | WOW"}]}),
 });
 
 function RouteComponent() {

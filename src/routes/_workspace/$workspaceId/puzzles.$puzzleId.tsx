@@ -26,6 +26,7 @@ import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/components/use-workspace";
+import {client} from "@/lib/orpc";
 import {
   getBgColorClassNamesForPuzzleStatusNoHover,
   getPuzzleStatusGroups,
@@ -35,6 +36,13 @@ import {usePuzzle} from "@/lib/usePuzzle";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
   component: RouteComponent,
+  head: async ({params}) => {
+    const puzzle = await client.puzzles.get({
+      workspaceId: params.workspaceId,
+      puzzleId: params.puzzleId,
+    });
+    return {meta: [{title: `${puzzle.name} | WOW`}]};
+  },
 });
 
 function RouteComponent() {

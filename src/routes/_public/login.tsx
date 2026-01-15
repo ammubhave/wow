@@ -13,6 +13,7 @@ import {getSession} from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_public/login")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Login | WOW"}]}),
   validateSearch: z.object({redirectTo: z.string().optional().default("/workspaces")}),
   loader: async () => {
     const session = await getSession();

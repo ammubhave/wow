@@ -9,6 +9,7 @@ import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_public/reset-password")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Reset Password | WOW"}]}),
   validateSearch: z.object({token: z.string()}),
 });
 

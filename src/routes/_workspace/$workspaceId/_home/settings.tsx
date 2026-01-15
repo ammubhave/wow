@@ -3,6 +3,7 @@ import {cn} from "tailwind-variants";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Workspace Settings | WOW"}]}),
 });
 
 function RouteComponent() {

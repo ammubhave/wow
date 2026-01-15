@@ -14,6 +14,7 @@ import {getSession} from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_public/forgot-password")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Forgot Password | WOW"}]}),
   loader: async () => {
     const session = await getSession();
     if (session) throw redirect({to: "/workspaces"});

@@ -4,6 +4,7 @@ import {ActivityLog} from "@/components/activity-log";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/activity-log")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Activity Log | WOW"}]}),
 });
 
 function RouteComponent() {

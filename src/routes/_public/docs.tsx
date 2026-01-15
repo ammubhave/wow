@@ -3,7 +3,10 @@ import {cn} from "tailwind-variants";
 
 import {Card} from "@/components/ui/card";
 
-export const Route = createFileRoute("/_public/docs")({component: RouteComponent});
+export const Route = createFileRoute("/_public/docs")({
+  component: RouteComponent,
+  head: () => ({meta: [{title: "Documentation | WOW"}]}),
+});
 
 interface NavGroup {
   title: string;

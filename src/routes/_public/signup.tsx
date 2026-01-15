@@ -15,6 +15,7 @@ import {getSession} from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_public/signup")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Sign Up | WOW"}]}),
   loader: async () => {
     const session = await getSession();
     if (session) throw redirect({to: "/workspaces"});

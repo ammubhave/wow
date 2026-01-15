@@ -19,6 +19,7 @@ import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Create Workspace | WOW"}]}),
 });
 
 function RouteComponent() {

@@ -7,7 +7,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
 
-import {procedure} from "./base";
+import {preauthorize, procedure} from "./base";
 
 export const puzzlesRouter = {
   create: procedure
@@ -346,4 +346,21 @@ export const puzzlesRouter = {
       })()
     );
   }),
+  get: procedure
+    .input(z.object({workspaceId: z.string(), puzzleId: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const [puzzle] = await db
+        .select({name: schema.puzzle.name})
+        .from(schema.puzzle)
+        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+        .where(
+          and(
+            eq(schema.puzzle.id, input.puzzleId),
+            eq(schema.round.workspaceId, context.workspace.id)
+          )
+        );
+      if (!puzzle) throw new ORPCError("NOT_FOUND");
+      return puzzle;
+    }),
 };

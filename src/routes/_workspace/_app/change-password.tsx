@@ -10,6 +10,7 @@ import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_workspace/_app/change-password")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Change Password | WOW"}]}),
 });
 
 function RouteComponent() {

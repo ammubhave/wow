@@ -13,6 +13,7 @@ import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspaceId")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Join Workspace | WOW"}]}),
 });
 
 function RouteComponent() {

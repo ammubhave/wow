@@ -6,6 +6,7 @@ import {Card, CardDescription, CardHeader, CardTitle} from "@/components/ui/card
 
 export const Route = createFileRoute("/_public/forgot-password-check-email")({
   component: RouteComponent,
+  head: () => ({meta: [{title: "Forgot Password | WOW"}]}),
 });
 
 function RouteComponent() {
