@@ -197,6 +197,16 @@ export class DiscordClient extends DurableObject {
       .filter(channel => channel.name.startsWith("🧩 "))
       .map(channel => ({...channel, name: channel.name.replace("🧩 ", "")}));
   }
+
+  async deleteAllChannels(discordGuildId: string) {
+    const channels = await this.listChannels(discordGuildId);
+    if (channels === undefined) {
+      return;
+    }
+    for (const channel of channels) {
+      await this.deleteChannel(channel.id);
+    }
+  }
 }
 
 type DeleteChannelAfterDelayWorkflowParams = {workspaceId: string; channelId: string};

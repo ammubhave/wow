@@ -426,5 +426,19 @@ export const workspacesRouter = {
         ).json();
         return data.filter(c => c.type === 0);
       }),
+    disconnect: procedure
+      .input(z.object({workspaceId: z.string()}))
+      .use(preauthorize)
+      .handler(async ({context}) => {
+        if (!context.workspace.discordGuildId) throw new ORPCError("BAD_REQUEST");
+        await env.DISCORD_CLIENT.getByName(context.workspace.discordGuildId).deleteAllChannels(
+          context.workspace.discordGuildId
+        );
+        await db
+          .update(schema.organization)
+          .set({discordGuildId: null})
+          .where(eq(schema.organization.id, context.workspace.id));
+        await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
+      }),
   },
 };

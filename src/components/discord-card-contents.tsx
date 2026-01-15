@@ -6,6 +6,8 @@ import {CardContent, CardDescription, CardHeader, CardTitle} from "@/components/
 import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
 
+import {DisconnectDiscordDialog} from "./disconnect-discord-dialog";
+
 function DiscordForm({
   children,
   redirectUrl,
@@ -100,9 +102,12 @@ export function DiscordCardContents({
                     </span>
                   </span>
                   <DiscordForm redirectUrl={redirectUrl} workspaceId={workspaceId}>
-                    <Button type="submit" variant="secondary" className="gap-2">
-                      Reconnect with Discord
+                    <Button type="submit" variant="secondary">
+                      Reconnect
                     </Button>
+                    <DisconnectDiscordDialog workspaceId={workspaceId}>
+                      <Button variant="destructive">Disconnect</Button>
+                    </DisconnectDiscordDialog>
                   </DiscordForm>
                 </div>
               </div>
