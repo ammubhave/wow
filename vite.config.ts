@@ -25,6 +25,8 @@ const config = defineConfig({
       },
     },
   },
+  optimizeDeps: {exclude: ["@tanstack/start-server-core"]},
+  ssr: {optimizeDeps: {exclude: ["@tanstack/start-server-core"]}},
 });
 
 export default config;
