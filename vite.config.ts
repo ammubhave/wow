@@ -15,16 +15,7 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
-  build: {
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        entryFileNames: "assets/[hash].js",
-        chunkFileNames: "assets/[hash].js",
-        assetFileNames: "assets/[hash].[ext]",
-      },
-    },
-  },
+  build: {sourcemap: true},
   optimizeDeps: {exclude: ["@tanstack/start-server-core"]},
   ssr: {optimizeDeps: {exclude: ["@tanstack/start-server-core"]}},
 });
