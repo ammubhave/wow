@@ -1,6 +1,5 @@
 import {Loader2Icon} from "lucide-react";
-
-import {cn} from "@/lib/utils";
+import {cn} from "tailwind-variants";
 
 function Spinner({className, ...props}: React.ComponentProps<"svg">) {
   return (

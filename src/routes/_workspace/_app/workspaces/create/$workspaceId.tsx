@@ -1,13 +1,13 @@
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowLeftIcon, ArrowRightIcon} from "lucide-react";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 
 import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
 import {useWorkspace} from "@/components/use-workspace";
-import {cn} from "@/lib/utils";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceId")({
   component: RouteComponent,

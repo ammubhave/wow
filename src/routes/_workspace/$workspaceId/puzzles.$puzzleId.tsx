@@ -2,6 +2,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {BrushIcon, EditIcon, PuzzleIcon, TableIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 
 import {Chat} from "@/components/chat";
 import {CommentBox} from "@/components/comment-box";
@@ -31,7 +32,6 @@ import {
   getPuzzleStatusOptions,
 } from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
-import {cn} from "@/lib/utils";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
   component: RouteComponent,

@@ -2,10 +2,10 @@ import {Popover as PopoverPrimitive} from "@base-ui/react/popover";
 import {AngryIcon, HeartIcon, LaughIcon, SendIcon, SmilePlusIcon, ThumbsUpIcon} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import useWebSocket from "react-use-websocket";
+import {cn} from "tailwind-variants";
 
 import type {ChatMessage, ChatRoomReceivedMessage, ChatRoomSentMessage} from "@/server/do/chat";
 
-import {cn} from "@/lib/utils";
 import {useAppSelector} from "@/store";
 
 import {Button} from "./ui/button";

@@ -1,8 +1,8 @@
 import {MegaphoneIcon} from "lucide-react";
 import * as React from "react";
+import {cn} from "tailwind-variants";
 
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
-import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 
 import {CommentBox} from "./comment-box";

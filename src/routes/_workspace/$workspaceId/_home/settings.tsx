@@ -1,6 +1,5 @@
 import {createFileRoute, Link, Outlet, useChildMatches} from "@tanstack/react-router";
-
-import {cn} from "@/lib/utils";
+import {cn} from "tailwind-variants";
 
 export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings")({
   component: RouteComponent,

@@ -1,5 +1,5 @@
 import {createFileRoute, Link, Outlet} from "@tanstack/react-router";
-import clsx from "clsx";
+import {cn} from "tailwind-variants";
 
 import {Card} from "@/components/ui/card";
 
@@ -25,7 +25,7 @@ function NavLink({
     <Link
       to={href}
       aria-current={active ? "page" : undefined}
-      className={clsx(
+      className={cn(
         "flex justify-between gap-2 py-1 pr-3 text-sm transition",
         isAnchorLink ? "pl-7" : "pl-4",
         active
@@ -39,7 +39,7 @@ function NavLink({
 
 function NavigationGroup({group, className}: {group: NavGroup; className?: string}) {
   return (
-    <li className={clsx("relative mt-6", className)}>
+    <li className={cn("relative mt-6", className)}>
       <h2 className="text-xs font-semibold text-zinc-900 dark:text-white">{group.title}</h2>
       <div className="relative mt-3 pl-2">
         <div className="absolute inset-y-0 left-2 w-px bg-zinc-900/10 dark:bg-white/5" />

@@ -3,6 +3,7 @@ import {useState} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
 import {Button} from "@/components/ui/button";
@@ -12,7 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {cn} from "@/lib/utils";
 
 import {useAppForm} from "./form";
 import {InputGroup, InputGroupAddon, InputGroupButton} from "./ui/input-group";

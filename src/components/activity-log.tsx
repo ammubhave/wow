@@ -13,11 +13,11 @@ import {
   SignalMediumIcon,
   SignalZeroIcon,
 } from "lucide-react";
+import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
 import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
-import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 
 import {UserHoverCard} from "./user-hover-card";

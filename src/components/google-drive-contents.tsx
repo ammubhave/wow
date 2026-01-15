@@ -2,12 +2,12 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {CheckIcon} from "lucide-react";
 import useDrivePicker from "react-google-drive-picker";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 
 import {Button} from "@/components/ui/button";
 import {CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
-import {cn} from "@/lib/utils";
 
 export function GoogleDriveCardContents({
   workspaceId,

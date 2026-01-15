@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
@@ -66,7 +67,6 @@ import {
   getPuzzleStatusGroups,
   getPuzzleStatusOptions,
 } from "@/lib/puzzleStatuses";
-import {cn} from "@/lib/utils";
 import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
