@@ -1,4 +1,5 @@
 import {ORPCError, os} from "@orpc/server";
+import {APIError} from "better-auth/api";
 
 import {auth} from "@/lib/auth";
 
@@ -35,12 +36,18 @@ export const procedure = base.use(async ({context: ctx, next}) => {
 
 export const preauthorize = base.middleware(
   async ({context, next}, input: {workspaceId: string}) => {
-    const workspace = await auth.api.getFullOrganization({
-      headers: context.headers,
-      query: {organizationSlug: input.workspaceId},
-      returnStatus: true,
-    });
-    if (!workspace.response) throw new ORPCError("NOT_FOUND");
-    return next({context: {workspace: workspace.response}});
+    try {
+      const workspace = await auth.api.getFullOrganization({
+        headers: context.headers,
+        query: {organizationSlug: input.workspaceId},
+      });
+      if (!workspace) throw new ORPCError("NOT_FOUND");
+      return next({context: {workspace}});
+    } catch (error) {
+      if (error instanceof APIError) {
+        if (error.status === "FORBIDDEN") throw new ORPCError("FORBIDDEN");
+      }
+      throw error;
+    }
   }
 );

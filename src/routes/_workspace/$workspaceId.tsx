@@ -1,5 +1,6 @@
-import {createFileRoute, Outlet, useNavigate} from "@tanstack/react-router";
-import {useEffect} from "react";
+import {ORPCError} from "@orpc/client";
+import {createFileRoute, Outlet} from "@tanstack/react-router";
+import {redirect} from "@tanstack/react-router";
 
 import {NotificationsWebSocket} from "@/components/notifications-websocket";
 import {PresencesWebSocket} from "@/components/presences-websocket";
@@ -8,17 +9,26 @@ import {WorkspaceHeader} from "@/components/workspace-header";
 import {authClient} from "@/lib/auth-client";
 import {client} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_workspace/$workspaceId")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/$workspaceId")({
+  beforeLoad: async ({params}) => {
+    try {
+      await client.workspaces.get({workspaceId: params.workspaceId});
+    } catch (e) {
+      if (e instanceof ORPCError && e.code === "FORBIDDEN") {
+        throw redirect({
+          to: "/workspaces/join/$workspaceId",
+          params: {workspaceId: params.workspaceId},
+        });
+      }
+    }
+  },
+  component: RouteComponent,
+});
 
 function RouteComponent() {
   const {workspaceId} = Route.useParams();
   const {data: session} = authClient.useSession();
-  const navigate = useNavigate();
-  useEffect(() => {
-    void client.workspaces.get({workspaceId}).catch(() => {
-      void navigate({to: "/workspaces/join/$workspaceId", params: {workspaceId}});
-    });
-  });
+
   if (!session) return null;
   return (
     <NotificationsWebSocket workspaceId={workspaceId}>
