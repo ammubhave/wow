@@ -46,7 +46,7 @@ export function DiscordCardContents({
   workspaceId: string;
   redirectUrl: string;
 }) {
-  const discordInfo = useQuery(orpc.workspaces.getDiscordInfo.queryOptions({input: workspaceId}));
+  const discordInfo = useQuery(orpc.workspaces.getDiscordInfo.queryOptions({input: {workspaceId}}));
   return (
     <>
       <CardHeader>

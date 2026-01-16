@@ -172,76 +172,78 @@ export const workspacesRouter = {
       });
     }),
 
-  getGoogleTokenState: procedure.input(z.string()).handler(async ({context, input}) => {
-    const workspace = await db.query.organization.findFirst({
-      where: (t, {eq}) => eq(t.slug, input),
-    });
-    if (!workspace) throw new ORPCError("NOT_FOUND");
-    const googleAccessToken = await context.google.getAccessToken(workspace.id);
-    if (!googleAccessToken) {
-      return {state: 0} as const;
-    }
-    let resp = await fetch("https://www.googleapis.com/drive/v3/files", {
-      method: "GET",
-      headers: {Authorization: `Bearer ${googleAccessToken}`},
-    });
-    if (resp.status !== 200) {
-      return {state: 0} as const;
-    }
+  getGoogleTokenState: procedure
+    .input(z.object({workspaceId: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}) => {
+      const googleAccessToken = await context.google.getAccessToken(context.workspace.id);
+      if (!googleAccessToken) {
+        return {state: 0} as const;
+      }
+      let resp = await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "GET",
+        headers: {Authorization: `Bearer ${googleAccessToken}`},
+      });
+      if (resp.status !== 200) {
+        return {state: 0} as const;
+      }
 
-    if (!workspace.googleFolderId) {
-      return {state: 1} as const;
-    }
-    resp = await fetch(`https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}`, {
-      method: "GET",
-      headers: {Authorization: `Bearer ${googleAccessToken}`},
-    });
-    if (resp.status !== 200) {
-      return {state: 1} as const;
-    }
+      if (!context.workspace.googleFolderId) {
+        return {state: 1} as const;
+      }
+      resp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${context.workspace.googleFolderId}`,
+        {method: "GET", headers: {Authorization: `Bearer ${googleAccessToken}`}}
+      );
+      if (resp.status !== 200) {
+        return {state: 1} as const;
+      }
 
-    const folder = z.object({id: z.string(), name: z.string()}).parse(await resp.json());
-    const folderName = folder.name;
-    const folderLink = `https://drive.google.com/drive/folders/${folder.id}`;
-    if (!workspace.googleTemplateFileId) {
-      return {state: 2, folderName, folderLink} as const;
-    }
+      const folder = z.object({id: z.string(), name: z.string()}).parse(await resp.json());
+      const folderName = folder.name;
+      const folderLink = `https://drive.google.com/drive/folders/${folder.id}`;
+      if (!context.workspace.googleTemplateFileId) {
+        return {state: 2, folderName, folderLink} as const;
+      }
 
-    resp = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${workspace.googleTemplateFileId}`,
-      {method: "GET", headers: {Authorization: `Bearer ${googleAccessToken}`}}
-    );
-    if (resp.status !== 200) {
-      return {state: 2, folderName, folderLink} as const;
-    }
-    const file = z.object({id: z.string(), name: z.string()}).parse(await resp.json());
-    const fileName = file.name;
-    const fileLink = `https://docs.google.com/spreadsheets/d/${file.id}/edit?gid=0#gid=0`;
-    return {state: 3, folderName, folderLink, fileName, fileLink} as const;
-  }),
+      resp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${context.workspace.googleTemplateFileId}`,
+        {method: "GET", headers: {Authorization: `Bearer ${googleAccessToken}`}}
+      );
+      if (resp.status !== 200) {
+        return {state: 2, folderName, folderLink} as const;
+      }
+      const file = z.object({id: z.string(), name: z.string()}).parse(await resp.json());
+      const fileName = file.name;
+      const fileLink = `https://docs.google.com/spreadsheets/d/${file.id}/edit?gid=0#gid=0`;
+      return {state: 3, folderName, folderLink, fileName, fileLink} as const;
+    }),
 
   setGoogleFolderId: procedure
-    .input(z.object({id: z.string(), folderId: z.string()}))
+    .input(z.object({workspaceId: z.string(), folderId: z.string()}))
+    .use(preauthorize)
     .handler(async ({context, input}) => {
       await db
         .update(schema.organization)
         .set({googleFolderId: input.folderId})
-        .where(eq(schema.organization.slug, input.id));
-      await context.notification.broadcast(input.id, {type: "invalidate"});
+        .where(eq(schema.organization.id, context.workspace.id));
+      await context.notification.broadcast(input.workspaceId, {type: "invalidate"});
     }),
 
   setGoogleTemplateFileId: procedure
-    .input(z.object({id: z.string(), fileId: z.string()}))
+    .input(z.object({workspaceId: z.string(), fileId: z.string()}))
+    .use(preauthorize)
     .handler(async ({context, input}) => {
       await db
         .update(schema.organization)
         .set({googleTemplateFileId: input.fileId})
-        .where(eq(schema.organization.slug, input.id));
-      await context.notification.broadcast(input.id, {type: "invalidate"});
+        .where(eq(schema.organization.id, context.workspace.id));
+      await context.notification.broadcast(input.workspaceId, {type: "invalidate"});
     }),
 
   shareGoogleDriveFolder: procedure
-    .input(z.object({workspaceId: z.string(), email: z.string().email()}))
+    .input(z.object({workspaceId: z.string(), email: z.email()}))
+    .use(preauthorize)
     .handler(async ({context, input}) => {
       const workspace = await db.query.organization.findFirst({
         where: (t, {eq}) => eq(t.slug, input.workspaceId),
@@ -278,37 +280,36 @@ export const workspacesRouter = {
       );
     }),
 
-  getDiscordInfo: procedure.input(z.string()).handler(async ({input}) => {
-    const workspace = await db.query.organization.findFirst({
-      where: (t, {eq}) => eq(t.slug, input),
-    });
-    if (!workspace) throw new ORPCError("NOT_FOUND");
-    if (!workspace.discordGuildId) {
-      return null;
-    }
-    const guild = await fetch(`https://discord.com/api/v10/guilds/${workspace.discordGuildId}`, {
-      method: "GET",
-      headers: {authorization: `Bot ${env.DISCORD_BOT_TOKEN}`},
-    });
-    if (guild.status !== 200) {
-      const responseText = await guild.text();
-      let error: string;
-      try {
-        const responseJson = JSON.parse(responseText);
-        const responseJsonParsed = z
-          .object({code: z.number(), message: z.string()})
-          .parse(responseJson);
-        error = `${responseJsonParsed.code}: ${responseJsonParsed.message}`;
-      } catch {
-        error = responseText;
+  getDiscordInfo: procedure
+    .input(z.object({workspaceId: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context: {workspace}}) => {
+      if (!workspace.discordGuildId) {
+        return null;
       }
-      return {ok: false, error} as const;
-    }
-    return {
-      ok: true,
-      data: z.object({id: z.string(), name: z.string()}).parse(await guild.json()),
-    } as const;
-  }),
+      const guild = await fetch(`https://discord.com/api/v10/guilds/${workspace.discordGuildId}`, {
+        method: "GET",
+        headers: {authorization: `Bot ${env.DISCORD_BOT_TOKEN}`},
+      });
+      if (guild.status !== 200) {
+        const responseText = await guild.text();
+        let error: string;
+        try {
+          const responseJson = JSON.parse(responseText);
+          const responseJsonParsed = z
+            .object({code: z.number(), message: z.string()})
+            .parse(responseJson);
+          error = `${responseJsonParsed.code}: ${responseJsonParsed.message}`;
+        } catch {
+          error = responseText;
+        }
+        return {ok: false, error} as const;
+      }
+      return {
+        ok: true,
+        data: z.object({id: z.string(), name: z.string()}).parse(await guild.json()),
+      } as const;
+    }),
 
   activityLog: {
     get: procedure

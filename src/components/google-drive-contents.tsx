@@ -42,7 +42,7 @@ export function GoogleDriveCardContents({
       setSelectFolderEnabled: true,
       callbackFunction: data => {
         if (data.action === "picked") {
-          toast.promise(folderMutation.mutateAsync({id: workspaceId, folderId: data.docs[0]!.id}), {
+          toast.promise(folderMutation.mutateAsync({workspaceId, folderId: data.docs[0]!.id}), {
             loading: "Selecting folder...",
             success: "Success! The folder has been selected.",
             error: "Oops! Something went wrong.",
@@ -60,7 +60,7 @@ export function GoogleDriveCardContents({
       setIncludeFolders: true,
       callbackFunction: data => {
         if (data.action === "picked") {
-          toast.promise(fileMutation.mutateAsync({id: workspaceId, fileId: data.docs[0]!.id}), {
+          toast.promise(fileMutation.mutateAsync({workspaceId, fileId: data.docs[0]!.id}), {
             loading: "Selecting template file...",
             success: "Success! The template file has been selected.",
             error: "Oops! Something went wrong.",
@@ -70,7 +70,7 @@ export function GoogleDriveCardContents({
     });
   };
 
-  const state = useQuery(orpc.workspaces.getGoogleTokenState.queryOptions({input: workspaceId}));
+  const state = useQuery(orpc.workspaces.getGoogleTokenState.queryOptions({input: {workspaceId}}));
 
   return (
     <>
