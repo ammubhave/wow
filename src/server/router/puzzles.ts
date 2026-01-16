@@ -204,7 +204,7 @@ export const puzzlesRouter = {
         .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
         .then(rows => rows[0]);
       invariant(puzzle);
-      if (input.answer !== undefined && input.answer !== puzzle.answer) {
+      if (input.answer !== undefined && input.answer !== "" && input.answer !== puzzle.answer) {
         await context.activityLog.createPuzzle({
           subType: "updateAnswer",
           puzzleId: puzzle.id,
