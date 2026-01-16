@@ -925,7 +925,7 @@ function BlackboardMetaPuzzle({
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                     className="size-3 rounded-full"
                   />
-                  {user.displayUsername}
+                  {user.name ?? user.displayUsername}
                 </span>
               </UserHoverCard>
             ))}
@@ -1261,7 +1261,7 @@ function BlackboardPuzzle({
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                     className="size-3 rounded-full"
                   />
-                  {user.displayUsername}
+                  {user.name ?? user.displayUsername}
                 </span>
               </UserHoverCard>
             ))}
