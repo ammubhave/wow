@@ -210,7 +210,13 @@ export function Chat({puzzleId}: {puzzleId: string}) {
               placeholder="Type your message..."
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSend()}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSend();
+                }
+              }}
             />
             <InputGroupAddon align="inline-end" className="self-end">
               <InputGroupButton
