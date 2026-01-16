@@ -23,7 +23,7 @@ function RouteComponent() {
     orpc.workspaces.getPublic.queryOptions({input: params.workspaceId})
   ).data;
   const form = useAppForm({
-    defaultValues: {workspaceId: "", password: ""},
+    defaultValues: {workspaceId: params.workspaceId, password: ""},
     onSubmit: ({value}) => {
       toast.promise(joinWorkspaceMutation.mutateAsync(value), {
         loading: "Joining workspace...",
