@@ -212,9 +212,9 @@ export const puzzlesRouter = {
           workspaceId: puzzle.round.workspaceId,
           field: input.answer ?? "",
         });
-        if (puzzle.status !== "solved" && puzzle.status !== "backsolved") {
-          input.status = "solved";
-        }
+        // if (puzzle.status !== "solved" && puzzle.status !== "backsolved") {
+        //   input.status = "solved";
+        // }
       }
       if (input.status !== undefined && input.status !== puzzle.status) {
         await context.activityLog.createPuzzle({
