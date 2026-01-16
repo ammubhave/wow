@@ -77,7 +77,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
       </div>
       <div className="px-4 flex-1 flex flex-col pt-2">
         <div className="flex-1 relative">
-          <div className="absolute inset-0 overflow-y-auto text-xs flex flex-col justify-end gap-1">
+          <div className="absolute inset-0 overflow-y-auto text-xs justify-end gap-1">
             {messages.map((message, idx) => (
               <div
                 key={idx}
