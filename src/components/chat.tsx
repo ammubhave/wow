@@ -100,7 +100,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                     </span>
                   </div>
                 )}
-                <p className="bg-muted mt-1 inline-block rounded-lg p-2 relative">
+                <p className="bg-muted mr-2 mt-1 inline-block rounded-lg p-2 relative">
                   {message.text}
                   <div className="absolute border right-0 bottom-0 bg-card invisible opacity-0 group-hover/message:visible group-hover/message:opacity-100 transition-all duration-300">
                     <Popover>
