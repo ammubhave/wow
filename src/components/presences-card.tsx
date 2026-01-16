@@ -1,6 +1,7 @@
 import {useAppSelector} from "@/store";
 
 import {HoverCard, HoverCardContent, HoverCardTrigger} from "./ui/hover-card";
+import {gravatarUrl, UserHoverCard} from "./user-hover-card";
 
 export function PresencesCard({id}: {id: string}) {
   const presences = useAppSelector(state => state.presences.value)[id] ?? [];
@@ -22,7 +23,15 @@ export function PresencesCard({id}: {id: string}) {
       />
       <HoverCardContent className="flex flex-col gap-1 text-sm font-normal w-fit">
         {presences.map(user => (
-          <div key={user.id}>{user.displayUsername ?? user.name}</div>
+          <UserHoverCard key={user.id} user={user} side="left">
+            <div key={user.id} className="inline-flex items-center gap-x-1 text-xs cursor-default">
+              <img
+                src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
+                className="size-4 rounded-full"
+              />
+              <span>{user.displayUsername ?? user.name}</span>
+            </div>
+          </UserHoverCard>
         ))}
       </HoverCardContent>
     </HoverCard>

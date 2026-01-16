@@ -11,9 +11,11 @@ export function gravatarUrl(email: string, opts?: {size?: number; d?: string}) {
 }
 
 export function UserHoverCard({
+  side,
   children,
   user,
 }: {
+  side?: "top" | "right" | "bottom" | "left";
   children: React.ReactElement;
   user: {name: string; email: string; image: string | null; displayUsername: string | null};
 }) {
@@ -22,7 +24,7 @@ export function UserHoverCard({
   return (
     <HoverCard>
       <HoverCardTrigger delay={200} render={children} />
-      <HoverCardContent className="flex items-center justify-center p-2 w-fit">
+      <HoverCardContent className="flex items-center justify-center p-2 w-fit" side={side}>
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={src} />
