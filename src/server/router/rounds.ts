@@ -29,16 +29,12 @@ export const roundsRouter = {
 
   create: procedure
     .input(z.object({workspaceId: z.string(), name: z.string()}))
+    .use(preauthorize)
     .handler(async ({context, input}) => {
-      const workspace = await db.query.organization.findFirst({
-        where: (t, {eq}) => eq(t.slug, input.workspaceId),
-      });
-      if (!workspace) throw new ORPCError("NOT_FOUND");
-
       // Create round in database
       const round = await db
         .insert(schema.round)
-        .values({workspaceId: workspace.id, name: input.name})
+        .values({workspaceId: context.workspace.id, name: input.name})
         .returning()
         .get();
 
@@ -48,12 +44,12 @@ export const roundsRouter = {
           await Promise.allSettled([
             context.activityLog.createRound({
               subType: "create",
-              workspaceId: workspace.id,
+              workspaceId: context.workspace.id,
               roundId: round.id,
               roundName: round.name,
             }),
-            context.notification.broadcast(workspace.id, {type: "invalidate"}),
-            context.discord.sync(workspace.id),
+            context.notification.broadcast(context.workspace.id, {type: "invalidate"}),
+            context.discord.sync(context.workspace.id),
           ]);
         })()
       );

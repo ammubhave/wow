@@ -227,7 +227,7 @@ export const workspacesRouter = {
         .update(schema.organization)
         .set({googleFolderId: input.folderId})
         .where(eq(schema.organization.id, context.workspace.id));
-      await context.notification.broadcast(input.workspaceId, {type: "invalidate"});
+      await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
     }),
 
   setGoogleTemplateFileId: procedure
@@ -238,7 +238,7 @@ export const workspacesRouter = {
         .update(schema.organization)
         .set({googleTemplateFileId: input.fileId})
         .where(eq(schema.organization.id, context.workspace.id));
-      await context.notification.broadcast(input.workspaceId, {type: "invalidate"});
+      await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
     }),
 
   shareGoogleDriveFolder: procedure
