@@ -38,6 +38,7 @@ export default {
 
     const email = await PostalMime.parse(message.raw);
     const formData = new FormData();
+    console.log(email);
     formData.append("content", `**${email.subject}**\n\n${email.text}`);
     const response = await fetchDiscord(`/channels/${channel.id}/messages`, {
       method: "POST",
