@@ -11,12 +11,14 @@ export default {
   },
 
   async email(message) {
+    console.log("message", message);
     const workspaceSlug = message.to.split("@")[0]!;
     const workspace = await db
       .select()
       .from(schema.organization)
       .where(eq(schema.organization.slug, workspaceSlug))
       .get();
+    console.log("workspace", workspace);
     if (!workspace) {
       message.setReject("Workspace not found");
       return;
@@ -29,13 +31,17 @@ export default {
     const data: {id: string; type: number; name?: string}[] = await (
       await fetchDiscord(`/guilds/${workspace.discordGuildId}/channels`)
     ).json();
+    console.log("channels", data);
     const [channel] = data.filter(c => c.type === 0 && c.name === "email-updates");
     if (!channel) {
       message.setReject("Channel '#email-updates' not found");
       return;
     }
+    console.log("channel", channel);
 
     const text = await new Response(message.raw).text();
+
+    console.log("text", text);
 
     const formData = new FormData();
     formData.append("content", `**${message.headers.get("Subject")}**\n\n${text}`);
