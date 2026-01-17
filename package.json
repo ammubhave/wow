@@ -40,6 +40,7 @@
     "hono": "^4.11.4",
     "js-sha256": "^0.11.1",
     "lucide-react": "^0.562.0",
+    "postal-mime": "^2.7.3",
     "posthog-js": "^1.324.1",
     "postprocessing": "^6.38.2",
     "react": "^19.2.3",
