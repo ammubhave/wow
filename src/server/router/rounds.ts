@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/client";
 import {waitUntil} from "cloudflare:workers";
-import {and, eq, isNull} from "drizzle-orm";
+import {and, asc, eq, isNull} from "drizzle-orm";
 import {z} from "zod";
 
 import {db} from "@/lib/db";
@@ -17,6 +17,7 @@ export const roundsRouter = {
       const rounds = await db.query.round.findMany({
         where: (t, {eq}) => eq(t.workspaceId, context.workspace.id),
         with: {puzzles: {with: {childPuzzles: true}}},
+        orderBy: t => [asc(t.name)],
       });
       return rounds.map(round => ({
         ...round,
