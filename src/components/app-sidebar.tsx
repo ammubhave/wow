@@ -47,15 +47,22 @@ export function AppSidebar({
                 </a>
                 <div className="flex flex-wrap">
                   {round.puzzles.map(puzzle => (
-                    <a
-                      key={puzzle.id}
-                      className={cn(
-                        "size-4 text-[8px] flex items-center justify-center text-primary border",
-                        getBgColorClassNamesForPuzzleStatus(puzzle.status)
-                      )}
-                      href={"#" + puzzle.id}>
-                      {(puzzle as any).puzzleIndex}
-                    </a>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <a
+                            key={puzzle.id}
+                            className={cn(
+                              "size-4 text-[8px] flex items-center justify-center text-primary border",
+                              getBgColorClassNamesForPuzzleStatus(puzzle.status)
+                            )}
+                            href={"#" + puzzle.id}>
+                            {(puzzle as any).puzzleIndex}
+                          </a>
+                        }
+                      />
+                      <TooltipContent>{puzzle.name}</TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
               </div>
