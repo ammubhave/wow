@@ -367,7 +367,7 @@ function RouteComponent() {
                       <TableHead className="p-0 w-8" colSpan={1} />
                       <TableHead className="p-0 w-8" colSpan={1} />
                       <TableHead>Name</TableHead>
-                      <TableHead>Solution</TableHead>
+                      <TableHead className="min-w-[150px]">Solution</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Importance</TableHead>
                       <TableHead>Tags</TableHead>
