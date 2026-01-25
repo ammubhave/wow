@@ -39,6 +39,7 @@ This project uses:
 - [Tailwind CSS](https://tailwindcss.com/) for styling.
 - [Base UI](https://baseui.design/) for the headless component library.
 - [Shadcn UI](https://shadcn.com/ui) for pre-built components.
+- [React Bits](https://reactbits.dev/) and [Lucide](https://lucide.dev/) for small components.
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) as the hosting platform.
 
 ## Secrets Management
