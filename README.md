@@ -27,7 +27,7 @@ Next, run the following commands to install dependencies, set up the database, a
 nvm use
 corepack enable pnpm
 pnpm install
-pnpm drizzle-kit push
+pnpm db:push
 pnpm run dev
 ```
 
