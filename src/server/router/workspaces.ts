@@ -12,49 +12,6 @@ import {getWorkspaceRoom} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
 
 export const workspacesRouter = {
-  list: procedure.handler(async ({context}) => {
-    const workspaces = await auth.api.listOrganizations({headers: context.headers});
-    return workspaces.map(({googleAccessToken, googleFolderId, ...workspace}) => ({
-      ...workspace,
-      isOnboarding: googleAccessToken === null || googleFolderId === null,
-    }));
-  }),
-
-  get: procedure
-    .input(z.object({workspaceSlug: z.string()}))
-    .use(preauthorize)
-    .handler(async ({context}) => {
-      const workspace = await db
-        .select()
-        .from(schema.organization)
-        .where(eq(schema.organization.id, context.workspace.id))
-        .get();
-      if (!workspace) throw new ORPCError("NOT_FOUND");
-      let googleAccessToken = null;
-      try {
-        googleAccessToken = await context.google.getAccessToken(context.workspace.id);
-      } catch (e) {
-        console.error(e);
-      }
-
-      const rounds = await db.query.round.findMany({
-        where: (t, {eq}) => eq(t.workspaceId, workspace.id),
-        with: {puzzles: {with: {childPuzzles: true}}},
-      });
-
-      return {
-        ...workspace,
-        rounds: rounds.map(round => ({
-          ...round,
-          unassignedPuzzles: round.puzzles.filter(
-            puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
-          ),
-          metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
-        })),
-        isOnboarding: googleAccessToken === null || workspace.googleFolderId === null,
-      };
-    }),
-
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
     const workspace = await db
       .select({teamName: schema.organization.teamName, eventName: schema.organization.eventName})

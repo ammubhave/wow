@@ -16,7 +16,6 @@ export function UsernameAvailabilityIndicator({
     queryKey: ["username-availability", debouncedUsername],
     enabled: debouncedUsername.length > 0,
   });
-  console.log(usernameAvailable);
   return (
     <>
       {children(

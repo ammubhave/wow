@@ -4,7 +4,7 @@ import {cn} from "tailwind-variants";
 
 import {useWorkspace} from "@/hooks/use-workspace";
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
-import {RouterOutputs} from "@/server/router";
+import {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {CommentBox} from "./comment-box";
 import {MakeAccouncementDialog} from "./make-announcement-dialog";
@@ -15,10 +15,7 @@ export function AppSidebar({
   workspaceSlug,
   rounds,
   ...props
-}: {
-  workspaceSlug: string;
-  rounds: RouterOutputs["workspaces"]["get"]["rounds"];
-} & React.ComponentProps<"div">) {
+}: {workspaceSlug: string; rounds: WorkspaceRoomState["rounds"]} & React.ComponentProps<"div">) {
   const workspace = useWorkspace();
   return (
     <div

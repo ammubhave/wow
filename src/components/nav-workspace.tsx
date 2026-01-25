@@ -1,4 +1,4 @@
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
 import {GalleryVerticalEndIcon, Share2Icon, PlusIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -18,7 +18,7 @@ import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
 export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
-  const workspaces = useQuery(orpc.workspaces.list.queryOptions());
+  const workspaces = authClient.useListOrganizations();
   const workspace = useWorkspace();
   const shareGoogleDriveFolderMutation = useMutation(
     orpc.workspaces.shareGoogleDriveFolder.mutationOptions()

@@ -39,8 +39,7 @@ function RouteComponent() {
           },
           {
             throw: true,
-            onSuccess: ({data}) => {
-              console.log("Created", data);
+            onSuccess: () => {
               void queryClient.invalidateQueries();
               form.reset();
               void router.navigate({

@@ -67,6 +67,7 @@ import {
   getPuzzleStatusGroups,
   getPuzzleStatusOptions,
 } from "@/lib/puzzleStatuses";
+import {WorkspaceRoomState} from "@/server/do/workspace";
 import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
@@ -422,7 +423,7 @@ function BlackboardRound({
   round,
 }: {
   workspaceSlug: string;
-  round: RouterOutputs["workspaces"]["get"]["rounds"][0];
+  round: WorkspaceRoomState["rounds"][0];
 }) {
   const roundsUpdateMutation = useMutation(orpc.rounds.update.mutationOptions());
   const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] = useState(false);
