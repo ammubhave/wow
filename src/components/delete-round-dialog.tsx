@@ -16,11 +16,13 @@ import {
 } from "./ui/alert-dialog";
 
 export function DeleteRoundDialog({
+  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
+  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
@@ -43,11 +45,14 @@ export function DeleteRoundDialog({
             variant="destructive"
             onClick={event => {
               toast.promise(
-                mutation.mutateAsync(roundId, {
-                  onSuccess: () => {
-                    setOpen(false);
-                  },
-                }),
+                mutation.mutateAsync(
+                  {workspaceSlug, id: roundId},
+                  {
+                    onSuccess: () => {
+                      setOpen(false);
+                    },
+                  }
+                ),
                 {
                   loading: "Deleting round...",
                   success: "Success! Round deleted.",

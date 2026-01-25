@@ -16,11 +16,13 @@ import {useAppForm} from "./form";
 import {FieldGroup} from "./ui/field";
 
 export function EditRoundDialog({
+  workspaceSlug,
   round,
   children,
   open,
   setOpen,
 }: {
+  workspaceSlug: string;
   round: {id: string; name: string};
   children?: React.ReactElement;
   open: boolean;
@@ -32,7 +34,7 @@ export function EditRoundDialog({
     onSubmit: ({value}) =>
       toast.promise(
         mutation.mutateAsync(
-          {id: round.id, ...value},
+          {workspaceSlug, id: round.id, ...value},
           {
             onSuccess: () => {
               form.reset();

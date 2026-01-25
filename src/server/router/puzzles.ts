@@ -27,6 +27,7 @@ export const puzzlesRouter = {
             ),
         ]),
         z.object({
+          workspaceSlug: z.string(),
           name: z.string(),
           tags: z.array(z.string()),
           link: z.url().or(z.string().length(0)),
@@ -34,6 +35,7 @@ export const puzzlesRouter = {
         })
       )
     )
+    .use(preauthorize)
     .handler(async ({context, input}) => {
       let workspace;
       if ("roundId" in input) {
@@ -42,7 +44,12 @@ export const puzzlesRouter = {
             .select()
             .from(schema.organization)
             .innerJoin(schema.round, eq(schema.organization.id, schema.round.workspaceId))
-            .where(eq(schema.round.id, input.roundId))
+            .where(
+              and(
+                eq(schema.round.id, input.roundId),
+                eq(schema.organization.slug, input.workspaceSlug)
+              )
+            )
         )[0]?.organization;
       } else {
         workspace = (
@@ -52,7 +59,11 @@ export const puzzlesRouter = {
             .innerJoin(schema.round, eq(schema.organization.id, schema.round.workspaceId))
             .innerJoin(schema.puzzle, eq(schema.round.id, schema.puzzle.roundId))
             .where(
-              and(eq(schema.puzzle.id, input.parentPuzzleId), eq(schema.puzzle.isMetaPuzzle, true))
+              and(
+                eq(schema.puzzle.id, input.parentPuzzleId),
+                eq(schema.puzzle.isMetaPuzzle, true),
+                eq(schema.organization.slug, input.workspaceSlug)
+              )
             )
         )[0]?.organization;
       }
@@ -163,6 +174,7 @@ export const puzzlesRouter = {
   update: procedure
     .input(
       z.object({
+        workspaceSlug: z.string(),
         id: z.string(),
         parentPuzzleId: z.string().nullable().optional(),
         name: z.string().min(1).optional(),
@@ -183,6 +195,7 @@ export const puzzlesRouter = {
         tags: z.array(z.string()).optional(),
       })
     )
+    .use(preauthorize)
     .handler(async ({context, input}) => {
       const puzzle = await db
         .select({
@@ -194,8 +207,10 @@ export const puzzlesRouter = {
           round: {workspaceId: schema.round.workspaceId},
         })
         .from(schema.puzzle)
-        .where(eq(schema.puzzle.id, input.id))
         .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+        .where(
+          and(eq(schema.puzzle.id, input.id), eq(schema.round.workspaceId, context.workspace.id))
+        )
         .then(rows => rows[0]);
       invariant(puzzle);
       if (input.answer !== undefined && input.answer !== "" && input.answer !== puzzle.answer) {
@@ -286,41 +301,46 @@ export const puzzlesRouter = {
       waitUntil(context.discord.sync(puzzle.round.workspaceId));
     }),
 
-  delete: procedure.input(z.string()).handler(async ({context, input}) => {
-    const puzzle = await db
-      .select({
-        id: schema.puzzle.id,
-        name: schema.puzzle.name,
-        round: {workspaceId: schema.round.workspaceId},
-        googleSpreadsheetId: schema.puzzle.googleSpreadsheetId,
-        googleDrawingId: schema.puzzle.googleDrawingId,
-      })
-      .from(schema.puzzle)
-      .where(eq(schema.puzzle.id, input))
-      .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-      .then(rows => rows[0]);
-    invariant(puzzle);
-    await context.activityLog.createPuzzle({
-      subType: "delete",
-      puzzleId: puzzle.id,
-      puzzleName: puzzle.name,
-      workspaceId: puzzle.round.workspaceId,
-    });
+  delete: procedure
+    .input(z.object({workspaceSlug: z.string(), id: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const puzzle = await db
+        .select({
+          id: schema.puzzle.id,
+          name: schema.puzzle.name,
+          round: {workspaceId: schema.round.workspaceId},
+          googleSpreadsheetId: schema.puzzle.googleSpreadsheetId,
+          googleDrawingId: schema.puzzle.googleDrawingId,
+        })
+        .from(schema.puzzle)
+        .where(
+          and(eq(schema.puzzle.id, input.id), eq(schema.round.workspaceId, context.workspace.id))
+        )
+        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+        .then(rows => rows[0]);
+      invariant(puzzle);
+      await context.activityLog.createPuzzle({
+        subType: "delete",
+        puzzleId: puzzle.id,
+        puzzleName: puzzle.name,
+        workspaceId: puzzle.round.workspaceId,
+      });
 
-    await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input));
+      await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input.id));
 
-    if (puzzle.googleSpreadsheetId || puzzle.googleDrawingId) {
-      const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
-      if (googleAccessToken) {
-        await fetch(
-          `https://www.googleapis.com/drive/v3/files/${puzzle.googleSpreadsheetId || puzzle.googleDrawingId}`,
-          {method: "DELETE", headers: {Authorization: `Bearer ${googleAccessToken}`}}
-        );
+      if (puzzle.googleSpreadsheetId || puzzle.googleDrawingId) {
+        const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
+        if (googleAccessToken) {
+          await fetch(
+            `https://www.googleapis.com/drive/v3/files/${puzzle.googleSpreadsheetId || puzzle.googleDrawingId}`,
+            {method: "DELETE", headers: {Authorization: `Bearer ${googleAccessToken}`}}
+          );
+        }
       }
-    }
-    await (await getWorkspaceRoom(puzzle.round.workspaceId)).invalidate();
-    waitUntil(context.discord.sync(puzzle.round.workspaceId));
-  }),
+      await (await getWorkspaceRoom(puzzle.round.workspaceId)).invalidate();
+      waitUntil(context.discord.sync(puzzle.round.workspaceId));
+    }),
   get: procedure
     .input(z.object({workspaceSlug: z.string(), puzzleId: z.string()}))
     .use(preauthorize)

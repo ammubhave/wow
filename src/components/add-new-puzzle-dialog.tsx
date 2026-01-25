@@ -44,6 +44,7 @@ export function AddNewPuzzleDialog({
             ...value,
             roundId: parentPuzzleId! ? undefined : roundId,
             parentPuzzleId,
+            workspaceSlug,
           },
           {
             onSuccess: () => {
@@ -93,7 +94,7 @@ export function AddNewPuzzleDialog({
               <form.AppField
                 name="tags"
                 children={field => (
-                  <field.ComboboxMultipleField label="Tags" items={workspace.tags} />
+                  <field.ComboboxMultipleField label="Tags" items={workspace.tags ?? []} />
                 )}
               />
               <form.AppField

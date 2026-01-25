@@ -442,11 +442,14 @@ function BlackboardRound({
 
   function onStatusChange(value: string | null) {
     if (round.status !== value) {
-      toast.promise(roundsUpdateMutation.mutateAsync({id: round.id, status: value}), {
-        loading: "Updating round status...",
-        success: "Success! Round status updated.",
-        error: "Oops! Something went wrong.",
-      });
+      toast.promise(
+        roundsUpdateMutation.mutateAsync({workspaceSlug, id: round.id, status: value}),
+        {
+          loading: "Updating round status...",
+          success: "Success! Round status updated.",
+          error: "Oops! Something went wrong.",
+        }
+      );
     }
   }
 
@@ -549,6 +552,7 @@ function BlackboardRound({
             </DropdownMenu>
           </div>
           <AddNewMetaPuzzleDialog
+            workspaceSlug={workspaceSlug}
             roundId={round.id}
             open={isAddNewMetaPuzzleDialogOpen}
             setOpen={setIsAddNewMetaPuzzleDialogOpen}
@@ -560,11 +564,13 @@ function BlackboardRound({
             setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
           />
           <EditRoundDialog
+            workspaceSlug={workspaceSlug}
             round={round}
             open={isEditRoundDialogOpen}
             setOpen={setIsEditRoundDialogOpen}
           />
           <DeleteRoundDialog
+            workspaceSlug={workspaceSlug}
             roundId={round.id}
             open={isDeleteRoundDialogOpen}
             setOpen={setIsDeleteRoundDialogOpen}
@@ -704,11 +710,14 @@ function BlackboardMetaPuzzle({
       tags: metaPuzzle.tags,
     },
     onSubmit: ({value}) => {
-      toast.promise(puzzlesUpdateMutation.mutateAsync({id: metaPuzzle.id, ...value}), {
-        loading: "Updating meta puzzle...",
-        success: "Success! Meta puzzle updated.",
-        error: "Oops! Something went wrong.",
-      });
+      toast.promise(
+        puzzlesUpdateMutation.mutateAsync({workspaceSlug, id: metaPuzzle.id, ...value}),
+        {
+          loading: "Updating meta puzzle...",
+          success: "Success! Meta puzzle updated.",
+          error: "Oops! Something went wrong.",
+        }
+      );
     },
     listeners: {
       onBlur: async ({formApi}) => {
@@ -974,11 +983,13 @@ function BlackboardMetaPuzzle({
             setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
           />
           <EditPuzzleDialog
+            workspaceSlug={workspaceSlug}
             puzzle={metaPuzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}
           />
           <DeletePuzzleDialog
+            workspaceSlug={workspaceSlug}
             puzzleId={metaPuzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}
@@ -1053,7 +1064,7 @@ function BlackboardPuzzle({
       tags: puzzle.tags,
     },
     onSubmit: ({value}) => {
-      toast.promise(puzzleUpdateMutation.mutateAsync({id: puzzle.id, ...value}), {
+      toast.promise(puzzleUpdateMutation.mutateAsync({workspaceSlug, id: puzzle.id, ...value}), {
         loading: "Updating puzzle...",
         success: "Success! Puzzle updated.",
         error: "Oops! Something went wrong.",
@@ -1299,11 +1310,13 @@ function BlackboardPuzzle({
             </DropdownMenu>
           </div>
           <EditPuzzleDialog
+            workspaceSlug={workspaceSlug}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}
           />
           <DeletePuzzleDialog
+            workspaceSlug={workspaceSlug}
             puzzleId={puzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}

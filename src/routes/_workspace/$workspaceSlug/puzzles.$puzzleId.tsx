@@ -119,6 +119,7 @@ function PuzzleInfoPanel({
     onSubmit: ({value}) => {
       toast.promise(
         puzzleUpdateMutation.mutateAsync({
+          workspaceSlug,
           id: puzzle.id,
           answer: value.answer,
           status: value.status,
@@ -215,6 +216,7 @@ function PuzzleInfoPanel({
             </Tooltip>
           )}
           <EditPuzzleDialog
+            workspaceSlug={workspaceSlug}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}>

@@ -53,17 +53,21 @@ export const roundsRouter = {
   update: procedure
     .input(
       z.object({
+        workspaceSlug: z.string(),
         id: z.string(),
         name: z.string().min(1).optional(),
         status: z.string().nullable().optional(),
       })
     )
+    .use(preauthorize)
     .handler(async ({context, input}) => {
       // Update round in database
       const [result] = await db
         .update(schema.round)
         .set({name: input.name, status: input.status})
-        .where(eq(schema.round.id, input.id))
+        .where(
+          and(eq(schema.round.id, input.id), eq(schema.round.workspaceId, context.workspace.id))
+        )
         .returning({workspaceId: schema.round.workspaceId});
       invariant(result);
       const {workspaceId} = result;
@@ -71,21 +75,26 @@ export const roundsRouter = {
       waitUntil(context.discord.sync(workspaceId));
     }),
 
-  delete: procedure.input(z.string()).handler(async ({context, input}) => {
-    const round = await db.query.round.findFirst({where: (t, {eq}) => eq(t.id, input)});
-    if (!round) throw new ORPCError("NOT_FOUND");
-    await context.activityLog.createRound({
-      subType: "delete",
-      workspaceId: round.workspaceId,
-      roundId: round.id,
-      roundName: round.name,
-    });
+  delete: procedure
+    .input(z.object({workspaceSlug: z.string(), id: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const round = await db.query.round.findFirst({
+        where: (t, {eq, and}) => and(eq(t.id, input.id), eq(t.workspaceId, context.workspace.id)),
+      });
+      if (!round) throw new ORPCError("NOT_FOUND");
+      await context.activityLog.createRound({
+        subType: "delete",
+        workspaceId: round.workspaceId,
+        roundId: round.id,
+        roundName: round.name,
+      });
 
-    // Delete round from database
-    await db.delete(schema.round).where(eq(schema.round.id, input));
-    await (await getWorkspaceRoom(round.workspaceId)).invalidate();
-    waitUntil(context.discord.sync(round.workspaceId));
-  }),
+      // Delete round from database
+      await db.delete(schema.round).where(eq(schema.round.id, input.id));
+      await (await getWorkspaceRoom(round.workspaceId)).invalidate();
+      waitUntil(context.discord.sync(round.workspaceId));
+    }),
 
   assignUnassignedPuzzles: procedure
     .input(z.object({workspaceSlug: z.string(), parentPuzzleId: z.string()}))

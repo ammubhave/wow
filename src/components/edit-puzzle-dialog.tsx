@@ -19,11 +19,13 @@ import {FieldGroup} from "./ui/field";
 import {SelectGroup, SelectItem} from "./ui/select";
 
 export function EditPuzzleDialog({
+  workspaceSlug,
   puzzle,
   children,
   open,
   setOpen,
 }: {
+  workspaceSlug: string;
   puzzle: {
     id: string;
     roundId: string;
@@ -57,6 +59,7 @@ export function EditPuzzleDialog({
       toast.promise(
         mutation.mutateAsync(
           {
+            workspaceSlug,
             id: puzzle.id,
             ...value,
             answer: value.answer === "" ? null : value.answer.toUpperCase(),

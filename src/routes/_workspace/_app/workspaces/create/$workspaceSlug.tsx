@@ -50,7 +50,7 @@ function RouteComponent() {
             <Button
               variant="ghost"
               onClick={() => {
-                toast.promise(workspaceDeleteMutation.mutateAsync(workspaceSlug!), {
+                toast.promise(workspaceDeleteMutation.mutateAsync({workspaceSlug}), {
                   loading: "Deleting workspace...",
                   success: "Success! Your workspace has been deleted.",
                   error: "Oops! Something went wrong.",

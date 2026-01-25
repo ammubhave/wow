@@ -113,11 +113,14 @@ export const workspacesRouter = {
       await (await getWorkspaceRoom(workspace.id)).invalidate();
     }),
 
-  delete: procedure.input(z.string()).handler(async () => {
-    throw new Error(
-      "Workspace deletion has been disabled. Contact support to delete your workspace."
-    );
-  }),
+  delete: procedure
+    .input(z.object({workspaceSlug: z.string()}))
+    .use(preauthorize)
+    .handler(async () => {
+      throw new Error(
+        "Workspace deletion has been disabled. Contact support to delete your workspace."
+      );
+    }),
 
   leave: procedure
     .input(z.object({workspaceSlug: z.string()}))

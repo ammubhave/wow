@@ -16,11 +16,13 @@ import {orpc} from "@/lib/orpc";
 import {useAppForm} from "./form";
 
 export function AddNewMetaPuzzleDialog({
+  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
+  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
@@ -33,7 +35,13 @@ export function AddNewMetaPuzzleDialog({
     onSubmit: ({value}) =>
       toast.promise(
         mutation.mutateAsync(
-          {type: "meta-puzzle", ...value, roundId, worksheetType: "google_spreadsheet"},
+          {
+            workspaceSlug,
+            type: "meta-puzzle",
+            ...value,
+            roundId,
+            worksheetType: "google_spreadsheet",
+          },
           {
             onSuccess: () => {
               form.reset();

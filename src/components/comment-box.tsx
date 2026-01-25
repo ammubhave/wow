@@ -48,7 +48,7 @@ export function CommentBox({
     toast.promise(
       puzzleId === undefined
         ? workspaceUpdateMutation.mutateAsync({workspaceSlug, comment})
-        : puzzleUpdateMutation.mutateAsync({id: puzzleId, comment}),
+        : puzzleUpdateMutation.mutateAsync({workspaceSlug, id: puzzleId, comment}),
       {
         loading: "Saving comment...",
         success: _data => {

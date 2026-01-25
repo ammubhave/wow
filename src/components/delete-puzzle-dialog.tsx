@@ -16,11 +16,13 @@ import {
 } from "./ui/alert-dialog";
 
 export function DeletePuzzleDialog({
+  workspaceSlug,
   puzzleId,
   children,
   open,
   setOpen,
 }: {
+  workspaceSlug: string;
   puzzleId: string;
   children?: React.ReactElement;
   open: boolean;
@@ -43,11 +45,14 @@ export function DeletePuzzleDialog({
             variant="destructive"
             onClick={event => {
               toast.promise(
-                mutation.mutateAsync(puzzleId, {
-                  onSuccess: () => {
-                    setOpen(false);
-                  },
-                }),
+                mutation.mutateAsync(
+                  {workspaceSlug, id: puzzleId},
+                  {
+                    onSuccess: () => {
+                      setOpen(false);
+                    },
+                  }
+                ),
                 {
                   loading: "Deleting puzzle...",
                   success: "Success! Puzzle deleted.",
