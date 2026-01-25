@@ -132,14 +132,6 @@ function PuzzleInfoPanel({
         }
       );
     },
-    listeners: {
-      onChange: async ({formApi}) => {
-        if (formApi.state.isValid) {
-          await formApi.handleSubmit();
-        }
-      },
-      onChangeDebounceMs: 500,
-    },
   });
 
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
@@ -232,6 +224,20 @@ function PuzzleInfoPanel({
             <FieldGroup className="gap-0">
               <form.AppField
                 name="answer"
+                listeners={{
+                  onBlur: async ({fieldApi}) => {
+                    // onBlur is called whenever focus is lost. Only actually submit the form if the
+                    // field value changed.
+                    if (fieldApi.state.value !== puzzle.answer && form.state.isValid) {
+                      const currentStatus = form.getFieldValue("status");
+                      if (currentStatus !== "solved" && currentStatus !== "backsolved") {
+                        form.setFieldValue("status", "solved");
+                      }
+
+                      await form.handleSubmit();
+                    }
+                  },
+                }}
                 children={field => (
                   <ButtonGroup className="w-full">
                     <ButtonGroupText className="min-w-16">Answer</ButtonGroupText>
@@ -243,6 +249,13 @@ function PuzzleInfoPanel({
               />
               <form.AppField
                 name="status"
+                listeners={{
+                  onChange: async _ => {
+                    if (form.state.isValid) {
+                      await form.handleSubmit();
+                    }
+                  },
+                }}
                 children={field => (
                   <ButtonGroup className="w-full">
                     <ButtonGroupText className="min-w-16">Status</ButtonGroupText>
@@ -266,6 +279,13 @@ function PuzzleInfoPanel({
               />
               <form.AppField
                 name="tags"
+                listeners={{
+                  onChange: async _ => {
+                    if (form.state.isValid) {
+                      await form.handleSubmit();
+                    }
+                  },
+                }}
                 children={field => (
                   <ButtonGroup className="w-full">
                     <ButtonGroupText className="min-w-16">Tags</ButtonGroupText>

@@ -221,9 +221,6 @@ export const puzzlesRouter = {
           workspaceId: puzzle.round.workspaceId,
           field: input.answer ?? "",
         });
-        // if (puzzle.status !== "solved" && puzzle.status !== "backsolved") {
-        //   input.status = "solved";
-        // }
       }
       if (input.status !== undefined && input.status !== puzzle.status) {
         await context.activityLog.createPuzzle({
@@ -233,7 +230,10 @@ export const puzzlesRouter = {
           workspaceId: puzzle.round.workspaceId,
           field: input.status ?? "None",
         });
-        if (input.status === "solved") {
+        if (
+          (input.status === "solved" || input.status === "backsolved") !==
+          (puzzle.status === "solved" || puzzle.status === "backsolved")
+        ) {
           waitUntil(
             context.notification.broadcast(puzzle.round.workspaceId, {
               type: "solved",
