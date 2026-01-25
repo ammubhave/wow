@@ -34,6 +34,12 @@ export function HelpPage() {
           name) then refresh the page.
         </p>
         <p />
+        <h4 id="code">Code in Puzzle Chat</h4>
+        <p>
+          Post code in puzzle chats by using the markdown syntax - three backticks (```) before and
+          after your code block.
+        </p>
+        <p />
         <h4 id="file-issues">File issues</h4>
         <p>
           File issues by talking to Amol or Allen or by filing a{" "}
