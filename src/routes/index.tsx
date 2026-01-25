@@ -70,7 +70,7 @@ function App() {
                 render={
                   <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
                     <CoffeeIcon />
-                    Buy me a coffee
+                    Buy me a puzzle
                   </a>
                 }
               />
