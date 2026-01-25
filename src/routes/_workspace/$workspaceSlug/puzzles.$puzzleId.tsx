@@ -125,11 +125,7 @@ function PuzzleInfoPanel({
           status: value.status,
           tags: value.tags,
         }),
-        {
-          loading: "Updating puzzle...",
-          success: "Success! Puzzle updated.",
-          error: "Oops! Something went wrong.",
-        }
+        {loading: "Updating puzzle...", error: "Oops! Something went wrong."}
       );
     },
   });
