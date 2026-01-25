@@ -8,7 +8,7 @@ import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
-import {useWorkspace} from "@/hooks/use-workspace";
+import {useWorkspace, WorkspaceProvider} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceSlug")({
@@ -17,6 +17,15 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/create/$worksp
 });
 
 function RouteComponent() {
+  const {workspaceSlug} = Route.useParams();
+  return (
+    <WorkspaceProvider workspaceSlug={workspaceSlug}>
+      <RouteComponentInner />
+    </WorkspaceProvider>
+  );
+}
+
+function RouteComponentInner() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
   const workspaceDeleteMutation = useMutation(orpc.workspaces.delete.mutationOptions());
