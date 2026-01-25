@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {toast} from "sonner";
 
@@ -13,7 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {useWorkspace} from "@/components/use-workspace";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
   component: RouteComponent,
@@ -72,11 +74,12 @@ function ArchiveWorkspaceCard() {
 
 function WorkspacePasswordCard() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
   const form = useAppForm({
-    defaultValues: {password: workspace.get.data.password ?? ""},
+    defaultValues: {password: workspace.password ?? ""},
     onSubmit: ({value}) => {
-      toast.promise(workspace.update.mutateAsync({workspaceSlug, ...value}), {
+      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! The workspace password has been updated.",
         error: "Oops! Something went wrong.",

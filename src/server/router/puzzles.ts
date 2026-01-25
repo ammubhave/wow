@@ -7,6 +7,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
 
+import {getWorkspaceRoom} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
 
 export const puzzlesRouter = {
@@ -147,21 +148,14 @@ export const puzzlesRouter = {
           }
         }
       }
-
-      waitUntil(
-        (async () => {
-          await Promise.allSettled([
-            context.activityLog.createPuzzle({
-              subType: "create",
-              puzzleId: puzzle.id,
-              puzzleName: puzzle.name,
-              workspaceId: workspace.id,
-            }),
-            context.notification.broadcast(workspace.id, {type: "invalidate"}),
-            context.discord.sync(workspace.id),
-          ]);
-        })()
-      );
+      await context.activityLog.createPuzzle({
+        subType: "create",
+        puzzleId: puzzle.id,
+        puzzleName: puzzle.name,
+        workspaceId: workspace.id,
+      });
+      await (await getWorkspaceRoom(workspace.id)).invalidate();
+      waitUntil(context.discord.sync(workspace.id));
 
       return puzzle;
     }),
@@ -288,16 +282,8 @@ export const puzzlesRouter = {
           tags: input.tags,
         })
         .where(eq(schema.puzzle.id, input.id));
-
-      // Deferred: Broadcast notification and sync discord
-      waitUntil(
-        (async () => {
-          await Promise.allSettled([
-            context.notification.broadcast(puzzle.round.workspaceId, {type: "invalidate"}),
-            context.discord.sync(puzzle.round.workspaceId),
-          ]);
-        })()
-      );
+      await (await getWorkspaceRoom(puzzle.round.workspaceId)).invalidate();
+      waitUntil(context.discord.sync(puzzle.round.workspaceId));
     }),
 
   delete: procedure.input(z.string()).handler(async ({context, input}) => {
@@ -323,28 +309,17 @@ export const puzzlesRouter = {
 
     await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input));
 
-    // Deferred: Broadcast notification, sync discord, and delete google spreadsheet
-    waitUntil(
-      (async () => {
-        let deleteGoogleSpreadsheetPromise: Promise<void> | undefined;
-        if (puzzle.googleSpreadsheetId || puzzle.googleDrawingId) {
-          deleteGoogleSpreadsheetPromise = (async () => {
-            const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
-            if (googleAccessToken) {
-              await fetch(
-                `https://www.googleapis.com/drive/v3/files/${puzzle.googleSpreadsheetId || puzzle.googleDrawingId}`,
-                {method: "DELETE", headers: {Authorization: `Bearer ${googleAccessToken}`}}
-              );
-            }
-          })();
-        }
-        await Promise.allSettled([
-          ...(deleteGoogleSpreadsheetPromise ? [deleteGoogleSpreadsheetPromise] : []),
-          context.notification.broadcast(puzzle.round.workspaceId, {type: "invalidate"}),
-          context.discord.sync(puzzle.round.workspaceId),
-        ]);
-      })()
-    );
+    if (puzzle.googleSpreadsheetId || puzzle.googleDrawingId) {
+      const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
+      if (googleAccessToken) {
+        await fetch(
+          `https://www.googleapis.com/drive/v3/files/${puzzle.googleSpreadsheetId || puzzle.googleDrawingId}`,
+          {method: "DELETE", headers: {Authorization: `Bearer ${googleAccessToken}`}}
+        );
+      }
+    }
+    await (await getWorkspaceRoom(puzzle.round.workspaceId)).invalidate();
+    waitUntil(context.discord.sync(puzzle.round.workspaceId));
   }),
   get: procedure
     .input(z.object({workspaceSlug: z.string(), puzzleId: z.string()}))

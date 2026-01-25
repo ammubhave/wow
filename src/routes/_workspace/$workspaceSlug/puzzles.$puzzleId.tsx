@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {BrushIcon, EditIcon, PuzzleIcon, TableIcon} from "lucide-react";
 import {useState} from "react";
@@ -25,8 +26,8 @@ import {SelectGroup, SelectItem} from "@/components/ui/select";
 import {SidebarInset} from "@/components/ui/sidebar";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-import {useWorkspace} from "@/components/use-workspace";
-import {client} from "@/lib/orpc";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {client, orpc} from "@/lib/orpc";
 import {
   getBgColorClassNamesForPuzzleStatusNoHover,
   getPuzzleStatusGroups,
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzle
 
 function RouteComponent() {
   const {workspaceSlug, puzzleId} = Route.useParams();
-  const puzzle = usePuzzle({workspaceSlug, puzzleId});
+  const puzzle = usePuzzle({puzzleId});
 
   if (!puzzle.data || !puzzleId) {
     return <></>;
@@ -111,12 +112,13 @@ function PuzzleInfoPanel({
     tags: string[];
   };
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const puzzleUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
   const form = useAppForm({
     defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status, tags: puzzle.tags},
     onSubmit: ({value}) => {
       toast.promise(
-        workspace.puzzles.update.mutateAsync({
+        puzzleUpdateMutation.mutateAsync({
           id: puzzle.id,
           answer: value.answer,
           status: value.status,
@@ -213,7 +215,6 @@ function PuzzleInfoPanel({
             </Tooltip>
           )}
           <EditPuzzleDialog
-            workspaceSlug={workspaceSlug}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}>
@@ -269,7 +270,7 @@ function PuzzleInfoPanel({
                     <InputGroup className="h-auto">
                       <field.ComboboxMultipleField
                         className="border-0 bg-transparent"
-                        items={(workspace.get.data.tags as string[] | null) ?? []}
+                        items={workspace.tags}
                       />
                     </InputGroup>
                   </ButtonGroup>

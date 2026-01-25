@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {toast} from "sonner";
 import {z} from "zod";
 
@@ -9,29 +10,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {orpc} from "@/lib/orpc";
 
 import {useAppForm} from "./form";
-import {useWorkspace} from "./use-workspace";
 
 export function AddNewMetaPuzzleDialog({
-  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
-  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.puzzles.create.mutationOptions());
   const form = useAppForm({
     defaultValues: {name: "", assignUnassignedPuzzles: true, tags: [] as string[], link: ""},
     onSubmit: ({value}) =>
       toast.promise(
-        workspace.puzzles.create.mutateAsync(
+        mutation.mutateAsync(
           {type: "meta-puzzle", ...value, roundId, worksheetType: "google_spreadsheet"},
           {
             onSuccess: () => {
@@ -66,10 +67,7 @@ export function AddNewMetaPuzzleDialog({
               <form.AppField
                 name="tags"
                 children={field => (
-                  <field.ComboboxMultipleField
-                    label="Tags"
-                    items={(workspace.get.data.tags as string[] | null) ?? []}
-                  />
+                  <field.ComboboxMultipleField label="Tags" items={workspace.tags} />
                 )}
               />
               <form.AppField

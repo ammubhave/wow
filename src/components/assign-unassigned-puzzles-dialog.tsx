@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {toast} from "sonner";
 
 import {
@@ -8,10 +9,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {orpc} from "@/lib/orpc";
 
 import {useAppForm} from "./form";
 import {SelectItem} from "./ui/select";
-import {useWorkspace} from "./use-workspace";
 
 export function AssignUnassignedPuzzlesDialog({
   workspaceSlug,
@@ -26,7 +28,8 @@ export function AssignUnassignedPuzzlesDialog({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.rounds.assignUnassignedPuzzles.mutationOptions());
   const form = useAppForm({
     defaultValues: {parentPuzzleId: ""},
     onSubmit: ({value}) => {
@@ -35,7 +38,7 @@ export function AssignUnassignedPuzzlesDialog({
         return;
       }
       toast.promise(
-        workspace.rounds.assignUnassignedPuzzles.mutateAsync(
+        mutation.mutateAsync(
           {...value, workspaceSlug},
           {
             onSuccess: () => {
@@ -74,7 +77,7 @@ export function AssignUnassignedPuzzlesDialog({
                 children={field => {
                   const items = [
                     {value: "", label: "None"},
-                    ...(workspace.get.data?.rounds
+                    ...(workspace.rounds
                       .filter(round => round.id === roundId)
                       .flatMap(round => round.metaPuzzles)
                       .map(metaPuzzle => ({value: metaPuzzle.id, label: metaPuzzle.name})) ?? []),

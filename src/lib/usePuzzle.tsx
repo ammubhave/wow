@@ -1,20 +1,15 @@
-import {useWorkspace} from "@/components/use-workspace";
+import {useWorkspace} from "@/hooks/use-workspace";
 
-export function usePuzzle(
-  {workspaceSlug, puzzleId}: {workspaceSlug: string; puzzleId: string},
-  opts?: {enabled?: boolean}
-) {
-  const workspace = useWorkspace({workspaceSlug, ...opts});
-  const puzzle =
-    workspace.get.data?.rounds &&
-    (() => {
-      for (const round of workspace.get.data.rounds) {
-        for (const puzzle of round.puzzles) {
-          if (puzzle.id === puzzleId) {
-            return puzzle;
-          }
+export function usePuzzle({puzzleId}: {puzzleId: string}) {
+  const workspace = useWorkspace();
+  const puzzle = (() => {
+    for (const round of workspace.rounds) {
+      for (const puzzle of round.puzzles) {
+        if (puzzle.id === puzzleId) {
+          return puzzle;
         }
       }
-    })();
-  return {isError: workspace.get.isError || puzzle === undefined, data: puzzle};
+    }
+  })();
+  return {isError: puzzle === undefined, data: puzzle};
 }

@@ -53,3 +53,4 @@ export {ChatRoom} from "./server/do/chat";
 export {NotificationRoom} from "./server/do/notification";
 export {PresenceRoom} from "./server/do/presence";
 export {DeleteChannelAfterDelayWorkflow} from "./server/do/discord-client";
+export {WorkspaceRoom} from "./server/do/workspace";

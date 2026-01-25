@@ -21,7 +21,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import {Separator} from "@/components/ui/separator";
-import {useWorkspace} from "@/components/use-workspace";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/")({
@@ -41,16 +41,12 @@ function RouteComponent() {
 
 function UpdateLinksCard() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
   const form = useAppForm({
-    defaultValues: {
-      links:
-        (workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
-          ({name, url}) => ({name, url})
-        ) ?? [],
-    },
+    defaultValues: {links: workspace.links.map(({name, url}) => ({name, url})) ?? []},
     onSubmit: ({value}) => {
-      toast.promise(workspace.update.mutateAsync({workspaceSlug, ...value}), {
+      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! Your changes have been saved.",
         error: "Oops! Something went wrong.",
@@ -175,15 +171,15 @@ function LeaveWorkspaceCard() {
 }
 function DetailsCard() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace({workspaceSlug});
-
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
   const form = useAppForm({
     defaultValues: {
-      teamName: workspace.get.data.teamName ?? undefined,
-      eventName: workspace.get.data.eventName ?? undefined,
+      teamName: workspace.teamName ?? undefined,
+      eventName: workspace.eventName ?? undefined,
     },
     onSubmit: ({value}) => {
-      toast.promise(workspace.update.mutateAsync({workspaceSlug, ...value}), {
+      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! Your changes have been saved.",
         error: "Oops! Something went wrong.",
@@ -252,10 +248,10 @@ function DetailsCard() {
 
 function UpdateTagsCard() {
   const {workspaceSlug} = Route.useParams();
-  const tags = (useWorkspace({workspaceSlug}).get.data.tags as string[] | undefined) ?? [];
+  const workspace = useWorkspace();
   const mutation = useMutation(orpc.workspaces.update.mutationOptions());
   const form = useAppForm({
-    defaultValues: {tags},
+    defaultValues: {tags: workspace.tags},
     onSubmit: ({value}) => {
       toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",

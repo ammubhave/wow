@@ -8,6 +8,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 import {fetchDiscord} from "../do/discord-client";
+import {getWorkspaceRoom} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
 
 export const workspacesRouter = {
@@ -108,6 +109,7 @@ export const workspacesRouter = {
           context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"}),
         ])
       );
+      await (await getWorkspaceRoom(workspace.id)).invalidate();
       return workspace;
     }),
 
@@ -151,15 +153,13 @@ export const workspacesRouter = {
         .where(eq(schema.organization.id, context.workspace.id))
         .returning();
       if (!workspace) throw new ORPCError("NOT_FOUND");
-      await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
+      await (await getWorkspaceRoom(workspace.id)).invalidate();
     }),
 
   delete: procedure.input(z.string()).handler(async () => {
     throw new Error(
       "Workspace deletion has been disabled. Contact support to delete your workspace."
     );
-    // await context.db.workspace.delete({where: {id: input}});
-    // await context.notification.broadcast(input, {type: "invalidate"});
   }),
 
   leave: procedure
@@ -227,7 +227,7 @@ export const workspacesRouter = {
         .update(schema.organization)
         .set({googleFolderId: input.folderId})
         .where(eq(schema.organization.id, context.workspace.id));
-      await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
+      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
     }),
 
   setGoogleTemplateFileId: procedure
@@ -238,7 +238,7 @@ export const workspacesRouter = {
         .update(schema.organization)
         .set({googleTemplateFileId: input.fileId})
         .where(eq(schema.organization.id, context.workspace.id));
-      await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
+      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
     }),
 
   shareGoogleDriveFolder: procedure
@@ -439,7 +439,7 @@ export const workspacesRouter = {
           .update(schema.organization)
           .set({discordGuildId: null})
           .where(eq(schema.organization.id, context.workspace.id));
-        await context.notification.broadcast(context.workspace.id, {type: "invalidate"});
+        await (await getWorkspaceRoom(context.workspace.id)).invalidate();
       }),
   },
 };

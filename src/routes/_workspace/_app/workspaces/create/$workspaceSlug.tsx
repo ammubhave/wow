@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowLeftIcon, ArrowRightIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -7,7 +8,8 @@ import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
-import {useWorkspace} from "@/components/use-workspace";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceSlug")({
   component: RouteComponent,
@@ -16,7 +18,8 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/create/$worksp
 
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const workspaceDeleteMutation = useMutation(orpc.workspaces.delete.mutationOptions());
 
   return (
     <div className="flex justify-center w-full">
@@ -47,7 +50,7 @@ function RouteComponent() {
             <Button
               variant="ghost"
               onClick={() => {
-                toast.promise(workspace.delete.mutateAsync(workspaceSlug!), {
+                toast.promise(workspaceDeleteMutation.mutateAsync(workspaceSlug!), {
                   loading: "Deleting workspace...",
                   success: "Success! Your workspace has been deleted.",
                   error: "Oops! Something went wrong.",
@@ -56,7 +59,7 @@ function RouteComponent() {
               Delete workspace
             </Button>
 
-            {workspace.get.data?.isOnboarding && (
+            {!workspace.googleAccessToken && (
               <span className="text-muted-foreground text-xs">
                 You must connect your Google Drive account first.
               </span>
@@ -64,8 +67,7 @@ function RouteComponent() {
             <Button
               className={cn(
                 "gap-2",
-                (!workspace.get.data || workspace.get.data.isOnboarding) &&
-                  "pointer-events-none opacity-50"
+                !workspace.googleAccessToken && "pointer-events-none opacity-50"
               )}
               render={
                 <Link to="/$workspaceSlug" params={{workspaceSlug}}>

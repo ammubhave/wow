@@ -34,10 +34,12 @@
       {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom"},
       {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
       {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
+      {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
     ],
   },
   "migrations": [
     {"tag": "v1", "new_classes": ["ChatRoom", "NotificationRoom", "PresenceRoom", "DiscordClient"]},
+    {"tag": "v2", "new_classes": ["WorkspaceRoom"]},
   ],
   "workflows": [
     {
@@ -71,6 +73,7 @@
           {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom"},
           {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
           {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
+          {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
         ],
       },
       "workflows": [

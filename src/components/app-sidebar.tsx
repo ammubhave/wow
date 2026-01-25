@@ -2,6 +2,7 @@ import {MegaphoneIcon} from "lucide-react";
 import * as React from "react";
 import {cn} from "tailwind-variants";
 
+import {useWorkspace} from "@/hooks/use-workspace";
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
 import {RouterOutputs} from "@/server/router";
 
@@ -9,7 +10,6 @@ import {CommentBox} from "./comment-box";
 import {MakeAccouncementDialog} from "./make-announcement-dialog";
 import {Button} from "./ui/button";
 import {Tooltip, TooltipContent, TooltipTrigger} from "./ui/tooltip";
-import {useWorkspace} from "./use-workspace";
 
 export function AppSidebar({
   workspaceSlug,
@@ -19,7 +19,7 @@ export function AppSidebar({
   workspaceSlug: string;
   rounds: RouterOutputs["workspaces"]["get"]["rounds"];
 } & React.ComponentProps<"div">) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
   return (
     <div
       className="relative w-full max-w-[16rem] bg-sidebar border-l border-sidebar-border"
@@ -28,9 +28,9 @@ export function AppSidebar({
         <div className="p-2 overflow-y-auto min-h-50">
           <CommentBox
             workspaceSlug={workspaceSlug}
-            comment={workspace.get.data.comment}
-            commentUpdatedAt={workspace.get.data.commentUpdatedAt}
-            commentUpdatedBy={workspace.get.data.commentUpdatedBy}
+            comment={workspace.comment}
+            commentUpdatedAt={workspace.commentUpdatedAt}
+            commentUpdatedBy={workspace.commentUpdatedBy}
           />
         </div>
         <div className="flex flex-1 p-2 flex-col gap-2 text-xs">

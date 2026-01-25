@@ -1,4 +1,3 @@
-import {useQueryClient} from "@tanstack/react-query";
 import useWebSocket from "react-use-websocket";
 import {toast} from "sonner";
 import z from "zod";
@@ -21,7 +20,6 @@ export function NotificationsWebSocket({
   workspaceSlug: string;
   children: React.ReactNode;
 }) {
-  const queryClient = useQueryClient();
   const notificationsEnabled = authClient.useSession().data?.user.notificationsDisabled === false;
 
   useWebSocket(
@@ -32,14 +30,11 @@ export function NotificationsWebSocket({
       onMessage: async data => {
         const payload = z
           .discriminatedUnion("type", [
-            z.object({type: z.literal("invalidate")}),
             z.object({type: z.literal("solved"), message: z.string()}),
             z.object({type: z.literal("announcement"), message: z.string()}),
           ])
           .parse(JSON.parse(data.data));
-        if (payload.type === "invalidate") {
-          await queryClient.invalidateQueries();
-        } else if (payload.type === "solved") {
+        if (payload.type === "solved") {
           if (notificationsEnabled) {
             const confetti = await getConfetti();
             var end = Date.now() + 1 * 1000;

@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {useWorkspace} from "@/hooks/use-workspace";
+
 import {
   Command,
   CommandDialog,
@@ -19,7 +21,6 @@ import {
   CommandItem,
   CommandList,
 } from "./ui/command";
-import {useWorkspace} from "./use-workspace";
 
 export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string}) {
   const [open, setOpen] = useState(false);
@@ -33,7 +34,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
   const navigate = useNavigate();
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -76,7 +77,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
             </CommandItem>
           </CommandGroup>
           <CommandGroup heading="Puzzles">
-            {workspace.rounds.list.data
+            {workspace.rounds
               .flatMap(round => round.puzzles)
               .map(puzzle => (
                 <CommandItem
@@ -94,7 +95,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
               ))}
           </CommandGroup>
           <CommandGroup heading="Links">
-            {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(link => (
+            {workspace.links.map(link => (
               <CommandItem
                 onSelect={() => {
                   window.open(link.url);

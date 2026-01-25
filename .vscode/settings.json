@@ -12,5 +12,6 @@
   "oxc.unusedDisableDirectives": "deny",
   "typescript.experimental.useTsgo": true,
   "tailwindCSS.classFunctions": ["cn", "cva", "clsx"],
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  "editor.tabSize": 2
 }

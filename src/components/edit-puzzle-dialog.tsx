@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {toast} from "sonner";
 import z from "zod";
 
@@ -9,21 +10,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {orpc} from "@/lib/orpc";
 import {getPuzzleStatusGroups, getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
 
 import {useAppForm} from "./form";
 import {FieldGroup} from "./ui/field";
 import {SelectGroup, SelectItem} from "./ui/select";
-import {useWorkspace} from "./use-workspace";
 
 export function EditPuzzleDialog({
-  workspaceSlug,
   puzzle,
   children,
   open,
   setOpen,
 }: {
-  workspaceSlug: string;
   puzzle: {
     id: string;
     roundId: string;
@@ -41,7 +41,8 @@ export function EditPuzzleDialog({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.puzzles.update.mutationOptions());
   const form = useAppForm({
     defaultValues: {
       parentPuzzleId: puzzle.parentPuzzleId ?? puzzle.roundId,
@@ -54,7 +55,7 @@ export function EditPuzzleDialog({
     },
     onSubmit: ({value}) =>
       toast.promise(
-        workspace.puzzles.update.mutateAsync(
+        mutation.mutateAsync(
           {
             id: puzzle.id,
             ...value,
@@ -101,7 +102,7 @@ export function EditPuzzleDialog({
                 name="parentPuzzleId"
                 children={field => {
                   const items = [
-                    ...(workspace.get.data?.rounds
+                    ...(workspace.rounds
                       .flatMap(r => [
                         {
                           id: r.id,
@@ -155,10 +156,7 @@ export function EditPuzzleDialog({
               <form.AppField
                 name="tags"
                 children={field => (
-                  <field.ComboboxMultipleField
-                    label="Tags"
-                    items={(workspace.get.data.tags as string[] | null) ?? []}
-                  />
+                  <field.ComboboxMultipleField label="Tags" items={workspace.tags} />
                 )}
               />
               <form.AppField

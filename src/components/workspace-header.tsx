@@ -7,6 +7,7 @@ import {PresencesCard} from "@/components/presences-card";
 import {Separator} from "@/components/ui/separator";
 import {useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
 import {useAppDispatch, useAppSelector} from "@/store";
@@ -17,12 +18,11 @@ import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
 import {DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
-import {useWorkspace} from "./use-workspace";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
 export function WorkspaceHeader() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
   const {isMobile} = useSidebar();
   const childMatches = useChildMatches();
   const match = childMatches[childMatches.length - 1]!;
@@ -41,9 +41,7 @@ export function WorkspaceHeader() {
 
   const puzzleId = newPuzzleId ?? lastActivePuzzleId;
 
-  const puzzle = workspace.rounds.list.data
-    .flatMap(round => round.puzzles)
-    .find(p => p.id === puzzleId);
+  const puzzle = workspace.rounds.flatMap(round => round.puzzles).find(p => p.id === puzzleId);
   const activityLogEntries = useQuery(
     orpc.workspaces.activityLog.get.queryOptions({input: {workspaceSlug}})
   ).data;
@@ -68,8 +66,8 @@ export function WorkspaceHeader() {
                 <img src="/favicon.ico" className="size-6 rounded-full" />
               </Link>
               <div className="flex-1 font-semibold flex-col flex">
-                <span className="text-sm text-nowrap">{workspace.get.data.eventName}</span>
-                <span className="text-xs text-nowrap">{workspace.get.data.teamName}</span>
+                <span className="text-sm text-nowrap">{workspace.eventName}</span>
+                <span className="text-xs text-nowrap">{workspace.teamName}</span>
               </div>
             </div>
             <TabsList>
@@ -118,20 +116,18 @@ export function WorkspaceHeader() {
         </div>
         <PresencesCard id={workspaceSlug} />
         <div className="flex items-center gap-1">
-          {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
-            (link, index) => (
-              <Button
-                key={index}
-                nativeButton={false}
-                variant="ghost"
-                render={
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    {link.name} <ExternalLinkIcon />
-                  </a>
-                }
-              />
-            )
-          )}
+          {workspace.links.map((link, index) => (
+            <Button
+              key={index}
+              nativeButton={false}
+              variant="ghost"
+              render={
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                  {link.name} <ExternalLinkIcon />
+                </a>
+              }
+            />
+          ))}
         </div>
         <Separator orientation="vertical" />
         <NavUser>
@@ -139,22 +135,20 @@ export function WorkspaceHeader() {
             <>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
-                  (link, index) => (
-                    <DropdownMenuItem
-                      key={index}
-                      render={
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="gap-2 justify-between">
-                          {link.name} <ExternalLinkIcon />
-                        </a>
-                      }
-                    />
-                  )
-                )}
+                {workspace.links.map((link, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    render={
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="gap-2 justify-between">
+                        {link.name} <ExternalLinkIcon />
+                      </a>
+                    }
+                  />
+                ))}
               </DropdownMenuGroup>
             </>
           )}

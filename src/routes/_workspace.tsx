@@ -30,5 +30,9 @@ function RouteComponent() {
       {createdAt: session.user.createdAt}
     );
   }, [session?.user]);
-  return <Outlet />;
+  return (
+    <div className="min-h-dvh flex flex-col">
+      <Outlet />
+    </div>
+  );
 }

@@ -1,4 +1,7 @@
+import {useMutation} from "@tanstack/react-query";
 import {toast} from "sonner";
+
+import {orpc} from "@/lib/orpc";
 
 import {
   AlertDialog,
@@ -11,22 +14,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import {useWorkspace} from "./use-workspace";
 
 export function DeletePuzzleDialog({
-  workspaceSlug,
   puzzleId,
   children,
   open,
   setOpen,
 }: {
-  workspaceSlug: string;
   puzzleId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const mutation = useMutation(orpc.puzzles.delete.mutationOptions());
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       {children && <AlertDialogTrigger render={children} />}
@@ -43,7 +43,7 @@ export function DeletePuzzleDialog({
             variant="destructive"
             onClick={event => {
               toast.promise(
-                workspace.puzzles.delete.mutateAsync(puzzleId, {
+                mutation.mutateAsync(puzzleId, {
                   onSuccess: () => {
                     setOpen(false);
                   },

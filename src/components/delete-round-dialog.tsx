@@ -1,4 +1,7 @@
+import {useMutation} from "@tanstack/react-query";
 import {toast} from "sonner";
+
+import {orpc} from "@/lib/orpc";
 
 import {
   AlertDialog,
@@ -11,22 +14,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import {useWorkspace} from "./use-workspace";
 
 export function DeleteRoundDialog({
-  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
-  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const mutation = useMutation(orpc.rounds.delete.mutationOptions());
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       {children && <AlertDialogTrigger render={children} />}
@@ -43,7 +43,7 @@ export function DeleteRoundDialog({
             variant="destructive"
             onClick={event => {
               toast.promise(
-                workspace.rounds.delete.mutateAsync(roundId, {
+                mutation.mutateAsync(roundId, {
                   onSuccess: () => {
                     setOpen(false);
                   },

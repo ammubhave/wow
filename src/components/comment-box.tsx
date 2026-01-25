@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {PencilIcon} from "lucide-react";
 import {useState} from "react";
 import Markdown from "react-markdown";
@@ -13,10 +14,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {orpc} from "@/lib/orpc";
 
 import {useAppForm} from "./form";
 import {InputGroup, InputGroupAddon, InputGroupButton} from "./ui/input-group";
-import {useWorkspace} from "./use-workspace";
 
 const DEFAULT_MESSAGE = "No pinned comment.";
 
@@ -39,14 +40,15 @@ export function CommentBox({
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [undoComment, setUndoComment] = useState(null as string | null);
 
-  const workspace = useWorkspace({workspaceSlug});
+  const workspaceUpdateMutation = useMutation(orpc.workspaces.update.mutationOptions());
+  const puzzleUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
 
   const updateComment = (comment: string | null) => {
     var oldComment = comment;
     toast.promise(
       puzzleId === undefined
-        ? workspace.update.mutateAsync({workspaceSlug, comment})
-        : workspace.puzzles.update.mutateAsync({id: puzzleId, comment}),
+        ? workspaceUpdateMutation.mutateAsync({workspaceSlug, comment})
+        : puzzleUpdateMutation.mutateAsync({id: puzzleId, comment}),
       {
         loading: "Saving comment...",
         success: _data => {

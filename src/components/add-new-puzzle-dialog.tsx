@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
 import {toast} from "sonner";
 
@@ -9,10 +10,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {useWorkspace} from "@/hooks/use-workspace";
+import {orpc} from "@/lib/orpc";
 
 import {useAppForm} from "./form";
 import {SelectItem} from "./ui/select";
-import {useWorkspace} from "./use-workspace";
 
 export function AddNewPuzzleDialog({
   workspaceSlug,
@@ -29,12 +31,13 @@ export function AddNewPuzzleDialog({
   roundId: string;
   parentPuzzleId?: string;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const mutation = useMutation(orpc.puzzles.create.mutationOptions());
   const form = useAppForm({
     defaultValues: {name: "", tags: [] as string[], link: "", worksheetType: "google_spreadsheet"},
     onSubmit: ({value}) =>
       toast.promise(
-        workspace.puzzles.create.mutateAsync(
+        mutation.mutateAsync(
           // @ts-expect-error error
           {
             type: "puzzle",
@@ -90,10 +93,7 @@ export function AddNewPuzzleDialog({
               <form.AppField
                 name="tags"
                 children={field => (
-                  <field.ComboboxMultipleField
-                    label="Tags"
-                    items={(workspace.get.data.tags as string[] | null) ?? []}
-                  />
+                  <field.ComboboxMultipleField label="Tags" items={workspace.tags} />
                 )}
               />
               <form.AppField

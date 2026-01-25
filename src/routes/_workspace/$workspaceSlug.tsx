@@ -6,6 +6,7 @@ import {NotificationsWebSocket} from "@/components/notifications-websocket";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {SidebarProvider} from "@/components/ui/sidebar";
 import {WorkspaceHeader} from "@/components/workspace-header";
+import {WorkspaceProvider} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
 import {client} from "@/lib/orpc";
 
@@ -31,19 +32,21 @@ function RouteComponent() {
 
   if (!session) return null;
   return (
-    <NotificationsWebSocket workspaceSlug={workspaceSlug}>
-      <PresencesWebSocket workspaceSlug={workspaceSlug}>
-        <div className="[--header-height:calc(--spacing(14))]">
-          <SidebarProvider className="flex flex-col">
-            <WorkspaceHeader />
-            <div className="flex flex-1 relative">
-              <div className="absolute inset-0 flex overflow-auto">
-                <Outlet />
+    <WorkspaceProvider workspaceSlug={workspaceSlug}>
+      <NotificationsWebSocket workspaceSlug={workspaceSlug}>
+        <PresencesWebSocket workspaceSlug={workspaceSlug}>
+          <div className="[--header-height:calc(--spacing(14))]">
+            <SidebarProvider className="flex flex-col">
+              <WorkspaceHeader />
+              <div className="flex flex-1 relative">
+                <div className="absolute inset-0 flex overflow-auto">
+                  <Outlet />
+                </div>
               </div>
-            </div>
-          </SidebarProvider>
-        </div>
-      </PresencesWebSocket>
-    </NotificationsWebSocket>
+            </SidebarProvider>
+          </div>
+        </PresencesWebSocket>
+      </NotificationsWebSocket>
+    </WorkspaceProvider>
   );
 }

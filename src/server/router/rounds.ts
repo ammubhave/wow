@@ -7,6 +7,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
 
+import {getWorkspaceRoom} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
 
 export const roundsRouter = {
@@ -38,23 +39,14 @@ export const roundsRouter = {
         .values({workspaceId: context.workspace.id, name: input.name})
         .returning()
         .get();
-
-      // Deferred: Broadcast notification and sync discord
-      waitUntil(
-        (async () => {
-          await Promise.allSettled([
-            context.activityLog.createRound({
-              subType: "create",
-              workspaceId: context.workspace.id,
-              roundId: round.id,
-              roundName: round.name,
-            }),
-            context.notification.broadcast(context.workspace.id, {type: "invalidate"}),
-            context.discord.sync(context.workspace.id),
-          ]);
-        })()
-      );
-
+      await context.activityLog.createRound({
+        subType: "create",
+        workspaceId: context.workspace.id,
+        roundId: round.id,
+        roundName: round.name,
+      });
+      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+      waitUntil(context.discord.sync(context.workspace.id));
       return round;
     }),
 
@@ -75,16 +67,8 @@ export const roundsRouter = {
         .returning({workspaceId: schema.round.workspaceId});
       invariant(result);
       const {workspaceId} = result;
-
-      // Deferred: Broadcast notification and sync discord
-      waitUntil(
-        (async () => {
-          await Promise.allSettled([
-            context.notification.broadcast(workspaceId, {type: "invalidate"}),
-            context.discord.sync(workspaceId),
-          ]);
-        })()
-      );
+      await (await getWorkspaceRoom(workspaceId)).invalidate();
+      waitUntil(context.discord.sync(workspaceId));
     }),
 
   delete: procedure.input(z.string()).handler(async ({context, input}) => {
@@ -99,14 +83,8 @@ export const roundsRouter = {
 
     // Delete round from database
     await db.delete(schema.round).where(eq(schema.round.id, input));
-
-    // Deferred: Broadcast notification and sync discord
-    waitUntil(
-      Promise.all([
-        context.notification.broadcast(round.workspaceId, {type: "invalidate"}),
-        context.discord.sync(round.workspaceId),
-      ])
-    );
+    await (await getWorkspaceRoom(round.workspaceId)).invalidate();
+    waitUntil(context.discord.sync(round.workspaceId));
   }),
 
   assignUnassignedPuzzles: procedure
@@ -127,14 +105,7 @@ export const roundsRouter = {
             eq(schema.puzzle.isMetaPuzzle, false)
           )
         );
-      // Deferred: Broadcast notification and sync discord
-      waitUntil(
-        (async () => {
-          await Promise.allSettled([
-            context.notification.broadcast(context.workspace.id, {type: "invalidate"}),
-            context.discord.sync(context.workspace.id),
-          ]);
-        })()
-      );
+      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+      waitUntil(context.discord.sync(context.workspace.id));
     }),
 };

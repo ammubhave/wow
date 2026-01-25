@@ -1,3 +1,4 @@
+import {useMutation} from "@tanstack/react-query";
 import {toast} from "sonner";
 import {z} from "zod";
 
@@ -9,30 +10,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {orpc} from "@/lib/orpc";
 
 import {useAppForm} from "./form";
 import {FieldGroup} from "./ui/field";
-import {useWorkspace} from "./use-workspace";
 
 export function EditRoundDialog({
-  workspaceSlug,
   round,
   children,
   open,
   setOpen,
 }: {
-  workspaceSlug: string;
   round: {id: string; name: string};
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const mutation = useMutation(orpc.rounds.update.mutationOptions());
   const form = useAppForm({
     defaultValues: {name: round.name},
     onSubmit: ({value}) =>
       toast.promise(
-        workspace.rounds.update.mutateAsync(
+        mutation.mutateAsync(
           {id: round.id, ...value},
           {
             onSuccess: () => {

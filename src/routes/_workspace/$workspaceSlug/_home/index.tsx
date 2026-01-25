@@ -59,8 +59,8 @@ import {
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Toggle} from "@/components/ui/toggle";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-import {useWorkspace} from "@/components/use-workspace";
 import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {
   getBgColorClassNamesForPuzzleStatus,
@@ -99,7 +99,7 @@ function getTagColor(tag: string): string {
 
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
@@ -113,7 +113,7 @@ function RouteComponent() {
     orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
   ).data?.favoritePuzzleIds ?? []) as string[];
 
-  const rounds = workspace.get.data.rounds.map(r => ({
+  const rounds = workspace.rounds.map(r => ({
     ...r,
     puzzles: r.puzzles
       .map((p, puzzleIndex) => ({...p, puzzleIndex: puzzleIndex + 1}))
@@ -215,7 +215,7 @@ function RouteComponent() {
                       Tags
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
-                      {(workspace.get.data.tags as string[] | undefined)?.map(tag => (
+                      {workspace.tags.map(tag => (
                         <DropdownMenuCheckboxItem
                           key={tag}
                           checked={tags.includes(tag)}
@@ -243,12 +243,7 @@ function RouteComponent() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         closeOnClick={false}
-                        onClick={() =>
-                          setTags([
-                            ...((workspace.get.data.tags as string[] | undefined) ?? []),
-                            null,
-                          ])
-                        }>
+                        onClick={() => setTags([...workspace.tags, null])}>
                         Select all
                       </DropdownMenuItem>
                       <DropdownMenuItem closeOnClick={false} onClick={() => setTags([])}>
@@ -429,7 +424,7 @@ function BlackboardRound({
   workspaceSlug: string;
   round: RouterOutputs["workspaces"]["get"]["rounds"][0];
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const roundsUpdateMutation = useMutation(orpc.rounds.update.mutationOptions());
   const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] = useState(false);
   const [isAddNewUnassignedPuzzleDialogOpen, setIsAddNewUnassignedPuzzleDialogOpen] =
     useState(false);
@@ -446,7 +441,7 @@ function BlackboardRound({
 
   function onStatusChange(value: string | null) {
     if (round.status !== value) {
-      toast.promise(workspace.rounds.update.mutateAsync({id: round.id, status: value}), {
+      toast.promise(roundsUpdateMutation.mutateAsync({id: round.id, status: value}), {
         loading: "Updating round status...",
         success: "Success! Round status updated.",
         error: "Oops! Something went wrong.",
@@ -553,25 +548,22 @@ function BlackboardRound({
             </DropdownMenu>
           </div>
           <AddNewMetaPuzzleDialog
-            workspaceSlug={workspaceSlug!}
             roundId={round.id}
             open={isAddNewMetaPuzzleDialogOpen}
             setOpen={setIsAddNewMetaPuzzleDialogOpen}
           />
           <AddNewPuzzleDialog
-            workspaceSlug={workspaceSlug!}
+            workspaceSlug={workspaceSlug}
             roundId={round.id}
             open={isAddNewUnassignedPuzzleDialogOpen}
             setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
           />
           <EditRoundDialog
-            workspaceSlug={workspaceSlug}
             round={round}
             open={isEditRoundDialogOpen}
             setOpen={setIsEditRoundDialogOpen}
           />
           <DeleteRoundDialog
-            workspaceSlug={workspaceSlug}
             roundId={round.id}
             open={isDeleteRoundDialogOpen}
             setOpen={setIsDeleteRoundDialogOpen}
@@ -678,7 +670,8 @@ function BlackboardMetaPuzzle({
   metaPuzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0];
   isParentCollapsed: boolean;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const puzzlesUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
   const [isAddNewPuzzleFeedingThisMetaDialogOpen, setIsAddNewPuzzleFeedingThisMetaDialogOpen] =
     useState(false);
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
@@ -710,7 +703,7 @@ function BlackboardMetaPuzzle({
       tags: metaPuzzle.tags,
     },
     onSubmit: ({value}) => {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: metaPuzzle.id, ...value}), {
+      toast.promise(puzzlesUpdateMutation.mutateAsync({id: metaPuzzle.id, ...value}), {
         loading: "Updating meta puzzle...",
         success: "Success! Meta puzzle updated.",
         error: "Oops! Something went wrong.",
@@ -914,7 +907,7 @@ function BlackboardMetaPuzzle({
                   defaultOpen
                   ref={tagsRef}
                   className="bg-amber-100 dark:bg-amber-950 border-0"
-                  items={(workspace.get.data.tags as string[] | null) ?? []}
+                  items={workspace.tags}
                 />
               )}
             />
@@ -980,13 +973,11 @@ function BlackboardMetaPuzzle({
             setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
           />
           <EditPuzzleDialog
-            workspaceSlug={workspaceSlug!}
             puzzle={metaPuzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}
           />
           <DeletePuzzleDialog
-            workspaceSlug={workspaceSlug!}
             puzzleId={metaPuzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}
@@ -1044,7 +1035,8 @@ function BlackboardPuzzle({
   isCollapsed?: boolean;
   isLast?: boolean;
 }) {
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const puzzleUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
@@ -1060,7 +1052,7 @@ function BlackboardPuzzle({
       tags: puzzle.tags,
     },
     onSubmit: ({value}) => {
-      toast.promise(workspace.puzzles.update.mutateAsync({id: puzzle.id, ...value}), {
+      toast.promise(puzzleUpdateMutation.mutateAsync({id: puzzle.id, ...value}), {
         loading: "Updating puzzle...",
         success: "Success! Puzzle updated.",
         error: "Oops! Something went wrong.",
@@ -1250,7 +1242,7 @@ function BlackboardPuzzle({
                   defaultOpen
                   ref={tagsRef}
                   className="bg-amber-100 dark:bg-amber-950 border-0"
-                  items={(workspace.get.data.tags as string[] | null) ?? []}
+                  items={workspace.tags}
                 />
               )}
             />
@@ -1306,13 +1298,11 @@ function BlackboardPuzzle({
             </DropdownMenu>
           </div>
           <EditPuzzleDialog
-            workspaceSlug={workspaceSlug!}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}
           />
           <DeletePuzzleDialog
-            workspaceSlug={workspaceSlug!}
             puzzleId={puzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}

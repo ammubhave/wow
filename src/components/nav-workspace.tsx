@@ -1,4 +1,4 @@
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
 import {GalleryVerticalEndIcon, Share2Icon, PlusIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -13,14 +13,16 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
-import {useWorkspace} from "./use-workspace";
-
 export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
   const workspaces = useQuery(orpc.workspaces.list.queryOptions());
-  const workspace = useWorkspace({workspaceSlug});
+  const workspace = useWorkspace();
+  const shareGoogleDriveFolderMutation = useMutation(
+    orpc.workspaces.shareGoogleDriveFolder.mutationOptions()
+  );
   const user = authClient.useSession().data?.user;
 
   if (!workspaces.data || !user) return null;
@@ -29,7 +31,7 @@ export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
       <DropdownMenuItem
         onClick={() => {
           toast.promise(
-            workspace.shareGoogleDriveFolder.mutateAsync({workspaceSlug, email: user.email!}),
+            shareGoogleDriveFolderMutation.mutateAsync({workspaceSlug, email: user.email!}),
             {
               loading: "Sharing Google Drive folder...",
               success: "Success! Google Drive folder has been shared.",
@@ -51,7 +53,7 @@ export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
           <DropdownMenuLabel className="text-xs flex items-center gap-2">
             <Avatar>
               <AvatarFallback>
-                {workspace.get.data.eventName
+                {workspace.eventName
                   ?.split(" ")
                   .map(word => word[0]?.toLocaleUpperCase())
                   .filter(c => !!c)
@@ -60,8 +62,8 @@ export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight font-bold">
-              <span className="truncate">{workspace.get.data.eventName}</span>
-              <span className="truncate text-xs">{workspace.get.data.teamName}</span>
+              <span className="truncate">{workspace.eventName}</span>
+              <span className="truncate text-xs">{workspace.teamName}</span>
             </div>
           </DropdownMenuLabel>
           {workspaces.data.length > 1 && <DropdownMenuSeparator />}
