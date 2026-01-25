@@ -12,14 +12,14 @@ import {Tooltip, TooltipContent, TooltipTrigger} from "./ui/tooltip";
 import {useWorkspace} from "./use-workspace";
 
 export function AppSidebar({
-  workspaceId,
+  workspaceSlug,
   rounds,
   ...props
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   rounds: RouterOutputs["workspaces"]["get"]["rounds"];
 } & React.ComponentProps<"div">) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   return (
     <div
       className="relative w-full max-w-[16rem] bg-sidebar border-l border-sidebar-border"
@@ -27,7 +27,7 @@ export function AppSidebar({
       <div className="absolute inset-0 overflow-y-auto flex flex-col">
         <div className="p-2 overflow-y-auto min-h-50">
           <CommentBox
-            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
             comment={workspace.get.data.comment}
             commentUpdatedAt={workspace.get.data.commentUpdatedAt}
             commentUpdatedBy={workspace.get.data.commentUpdatedBy}
@@ -72,7 +72,7 @@ export function AppSidebar({
         <div className="p-2">
           <Tooltip>
             <MakeAccouncementDialog
-              workspaceId={workspaceId}
+              workspaceSlug={workspaceSlug}
               children={
                 <TooltipTrigger
                   render={

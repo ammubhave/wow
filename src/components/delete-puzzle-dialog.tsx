@@ -14,19 +14,19 @@ import {
 import {useWorkspace} from "./use-workspace";
 
 export function DeletePuzzleDialog({
-  workspaceId,
+  workspaceSlug,
   puzzleId,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   puzzleId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       {children && <AlertDialogTrigger render={children} />}

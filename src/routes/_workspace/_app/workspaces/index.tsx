@@ -24,12 +24,12 @@ function RouteComponent() {
     orpc.workspaces.join.mutationOptions({
       onSuccess: data => {
         form.reset();
-        void router.navigate({to: "/$workspaceId", params: {workspaceId: data.slug}});
+        void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: data.slug}});
       },
     })
   );
   const form = useAppForm({
-    defaultValues: {workspaceId: "", password: ""},
+    defaultValues: {workspaceSlug: "", password: ""},
     onSubmit: ({value}) => {
       toast.promise(joinWorkspaceMutation.mutateAsync(value), {
         loading: "Joining workspace...",
@@ -67,12 +67,12 @@ function RouteComponent() {
                         <Link
                           {...(!workspace.googleAccessToken || !workspace.googleFolderId
                             ? ({
-                                to: "/workspaces/create/$workspaceId",
-                                params: {workspaceId: workspace.slug},
+                                to: "/workspaces/create/$workspaceSlug",
+                                params: {workspaceSlug: workspace.slug},
                               } as const)
                             : ({
-                                to: "/$workspaceId",
-                                params: {workspaceId: workspace.slug},
+                                to: "/$workspaceSlug",
+                                params: {workspaceSlug: workspace.slug},
                               } as const))}>
                           <span className="absolute inset-x-0 -top-px bottom-0" />
                           <span className="font-semibold">{workspace.teamName}</span> •{" "}
@@ -102,7 +102,7 @@ function RouteComponent() {
           <form.AppForm>
             <form.Form className="grid items-stretch space-y-8">
               <form.AppField
-                name="workspaceId"
+                name="workspaceSlug"
                 children={field => (
                   <field.TextField
                     label="Workspace ID"

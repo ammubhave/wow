@@ -70,7 +70,7 @@ import {
 import {RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home/")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
   component: RouteComponent,
 });
 
@@ -98,8 +98,8 @@ function getTagColor(tag: string): string {
 }
 
 function RouteComponent() {
-  const {workspaceId} = Route.useParams();
-  const workspace = useWorkspace({workspaceId});
+  const {workspaceSlug} = Route.useParams();
+  const workspace = useWorkspace({workspaceSlug});
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
@@ -110,7 +110,7 @@ function RouteComponent() {
   const [importances, setImportances] = useLocalStorage<(string | null)[]>("importances", []);
 
   const favoritePuzzleIds = (useQuery(
-    orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
+    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
   ).data?.favoritePuzzleIds ?? []) as string[];
 
   const rounds = workspace.get.data.rounds.map(r => ({
@@ -390,7 +390,7 @@ function RouteComponent() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <AddNewRoundDialog
-                            workspaceId={workspaceId!}
+                            workspaceSlug={workspaceSlug!}
                             open={isAddNewRoundDialogOpen}
                             setOpen={setIsAddNewRoundDialogOpen}
                           />
@@ -400,7 +400,11 @@ function RouteComponent() {
                   </TableHeader>
                   <TableBody>
                     {rounds.map(round => (
-                      <BlackboardRound key={round.id} workspaceId={workspaceId!} round={round} />
+                      <BlackboardRound
+                        key={round.id}
+                        workspaceSlug={workspaceSlug!}
+                        round={round}
+                      />
                     ))}
                     {/* Gets rid of the scroll bar when the last row is hidden. */}
                     <TableRow>
@@ -413,19 +417,19 @@ function RouteComponent() {
           </div>
         </div>
       </div>
-      <AppSidebar workspaceId={workspaceId} rounds={rounds} />
+      <AppSidebar workspaceSlug={workspaceSlug} rounds={rounds} />
     </div>
   );
 }
 
 function BlackboardRound({
-  workspaceId,
+  workspaceSlug,
   round,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   round: RouterOutputs["workspaces"]["get"]["rounds"][0];
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] = useState(false);
   const [isAddNewUnassignedPuzzleDialogOpen, setIsAddNewUnassignedPuzzleDialogOpen] =
     useState(false);
@@ -549,25 +553,25 @@ function BlackboardRound({
             </DropdownMenu>
           </div>
           <AddNewMetaPuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             roundId={round.id}
             open={isAddNewMetaPuzzleDialogOpen}
             setOpen={setIsAddNewMetaPuzzleDialogOpen}
           />
           <AddNewPuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             roundId={round.id}
             open={isAddNewUnassignedPuzzleDialogOpen}
             setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
           />
           <EditRoundDialog
-            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
             round={round}
             open={isEditRoundDialogOpen}
             setOpen={setIsEditRoundDialogOpen}
           />
           <DeleteRoundDialog
-            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
             roundId={round.id}
             open={isDeleteRoundDialogOpen}
             setOpen={setIsDeleteRoundDialogOpen}
@@ -577,7 +581,7 @@ function BlackboardRound({
       {round.metaPuzzles.map(metaPuzzle => (
         <BlackboardMetaPuzzle
           key={metaPuzzle.id}
-          workspaceId={workspaceId}
+          workspaceSlug={workspaceSlug}
           metaPuzzle={metaPuzzle}
           isParentCollapsed={isCollapsed}
         />
@@ -642,7 +646,7 @@ function BlackboardRound({
                 </DropdownMenu>
               </div>
               <AssignUnassignedPuzzlesDialog
-                workspaceId={workspaceId}
+                workspaceSlug={workspaceSlug}
                 roundId={round.id}
                 open={isAssignedUnassignedPuzzlesDialogOpen}
                 setOpen={setIsAssignUnassignedPuzzlesDialogOpen}
@@ -653,7 +657,7 @@ function BlackboardRound({
             <BlackboardPuzzle
               color="grey"
               key={puzzle.id}
-              workspaceId={workspaceId}
+              workspaceSlug={workspaceSlug}
               puzzle={puzzle}
               isCollapsed={isCollapsed || isUnassignedCollapsed}
               isLast={puzzle === round.unassignedPuzzles[round.unassignedPuzzles.length - 1]}
@@ -666,22 +670,22 @@ function BlackboardRound({
 }
 
 function BlackboardMetaPuzzle({
-  workspaceId,
+  workspaceSlug,
   metaPuzzle,
   isParentCollapsed,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   metaPuzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0];
   isParentCollapsed: boolean;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const [isAddNewPuzzleFeedingThisMetaDialogOpen, setIsAddNewPuzzleFeedingThisMetaDialogOpen] =
     useState(false);
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
   const favoritePuzzles: string[] = (useSuspenseQuery(
-    orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
+    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
   ).data.favoritePuzzleIds ?? []) as string[];
   const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
 
@@ -782,8 +786,8 @@ function BlackboardMetaPuzzle({
         <TableCell className="font-semibold">
           {metaPuzzle.googleSpreadsheetId || metaPuzzle.googleDrawingId ? (
             <Link
-              to="/$workspaceId/puzzles/$puzzleId"
-              params={{workspaceId, puzzleId: metaPuzzle.id}}
+              to="/$workspaceSlug/puzzles/$puzzleId"
+              params={{workspaceSlug, puzzleId: metaPuzzle.id}}
               className="-m-2 block p-2 hover:underline">
               {metaPuzzle.name}
             </Link>
@@ -937,7 +941,7 @@ function BlackboardMetaPuzzle({
               defaultPressed={favoritePuzzles.includes(metaPuzzle.id)}
               onPressedChange={async value => {
                 await setFavoritePuzzlesMutation.mutateAsync({
-                  workspaceId,
+                  workspaceSlug,
                   favoritePuzzleIds: value
                     ? [...favoritePuzzles, metaPuzzle.id]
                     : favoritePuzzles.filter(id => id !== metaPuzzle.id),
@@ -969,20 +973,20 @@ function BlackboardMetaPuzzle({
             </DropdownMenu>
           </div>
           <AddNewPuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             roundId={metaPuzzle.roundId}
             parentPuzzleId={metaPuzzle.id}
             open={isAddNewPuzzleFeedingThisMetaDialogOpen}
             setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
           />
           <EditPuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             puzzle={metaPuzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}
           />
           <DeletePuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             puzzleId={metaPuzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}
@@ -992,7 +996,7 @@ function BlackboardMetaPuzzle({
       {metaPuzzle.childPuzzles.map((puzzle, idx) => (
         <BlackboardPuzzle
           key={idx}
-          workspaceId={workspaceId}
+          workspaceSlug={workspaceSlug}
           color={color}
           puzzle={puzzle}
           isCollapsed={isParentCollapsed || isCollapsed}
@@ -1028,24 +1032,24 @@ function BlackboardMetaPuzzle({
 }
 
 function BlackboardPuzzle({
-  workspaceId,
+  workspaceSlug,
   puzzle,
   color,
   isCollapsed,
   isLast,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   puzzle: RouterOutputs["rounds"]["list"][0]["puzzles"][0]["childPuzzles"][0];
   color?: string;
   isCollapsed?: boolean;
   isLast?: boolean;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const [isTagsEditing, setIsTagsEditing] = useState(false);
   const favoritePuzzles: string[] = (useSuspenseQuery(
-    orpc.workspaces.members.get.queryOptions({input: {workspaceId}})
+    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
   ).data.favoritePuzzleIds ?? []) as string[];
   const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
   const form = useAppForm({
@@ -1125,8 +1129,8 @@ function BlackboardPuzzle({
         <TableCell>
           {puzzle.googleSpreadsheetId || puzzle.googleDrawingId ? (
             <Link
-              to="/$workspaceId/puzzles/$puzzleId"
-              params={{workspaceId, puzzleId: puzzle.id}}
+              to="/$workspaceSlug/puzzles/$puzzleId"
+              params={{workspaceSlug, puzzleId: puzzle.id}}
               className="-m-2 block p-2 hover:underline">
               {puzzle.name}
             </Link>
@@ -1273,7 +1277,7 @@ function BlackboardPuzzle({
               defaultPressed={favoritePuzzles.includes(puzzle.id)}
               onPressedChange={async value => {
                 await setFavoritePuzzlesMutation.mutateAsync({
-                  workspaceId,
+                  workspaceSlug,
                   favoritePuzzleIds: value
                     ? [...favoritePuzzles, puzzle.id]
                     : favoritePuzzles.filter(id => id !== puzzle.id),
@@ -1302,13 +1306,13 @@ function BlackboardPuzzle({
             </DropdownMenu>
           </div>
           <EditPuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}
           />
           <DeletePuzzleDialog
-            workspaceId={workspaceId!}
+            workspaceSlug={workspaceSlug!}
             puzzleId={puzzle.id}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}

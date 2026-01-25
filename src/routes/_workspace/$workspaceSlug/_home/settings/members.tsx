@@ -6,15 +6,15 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {gravatarUrl} from "@/components/user-hover-card";
 import {orpc} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/members")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/members")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Members | Workspace Settings | WOW"}]}),
 });
 
 function RouteComponent() {
-  const {workspaceId} = Route.useParams();
+  const {workspaceSlug} = Route.useParams();
   const members = useSuspenseQuery(
-    orpc.workspaces.members.list.queryOptions({input: {workspaceId}})
+    orpc.workspaces.members.list.queryOptions({input: {workspaceSlug}})
   ).data;
   return (
     <Card>

@@ -14,19 +14,19 @@ import {
 import {useWorkspace} from "./use-workspace";
 
 export function DeleteRoundDialog({
-  workspaceId,
+  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       {children && <AlertDialogTrigger render={children} />}

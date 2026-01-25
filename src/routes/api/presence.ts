@@ -7,8 +7,8 @@ export const Route = createFileRoute("/api/presence")({
     handlers: {
       GET: async ({request}) => {
         const url = new URL(request.url);
-        const workspaceId = z.string().parse(url.searchParams.get("workspaceId"));
-        return await env.PRESENCE_ROOMS.getByName(workspaceId, {locationHint: "enam"}).fetch(
+        const workspaceSlug = z.string().parse(url.searchParams.get("workspaceSlug"));
+        return await env.PRESENCE_ROOMS.getByName(workspaceSlug, {locationHint: "enam"}).fetch(
           request
         );
       },

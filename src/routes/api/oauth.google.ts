@@ -10,8 +10,8 @@ export const Route = createFileRoute("/api/oauth/google")({
     handlers: {
       GET: async ({request}) => {
         const url = new URL(request.url);
-        const {redirectUrl, workspaceId} = z
-          .object({redirectUrl: z.string(), workspaceId: z.string()})
+        const {redirectUrl, workspaceSlug} = z
+          .object({redirectUrl: z.string(), workspaceSlug: z.string()})
           .parse(
             Object.fromEntries(
               new URLSearchParams(z.string().parse(url.searchParams.get("state"))).entries()
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/oauth/google")({
             googleTokenExpiresAt: new Date(Date.now() + (tokens.expires_in - 60) * 1000),
             googleRefreshToken: tokens.refresh_token,
           })
-          .where(eq(schema.organization.slug, workspaceId));
+          .where(eq(schema.organization.slug, workspaceSlug));
         return redirect({href: redirectUrl});
       },
     },

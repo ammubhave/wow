@@ -35,11 +35,11 @@ export const procedure = base.use(async ({context: ctx, next}) => {
 });
 
 export const preauthorize = base.middleware(
-  async ({context, next}, input: {workspaceId: string}) => {
+  async ({context, next}, input: {workspaceSlug: string}) => {
     try {
       const workspace = await auth.api.getFullOrganization({
         headers: context.headers,
-        query: {organizationSlug: input.workspaceId},
+        query: {organizationSlug: input.workspaceSlug},
       });
       if (!workspace) throw new ORPCError("NOT_FOUND");
       return next({context: {workspace}});

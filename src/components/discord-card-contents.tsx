@@ -11,11 +11,11 @@ import {DisconnectDiscordDialog} from "./disconnect-discord-dialog";
 function DiscordForm({
   children,
   redirectUrl,
-  workspaceId,
+  workspaceSlug,
 }: {
   children: React.ReactNode;
   redirectUrl: string;
-  workspaceId: string;
+  workspaceSlug: string;
 }) {
   return (
     <form method="GET" action="https://discord.com/oauth2/authorize">
@@ -32,7 +32,7 @@ function DiscordForm({
       <input
         type="hidden"
         name="state"
-        value={new URLSearchParams({redirectUrl, workspaceId}).toString()}
+        value={new URLSearchParams({redirectUrl, workspaceSlug}).toString()}
       />
       {children}
     </form>
@@ -40,13 +40,15 @@ function DiscordForm({
 }
 
 export function DiscordCardContents({
-  workspaceId,
+  workspaceSlug,
   redirectUrl,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   redirectUrl: string;
 }) {
-  const discordInfo = useQuery(orpc.workspaces.getDiscordInfo.queryOptions({input: {workspaceId}}));
+  const discordInfo = useQuery(
+    orpc.workspaces.getDiscordInfo.queryOptions({input: {workspaceSlug}})
+  );
   return (
     <>
       <CardHeader>
@@ -101,11 +103,11 @@ export function DiscordCardContents({
                       )}
                     </span>
                   </span>
-                  <DiscordForm redirectUrl={redirectUrl} workspaceId={workspaceId}>
+                  <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
                     <Button type="submit" variant="secondary">
                       Reconnect
                     </Button>
-                    <DisconnectDiscordDialog workspaceId={workspaceId}>
+                    <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
                       <Button variant="destructive">Disconnect</Button>
                     </DisconnectDiscordDialog>
                   </DiscordForm>
@@ -127,7 +129,7 @@ export function DiscordCardContents({
                       You need to connect your Discord account.
                     </span>
                   </span>
-                  <DiscordForm redirectUrl={redirectUrl} workspaceId={workspaceId}>
+                  <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
                     <Button type="submit" variant="default" className="gap-2">
                       Connect with Discord
                     </Button>

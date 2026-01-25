@@ -22,7 +22,7 @@ const DEFAULT_MESSAGE = "No pinned comment.";
 
 export function CommentBox({
   comment,
-  workspaceId,
+  workspaceSlug,
   puzzleId,
   commentUpdatedAt,
   commentUpdatedBy,
@@ -30,7 +30,7 @@ export function CommentBox({
   comment: string | null;
   commentUpdatedAt: Date | null;
   commentUpdatedBy: string | null;
-  workspaceId: string;
+  workspaceSlug: string;
   puzzleId?: string;
 }) {
   const now = useNow({updateInterval: 1000});
@@ -39,13 +39,13 @@ export function CommentBox({
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [undoComment, setUndoComment] = useState(null as string | null);
 
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
 
   const updateComment = (comment: string | null) => {
     var oldComment = comment;
     toast.promise(
       puzzleId === undefined
-        ? workspace.update.mutateAsync({workspaceId, comment})
+        ? workspace.update.mutateAsync({workspaceSlug, comment})
         : workspace.puzzles.update.mutateAsync({id: puzzleId, comment}),
       {
         loading: "Saving comment...",

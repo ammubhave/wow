@@ -26,13 +26,13 @@ function RouteComponent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const form = useAppForm({
-    defaultValues: {teamName: "", eventName: "", workspaceId: "", password: ""},
+    defaultValues: {teamName: "", eventName: "", workspaceSlug: "", password: ""},
     onSubmit: ({value}) => {
       toast.promise(
         authClient.organization.create(
           {
             name: `${value.teamName} - ${value.eventName}`,
-            slug: value.workspaceId,
+            slug: value.workspaceSlug,
             teamName: value.teamName,
             eventName: value.eventName,
             password: value.password,
@@ -44,8 +44,8 @@ function RouteComponent() {
               void queryClient.invalidateQueries();
               form.reset();
               void router.navigate({
-                to: "/workspaces/create/$workspaceId",
-                params: {workspaceId: value.workspaceId},
+                to: "/workspaces/create/$workspaceSlug",
+                params: {workspaceSlug: value.workspaceSlug},
               });
             },
           }
@@ -97,7 +97,7 @@ function RouteComponent() {
                     children={field => <field.TextField label="Event Name" />}
                   />
                   <form.AppField
-                    name="workspaceId"
+                    name="workspaceSlug"
                     children={field => (
                       <field.TextField
                         label="Workspace ID"

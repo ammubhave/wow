@@ -17,13 +17,13 @@ import {SelectGroup, SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
 
 export function EditPuzzleDialog({
-  workspaceId,
+  workspaceSlug,
   puzzle,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   puzzle: {
     id: string;
     roundId: string;
@@ -41,7 +41,7 @@ export function EditPuzzleDialog({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {
       parentPuzzleId: puzzle.parentPuzzleId ?? puzzle.roundId,

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import {useWorkspace} from "@/components/use-workspace";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/administration")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Administration | Workspace Settings | WOW"}]}),
 });
@@ -33,16 +33,6 @@ function RouteComponent() {
 }
 
 function DeleteWorkspaceCard() {
-  // const navigate = useNavigate();
-  // const { workspaceId } = useParams<{ workspaceId: string }>();
-  // const utils = trpc.useUtils();
-  // const mutation = trpc.workspaces.delete.useMutation({
-  //   onSuccess: () => {
-  //     navigate("/");
-  //     utils.invalidate();
-  //   },
-  // });
-
   return (
     <Card>
       <CardHeader>
@@ -52,18 +42,7 @@ function DeleteWorkspaceCard() {
         </CardDescription>
       </CardHeader>
       <CardFooter>
-        <Button
-          variant="destructive"
-          disabled
-          // onClick={() => {
-          //   toast.promise(mutation.mutateAsync(workspaceId!), {
-          //     loading: "Deleting workspace...",
-          //     success: "Success! Your workspace has been deleted.",
-          //     error: "Oops! Something went wrong.",
-          //   });
-          // }}
-        >
-          {/* Delete */}
+        <Button variant="destructive" disabled>
           Contact support to delete your workspace
         </Button>
       </CardFooter>
@@ -92,12 +71,12 @@ function ArchiveWorkspaceCard() {
 }
 
 function WorkspacePasswordCard() {
-  const workspaceId = Route.useParams().workspaceId;
-  const workspace = useWorkspace({workspaceId});
+  const {workspaceSlug} = Route.useParams();
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {password: workspace.get.data.password ?? ""},
     onSubmit: ({value}) => {
-      toast.promise(workspace.update.mutateAsync({workspaceId, ...value}), {
+      toast.promise(workspace.update.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! The workspace password has been updated.",
         error: "Oops! Something went wrong.",
@@ -132,24 +111,24 @@ function WorkspacePasswordCard() {
 }
 
 function GoogleDriveCard() {
-  const {workspaceId} = Route.useParams();
+  const {workspaceSlug} = Route.useParams();
   return (
     <Card>
       <GoogleDriveCardContents
-        workspaceId={workspaceId}
-        redirectUrl={`/${workspaceId}/settings/administration`}
+        workspaceSlug={workspaceSlug}
+        redirectUrl={`/${workspaceSlug}/settings/administration`}
       />
     </Card>
   );
 }
 
 function DiscordCard() {
-  const {workspaceId} = Route.useParams();
+  const {workspaceSlug} = Route.useParams();
   return (
     <Card>
       <DiscordCardContents
-        workspaceId={workspaceId}
-        redirectUrl={`/${workspaceId}/settings/administration`}
+        workspaceSlug={workspaceSlug}
+        redirectUrl={`/${workspaceSlug}/settings/administration`}
       />
     </Card>
   );

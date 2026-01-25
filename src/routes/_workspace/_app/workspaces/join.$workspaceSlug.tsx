@@ -11,7 +11,7 @@ import {Item, ItemContent, ItemDescription, ItemTitle} from "@/components/ui/ite
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspaceId")({
+export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspaceSlug")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Join Workspace | WOW"}]}),
 });
@@ -20,10 +20,10 @@ function RouteComponent() {
   const params = Route.useParams();
   const router = useRouter();
   const workspace = useSuspenseQuery(
-    orpc.workspaces.getPublic.queryOptions({input: params.workspaceId})
+    orpc.workspaces.getPublic.queryOptions({input: params.workspaceSlug})
   ).data;
   const form = useAppForm({
-    defaultValues: {workspaceId: params.workspaceId, password: ""},
+    defaultValues: {workspaceSlug: params.workspaceSlug, password: ""},
     onSubmit: ({value}) => {
       toast.promise(joinWorkspaceMutation.mutateAsync(value), {
         loading: "Joining workspace...",
@@ -36,14 +36,14 @@ function RouteComponent() {
     orpc.workspaces.join.mutationOptions({
       onSuccess: data => {
         form.reset();
-        void router.navigate({to: "/$workspaceId", params: {workspaceId: data.slug}});
+        void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: data.slug}});
       },
     })
   );
   const organizations = authClient.useListOrganizations().data;
   useEffect(() => {
-    if (organizations && organizations.findIndex(org => org.slug === params.workspaceId) !== -1) {
-      void router.navigate({to: "/$workspaceId", params: {workspaceId: params.workspaceId}});
+    if (organizations && organizations.findIndex(org => org.slug === params.workspaceSlug) !== -1) {
+      void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: params.workspaceSlug}});
     }
   }, [organizations]);
   return (
@@ -54,7 +54,7 @@ function RouteComponent() {
       <div className="w-full max-w-sm z-10">
         <Card>
           <CardHeader>
-            <CardTitle>Join Workspace {params.workspaceId}</CardTitle>
+            <CardTitle>Join Workspace {params.workspaceSlug}</CardTitle>
             <CardDescription>Enter the workspace password to join.</CardDescription>
           </CardHeader>
           <CardContent>

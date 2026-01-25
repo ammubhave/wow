@@ -15,23 +15,23 @@ import {FieldGroup} from "./ui/field";
 import {useWorkspace} from "./use-workspace";
 
 export function AddNewRoundDialog({
-  workspaceId,
+  workspaceSlug,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {name: ""},
     onSubmit: ({value}) =>
       toast.promise(
         workspace.rounds.create.mutateAsync(
-          {...value, workspaceId},
+          {...value, workspaceSlug},
           {
             onSuccess: () => {
               form.reset();

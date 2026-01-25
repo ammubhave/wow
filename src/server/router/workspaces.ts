@@ -20,7 +20,7 @@ export const workspacesRouter = {
   }),
 
   get: procedure
-    .input(z.object({workspaceId: z.string()}))
+    .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
       const workspace = await db
@@ -64,14 +64,14 @@ export const workspacesRouter = {
     return workspace;
   }),
   join: procedure
-    .input(z.object({workspaceId: z.string(), password: z.string()}))
+    .input(z.object({workspaceSlug: z.string(), password: z.string()}))
     .handler(async ({context, input}) => {
       const workspace = await db
         .select()
         .from(schema.organization)
         .where(
           and(
-            eq(schema.organization.slug, input.workspaceId),
+            eq(schema.organization.slug, input.workspaceSlug),
             eq(schema.organization.password, input.password)
           )
         )
@@ -114,7 +114,7 @@ export const workspacesRouter = {
   update: procedure
     .input(
       z.object({
-        workspaceId: z.string(),
+        workspaceSlug: z.string(),
         teamName: z.string().min(1).optional(),
         eventName: z.string().min(1).optional(),
         password: z.string().min(8).optional(),
@@ -163,7 +163,7 @@ export const workspacesRouter = {
   }),
 
   leave: procedure
-    .input(z.object({workspaceId: z.string()}))
+    .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
       await auth.api.leaveOrganization({
@@ -173,7 +173,7 @@ export const workspacesRouter = {
     }),
 
   getGoogleTokenState: procedure
-    .input(z.object({workspaceId: z.string()}))
+    .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
       const googleAccessToken = await context.google.getAccessToken(context.workspace.id);
@@ -220,7 +220,7 @@ export const workspacesRouter = {
     }),
 
   setGoogleFolderId: procedure
-    .input(z.object({workspaceId: z.string(), folderId: z.string()}))
+    .input(z.object({workspaceSlug: z.string(), folderId: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       await db
@@ -231,7 +231,7 @@ export const workspacesRouter = {
     }),
 
   setGoogleTemplateFileId: procedure
-    .input(z.object({workspaceId: z.string(), fileId: z.string()}))
+    .input(z.object({workspaceSlug: z.string(), fileId: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       await db
@@ -242,14 +242,14 @@ export const workspacesRouter = {
     }),
 
   shareGoogleDriveFolder: procedure
-    .input(z.object({workspaceId: z.string(), email: z.email()}))
+    .input(z.object({workspaceSlug: z.string(), email: z.email()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       const workspace = await db.query.organization.findFirst({
-        where: (t, {eq}) => eq(t.slug, input.workspaceId),
+        where: (t, {eq}) => eq(t.slug, input.workspaceSlug),
       });
       if (!workspace) throw new ORPCError("NOT_FOUND");
-      const googleAccessToken = await context.google.getAccessToken(input.workspaceId);
+      const googleAccessToken = await context.google.getAccessToken(context.workspace.id);
       if (!workspace.googleFolderId || !googleAccessToken) {
         throw new ORPCError("FORBIDDEN", {
           message: "Google drive connection is not correctly configured.",
@@ -281,7 +281,7 @@ export const workspacesRouter = {
     }),
 
   getDiscordInfo: procedure
-    .input(z.object({workspaceId: z.string()}))
+    .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context: {workspace}}) => {
       if (!workspace.discordGuildId) {
@@ -313,7 +313,7 @@ export const workspacesRouter = {
 
   activityLog: {
     get: procedure
-      .input(z.object({workspaceId: z.string()}))
+      .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
       .handler(async ({context}) => {
         const activityLogEntries = await db
@@ -340,7 +340,7 @@ export const workspacesRouter = {
   },
   members: {
     list: procedure
-      .input(z.object({workspaceId: z.string()}))
+      .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
       .handler(async ({context}) => {
         const members = await db
@@ -360,7 +360,7 @@ export const workspacesRouter = {
       }),
 
     get: procedure
-      .input(z.object({workspaceId: z.string()}))
+      .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
       .handler(async ({context}) => {
         const member = await db
@@ -379,7 +379,7 @@ export const workspacesRouter = {
         return member;
       }),
     set: procedure
-      .input(z.object({workspaceId: z.string(), favoritePuzzleIds: z.array(z.string())}))
+      .input(z.object({workspaceSlug: z.string(), favoritePuzzleIds: z.array(z.string())}))
       .use(preauthorize)
       .handler(async ({context, input}) => {
         await db
@@ -395,7 +395,7 @@ export const workspacesRouter = {
   },
   announce: procedure
     .input(
-      z.object({workspaceId: z.string(), message: z.string(), channelId: z.string().nullable()})
+      z.object({workspaceSlug: z.string(), message: z.string(), channelId: z.string().nullable()})
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
@@ -418,7 +418,7 @@ export const workspacesRouter = {
     }),
   discord: {
     listTextChannels: procedure
-      .input(z.object({workspaceId: z.string()}))
+      .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
       .handler(async ({context}) => {
         if (!context.workspace.discordGuildId) return null;
@@ -428,7 +428,7 @@ export const workspacesRouter = {
         return data.filter(c => c.type === 0);
       }),
     disconnect: procedure
-      .input(z.object({workspaceId: z.string()}))
+      .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
       .handler(async ({context}) => {
         if (!context.workspace.discordGuildId) throw new ORPCError("BAD_REQUEST");

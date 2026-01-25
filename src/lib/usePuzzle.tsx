@@ -1,10 +1,10 @@
 import {useWorkspace} from "@/components/use-workspace";
 
 export function usePuzzle(
-  {workspaceId, puzzleId}: {workspaceId: string; puzzleId: string},
+  {workspaceSlug, puzzleId}: {workspaceSlug: string; puzzleId: string},
   opts?: {enabled?: boolean}
 ) {
-  const workspace = useWorkspace({workspaceId, ...opts});
+  const workspace = useWorkspace({workspaceSlug, ...opts});
   const puzzle =
     workspace.get.data?.rounds &&
     (() => {

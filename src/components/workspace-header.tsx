@@ -1,5 +1,5 @@
 import {useQuery} from "@tanstack/react-query";
-import {createFileRoute, Link, useChildMatches, useNavigate} from "@tanstack/react-router";
+import {Link, useChildMatches, useNavigate} from "@tanstack/react-router";
 import {ExternalLinkIcon, InfoIcon, SettingsIcon, HistoryIcon} from "lucide-react";
 import {useEffect} from "react";
 
@@ -8,6 +8,7 @@ import {Separator} from "@/components/ui/separator";
 import {useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {orpc} from "@/lib/orpc";
+import {Route} from "@/routes/_workspace/$workspaceSlug";
 import {useAppDispatch, useAppSelector} from "@/store";
 
 import {ActivityLogItem} from "./activity-log";
@@ -19,19 +20,15 @@ import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {useWorkspace} from "./use-workspace";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home")({
-  component: WorkspaceHeader,
-});
-
 export function WorkspaceHeader() {
-  const {workspaceId} = Route.useParams();
-  const workspace = useWorkspace({workspaceId});
+  const {workspaceSlug} = Route.useParams();
+  const workspace = useWorkspace({workspaceSlug});
   const {isMobile} = useSidebar();
   const childMatches = useChildMatches();
   const match = childMatches[childMatches.length - 1]!;
 
   const newPuzzleId =
-    match.routeId === "/_workspace/$workspaceId/puzzles/$puzzleId"
+    match.routeId === "/_workspace/$workspaceSlug/puzzles/$puzzleId"
       ? match.params.puzzleId
       : undefined;
   const dispatch = useAppDispatch();
@@ -48,20 +45,20 @@ export function WorkspaceHeader() {
     .flatMap(round => round.puzzles)
     .find(p => p.id === puzzleId);
   const activityLogEntries = useQuery(
-    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceId}})
+    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceSlug}})
   ).data;
   const navigate = useNavigate();
 
   return (
     <header className="bg-sidebar top-0 z-50 flex w-full items-center border-b">
-      <WorkspaceCommandDialog workspaceId={workspaceId} />
+      <WorkspaceCommandDialog workspaceSlug={workspaceSlug} />
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
           onValueChange={(to: string) => {
             void navigate({
               to,
-              params: to === "/$workspaceId/puzzles/$puzzleId" ? {puzzleId} : undefined,
+              params: to === "/$workspaceSlug/puzzles/$puzzleId" ? {puzzleId} : undefined,
             });
           }}
           className="flex flex-col shrink-0">
@@ -76,16 +73,16 @@ export function WorkspaceHeader() {
               </div>
             </div>
             <TabsList>
-              <TabsTrigger value="/$workspaceId/" className="px-2 flex items-center gap-4">
+              <TabsTrigger value="/$workspaceSlug/" className="px-2 flex items-center gap-4">
                 Home
               </TabsTrigger>
-              <TabsTrigger value="/$workspaceId/settings">
+              <TabsTrigger value="/$workspaceSlug/settings">
                 <SettingsIcon />
               </TabsTrigger>
-              <TabsTrigger value="/$workspaceId/activity-log">
+              <TabsTrigger value="/$workspaceSlug/activity-log">
                 <HistoryIcon />
               </TabsTrigger>
-              <TabsTrigger value="/$workspaceId/help-page">
+              <TabsTrigger value="/$workspaceSlug/help-page">
                 <InfoIcon />
               </TabsTrigger>
               {puzzle && (
@@ -93,7 +90,7 @@ export function WorkspaceHeader() {
                   <div className="w-full h-full px-1">
                     <Separator orientation="vertical" />
                   </div>
-                  <TabsTrigger value="/$workspaceId/puzzles/$puzzleId">{puzzle.name}</TabsTrigger>
+                  <TabsTrigger value="/$workspaceSlug/puzzles/$puzzleId">{puzzle.name}</TabsTrigger>
                 </>
               )}
             </TabsList>
@@ -106,7 +103,7 @@ export function WorkspaceHeader() {
                 variant="ghost"
                 nativeButton={false}
                 render={
-                  <Link to="/$workspaceId/activity-log" params={{workspaceId}}>
+                  <Link to="/$workspaceSlug/activity-log" params={{workspaceSlug}}>
                     <HistoryIcon className="text-muted-foreground shrink-0" />
                   </Link>
                 }
@@ -119,7 +116,7 @@ export function WorkspaceHeader() {
             </div>
           )}
         </div>
-        <PresencesCard id={workspaceId} />
+        <PresencesCard id={workspaceSlug} />
         <div className="flex items-center gap-1">
           {(workspace.get.data.links as {name: string; url: string}[] | undefined)?.map(
             (link, index) => (
@@ -161,7 +158,7 @@ export function WorkspaceHeader() {
               </DropdownMenuGroup>
             </>
           )}
-          <NavWorkspace workspaceId={workspaceId} />
+          <NavWorkspace workspaceSlug={workspaceSlug} />
         </NavUser>
       </div>
     </header>

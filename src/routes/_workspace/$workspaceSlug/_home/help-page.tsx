@@ -2,7 +2,7 @@ import {createFileRoute} from "@tanstack/react-router";
 
 import {HelpPage} from "@/components/help-page";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home/help-page")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/help-page")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Help | WOW"}]}),
 });

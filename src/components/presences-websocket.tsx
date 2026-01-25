@@ -6,18 +6,18 @@ import {setPresences} from "@/features/presences/presences";
 import {useAppDispatch} from "@/store";
 
 export function PresencesWebSocket({
-  workspaceId,
+  workspaceSlug,
   puzzleId,
   children,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   puzzleId?: string;
   children: React.ReactNode;
 }) {
   const {lastJsonMessage} = useWebSocket(
     puzzleId
-      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/presence?workspaceId=${workspaceId}&puzzleId=${puzzleId}`
-      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/presence?workspaceId=${workspaceId}`,
+      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/presence?workspaceSlug=${workspaceSlug}&puzzleId=${puzzleId}`
+      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${typeof window !== "undefined" ? window.location.host : ""}/api/presence?workspaceSlug=${workspaceSlug}`,
     {share: false, shouldReconnect: () => true}
   );
   const dispatch = useAppDispatch();

@@ -24,7 +24,7 @@ import {Separator} from "@/components/ui/separator";
 import {useWorkspace} from "@/components/use-workspace";
 import {orpc} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings/")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/")({
   component: RouteComponent,
 });
 
@@ -40,8 +40,8 @@ function RouteComponent() {
 }
 
 function UpdateLinksCard() {
-  const {workspaceId} = Route.useParams();
-  const workspace = useWorkspace({workspaceId});
+  const {workspaceSlug} = Route.useParams();
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {
       links:
@@ -50,7 +50,7 @@ function UpdateLinksCard() {
         ) ?? [],
     },
     onSubmit: ({value}) => {
-      toast.promise(workspace.update.mutateAsync({workspaceId, ...value}), {
+      toast.promise(workspace.update.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! Your changes have been saved.",
         error: "Oops! Something went wrong.",
@@ -137,7 +137,7 @@ function UpdateLinksCard() {
 
 function LeaveWorkspaceCard() {
   const navigate = Route.useNavigate();
-  const {workspaceId} = Route.useParams();
+  const {workspaceSlug} = Route.useParams();
   const leaveMutation = useMutation(orpc.workspaces.leave.mutationOptions());
   return (
     <Card>
@@ -153,7 +153,7 @@ function LeaveWorkspaceCard() {
           onClick={() => {
             toast.promise(
               leaveMutation.mutateAsync(
-                {workspaceId},
+                {workspaceSlug},
                 {
                   onSuccess: async () => {
                     await navigate({to: "/workspaces"});
@@ -174,8 +174,8 @@ function LeaveWorkspaceCard() {
   );
 }
 function DetailsCard() {
-  const {workspaceId} = Route.useParams();
-  const workspace = useWorkspace({workspaceId});
+  const {workspaceSlug} = Route.useParams();
+  const workspace = useWorkspace({workspaceSlug});
 
   const form = useAppForm({
     defaultValues: {
@@ -183,7 +183,7 @@ function DetailsCard() {
       eventName: workspace.get.data.eventName ?? undefined,
     },
     onSubmit: ({value}) => {
-      toast.promise(workspace.update.mutateAsync({workspaceId, ...value}), {
+      toast.promise(workspace.update.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! Your changes have been saved.",
         error: "Oops! Something went wrong.",
@@ -218,14 +218,16 @@ function DetailsCard() {
               <Field>
                 <FieldLabel>Invitation Link</FieldLabel>
                 <p className="text-muted-foreground text-xs flex items-center gap-2">
-                  https://join.wafflehaus.io/{workspaceId}
+                  https://join.wafflehaus.io/{workspaceSlug}
                   <Button
                     variant="ghost"
                     size="icon"
                     type="button"
                     onClick={() => {
                       toast.promise(
-                        navigator.clipboard.writeText(`https://join.wafflehaus.io/${workspaceId}`),
+                        navigator.clipboard.writeText(
+                          `https://join.wafflehaus.io/${workspaceSlug}`
+                        ),
                         {
                           loading: "Copying...",
                           success: "Join link copied!",
@@ -249,13 +251,13 @@ function DetailsCard() {
 }
 
 function UpdateTagsCard() {
-  const {workspaceId} = Route.useParams();
-  const tags = (useWorkspace({workspaceId}).get.data.tags as string[] | undefined) ?? [];
+  const {workspaceSlug} = Route.useParams();
+  const tags = (useWorkspace({workspaceSlug}).get.data.tags as string[] | undefined) ?? [];
   const mutation = useMutation(orpc.workspaces.update.mutationOptions());
   const form = useAppForm({
     defaultValues: {tags},
     onSubmit: ({value}) => {
-      toast.promise(mutation.mutateAsync({workspaceId, ...value}), {
+      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
         loading: "Saving...",
         success: "Success! Your changes have been saved.",
         error: "Oops! Something went wrong.",

@@ -18,9 +18,9 @@ import {orpc} from "@/lib/orpc";
 
 import {useWorkspace} from "./use-workspace";
 
-export function NavWorkspace({workspaceId}: {workspaceId: string}) {
+export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
   const workspaces = useQuery(orpc.workspaces.list.queryOptions());
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const user = authClient.useSession().data?.user;
 
   if (!workspaces.data || !user) return null;
@@ -29,10 +29,7 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
       <DropdownMenuItem
         onClick={() => {
           toast.promise(
-            workspace.shareGoogleDriveFolder.mutateAsync({
-              workspaceId: workspaceId,
-              email: user.email!,
-            }),
+            workspace.shareGoogleDriveFolder.mutateAsync({workspaceSlug, email: user.email!}),
             {
               loading: "Sharing Google Drive folder...",
               success: "Success! Google Drive folder has been shared.",
@@ -69,13 +66,13 @@ export function NavWorkspace({workspaceId}: {workspaceId: string}) {
           </DropdownMenuLabel>
           {workspaces.data.length > 1 && <DropdownMenuSeparator />}
           {workspaces.data
-            .filter(ws => ws.slug !== workspaceId)
+            .filter(ws => ws.slug !== workspaceSlug)
             .map(ws => (
               <DropdownMenuItem
                 key={ws.id}
                 className="gap-2 p-2"
                 render={
-                  <Link to="/$workspaceId" params={{workspaceId: ws.slug}}>
+                  <Link to="/$workspaceSlug" params={{workspaceSlug: ws.slug}}>
                     <Avatar>
                       <AvatarFallback>
                         {ws.eventName

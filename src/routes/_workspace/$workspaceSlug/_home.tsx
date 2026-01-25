@@ -2,7 +2,9 @@ import {createFileRoute, Outlet, useChildMatches} from "@tanstack/react-router";
 
 import {Tabs} from "@/components/ui/tabs";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home")({
+  component: RouteComponent,
+});
 
 function RouteComponent() {
   const childMatches = useChildMatches();

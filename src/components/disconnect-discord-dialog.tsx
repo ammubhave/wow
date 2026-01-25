@@ -17,10 +17,10 @@ import {
 } from "./ui/alert-dialog";
 
 export function DisconnectDiscordDialog({
-  workspaceId,
+  workspaceSlug,
   children,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   children?: React.ReactElement;
 }) {
   const mutation = useMutation(orpc.workspaces.discord.disconnect.mutationOptions());
@@ -43,7 +43,7 @@ export function DisconnectDiscordDialog({
             onClick={event => {
               toast.promise(
                 mutation.mutateAsync(
-                  {workspaceId},
+                  {workspaceSlug},
                   {
                     onSuccess: () => {
                       setOpen(false);

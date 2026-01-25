@@ -15,19 +15,19 @@ import {FieldGroup} from "./ui/field";
 import {useWorkspace} from "./use-workspace";
 
 export function EditRoundDialog({
-  workspaceId,
+  workspaceSlug,
   round,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   round: {id: string; name: string};
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {name: round.name},
     onSubmit: ({value}) =>

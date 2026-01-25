@@ -105,7 +105,7 @@ export function ActivityLogItem({
                       ? "updated the answer of"
                       : ""}{" "}
             <Link
-              to="/$workspaceId/puzzles/$puzzleId"
+              to="/$workspaceSlug/puzzles/$puzzleId"
               params={{puzzleId: activityItem.puzzle_activity_log_entry.puzzleId} as any}
               className="font-medium text-foreground">
               {activityItem.puzzle_activity_log_entry.puzzleName}
@@ -167,9 +167,9 @@ export function ActivityLogItem({
   );
 }
 
-export function ActivityLog({workspaceId}: {workspaceId: string}) {
+export function ActivityLog({workspaceSlug}: {workspaceSlug: string}) {
   const activityLogEntries = useQuery(
-    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceId}})
+    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceSlug}})
   ).data;
   if (activityLogEntries === undefined) {
     return <Skeleton className="h-96 w-full" />;

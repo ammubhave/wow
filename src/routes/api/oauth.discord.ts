@@ -11,8 +11,8 @@ export const Route = createFileRoute("/api/oauth/discord")({
     handlers: {
       GET: async ({request}) => {
         const url = new URL(request.url);
-        const {redirectUrl, workspaceId} = z
-          .object({redirectUrl: z.string(), workspaceId: z.string()})
+        const {redirectUrl, workspaceSlug} = z
+          .object({redirectUrl: z.string(), workspaceSlug: z.string()})
           .parse(
             Object.fromEntries(
               new URLSearchParams(z.string().parse(url.searchParams.get("state"))).entries()
@@ -32,19 +32,10 @@ export const Route = createFileRoute("/api/oauth/discord")({
         await db
           .update(schema.organization)
           .set({discordGuildId: guildId})
-          .where(eq(schema.organization.slug, workspaceId));
-        // const prisma = getPrisma();
-        // const workspace = await prisma.workspace.update({
-        //   where: {id: workspaceId},
-        //   data: {discordGuildId: guildId},
-        //   select: {
-        //     discordGuildId: true,
-        //     rounds: {select: {name: true, puzzles: {select: {name: true, status: true}}}},
-        //   },
-        // });
+          .where(eq(schema.organization.slug, workspaceSlug));
 
         const workspace = await db.query.organization.findFirst({
-          where: (t, {eq}) => eq(t.slug, workspaceId),
+          where: (t, {eq}) => eq(t.slug, workspaceSlug),
         });
         if (!workspace) throw new Error("Workspace not found");
         const rounds = await db.query.round.findMany({

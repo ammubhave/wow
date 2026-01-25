@@ -15,21 +15,21 @@ import {SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
 
 export function AddNewPuzzleDialog({
-  workspaceId,
+  workspaceSlug,
   children,
   open,
   setOpen,
   roundId,
   parentPuzzleId,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
   roundId: string;
   parentPuzzleId?: string;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {name: "", tags: [] as string[], link: "", worksheetType: "google_spreadsheet"},
     onSubmit: ({value}) =>
@@ -57,8 +57,8 @@ export function AddNewPuzzleDialog({
             <>
               Go to
               <Link
-                to="/$workspaceId/puzzles/$puzzleId"
-                params={{workspaceId, puzzleId: puzzle.id}}
+                to="/$workspaceSlug/puzzles/$puzzleId"
+                params={{workspaceSlug, puzzleId: puzzle.id}}
                 className="ml-1 hover:underline">
                 {puzzle.name}
               </Link>

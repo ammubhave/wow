@@ -1,7 +1,7 @@
 import {createFileRoute, Link, Outlet, useChildMatches} from "@tanstack/react-router";
 import {cn} from "tailwind-variants";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/_home/settings")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Workspace Settings | WOW"}]}),
 });
@@ -21,7 +21,7 @@ function RouteComponent() {
               from={Route.fullPath}
               to="."
               className={cn(
-                match.routeId === "/_workspace/$workspaceId/_home/settings/" &&
+                match.routeId === "/_workspace/$workspaceSlug/_home/settings/" &&
                   "text-primary font-semibold"
               )}>
               General
@@ -30,7 +30,7 @@ function RouteComponent() {
               from={Route.fullPath}
               to="./members"
               className={cn(
-                match.routeId === "/_workspace/$workspaceId/_home/settings/members" &&
+                match.routeId === "/_workspace/$workspaceSlug/_home/settings/members" &&
                   "text-primary font-semibold"
               )}>
               Members
@@ -39,7 +39,7 @@ function RouteComponent() {
               from={Route.fullPath}
               to="./administration"
               className={cn(
-                match.routeId === "/_workspace/$workspaceId/_home/settings/administration" &&
+                match.routeId === "/_workspace/$workspaceSlug/_home/settings/administration" &&
                   "text-primary font-semibold"
               )}>
               Administration

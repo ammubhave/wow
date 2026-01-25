@@ -14,19 +14,19 @@ import {useAppForm} from "./form";
 import {useWorkspace} from "./use-workspace";
 
 export function AddNewMetaPuzzleDialog({
-  workspaceId,
+  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {name: "", assignUnassignedPuzzles: true, tags: [] as string[], link: ""},
     onSubmit: ({value}) =>

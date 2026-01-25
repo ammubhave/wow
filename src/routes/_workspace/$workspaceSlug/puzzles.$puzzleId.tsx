@@ -34,11 +34,11 @@ import {
 } from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
 
-export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzleId")({
   component: RouteComponent,
   head: async ({params}) => {
     const puzzle = await client.puzzles.get({
-      workspaceId: params.workspaceId,
+      workspaceSlug: params.workspaceSlug,
       puzzleId: params.puzzleId,
     });
     return {meta: [{title: `${puzzle.name} | WOW`}]};
@@ -46,8 +46,8 @@ export const Route = createFileRoute("/_workspace/$workspaceId/puzzles/$puzzleId
 });
 
 function RouteComponent() {
-  const {workspaceId, puzzleId} = Route.useParams();
-  const puzzle = usePuzzle({workspaceId, puzzleId});
+  const {workspaceSlug, puzzleId} = Route.useParams();
+  const puzzle = usePuzzle({workspaceSlug, puzzleId});
 
   if (!puzzle.data || !puzzleId) {
     return <></>;
@@ -55,7 +55,7 @@ function RouteComponent() {
 
   return (
     <SidebarInset>
-      <PresencesWebSocket workspaceId={workspaceId!} puzzleId={puzzleId!}>
+      <PresencesWebSocket workspaceSlug={workspaceSlug!} puzzleId={puzzleId!}>
         <div className="flex flex-1">
           <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={80}>
@@ -73,7 +73,7 @@ function RouteComponent() {
             <ResizablePanel defaultSize={20}>
               <ResizablePanelGroup orientation="vertical">
                 <ResizablePanel defaultSize={30} className="flex">
-                  <PuzzleInfoPanel workspaceId={workspaceId!} puzzle={puzzle.data} />
+                  <PuzzleInfoPanel workspaceSlug={workspaceSlug!} puzzle={puzzle.data} />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={60} className="flex flex-col">
@@ -89,10 +89,10 @@ function RouteComponent() {
 }
 
 function PuzzleInfoPanel({
-  workspaceId,
+  workspaceSlug,
   puzzle,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   puzzle: {
     comment: string | null;
     commentUpdatedAt: Date | null;
@@ -111,7 +111,7 @@ function PuzzleInfoPanel({
     tags: string[];
   };
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status, tags: puzzle.tags},
     onSubmit: ({value}) => {
@@ -213,7 +213,7 @@ function PuzzleInfoPanel({
             </Tooltip>
           )}
           <EditPuzzleDialog
-            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}>
@@ -304,7 +304,7 @@ function PuzzleInfoPanel({
             comment={puzzle.comment}
             commentUpdatedAt={puzzle.commentUpdatedAt}
             commentUpdatedBy={puzzle.commentUpdatedBy}
-            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
             puzzleId={puzzle.id}
           />
         </div>

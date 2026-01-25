@@ -15,17 +15,17 @@ function getConfetti() {
 }
 
 export function NotificationsWebSocket({
-  workspaceId,
+  workspaceSlug,
   children,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   children: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
   const notificationsEnabled = authClient.useSession().data?.user.notificationsDisabled === false;
 
   useWebSocket(
-    `${typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}` : ""}/api/notification/${workspaceId}`,
+    `${typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}` : ""}/api/notification/${workspaceSlug}`,
     {
       share: false,
       shouldReconnect: () => true,

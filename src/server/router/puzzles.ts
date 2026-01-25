@@ -347,7 +347,7 @@ export const puzzlesRouter = {
     );
   }),
   get: procedure
-    .input(z.object({workspaceId: z.string(), puzzleId: z.string()}))
+    .input(z.object({workspaceSlug: z.string(), puzzleId: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       const [puzzle] = await db

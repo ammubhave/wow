@@ -14,19 +14,19 @@ import {SelectItem} from "./ui/select";
 import {useWorkspace} from "./use-workspace";
 
 export function AssignUnassignedPuzzlesDialog({
-  workspaceId,
+  workspaceSlug,
   roundId,
   children,
   open,
   setOpen,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   roundId: string;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const form = useAppForm({
     defaultValues: {parentPuzzleId: ""},
     onSubmit: ({value}) => {
@@ -36,7 +36,7 @@ export function AssignUnassignedPuzzlesDialog({
       }
       toast.promise(
         workspace.rounds.assignUnassignedPuzzles.mutateAsync(
-          {...value, workspaceId},
+          {...value, workspaceSlug},
           {
             onSuccess: () => {
               form.reset();

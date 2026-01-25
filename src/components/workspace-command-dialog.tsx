@@ -21,7 +21,7 @@ import {
 } from "./ui/command";
 import {useWorkspace} from "./use-workspace";
 
-export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
+export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string}) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -33,7 +33,7 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
-  const workspace = useWorkspace({workspaceId});
+  const workspace = useWorkspace({workspaceSlug});
   const navigate = useNavigate();
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -44,7 +44,7 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
           <CommandGroup heading="Workspace">
             <CommandItem
               onSelect={() => {
-                void navigate({to: "/$workspaceId", params: {workspaceId}});
+                void navigate({to: "/$workspaceSlug", params: {workspaceSlug}});
                 setOpen(false);
               }}>
               <HomeIcon />
@@ -52,7 +52,7 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
             </CommandItem>
             <CommandItem
               onSelect={() => {
-                void navigate({to: "/$workspaceId/settings", params: {workspaceId}});
+                void navigate({to: "/$workspaceSlug/settings", params: {workspaceSlug}});
                 setOpen(false);
               }}>
               <SettingsIcon />
@@ -60,7 +60,7 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
             </CommandItem>
             <CommandItem
               onSelect={() => {
-                void navigate({to: "/$workspaceId/activity-log", params: {workspaceId}});
+                void navigate({to: "/$workspaceSlug/activity-log", params: {workspaceSlug}});
                 setOpen(false);
               }}>
               <HistoryIcon />
@@ -68,7 +68,7 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
             </CommandItem>
             <CommandItem
               onSelect={() => {
-                void navigate({to: "/$workspaceId/help-page", params: {workspaceId}});
+                void navigate({to: "/$workspaceSlug/help-page", params: {workspaceSlug}});
                 setOpen(false);
               }}>
               <InfoIcon />
@@ -83,8 +83,8 @@ export function WorkspaceCommandDialog({workspaceId}: {workspaceId: string}) {
                   key={puzzle.id}
                   onSelect={() => {
                     void navigate({
-                      to: "/$workspaceId/puzzles/$puzzleId",
-                      params: {workspaceId, puzzleId: puzzle.id},
+                      to: "/$workspaceSlug/puzzles/$puzzleId",
+                      params: {workspaceSlug, puzzleId: puzzle.id},
                     });
                     setOpen(false);
                   }}>

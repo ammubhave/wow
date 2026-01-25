@@ -17,15 +17,15 @@ import {FieldGroup} from "./ui/field";
 import {SelectItem} from "./ui/select";
 
 export function MakeAccouncementDialog({
-  workspaceId,
+  workspaceSlug,
   children,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   children: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
   const discordTextChannels = useQuery(
-    orpc.workspaces.discord.listTextChannels.queryOptions({input: {workspaceId}, enabled: open})
+    orpc.workspaces.discord.listTextChannels.queryOptions({input: {workspaceSlug}, enabled: open})
   );
   const mutation = useMutation(orpc.workspaces.announce.mutationOptions());
   const form = useAppForm({
@@ -33,7 +33,7 @@ export function MakeAccouncementDialog({
     onSubmit: ({value}) =>
       mutation.mutateAsync(
         {
-          workspaceId,
+          workspaceSlug,
           message: value.message,
           channelId: value.channelId.length > 0 ? value.channelId : null,
         },

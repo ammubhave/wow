@@ -9,14 +9,14 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
 import {useWorkspace} from "@/components/use-workspace";
 
-export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceId")({
+export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceSlug")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Create Workspace | WOW"}]}),
 });
 
 function RouteComponent() {
-  const {workspaceId} = Route.useParams();
-  const workspace = useWorkspace({workspaceId});
+  const {workspaceSlug} = Route.useParams();
+  const workspace = useWorkspace({workspaceSlug});
 
   return (
     <div className="flex justify-center w-full">
@@ -35,19 +35,19 @@ function RouteComponent() {
         </div>
         <Card>
           <GoogleDriveCardContents
-            workspaceId={workspaceId!}
-            redirectUrl={`/workspaces/create/${workspaceId}`}
+            workspaceSlug={workspaceSlug!}
+            redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
           <div className="border-t" />
           <DiscordCardContents
-            workspaceId={workspaceId!}
-            redirectUrl={`/workspaces/create/${workspaceId}`}
+            workspaceSlug={workspaceSlug!}
+            redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
           <CardContent className="flex items-center justify-between gap-4 border-t pt-6">
             <Button
               variant="ghost"
               onClick={() => {
-                toast.promise(workspace.delete.mutateAsync(workspaceId!), {
+                toast.promise(workspace.delete.mutateAsync(workspaceSlug!), {
                   loading: "Deleting workspace...",
                   success: "Success! Your workspace has been deleted.",
                   error: "Oops! Something went wrong.",
@@ -68,7 +68,7 @@ function RouteComponent() {
                   "pointer-events-none opacity-50"
               )}
               render={
-                <Link to="/$workspaceId" params={{workspaceId}}>
+                <Link to="/$workspaceSlug" params={{workspaceSlug}}>
                   Go to blackboard
                   <ArrowRightIcon />
                 </Link>

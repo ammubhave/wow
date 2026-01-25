@@ -10,10 +10,10 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
 
 export function GoogleDriveCardContents({
-  workspaceId,
+  workspaceSlug,
   redirectUrl,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   redirectUrl: string;
 }) {
   const [openPicker] = useDrivePicker();
@@ -42,7 +42,7 @@ export function GoogleDriveCardContents({
       setSelectFolderEnabled: true,
       callbackFunction: data => {
         if (data.action === "picked") {
-          toast.promise(folderMutation.mutateAsync({workspaceId, folderId: data.docs[0]!.id}), {
+          toast.promise(folderMutation.mutateAsync({workspaceSlug, folderId: data.docs[0]!.id}), {
             loading: "Selecting folder...",
             success: "Success! The folder has been selected.",
             error: "Oops! Something went wrong.",
@@ -60,7 +60,7 @@ export function GoogleDriveCardContents({
       setIncludeFolders: true,
       callbackFunction: data => {
         if (data.action === "picked") {
-          toast.promise(fileMutation.mutateAsync({workspaceId, fileId: data.docs[0]!.id}), {
+          toast.promise(fileMutation.mutateAsync({workspaceSlug, fileId: data.docs[0]!.id}), {
             loading: "Selecting template file...",
             success: "Success! The template file has been selected.",
             error: "Oops! Something went wrong.",
@@ -70,7 +70,9 @@ export function GoogleDriveCardContents({
     });
   };
 
-  const state = useQuery(orpc.workspaces.getGoogleTokenState.queryOptions({input: {workspaceId}}));
+  const state = useQuery(
+    orpc.workspaces.getGoogleTokenState.queryOptions({input: {workspaceSlug}})
+  );
 
   return (
     <>
@@ -104,7 +106,7 @@ export function GoogleDriveCardContents({
                           You're successfully connected to Google.
                         </span>
                       </span>
-                      <ConnectToGoogleForm workspaceId={workspaceId} redirectUrl={redirectUrl}>
+                      <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>
                         <Button variant="secondary" type="submit">
                           Reconnect
                         </Button>
@@ -133,7 +135,7 @@ export function GoogleDriveCardContents({
                           You need to connect your Google account.
                         </span>
                       </span>
-                      <ConnectToGoogleForm workspaceId={workspaceId} redirectUrl={redirectUrl}>
+                      <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>
                         <Button type="submit">Connect</Button>
                       </ConnectToGoogleForm>
                     </div>
@@ -311,11 +313,11 @@ export function GoogleDriveCardContents({
 }
 
 function ConnectToGoogleForm({
-  workspaceId,
+  workspaceSlug,
   redirectUrl,
   children,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
   redirectUrl: string;
   children: React.ReactNode;
 }) {
@@ -334,7 +336,7 @@ function ConnectToGoogleForm({
       <input
         type="hidden"
         name="state"
-        value={new URLSearchParams({redirectUrl, workspaceId}).toString()}
+        value={new URLSearchParams({redirectUrl, workspaceSlug}).toString()}
       />
       <input type="hidden" name="include_granted_scopes" value="false" />
       {children}

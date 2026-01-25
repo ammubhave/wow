@@ -11,7 +11,7 @@ import {preauthorize, procedure} from "./base";
 
 export const roundsRouter = {
   list: procedure
-    .input(z.object({workspaceId: z.string()}))
+    .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
       const rounds = await db.query.round.findMany({
@@ -29,7 +29,7 @@ export const roundsRouter = {
     }),
 
   create: procedure
-    .input(z.object({workspaceId: z.string(), name: z.string()}))
+    .input(z.object({workspaceSlug: z.string(), name: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       // Create round in database
@@ -110,7 +110,7 @@ export const roundsRouter = {
   }),
 
   assignUnassignedPuzzles: procedure
-    .input(z.object({workspaceId: z.string(), parentPuzzleId: z.string()}))
+    .input(z.object({workspaceSlug: z.string(), parentPuzzleId: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       const parentPuzzle = await db.query.puzzle.findFirst({
@@ -131,8 +131,8 @@ export const roundsRouter = {
       waitUntil(
         (async () => {
           await Promise.allSettled([
-            context.notification.broadcast(input.workspaceId, {type: "invalidate"}),
-            context.discord.sync(input.workspaceId),
+            context.notification.broadcast(context.workspace.id, {type: "invalidate"}),
+            context.discord.sync(context.workspace.id),
           ]);
         })()
       );

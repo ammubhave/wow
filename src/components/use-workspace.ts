@@ -2,9 +2,9 @@ import {useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-que
 
 import {orpc} from "@/lib/orpc";
 
-export function useWorkspace({workspaceId}: {workspaceId: string}) {
+export function useWorkspace({workspaceSlug}: {workspaceSlug: string}) {
   const queryClient = useQueryClient();
-  const query = useSuspenseQuery(orpc.workspaces.get.queryOptions({input: {workspaceId}}));
+  const query = useSuspenseQuery(orpc.workspaces.get.queryOptions({input: {workspaceSlug}}));
   const updateMutation = useMutation(
     orpc.workspaces.update.mutationOptions({
       onSuccess: () => {
@@ -78,7 +78,7 @@ export function useWorkspace({workspaceId}: {workspaceId: string}) {
   const shareGoogleDriveFolderMutation = useMutation(
     orpc.workspaces.shareGoogleDriveFolder.mutationOptions()
   );
-  const roundsQuery = useSuspenseQuery(orpc.rounds.list.queryOptions({input: {workspaceId}}));
+  const roundsQuery = useSuspenseQuery(orpc.rounds.list.queryOptions({input: {workspaceSlug}}));
   const roundAssignUnassignedPuzzlesMutation = useMutation(
     orpc.rounds.assignUnassignedPuzzles.mutationOptions({
       onSuccess: () => {

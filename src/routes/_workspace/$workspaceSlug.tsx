@@ -9,15 +9,15 @@ import {WorkspaceHeader} from "@/components/workspace-header";
 import {authClient} from "@/lib/auth-client";
 import {client} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_workspace/$workspaceId")({
+export const Route = createFileRoute("/_workspace/$workspaceSlug")({
   beforeLoad: async ({params}) => {
     try {
-      await client.workspaces.get({workspaceId: params.workspaceId});
+      await client.workspaces.get({workspaceSlug: params.workspaceSlug});
     } catch (e) {
       if (e instanceof ORPCError && e.code === "FORBIDDEN") {
         throw redirect({
-          to: "/workspaces/join/$workspaceId",
-          params: {workspaceId: params.workspaceId},
+          to: "/workspaces/join/$workspaceSlug",
+          params: {workspaceSlug: params.workspaceSlug},
         });
       }
     }
@@ -26,13 +26,13 @@ export const Route = createFileRoute("/_workspace/$workspaceId")({
 });
 
 function RouteComponent() {
-  const {workspaceId} = Route.useParams();
+  const {workspaceSlug} = Route.useParams();
   const {data: session} = authClient.useSession();
 
   if (!session) return null;
   return (
-    <NotificationsWebSocket workspaceId={workspaceId}>
-      <PresencesWebSocket workspaceId={workspaceId}>
+    <NotificationsWebSocket workspaceSlug={workspaceSlug}>
+      <PresencesWebSocket workspaceSlug={workspaceSlug}>
         <div className="[--header-height:calc(--spacing(14))]">
           <SidebarProvider className="flex flex-col">
             <WorkspaceHeader />
