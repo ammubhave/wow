@@ -1,4 +1,4 @@
-import {Link, useChildMatches, useNavigate} from "@tanstack/react-router";
+import {Link, useChildMatches} from "@tanstack/react-router";
 import {ExternalLinkIcon, InfoIcon, SettingsIcon, HistoryIcon} from "lucide-react";
 import {useEffect} from "react";
 
@@ -40,7 +40,6 @@ export function WorkspaceHeader() {
   const puzzleId = newPuzzleId ?? lastActivePuzzleId;
 
   const puzzle = workspace.rounds.flatMap(round => round.puzzles).find(p => p.id === puzzleId);
-  const navigate = useNavigate();
 
   return (
     <header className="bg-sidebar top-0 z-50 flex w-full items-center border-b">
@@ -48,12 +47,6 @@ export function WorkspaceHeader() {
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
-          onValueChange={(to: string) => {
-            void navigate({
-              to,
-              params: to === "/$workspaceSlug/puzzles/$puzzleId" ? {puzzleId} : undefined,
-            });
-          }}
           className="flex flex-col shrink-0">
           <div className="justify-between flex items-center gap-2">
             <div className="px-2 flex items-center gap-4 shrink-0">
@@ -66,24 +59,53 @@ export function WorkspaceHeader() {
               </div>
             </div>
             <TabsList>
-              <TabsTrigger value="/$workspaceSlug/" className="px-2 flex items-center gap-4">
-                Home
-              </TabsTrigger>
-              <TabsTrigger value="/$workspaceSlug/settings">
-                <SettingsIcon />
-              </TabsTrigger>
-              <TabsTrigger value="/$workspaceSlug/activity-log">
-                <HistoryIcon />
-              </TabsTrigger>
-              <TabsTrigger value="/$workspaceSlug/help-page">
-                <InfoIcon />
-              </TabsTrigger>
+              <TabsTrigger
+                value="/$workspaceSlug/"
+                render={
+                  <Link to="/$workspaceSlug" params={{workspaceSlug}}>
+                    Home
+                  </Link>
+                }
+              />
+              <TabsTrigger
+                value="/$workspaceSlug/settings"
+                render={
+                  <Link to="/$workspaceSlug/settings" params={{workspaceSlug}}>
+                    <SettingsIcon />
+                  </Link>
+                }
+              />
+              <TabsTrigger
+                value="/$workspaceSlug/activity-log"
+                render={
+                  <Link to="/$workspaceSlug/activity-log" params={{workspaceSlug}}>
+                    <HistoryIcon />
+                  </Link>
+                }
+              />
+              <TabsTrigger
+                value="/$workspaceSlug/help-page"
+                render={
+                  <Link to="/$workspaceSlug/help-page" params={{workspaceSlug}}>
+                    <InfoIcon />
+                  </Link>
+                }
+              />
               {puzzle && (
                 <>
                   <div className="w-full h-full px-1">
                     <Separator orientation="vertical" />
                   </div>
-                  <TabsTrigger value="/$workspaceSlug/puzzles/$puzzleId">{puzzle.name}</TabsTrigger>
+                  <TabsTrigger
+                    value="/$workspaceSlug/puzzles/$puzzleId"
+                    render={
+                      <Link
+                        to="/$workspaceSlug/puzzles/$puzzleId"
+                        params={{workspaceSlug, puzzleId: puzzle.id}}>
+                        {puzzle.name}
+                      </Link>
+                    }
+                  />
                 </>
               )}
             </TabsList>
