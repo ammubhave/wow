@@ -267,3 +267,19 @@ Files prefixed with `demo` can be safely deleted. They are there to provide a st
 # Learn More
 
 You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+
+# Secrets Management
+
+All secrets are checked in encrypted format using [DotenvX](https://dotenvx.com). To make changes to your secrets, follow the instructions below.
+
+1. Make changes in .env.local file.
+
+2. Encrypt the .env.local file using the command below.
+
+```bash
+pnpm encrypt
+```
+
+3. Commit the changes to the .env.local.encrypted file to source control.
+
+4. Update the secret in the Cloudflare dashboard.

@@ -153,6 +153,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@dotenvx/dotenvx':
+        specifier: ^1.52.0
+        version: 1.52.0
       '@libsql/client':
         specifier: ^0.17.0
         version: 0.17.0
