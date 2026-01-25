@@ -250,9 +250,16 @@ function PuzzleInfoPanel({
               <form.AppField
                 name="status"
                 listeners={{
-                  onChange: async _ => {
-                    if (form.state.isValid) {
-                      await form.handleSubmit();
+                  onChange: async ({fieldApi}) => {
+                    if (
+                      fieldApi.state.value !== "solved" &&
+                      fieldApi.state.value !== "backsolved"
+                    ) {
+                      form.setFieldValue("answer", "");
+
+                      if (form.state.isValid) {
+                        await form.handleSubmit();
+                      }
                     }
                   },
                 }}

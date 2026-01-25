@@ -230,10 +230,10 @@ export const puzzlesRouter = {
           workspaceId: puzzle.round.workspaceId,
           field: input.status ?? "None",
         });
-        if (
-          (input.status === "solved" || input.status === "backsolved") !==
-          (puzzle.status === "solved" || puzzle.status === "backsolved")
-        ) {
+
+        const inputSolved = input.status === "solved" || input.status === "backsolved";
+        const puzzleSolved = puzzle.status === "solved" || puzzle.status === "backsolved";
+        if (inputSolved && inputSolved !== puzzleSolved) {
           waitUntil(
             context.notification.broadcast(puzzle.round.workspaceId, {
               type: "solved",
