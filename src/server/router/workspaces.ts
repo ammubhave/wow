@@ -284,12 +284,11 @@ export const workspacesRouter = {
     .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context: {workspace}}) => {
-      if (!workspace.discordGuildId) {
-        return null;
-      }
+      if (!process.env.DISCORD_BOT_TOKEN) return null;
+      if (!workspace.discordGuildId) return null;
       const guild = await fetch(`https://discord.com/api/v10/guilds/${workspace.discordGuildId}`, {
         method: "GET",
-        headers: {authorization: `Bot ${env.DISCORD_BOT_TOKEN}`},
+        headers: {authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`},
       });
       if (guild.status !== 200) {
         const responseText = await guild.text();
@@ -376,7 +375,7 @@ export const workspacesRouter = {
         type: "announcement",
         message: input.message,
       });
-      if (context.workspace.discordGuildId && input.channelId) {
+      if (process.env.DISCORD_BOT_TOKEN && context.workspace.discordGuildId && input.channelId) {
         const channel: {guild_id?: string} = await (
           await fetchDiscord(`/channels/${input.channelId}`)
         ).json();
@@ -394,7 +393,7 @@ export const workspacesRouter = {
       .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
       .handler(async ({context}) => {
-        if (!context.workspace.discordGuildId) return null;
+        if (!process.env.DISCORD_BOT_TOKEN || !context.workspace.discordGuildId) return null;
         const data: {id: string; type: number; name?: string}[] = await (
           await fetchDiscord(`/guilds/${context.workspace.discordGuildId}/channels`)
         ).json();

@@ -13,7 +13,8 @@
     "postinstall": "concurrently 'wrangler types --strict-vars=false' 'touch src/lib/db/auth-schema.ts && pnpm dlx @better-auth/cli@latest generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes'",
     "prepare": "husky",
     "decrypt": "dotenvx decrypt --env-file .env.local.encrypted --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local",
-    "encrypt": "dotenvx encrypt --env-file .env.local --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local.encrypted"
+    "encrypt": "dotenvx encrypt --env-file .env.local --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local.encrypted",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
