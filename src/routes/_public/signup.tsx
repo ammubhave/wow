@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_public/signup")({
 function RouteComponent() {
   const router = useRouter();
   const form = useAppForm({
-    defaultValues: {name: "", email: "", username: "", password: "", token: ""},
+    defaultValues: {name: "", email: "", password: "", token: ""},
     onSubmit: async ({value}) =>
       await authClient.signUp.email({
         name: value.name,

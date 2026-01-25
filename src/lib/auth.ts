@@ -17,14 +17,12 @@ export const auth = betterAuth({
     enabled: true,
     sendResetPassword: async ({user, url}) => {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const username =
-        "username" in user && typeof user.username === "string" ? user.username : "UNKNOWN";
       waitUntil(
         resend.emails.send({
           from: "noreply@wafflehaus.io",
           to: user.email,
           subject: "Change password for Wafflehaüs Organized Workspaces (WOW)",
-          html: `<h1>Reset password</h1><p>Username: ${username}</p><p>A password reset was requested for your account. If it wasn't you, you can ignore this email. Click <a href='${url}'>here</a> to reset your password.</p>`,
+          html: `<h1>Reset password</h1><p>Email: ${user.email}</p><p>A password reset was requested for your account. If it wasn't you, you can ignore this email. Click <a href='${url}'>here</a> to reset your password.</p>`,
         })
       );
     },
@@ -54,7 +52,6 @@ export const auth = betterAuth({
             provider: "cloudflare-turnstile",
             secretKey: process.env.TURNSTILE_SECRET_KEY,
             endpoints: [
-              "/sign-in/username",
               "/sign-in/email",
               "/sign-up/email",
               "/forget-password",
