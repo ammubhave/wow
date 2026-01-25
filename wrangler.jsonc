@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/index.ts",
   "observability": {"enabled": true, "traces": {"enabled": true}, "logs": {"enabled": true}},
-  "placement": {"mode": "smart", "hint": "enam"},
+  "placement": {"mode": "smart"},
   "upload_source_maps": true,
   "workers_dev": false,
   "preview_urls": true,
