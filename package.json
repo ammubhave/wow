@@ -14,7 +14,7 @@
     "prepare": "husky",
     "decrypt": "dotenvx decrypt --env-file .env.local.encrypted --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local",
     "encrypt": "dotenvx encrypt --env-file .env.local --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local.encrypted",
-    "db:push": "drizzle-kit push"
+    "db:push": "mkdir -p .wrangler/state/v3/d1/miniflare-D1DatabaseObject/ && drizzle-kit push"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",

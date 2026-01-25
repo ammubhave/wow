@@ -33,13 +33,7 @@ export class PresenceRoom extends DurableObject<Env> {
   broadcast(excludeWs?: WebSocket) {
     const participants: Record<
       string,
-      {
-        id: string;
-        name: string;
-        email: string;
-        image: string | null;
-        displayUsername: string | null;
-      }[]
+      {id: string; name: string; email: string; image: string | null}[]
     > = {};
     this.ctx.getWebSockets().forEach(ws => {
       if (excludeWs === ws) {

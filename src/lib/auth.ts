@@ -1,6 +1,5 @@
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {betterAuth} from "better-auth/minimal";
-import {username} from "better-auth/plugins";
 import {organization} from "better-auth/plugins";
 import {captcha} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
@@ -102,10 +101,6 @@ export const auth = betterAuth({
         },
         member: {additionalFields: {favoritePuzzleIds: {type: "string[]", required: false}}},
       },
-    }),
-    username({
-      minUsernameLength: 3,
-      displayUsernameValidator: displayUsername => displayUsername.length >= 3,
     }),
     tanstackStartCookies(),
   ],

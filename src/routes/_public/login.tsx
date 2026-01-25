@@ -25,10 +25,10 @@ function RouteComponent() {
   const router = useRouter();
   const searchParams = Route.useSearch();
   const form = useAppForm({
-    defaultValues: {username: "", password: "", token: ""},
+    defaultValues: {email: "", password: "", token: ""},
     onSubmit: async ({value}) => {
-      await authClient.signIn.username({
-        username: value.username,
+      await authClient.signIn.email({
+        email: value.email,
         password: value.password,
         fetchOptions: {
           headers: {"x-captcha-response": value.token},
@@ -52,14 +52,14 @@ function RouteComponent() {
           <Card>
             <CardHeader>
               <CardTitle>Login to your account</CardTitle>
-              <CardDescription>Enter your username below to login to your account</CardDescription>
+              <CardDescription>Enter your email below to login to your account</CardDescription>
             </CardHeader>
             <CardContent>
               <form.AppForm>
                 <form.Form>
                   <FieldGroup>
-                    <form.AppField name="username">
-                      {field => <field.TextField label="Username" autoComplete="username" />}
+                    <form.AppField name="email">
+                      {field => <field.TextField label="Email" autoComplete="email" />}
                     </form.AppField>
                     <form.AppField name="password">
                       {field => (

@@ -17,7 +17,7 @@ export function UserHoverCard({
 }: {
   side?: "top" | "right" | "bottom" | "left";
   children: React.ReactElement;
-  user: {name: string; email: string; image: string | null; displayUsername: string | null};
+  user: {name: string; email: string; image: string | null};
 }) {
   const src =
     user.image ?? (user.email ? gravatarUrl(user.email, {size: 96, d: "identicon"}) : undefined);
@@ -39,7 +39,6 @@ export function UserHoverCard({
           </Avatar>
           <div className="flex items-baseline flex-col">
             <div className="font-medium text-accent-foreground">{user.name}</div>
-            <div className="text-xs text-muted-foreground">{user.displayUsername}</div>
           </div>
         </div>
       </HoverCardContent>

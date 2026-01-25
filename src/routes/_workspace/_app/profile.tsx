@@ -1,14 +1,12 @@
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
-import {ArrowLeftIcon, CheckIcon, XIcon} from "lucide-react";
+import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
-import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
+import {Field, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {gravatarUrl} from "@/components/user-hover-card";
-import {UsernameAvailabilityIndicator} from "@/components/username-availability-indicator";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_workspace/_app/profile")({
@@ -28,11 +26,11 @@ function ProfileCard({
 }) {
   const router = useRouter();
   const form = useAppForm({
-    defaultValues: {displayUsername: user.displayUsername!, name: user.name, email: user.email},
+    defaultValues: {name: user.name, email: user.email},
     onSubmit: async ({value}) => {
-      if (user.displayUsername !== value.displayUsername || user.name !== value.name) {
+      if (user.name !== value.name) {
         await authClient.updateUser(
-          {displayUsername: value.displayUsername, name: value.name},
+          {name: value.name},
           {
             onSuccess: async () => {
               toast.success("User updated successfully");
@@ -89,67 +87,11 @@ function ProfileCard({
               <form.AppForm>
                 <form.Form>
                   <FieldGroup>
-                    <form.AppField name="displayUsername">
-                      {field => (
-                        <UsernameAvailabilityIndicator username={field.state.value}>
-                          {available_ => {
-                            const available =
-                              field.state.value !== user.displayUsername ? available_ : undefined;
-                            return (
-                              <Field
-                                data-invalid={
-                                  available === false ||
-                                  (field.state.meta.errors.length > 0 && form.state.isTouched)
-                                }>
-                                <FieldLabel>Username</FieldLabel>
-                                <InputGroup>
-                                  <InputGroupInput
-                                    value={field.state.value}
-                                    onChange={e => field.handleChange(e.target.value)}
-                                    onBlur={field.handleBlur}
-                                    autoComplete="username"
-                                    aria-invalid={
-                                      available === false ||
-                                      (field.state.meta.errors.length > 0 && form.state.isTouched)
-                                    }
-                                  />
-                                  {available === true && (
-                                    <InputGroupAddon align="inline-end">
-                                      <div className="flex size-4 items-center justify-center rounded-full bg-green-500 dark:bg-green-800">
-                                        <CheckIcon className="size-3 text-white" />
-                                      </div>
-                                    </InputGroupAddon>
-                                  )}
-                                  {available === false && (
-                                    <InputGroupAddon align="inline-end">
-                                      <div className="flex size-4 items-center justify-center rounded-full bg-red-500 dark:bg-red-800">
-                                        <XIcon className="size-3 text-white" />
-                                      </div>
-                                    </InputGroupAddon>
-                                  )}
-                                </InputGroup>
-                                {available === true && (
-                                  <FieldDescription className="text-green-700">
-                                    This username is available.
-                                  </FieldDescription>
-                                )}
-                                {available === false && (
-                                  <FieldDescription className="text-red-700">
-                                    This username is not available.
-                                  </FieldDescription>
-                                )}
-                                <FieldError errors={field.state.meta.errors} />
-                              </Field>
-                            );
-                          }}
-                        </UsernameAvailabilityIndicator>
-                      )}
+                    <form.AppField name="email">
+                      {field => <field.TextField label="Email" autoComplete="email" />}
                     </form.AppField>
                     <form.AppField name="name">
                       {field => <field.TextField label="Name" autoComplete="name" />}
-                    </form.AppField>
-                    <form.AppField name="email">
-                      {field => <field.TextField label="Email" autoComplete="email" />}
                     </form.AppField>
                     <Field>
                       <FieldLabel>Profile picture</FieldLabel>

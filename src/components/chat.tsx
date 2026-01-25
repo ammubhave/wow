@@ -71,7 +71,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                   src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                   className="size-3 rounded-full"
                 />
-                <span>{user.name ?? user.displayUsername}</span>
+                <span>{user.name}</span>
               </span>
             </UserHoverCard>
           ))}
