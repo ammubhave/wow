@@ -9,5 +9,11 @@
   "typescript.experimental.useTsgo": true,
   "tailwindCSS.classFunctions": ["cn", "cva", "clsx"],
   "css.lint.unknownAtRules": "ignore",
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "[typescript]": {"editor.defaultFormatter": "oxc.oxc-vscode"},
+  "[typescriptreact]": {"editor.defaultFormatter": "oxc.oxc-vscode"},
+  "[javascript]": {"editor.defaultFormatter": "oxc.oxc-vscode"},
+  "[javascriptreact]": {"editor.defaultFormatter": "oxc.oxc-vscode"},
+  "[json]": {"editor.defaultFormatter": "oxc.oxc-vscode"},
+  "[jsonc]": {"editor.defaultFormatter": "oxc.oxc-vscode"}
 }
