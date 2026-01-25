@@ -1,16 +1,7 @@
 import {createSlice, type PayloadAction} from "@reduxjs/toolkit";
 
 export interface PresenceState {
-  value: Record<
-    string,
-    {
-      id: string;
-      name: string;
-      email: string;
-      image: string | null;
-      displayUsername: string | null;
-    }[]
-  >;
+  value: Record<string, {id: string; name: string; email: string; image: string | null}[]>;
 }
 
 const initialState: PresenceState = {value: {}};
@@ -22,16 +13,7 @@ export const presencesSlice = createSlice({
     set: (
       state,
       action: PayloadAction<
-        Record<
-          string,
-          {
-            id: string;
-            name: string;
-            email: string;
-            image: string | null;
-            displayUsername: string | null;
-          }[]
-        >
+        Record<string, {id: string; name: string; email: string; image: string | null}[]>
       >
     ) => {
       state.value = action.payload;

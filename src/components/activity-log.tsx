@@ -85,7 +85,7 @@ export function ActivityLogItem({
         {activityItem.user && (
           <UserHoverCard user={activityItem.user}>
             <span className="cursor-default hover:text-muted-foreground font-medium text-foreground">
-              {activityItem.user.name ?? activityItem.user.displayUsername}
+              {activityItem.user.name}
             </span>
           </UserHoverCard>
         )}{" "}

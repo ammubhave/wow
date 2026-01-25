@@ -92,7 +92,7 @@ export const workspacesRouter = {
       let commentUpdatedBy = undefined;
       if (input.comment !== undefined) {
         commentUpdatedAt = new Date();
-        commentUpdatedBy = context.session.user.displayUsername;
+        commentUpdatedBy = context.session.user.name;
       }
 
       const [workspace] = await db
@@ -282,7 +282,6 @@ export const workspacesRouter = {
               name: schema.user.name,
               email: schema.user.email,
               image: schema.user.image,
-              displayUsername: schema.user.displayUsername,
             },
           })
           .from(schema.member)

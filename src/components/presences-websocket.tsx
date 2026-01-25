@@ -34,7 +34,6 @@ export function PresencesWebSocket({
             name: z.string(),
             email: z.string(),
             image: z.string().nullable(),
-            displayUsername: z.string().nullable(),
           })
           .array()
       )

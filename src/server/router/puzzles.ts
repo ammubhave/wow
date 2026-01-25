@@ -278,7 +278,7 @@ export const puzzlesRouter = {
       let commentUpdatedBy = undefined;
       if (input.comment !== undefined) {
         commentUpdatedAt = new Date();
-        commentUpdatedBy = context.session.user.displayUsername;
+        commentUpdatedBy = context.session.user.name;
       }
       await db
         .update(schema.puzzle)
