@@ -6,7 +6,7 @@
  */
 
 import {DurableObject, env} from "cloudflare:workers";
-import {eq} from "drizzle-orm";
+import {desc, eq} from "drizzle-orm";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -19,12 +19,34 @@ async function getWorkspace(workspaceId: string) {
     .where(eq(schema.organization.id, workspaceId))
     .get();
   if (!workspace) throw new Error(`Workspace ${workspaceId} not found`);
-  const rounds = await db.query.round.findMany({
-    where: (t, {eq}) => eq(t.workspaceId, workspace.id),
-    with: {puzzles: {with: {childPuzzles: true}}},
-  });
+  const [rounds, activityLogEntries] = await Promise.all([
+    db.query.round.findMany({
+      where: (t, {eq}) => eq(t.workspaceId, workspace.id),
+      with: {puzzles: {with: {childPuzzles: true}}},
+    }),
+    db
+      .select()
+      .from(schema.activityLogEntry)
+      .leftJoin(schema.user, eq(schema.activityLogEntry.userId, schema.user.id))
+      .leftJoin(
+        schema.roundActivityLogEntry,
+        eq(schema.activityLogEntry.id, schema.roundActivityLogEntry.activityLogEntryId)
+      )
+      .leftJoin(
+        schema.puzzleActivityLogEntry,
+        eq(schema.activityLogEntry.id, schema.puzzleActivityLogEntry.activityLogEntryId)
+      )
+      .leftJoin(
+        schema.workspaceActivityLogEntry,
+        eq(schema.activityLogEntry.id, schema.workspaceActivityLogEntry.activityLogEntryId)
+      )
+      .where(eq(schema.activityLogEntry.workspaceId, workspace.id))
+      .orderBy(desc(schema.activityLogEntry.createdAt)),
+  ]);
+
   return {
     ...workspace,
+    activityLogEntries,
     rounds: rounds.map(round => ({
       ...round,
       unassignedPuzzles: round.puzzles.filter(

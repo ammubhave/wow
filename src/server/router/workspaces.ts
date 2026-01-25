@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
-import {and, desc, eq} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
@@ -311,33 +311,6 @@ export const workspacesRouter = {
       } as const;
     }),
 
-  activityLog: {
-    get: procedure
-      .input(z.object({workspaceSlug: z.string()}))
-      .use(preauthorize)
-      .handler(async ({context}) => {
-        const activityLogEntries = await db
-          .select()
-          .from(schema.activityLogEntry)
-          .leftJoin(schema.user, eq(schema.activityLogEntry.userId, schema.user.id))
-          .leftJoin(
-            schema.roundActivityLogEntry,
-            eq(schema.activityLogEntry.id, schema.roundActivityLogEntry.activityLogEntryId)
-          )
-          .leftJoin(
-            schema.puzzleActivityLogEntry,
-            eq(schema.activityLogEntry.id, schema.puzzleActivityLogEntry.activityLogEntryId)
-          )
-          .leftJoin(
-            schema.workspaceActivityLogEntry,
-            eq(schema.activityLogEntry.id, schema.workspaceActivityLogEntry.activityLogEntryId)
-          )
-          .where(eq(schema.activityLogEntry.workspaceId, context.workspace.id))
-          .orderBy(desc(schema.activityLogEntry.createdAt));
-
-        return activityLogEntries;
-      }),
-  },
   members: {
     list: procedure
       .input(z.object({workspaceSlug: z.string()}))

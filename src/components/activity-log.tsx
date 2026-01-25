@@ -1,4 +1,3 @@
-import {useQuery} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
 import {
   CheckIcon,
@@ -16,9 +15,9 @@ import {
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
-import {Skeleton} from "@/components/ui/skeleton";
-import {orpc} from "@/lib/orpc";
-import {RouterOutputs} from "@/server/router";
+import type {WorkspaceRoomState} from "@/server/do/workspace";
+
+import {useWorkspace} from "@/hooks/use-workspace";
 
 import {UserHoverCard} from "./user-hover-card";
 
@@ -27,7 +26,7 @@ export function ActivityLogItem({
   showIcon = true,
   relativeTime = false,
 }: {
-  activityItem: RouterOutputs["workspaces"]["activityLog"]["get"][0];
+  activityItem: WorkspaceRoomState["activityLogEntries"][0];
   showIcon?: boolean;
   relativeTime?: boolean;
 }) {
@@ -167,13 +166,8 @@ export function ActivityLogItem({
   );
 }
 
-export function ActivityLog({workspaceSlug}: {workspaceSlug: string}) {
-  const activityLogEntries = useQuery(
-    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceSlug}})
-  ).data;
-  if (activityLogEntries === undefined) {
-    return <Skeleton className="h-96 w-full" />;
-  }
+export function ActivityLog() {
+  const workspace = useWorkspace();
   return (
     <div className="flex justify-center">
       <div className="flex max-w-4xl flex-1 flex-col gap-4 md:gap-8">
@@ -183,11 +177,13 @@ export function ActivityLog({workspaceSlug}: {workspaceSlug: string}) {
         <div className="w-full flex-1 flex flex-col">
           <div className="flow-root">
             <ul role="list" className="space-y-6">
-              {activityLogEntries.map((activityItem, activityItemIdx) => (
+              {workspace.activityLogEntries.map((activityItem, activityItemIdx) => (
                 <li key={activityItem.activity_log_entry.id} className="relative flex gap-x-4">
                   <div
                     className={cn(
-                      activityItemIdx === activityLogEntries.length - 1 ? "h-6" : "-bottom-6",
+                      activityItemIdx === workspace.activityLogEntries.length - 1
+                        ? "h-6"
+                        : "-bottom-6",
                       "absolute left-0 top-0 flex w-6 justify-center"
                     )}>
                     <div className="w-px bg-border" />

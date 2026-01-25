@@ -8,10 +8,9 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/activity-
 });
 
 function RouteComponent() {
-  const {workspaceSlug} = Route.useParams();
   return (
     <div className="p-8">
-      <ActivityLog workspaceSlug={workspaceSlug} />
+      <ActivityLog />
     </div>
   );
 }

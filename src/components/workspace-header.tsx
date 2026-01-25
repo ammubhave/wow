@@ -1,4 +1,3 @@
-import {useQuery} from "@tanstack/react-query";
 import {Link, useChildMatches, useNavigate} from "@tanstack/react-router";
 import {ExternalLinkIcon, InfoIcon, SettingsIcon, HistoryIcon} from "lucide-react";
 import {useEffect} from "react";
@@ -8,7 +7,6 @@ import {Separator} from "@/components/ui/separator";
 import {useSidebar} from "@/components/ui/sidebar";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {useWorkspace} from "@/hooks/use-workspace";
-import {orpc} from "@/lib/orpc";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
 import {useAppDispatch, useAppSelector} from "@/store";
 
@@ -42,9 +40,6 @@ export function WorkspaceHeader() {
   const puzzleId = newPuzzleId ?? lastActivePuzzleId;
 
   const puzzle = workspace.rounds.flatMap(round => round.puzzles).find(p => p.id === puzzleId);
-  const activityLogEntries = useQuery(
-    orpc.workspaces.activityLog.get.queryOptions({input: {workspaceSlug}})
-  ).data;
   const navigate = useNavigate();
 
   return (
@@ -95,7 +90,7 @@ export function WorkspaceHeader() {
           </div>
         </Tabs>
         <div className="flex-1 flex items-center overflow-hidden justify-end">
-          {activityLogEntries?.[0] && (
+          {workspace.activityLogEntries[0] && (
             <div className="overflow-hidden px-3 flex items-center">
               <Button
                 variant="ghost"
@@ -109,7 +104,7 @@ export function WorkspaceHeader() {
               <ActivityLogItem
                 relativeTime
                 showIcon={false}
-                activityItem={activityLogEntries?.[0]}
+                activityItem={workspace.activityLogEntries[0]}
               />
             </div>
           )}
