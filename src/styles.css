@@ -169,3 +169,28 @@
     @apply bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold;
   }
 }
+
+@theme {
+  --animate-marquee: marquee 25s linear infinite;
+  --animate-marquee-alt: marquee-alt 25s linear infinite;
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes marquee-alt {
+    0% {
+      transform: translateX(100%);
+    }
+
+    100% {
+      transform: translateX(0%);
+    }
+  }
+}
