@@ -36,38 +36,36 @@ export function AddNewPuzzleDialog({
   const form = useAppForm({
     defaultValues: {name: "", tags: [] as string[], link: "", worksheetType: "google_spreadsheet"},
     onSubmit: ({value}) =>
-      toast.promise(
-        mutation.mutateAsync(
-          // @ts-expect-error error
-          {
-            type: "puzzle",
-            ...value,
-            roundId: parentPuzzleId! ? undefined : roundId,
-            parentPuzzleId,
-            workspaceSlug,
-          },
-          {
-            onSuccess: () => {
-              form.reset();
-              setOpen(false);
-            },
-          }
-        ),
+      mutation.mutateAsync(
+        // @ts-expect-error error
         {
-          loading: "Adding puzzle...",
-          success: <>Success! Puzzle added.</>,
-          error: "Oops! Something went wrong.",
-          description: puzzle => (
-            <>
-              Go to
-              <Link
-                to="/$workspaceSlug/puzzles/$puzzleId"
-                params={{workspaceSlug, puzzleId: puzzle.id}}
-                className="ml-1 hover:underline">
-                {puzzle.name}
-              </Link>
-            </>
-          ),
+          type: "puzzle",
+          ...value,
+          roundId: parentPuzzleId! ? undefined : roundId,
+          parentPuzzleId,
+          workspaceSlug,
+        },
+        {
+          onSuccess: data => {
+            form.reset();
+            toast.success("Success! Puzzle added.", {
+              description: () => (
+                <>
+                  Go to
+                  <Link
+                    to="/$workspaceSlug/puzzles/$puzzleId"
+                    params={{workspaceSlug, puzzleId: data.id}}
+                    className="ml-1 hover:underline">
+                    {data.name}
+                  </Link>
+                </>
+              ),
+            });
+            setOpen(false);
+          },
+          onError: () => {
+            toast.error("Oops! Something went wrong.");
+          },
         }
       ),
   });
