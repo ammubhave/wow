@@ -26,6 +26,14 @@ export function HelpPage() {
           one if you don't have one).
         </p>
         <p />
+        <h4 id="403s">Fix 403s on Puzzle Page</h4>
+        <p>
+          If you are getting 403s when opening a puzzle spreadsheet, make sure that you are signed
+          into the right Google account (see the top right corner of the page underneath your name).
+          Then, open the spreadsheet link directly in a new tab (top right icon next to the puzzle
+          name) then refresh the page.
+        </p>
+        <p />
         <h4 id="file-issues">File issues</h4>
         <p>
           File issues by talking to Amol or Allen or by filing a{" "}
