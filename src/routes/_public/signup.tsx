@@ -23,7 +23,11 @@ function RouteComponent() {
   const router = useRouter();
   const form = useAppForm({
     defaultValues: {name: "", email: "", password: "", token: ""},
-    onSubmit: async ({value}) =>
+    onSubmit: async ({value}) => {
+      if (["simhunt", "eggö", "admin"].includes(value.name.trim().toLowerCase())) {
+        toast.error("That name is reserved. Please choose a different name.");
+        return;
+      }
       await authClient.signUp.email({
         name: value.name,
         email: value.email,
@@ -39,7 +43,8 @@ function RouteComponent() {
             toast.error(error.error.message);
           },
         },
-      }),
+      });
+    },
   });
   const {theme} = useTheme();
   const turnstileRef = useRef<TurnstileInstance>(null);

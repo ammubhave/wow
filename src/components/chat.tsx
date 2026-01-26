@@ -1,5 +1,13 @@
 import {Popover as PopoverPrimitive} from "@base-ui/react/popover";
-import {AngryIcon, HeartIcon, LaughIcon, SendIcon, SmilePlusIcon, ThumbsUpIcon} from "lucide-react";
+import {
+  AngryIcon,
+  CircleQuestionMarkIcon,
+  HeartIcon,
+  LaughIcon,
+  SendIcon,
+  SmilePlusIcon,
+  ThumbsUpIcon,
+} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import Markdown from "react-markdown";
 import useWebSocket from "react-use-websocket";
@@ -19,6 +27,36 @@ import {gravatarUrl, UserHoverCard} from "./user-hover-card";
 
 function formatTime(date: Date) {
   return date.toLocaleString([], {weekday: "short", hour: "2-digit", minute: "2-digit"});
+}
+
+const hints = [
+  "1) Re-read the puzzle text. Did you use everything?",
+  "2) Re-read the puzzle title and flavor text. Are there hints there?",
+  "3) Type random parts of the puzzle into a search engine.",
+  "4) Is there a given order? If not, what's the correct order?",
+  "5) Read out loud whatever you can.",
+  "6) Ask around to see if there's a reference you're missing.",
+  "7) Take a break! Do something else.",
+];
+
+function EggoText({text}: {text: string}) {
+  const [eggoText, setEggoText] = useState("");
+
+  const rollEggoText = () => {
+    if (text == "!stuck") {
+      setEggoText(hints[Math.floor(Math.random() * hints.length)] ?? "");
+    }
+  };
+  useEffect(() => {
+    // Don't roll multiple times during the first render.
+    if (eggoText != "") return;
+    rollEggoText();
+  });
+  return (
+    <div>
+      🍳 {eggoText.split(" ").join(" 🥚 ")} 🍳<p /> <Button onClick={rollEggoText}>🧇 Roll</Button>
+    </div>
+  );
 }
 
 export function Chat({puzzleId}: {puzzleId: string}) {
@@ -103,149 +141,158 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                   </div>
                 )}
                 <p className="bg-muted mr-2 mt-1 inline-block rounded-lg p-2 relative">
-                  <Markdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      h1: ({children, className, node: _node, ...rest}) => (
-                        <h1
-                          {...rest}
-                          className={cn(
-                            className,
-                            "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl"
-                          )}>
-                          {children}
-                        </h1>
-                      ),
-                      h2: ({children, className, node: _node, ...rest}) => (
-                        <h2
-                          {...rest}
-                          className={cn(
-                            className,
-                            "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0"
-                          )}>
-                          {children}
-                        </h2>
-                      ),
-                      h3: ({children, className, node: _node, ...rest}) => (
-                        <h3
-                          {...rest}
-                          className={cn(
-                            className,
-                            "scroll-m-20 text-2xl font-semibold tracking-tight"
-                          )}>
-                          {children}
-                        </h3>
-                      ),
-                      h4: ({children, className, node: _node, ...rest}) => (
-                        <h4
-                          {...rest}
-                          className={cn(
-                            className,
-                            "scroll-m-20 text-xl font-semibold tracking-tight"
-                          )}>
-                          {children}
-                        </h4>
-                      ),
-                      h5: ({children, className, node: _node, ...rest}) => (
-                        <h4
-                          {...rest}
-                          className={cn(
-                            className,
-                            "scroll-m-20 text-lg font-semibold tracking-tight"
-                          )}>
-                          {children}
-                        </h4>
-                      ),
-                      h6: ({children, className, node: _node, ...rest}) => (
-                        <h4
-                          {...rest}
-                          className={cn(
-                            className,
-                            "scroll-m-20 text-base font-semibold tracking-tight"
-                          )}>
-                          {children}
-                        </h4>
-                      ),
-                      p: ({children, className, node: _node, ...rest}) => (
-                        <p
-                          {...rest}
-                          className={cn(className, "whitespace-pre-wrap leading-7 not-first:mt-6")}>
-                          {children}
-                        </p>
-                      ),
-                      blockquote: ({children, className, node: _node, ...rest}) => (
-                        <blockquote
-                          {...rest}
-                          className={cn(className, "mt-6 border-l-2 pl-6 italic")}>
-                          {children}
-                        </blockquote>
-                      ),
-                      ul: ({children, className, node: _node, ...rest}) => (
-                        <ul {...rest} className={cn(className, "my-6 ml-6 list-disc [&>li]:mt-2")}>
-                          {children}
-                        </ul>
-                      ),
-                      ol: ({children, className, node: _node, ...rest}) => (
-                        <ol
-                          {...rest}
-                          className={cn(className, "my-6 ml-6 list-decimal [&>li]:mt-2")}>
-                          {children}
-                        </ol>
-                      ),
-                      code: ({children, className, node: _node, ...rest}) => (
-                        <code
-                          {...rest}
-                          className={cn(
-                            className,
-                            "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
-                          )}>
-                          {children}
-                        </code>
-                      ),
-                      table: ({children, className, node: _node, ...rest}) => (
-                        <div className="my-6 w-full overflow-y-auto">
-                          <table {...rest} className={cn(className, "w-full")}>
+                  {message.name == "Eggö" ? (
+                    <EggoText text={message.text} />
+                  ) : (
+                    <Markdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({children, className, node: _node, ...rest}) => (
+                          <h1
+                            {...rest}
+                            className={cn(
+                              className,
+                              "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl"
+                            )}>
                             {children}
-                          </table>
-                        </div>
-                      ),
-                      tr: ({children, className, node: _node, ...rest}) => (
-                        <tr {...rest} className={cn(className, "m-0 border-t p-0 even:bg-muted")}>
-                          {children}
-                        </tr>
-                      ),
-                      td: ({children, className, node: _node, ...rest}) => (
-                        <td
-                          {...rest}
-                          className={cn(
-                            className,
-                            "border px-4 py-2 text-left [[align=center]]:text-center [[align=right]]:text-right"
-                          )}>
-                          {children}
-                        </td>
-                      ),
-                      th: ({children, className, node: _node, ...rest}) => (
-                        <th
-                          {...rest}
-                          className={cn(
-                            className,
-                            "border px-4 py-2 text-left font-bold [[align=center]]:text-center [[align=right]]:text-right"
-                          )}>
-                          {children}
-                        </th>
-                      ),
-                      a: ({children, className, node: _node, ...rest}) => (
-                        <a
-                          {...rest}
-                          className={cn(className, "font-medium underline underline-offset-4")}
-                          target="_blank"
-                          rel="noopener noreferrer">
-                          {children}
-                        </a>
-                      ),
-                    }}>
-                    {message.text}
-                  </Markdown>
+                          </h1>
+                        ),
+                        h2: ({children, className, node: _node, ...rest}) => (
+                          <h2
+                            {...rest}
+                            className={cn(
+                              className,
+                              "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0"
+                            )}>
+                            {children}
+                          </h2>
+                        ),
+                        h3: ({children, className, node: _node, ...rest}) => (
+                          <h3
+                            {...rest}
+                            className={cn(
+                              className,
+                              "scroll-m-20 text-2xl font-semibold tracking-tight"
+                            )}>
+                            {children}
+                          </h3>
+                        ),
+                        h4: ({children, className, node: _node, ...rest}) => (
+                          <h4
+                            {...rest}
+                            className={cn(
+                              className,
+                              "scroll-m-20 text-xl font-semibold tracking-tight"
+                            )}>
+                            {children}
+                          </h4>
+                        ),
+                        h5: ({children, className, node: _node, ...rest}) => (
+                          <h4
+                            {...rest}
+                            className={cn(
+                              className,
+                              "scroll-m-20 text-lg font-semibold tracking-tight"
+                            )}>
+                            {children}
+                          </h4>
+                        ),
+                        h6: ({children, className, node: _node, ...rest}) => (
+                          <h4
+                            {...rest}
+                            className={cn(
+                              className,
+                              "scroll-m-20 text-base font-semibold tracking-tight"
+                            )}>
+                            {children}
+                          </h4>
+                        ),
+                        p: ({children, className, node: _node, ...rest}) => (
+                          <p
+                            {...rest}
+                            className={cn(
+                              className,
+                              "whitespace-pre-wrap leading-7 not-first:mt-6"
+                            )}>
+                            {children}
+                          </p>
+                        ),
+                        blockquote: ({children, className, node: _node, ...rest}) => (
+                          <blockquote
+                            {...rest}
+                            className={cn(className, "mt-6 border-l-2 pl-6 italic")}>
+                            {children}
+                          </blockquote>
+                        ),
+                        ul: ({children, className, node: _node, ...rest}) => (
+                          <ul
+                            {...rest}
+                            className={cn(className, "my-6 ml-6 list-disc [&>li]:mt-2")}>
+                            {children}
+                          </ul>
+                        ),
+                        ol: ({children, className, node: _node, ...rest}) => (
+                          <ol
+                            {...rest}
+                            className={cn(className, "my-6 ml-6 list-decimal [&>li]:mt-2")}>
+                            {children}
+                          </ol>
+                        ),
+                        code: ({children, className, node: _node, ...rest}) => (
+                          <code
+                            {...rest}
+                            className={cn(
+                              className,
+                              "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
+                            )}>
+                            {children}
+                          </code>
+                        ),
+                        table: ({children, className, node: _node, ...rest}) => (
+                          <div className="my-6 w-full overflow-y-auto">
+                            <table {...rest} className={cn(className, "w-full")}>
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        tr: ({children, className, node: _node, ...rest}) => (
+                          <tr {...rest} className={cn(className, "m-0 border-t p-0 even:bg-muted")}>
+                            {children}
+                          </tr>
+                        ),
+                        td: ({children, className, node: _node, ...rest}) => (
+                          <td
+                            {...rest}
+                            className={cn(
+                              className,
+                              "border px-4 py-2 text-left [[align=center]]:text-center [[align=right]]:text-right"
+                            )}>
+                            {children}
+                          </td>
+                        ),
+                        th: ({children, className, node: _node, ...rest}) => (
+                          <th
+                            {...rest}
+                            className={cn(
+                              className,
+                              "border px-4 py-2 text-left font-bold [[align=center]]:text-center [[align=right]]:text-right"
+                            )}>
+                            {children}
+                          </th>
+                        ),
+                        a: ({children, className, node: _node, ...rest}) => (
+                          <a
+                            {...rest}
+                            className={cn(className, "font-medium underline underline-offset-4")}
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            {children}
+                          </a>
+                        ),
+                      }}>
+                      {message.text}
+                    </Markdown>
+                  )}
                   <div className="absolute border right-0 bottom-0 bg-card invisible opacity-0 group-hover/message:visible group-hover/message:opacity-100 transition-all duration-300">
                     <Popover>
                       <PopoverTrigger
@@ -271,7 +318,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                     reaction: "like",
                                   } satisfies ChatRoomSentMessage);
                                 }}>
-                                <ThumbsUpIcon className="text-blue-600" />
+                                <ThumbsUpIcon className="text-green-950" fill="limegreen" />
                               </Button>
                             }
                           />
@@ -287,7 +334,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                     reaction: "love",
                                   } satisfies ChatRoomSentMessage);
                                 }}>
-                                <HeartIcon className="text-red-600" />
+                                <HeartIcon className="text-red-950" fill="hotpink" />
                               </Button>
                             }
                           />
@@ -303,7 +350,26 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                     reaction: "laugh",
                                   } satisfies ChatRoomSentMessage);
                                 }}>
-                                <LaughIcon className="text-yellow-600" />
+                                <LaughIcon className="text-yellow-950" fill="orange" />
+                              </Button>
+                            }
+                          />
+                          <PopoverPrimitive.Close
+                            render={
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  sendJsonMessage({
+                                    type: "react",
+                                    messageId: message.id,
+                                    reaction: "question",
+                                  } satisfies ChatRoomSentMessage);
+                                }}>
+                                <CircleQuestionMarkIcon
+                                  className="text-blue-950"
+                                  fill="lightskyblue"
+                                />
                               </Button>
                             }
                           />
@@ -319,7 +385,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                                     reaction: "angry",
                                   } satisfies ChatRoomSentMessage);
                                 }}>
-                                <AngryIcon className="text-red-800" />
+                                <AngryIcon className="text-violet-950" fill="violet" />
                               </Button>
                             }
                           />
@@ -333,11 +399,25 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                     {Object.entries(message.reactions).map(([reaction, count]) => (
                       <div
                         key={reaction}
-                        className="inline-flex items-center space-x-1 px-2 py-0.5 text-xs">
-                        {reaction === "like" && <ThumbsUpIcon className="size-3 text-blue-600" />}
-                        {reaction === "love" && <HeartIcon className="size-3 text-red-600" />}
-                        {reaction === "laugh" && <LaughIcon className="size-3 text-yellow-500" />}
-                        {reaction === "angry" && <AngryIcon className="size-3 text-red-800" />}
+                        className="inline-flex items-center space-x-1 px-2 py-0.5 text-xs bg-card">
+                        {reaction === "like" && (
+                          <ThumbsUpIcon className="size-3 text-green-950" fill="limegreen" />
+                        )}
+                        {reaction === "love" && (
+                          <HeartIcon className="size-3 text-red-950" fill="hotpink" />
+                        )}
+                        {reaction === "laugh" && (
+                          <LaughIcon className="size-3 text-yellow-950" fill="orange" />
+                        )}
+                        {reaction === "question" && (
+                          <CircleQuestionMarkIcon
+                            className="size-3 text-blue-950"
+                            fill="lightskyblue"
+                          />
+                        )}
+                        {reaction === "angry" && (
+                          <AngryIcon className="size-3 text-violet-950" fill="violet" />
+                        )}
                         <span>{count}</span>
                       </div>
                     ))}

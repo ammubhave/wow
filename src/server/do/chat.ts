@@ -11,7 +11,7 @@ const chatRoomSentMessageSchema = z.union([
   z.object({
     type: z.literal("react"),
     messageId: z.string(),
-    reaction: z.literal(["like", "love", "laugh", "angry"]),
+    reaction: z.literal(["like", "love", "laugh", "question", "angry"]),
   }),
   z.object({
     type: z.literal("connect"),
@@ -89,6 +89,24 @@ export class ChatRoom extends DurableObject {
       };
       this.broadcast({type: "message", message: data});
       await this.storage.put<ChatMessage>(key, data);
+
+      if (m.text.startsWith("!stuck")) {
+        // Automatically react with "angry" to stuck messages
+        data.reactions["angry"] = 1;
+        this.broadcast({type: "message", message: data});
+        await this.storage.put(key, data);
+
+        const botKey = uuidv7();
+        const botData: ChatMessage = {
+          id: botKey,
+          text: `!stuck`,
+          name: "Eggö",
+          timestamp: Date.now(),
+          reactions: {},
+        };
+        this.broadcast({type: "message", message: botData});
+        await this.storage.put<ChatMessage>(botKey, botData);
+      }
     } else if (m.type === "react") {
       const data = await this.storage.get<ChatMessage>(m.messageId);
       if (data) {
