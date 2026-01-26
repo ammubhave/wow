@@ -9,11 +9,8 @@ import {
   InfoIcon,
   PuzzleIcon,
   SearchIcon,
-  SignalHighIcon,
   SignalIcon,
-  SignalLowIcon,
   SignalMediumIcon,
-  SignalZeroIcon,
   StarIcon,
   TagIcon,
 } from "lucide-react";

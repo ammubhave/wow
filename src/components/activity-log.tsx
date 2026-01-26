@@ -6,11 +6,6 @@ import {
   LogInIcon,
   OctagonAlertIcon,
   PuzzleIcon,
-  SignalHighIcon,
-  SignalIcon,
-  SignalLowIcon,
-  SignalMediumIcon,
-  SignalZeroIcon,
 } from "lucide-react";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
@@ -18,7 +13,6 @@ import {useFormatter, useNow} from "use-intl";
 import type {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {useWorkspace} from "@/hooks/use-workspace";
-import {getPuzzleImportance} from "@/lib/puzzleImportances";
 
 import {UserHoverCard} from "./user-hover-card";
 
