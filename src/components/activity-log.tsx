@@ -18,6 +18,7 @@ import {useFormatter, useNow} from "use-intl";
 import type {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {useWorkspace} from "@/hooks/use-workspace";
+import {getPuzzleImportance} from "@/lib/puzzleImportances";
 
 import {UserHoverCard} from "./user-hover-card";
 
@@ -81,7 +82,7 @@ export function ActivityLogItem({
           </div>
         </div>
       )}
-      <p className="flex-auto py-0.5 text-xs/5 text-muted-foreground line-clamp-1">
+      <p className="flex-auto py-0.5 text-xs/5 text-muted-foreground">
         {activityItem.user && (
           <UserHoverCard user={activityItem.user}>
             <span className="cursor-default hover:text-muted-foreground font-medium text-foreground">
@@ -113,21 +114,7 @@ export function ActivityLogItem({
               <>
                 {" "}
                 to{" "}
-                {activityItem.puzzle_activity_log_entry.subType === "updateImportance" ? (
-                  activityItem.puzzle_activity_log_entry.field === "veryhigh" ? (
-                    <SignalIcon className="py-1 inline" />
-                  ) : activityItem.puzzle_activity_log_entry.field === "high" ? (
-                    <SignalHighIcon className="py-1 inline" />
-                  ) : activityItem.puzzle_activity_log_entry.field === "medium" ? (
-                    <SignalMediumIcon className="py-1 inline" />
-                  ) : activityItem.puzzle_activity_log_entry.field === "low" ? (
-                    <SignalLowIcon className="py-1 inline" />
-                  ) : activityItem.puzzle_activity_log_entry.field === "obsolete" ? (
-                    <SignalZeroIcon className="py-1 inline" />
-                  ) : (
-                    activityItem.puzzle_activity_log_entry.field
-                  )
-                ) : activityItem.puzzle_activity_log_entry.subType === "updateAnswer" ? (
+                {activityItem.puzzle_activity_log_entry.subType === "updateAnswer" ? (
                   <span className="font-mono">{activityItem.puzzle_activity_log_entry.field}</span>
                 ) : (
                   activityItem.puzzle_activity_log_entry.field

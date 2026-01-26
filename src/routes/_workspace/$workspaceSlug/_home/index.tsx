@@ -63,6 +63,10 @@ import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {
+  getPuzzleImportances,
+  getColorClassNamesForPuzzleImportances,
+} from "@/lib/puzzleImportances";
+import {
   getBgColorClassNamesForPuzzleStatus,
   getPuzzleStatusGroups,
   getPuzzleStatusOptions,
@@ -259,54 +263,11 @@ function RouteComponent() {
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       {[
-                        {
-                          value: "veryhigh",
-                          label: (
-                            <>
-                              <SignalIcon /> Very High
-                            </>
-                          ),
-                        },
-                        {
-                          value: "high",
-                          label: (
-                            <>
-                              <SignalHighIcon /> High
-                            </>
-                          ),
-                        },
-                        {
-                          value: "medium",
-                          label: (
-                            <>
-                              <SignalMediumIcon /> Medium
-                            </>
-                          ),
-                        },
-                        {
-                          value: "low",
-                          label: (
-                            <>
-                              <SignalLowIcon /> Low
-                            </>
-                          ),
-                        },
-                        {
-                          value: "obsolete",
-                          label: (
-                            <>
-                              <SignalZeroIcon /> Obsolete
-                            </>
-                          ),
-                        },
+                        ...getPuzzleImportances(),
                         {
                           value: null,
-                          label: (
-                            <>
-                              <SignalMediumIcon className="text-muted-foreground" />
-                              None
-                            </>
-                          ),
+                          label: "None",
+                          icon: <SignalMediumIcon className="text-muted-foreground" />,
                         },
                       ].map(importance => (
                         <DropdownMenuCheckboxItem
@@ -318,14 +279,17 @@ function RouteComponent() {
                                 : [...prevImportances, importance.value]
                             );
                           }}>
-                          {importance.label}
+                          {importance.icon} {importance.label}
                         </DropdownMenuCheckboxItem>
                       ))}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         closeOnClick={false}
                         onClick={() =>
-                          setImportances(["veryhigh", "high", "medium", "low", "obsolete", null])
+                          setImportances([
+                            ...getPuzzleImportances().map(importance => importance.value),
+                            null,
+                          ])
                         }>
                         Select all
                       </DropdownMenuItem>
@@ -850,40 +814,24 @@ function BlackboardMetaPuzzle({
                   field.handleBlur();
                 }}
                 value={field.state.value}
-                items={[
-                  {value: null, label: <SignalMediumIcon />},
-                  {value: "high", label: <SignalHighIcon />},
-                  {value: "veryhigh", label: <SignalIcon />},
-                  {value: "medium", label: <SignalMediumIcon />},
-                  {value: "low", label: <SignalLowIcon />},
-                  {value: "obsolete", label: <SignalZeroIcon />},
-                ]}>
+                items={getPuzzleImportances().map(importance => ({
+                  value: importance.value,
+                  label: importance.icon,
+                }))}>
                 <SelectTrigger
                   showTrigger={false}
-                  className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+                  className={cn(
+                    "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100/50 focus:bg-amber-100/50 dark:hover:bg-amber-950/50 dark:focus-visible:bg-amber-950/50 focus:outline-none",
+                    getColorClassNamesForPuzzleImportances(metaPuzzle.importance)
+                  )}>
                   <SelectValue onBlur={field.handleBlur} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="veryhigh">
-                    <SignalIcon />
-                    Very High
-                  </SelectItem>
-                  <SelectItem value="high">
-                    <SignalHighIcon />
-                    High
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    <SignalMediumIcon />
-                    Medium
-                  </SelectItem>
-                  <SelectItem value="low">
-                    <SignalLowIcon />
-                    Low
-                  </SelectItem>
-                  <SelectItem value="obsolete">
-                    <SignalZeroIcon />
-                    Obsolete
-                  </SelectItem>
+                  {getPuzzleImportances().map(importance => (
+                    <SelectItem value={importance.value}>
+                      {importance.icon} {importance.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
@@ -1188,40 +1136,24 @@ function BlackboardPuzzle({
               <Select
                 onValueChange={field.handleChange}
                 value={field.state.value}
-                items={[
-                  {value: null, label: <SignalMediumIcon />},
-                  {value: "high", label: <SignalHighIcon />},
-                  {value: "veryhigh", label: <SignalIcon />},
-                  {value: "medium", label: <SignalMediumIcon />},
-                  {value: "low", label: <SignalLowIcon />},
-                  {value: "obsolete", label: <SignalZeroIcon />},
-                ]}>
+                items={getPuzzleImportances().map(importance => ({
+                  value: importance.value,
+                  label: importance.icon,
+                }))}>
                 <SelectTrigger
                   showTrigger={false}
-                  className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+                  className={cn(
+                    "-my-2 h-auto rounded-lg border-0 p-2 shadow-none hover:bg-amber-100/50 focus:bg-amber-100/50 dark:hover:bg-amber-950/50 dark:focus-visible:bg-amber-950/50 focus:outline-none",
+                    getColorClassNamesForPuzzleImportances(puzzle.importance)
+                  )}>
                   <SelectValue onBlur={field.handleBlur} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="veryhigh">
-                    <SignalIcon />
-                    Very High
-                  </SelectItem>
-                  <SelectItem value="high">
-                    <SignalHighIcon />
-                    High
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    <SignalMediumIcon />
-                    Medium
-                  </SelectItem>
-                  <SelectItem value="low">
-                    <SignalLowIcon />
-                    Low
-                  </SelectItem>
-                  <SelectItem value="obsolete">
-                    <SignalZeroIcon />
-                    Obsolete
-                  </SelectItem>
+                  {getPuzzleImportances().map(importance => (
+                    <SelectItem value={importance.value}>
+                      {importance.icon} {importance.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
