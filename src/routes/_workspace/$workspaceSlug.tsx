@@ -7,7 +7,7 @@ import {z} from "zod";
 
 import {NotificationsWebSocket} from "@/components/notifications-websocket";
 import {PresencesWebSocket} from "@/components/presences-websocket";
-import {SidebarProvider} from "@/components/ui/sidebar";
+import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
 import {WorkspaceProvider} from "@/hooks/use-workspace";
 import {auth} from "@/lib/auth";
@@ -55,15 +55,14 @@ function RouteComponent() {
     <WorkspaceProvider workspaceSlug={workspaceSlug}>
       <NotificationsWebSocket workspaceSlug={workspaceSlug}>
         <PresencesWebSocket workspaceSlug={workspaceSlug}>
-          <div className="[--header-height:calc(--spacing(14))]">
-            <SidebarProvider className="flex flex-col">
-              <WorkspaceHeader />
-              <div className="flex flex-1 relative">
-                <div className="absolute inset-0 flex overflow-auto">
-                  <Outlet />
-                </div>
+          <div className="flex flex-1 flex-col">
+            <WorkspaceHeader />
+            <div className="flex flex-1 relative">
+              <div className="absolute inset-0 flex overflow-auto">
+                <Outlet />
               </div>
-            </SidebarProvider>
+            </div>
+            <WorkspaceFooter />
           </div>
         </PresencesWebSocket>
       </NotificationsWebSocket>

@@ -47,14 +47,14 @@ export function NavUser({children}: {children?: React.ReactNode}) {
   const src =
     user.image ?? (user.email ? gravatarUrl(user.email, {size: 96, d: "identicon"}) : undefined);
   return (
-    <div className="w-59.75">
+    <div className="w-60">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
             <SidebarMenuButton
-              size="lg"
-              className="w-59.75 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground">
-              <Avatar>
+              size="sm"
+              className="w-60 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground">
+              <Avatar size="sm">
                 <AvatarImage src={src} alt={user.name ?? user.email} />
                 <AvatarFallback className="rounded-lg">
                   {user.name
@@ -67,7 +67,6 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium text-accent-foreground">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
               </div>
               <ChevronsUpDownIcon />
             </SidebarMenuButton>
