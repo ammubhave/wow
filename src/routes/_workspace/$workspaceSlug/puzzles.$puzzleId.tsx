@@ -28,6 +28,7 @@ import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {client, orpc} from "@/lib/orpc";
+import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {
   getBgColorClassNamesForPuzzleStatusNoHover,
   getPuzzleStatusGroups,
@@ -107,6 +108,7 @@ function PuzzleInfoPanel({
     googleDrawingId: string | null;
     answer: string | null;
     status: string | null;
+    importance: string | null;
     childPuzzles: {answer: string | null; name: string}[];
     isMetaPuzzle: boolean;
     tags: string[];
@@ -115,7 +117,12 @@ function PuzzleInfoPanel({
   const workspace = useWorkspace();
   const puzzleUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
   const form = useAppForm({
-    defaultValues: {answer: puzzle.answer ?? "", status: puzzle.status, tags: puzzle.tags},
+    defaultValues: {
+      answer: puzzle.answer ?? "",
+      status: puzzle.status,
+      importance: puzzle.importance,
+      tags: puzzle.tags,
+    },
     onSubmit: ({value}) => {
       toast.promise(
         puzzleUpdateMutation.mutateAsync({
@@ -123,6 +130,7 @@ function PuzzleInfoPanel({
           id: puzzle.id,
           answer: value.answer,
           status: value.status,
+          importance: value.importance,
           tags: value.tags,
         }),
         {loading: "Updating puzzle...", error: "Oops! Something went wrong."}
@@ -236,7 +244,7 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-16">Answer</ButtonGroupText>
+                    <ButtonGroupText className="min-w-22">Answer</ButtonGroupText>
                     <InputGroup>
                       <field.InputGroupInputField className="whitespace-pre uppercase font-mono" />
                     </InputGroup>
@@ -252,16 +260,16 @@ function PuzzleInfoPanel({
                       fieldApi.state.value !== "backsolved"
                     ) {
                       form.setFieldValue("answer", "");
+                    }
 
-                      if (form.state.isValid) {
-                        await form.handleSubmit();
-                      }
+                    if (form.state.isValid) {
+                      await form.handleSubmit();
                     }
                   },
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-16">Status</ButtonGroupText>
+                    <ButtonGroupText className="min-w-22">Status</ButtonGroupText>
                     <InputGroup>
                       <field.SelectField
                         className="border-0 bg-transparent"
@@ -281,6 +289,46 @@ function PuzzleInfoPanel({
                 )}
               />
               <form.AppField
+                name="importance"
+                listeners={{
+                  onChange: async ({fieldApi}) => {
+                    console.log(fieldApi.state.value);
+                    console.log(form.getFieldValue("importance"));
+                    if (form.state.isValid) {
+                      await form.handleSubmit();
+                    }
+                  },
+                }}
+                children={field => (
+                  <ButtonGroup className="w-full">
+                    <ButtonGroupText className="min-w-22">Importance</ButtonGroupText>
+                    <InputGroup>
+                      <field.SelectField
+                        className="border-0 bg-transparent"
+                        items={getPuzzleImportances().map(importance => {
+                          return {
+                            value: importance.value,
+                            label: (
+                              <>
+                                {importance.icon} {importance.label}
+                              </>
+                            ),
+                          };
+                        })}>
+                        {getPuzzleImportances().map(importance => (
+                          <SelectItem
+                            key={importance.value}
+                            value={importance.value}
+                            className={importance.color}>
+                            {importance.icon} {importance.label}
+                          </SelectItem>
+                        ))}
+                      </field.SelectField>
+                    </InputGroup>
+                  </ButtonGroup>
+                )}
+              />
+              <form.AppField
                 name="tags"
                 listeners={{
                   onChange: async _ => {
@@ -291,7 +339,7 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-16">Tags</ButtonGroupText>
+                    <ButtonGroupText className="min-w-22">Tags</ButtonGroupText>
                     <InputGroup className="h-auto">
                       <field.ComboboxMultipleField
                         className="border-0 bg-transparent"
