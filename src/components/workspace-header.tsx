@@ -1,5 +1,5 @@
 import {Link, useChildMatches} from "@tanstack/react-router";
-import {ExternalLinkIcon, InfoIcon, SettingsIcon, HistoryIcon} from "lucide-react";
+import {ExternalLinkIcon, InfoIcon, HomeIcon, SettingsIcon, HistoryIcon} from "lucide-react";
 import {useEffect} from "react";
 
 import {Separator} from "@/components/ui/separator";
@@ -11,6 +11,7 @@ import {useAppDispatch, useAppSelector} from "@/store";
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
+import {Card} from "./ui/card";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
@@ -46,10 +47,18 @@ export function WorkspaceHeader() {
           <div className="flex items-center gap-2">
             <TabsList>
               <TabsTrigger
+                value=""
+                render={
+                  <div>
+                    <img src="/favicon.ico" className="size-5 shrink-0 rounded-full" />
+                  </div>
+                }
+              />
+              <TabsTrigger
                 value="/$workspaceSlug/"
                 render={
                   <Link to="/$workspaceSlug" params={{workspaceSlug}}>
-                    <img src="/favicon.ico" className="size-5 shrink-0 rounded-full" />
+                    <HomeIcon />
                   </Link>
                 }
               />
