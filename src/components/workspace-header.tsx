@@ -11,7 +11,6 @@ import {useAppDispatch, useAppSelector} from "@/store";
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
 import {Button} from "./ui/button";
-import {Card} from "./ui/card";
 import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
