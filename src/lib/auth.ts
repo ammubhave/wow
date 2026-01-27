@@ -63,6 +63,12 @@ export const auth = betterAuth({
     organization({
       membershipLimit: 500,
       organizationHooks: {
+        beforeCreateOrganization: async ({organization}) => {
+          const reservedSlugs = ["exchange"];
+          if (reservedSlugs.includes(organization.slug?.toLowerCase() ?? "")) {
+            throw new Error(`Workspace ID cannot be ${organization.slug?.toLowerCase()}.`);
+          }
+        },
         afterCreateOrganization: async ({organization}) => {
           await db
             .update(schema.organization)

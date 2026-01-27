@@ -22,12 +22,24 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   head: () => ({meta: [{title: "Create Workspace | WOW"}]}),
 });
 
+const reservedSlugs = ["exchange"];
+
 function RouteComponent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const form = useAppForm({
     defaultValues: {teamName: "", eventName: "", workspaceSlug: "", password: ""},
-    onSubmit: ({value}) => {
+    onSubmit: async ({value}) => {
+      if (!(await authClient.organization.checkSlug({slug: value.workspaceSlug})).data) {
+        toast.error("Workspace ID is already taken. Please choose another one.");
+        return;
+      }
+      if (reservedSlugs.includes(value.workspaceSlug.toLowerCase())) {
+        toast.error(
+          `Workspace ID cannot be ${value.workspaceSlug.toLowerCase()}. Please choose another one.`
+        );
+        return;
+      }
       toast.promise(
         authClient.organization.create(
           {
