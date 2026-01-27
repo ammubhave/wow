@@ -17,6 +17,12 @@ export function HelpPage() {
           actions.
         </p>
         <p />
+        <h4 id="hide-menu-bar">Hide Menu Bar on Puzzle Page</h4>
+        <p>
+          Press <code>Cmd + Shift + F</code> (Mac) or <code>Ctrl + Shift + F</code> (Windows) to
+          hide the menu bar on the puzzle page.
+        </p>
+        <p />
         <h4 id="wifi">MIT Wi-Fi Discord Voice Channel Issues</h4>
         <p>
           For anyone have issues connecting to Discord voice channels on MIT GUEST: If you are an
