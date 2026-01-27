@@ -90,16 +90,28 @@ export class ChatRoom extends DurableObject {
       this.broadcast({type: "message", message: data});
       await this.storage.put<ChatMessage>(key, data);
 
-      if (m.text.startsWith("!stuck")) {
-        // Automatically react with "angry" to stuck messages
-        data.reactions["angry"] = 1;
+      const commands = ["!stuck", "!help"];
+      var matchedCommand = "";
+      for (const cmd of commands) {
+        if (m.text.startsWith(cmd)) {
+          matchedCommand = cmd;
+          break;
+        }
+      }
+
+      if (matchedCommand !== "") {
+        if (matchedCommand === "!stuck") {
+          data.reactions["angry"] = 1;
+        } else if (matchedCommand === "!help") {
+          data.reactions["like"] = 1;
+        }
         this.broadcast({type: "message", message: data});
         await this.storage.put(key, data);
 
         const botKey = uuidv7();
         const botData: ChatMessage = {
           id: botKey,
-          text: `!stuck`,
+          text: matchedCommand,
           name: "Eggö",
           timestamp: Date.now(),
           reactions: {},

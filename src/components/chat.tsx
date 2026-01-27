@@ -34,27 +34,51 @@ const hints = [
   "2) Re-read the puzzle title and flavor text. Are there hints there?",
   "3) Type random parts of the puzzle into a search engine.",
   "4) Is there a given order? If not, what's the correct order?",
-  "5) Read out loud whatever you can.",
+  "5) Read out loud everything that you've found so far.",
   "6) Ask around to see if there's a reference you're missing.",
   "7) Take a break! Do something else.",
 ];
 
-function EggoText({text}: {text: string}) {
-  const [eggoText, setEggoText] = useState("");
+function EggoHeader({text}: {text: string}) {
+  return (
+    <div>
+      <b>🧇🍳 {text} 🍳🧇</b>
+      <br />
+    </div>
+  );
+}
 
-  const rollEggoText = () => {
-    if (text == "!stuck") {
-      setEggoText(hints[Math.floor(Math.random() * hints.length)] ?? "");
+function EggoStuckText() {
+  const [eggoNum, setEggoNum] = useState(0);
+
+  const rollEggoNum = () => {
+    if (hints.length <= 1) return;
+    let newEggoNum = eggoNum;
+    while (newEggoNum === eggoNum) {
+      newEggoNum = Math.floor(Math.random() * hints.length);
     }
+    setEggoNum(newEggoNum);
   };
   useEffect(() => {
-    // Don't roll multiple times during the first render.
-    if (eggoText != "") return;
-    rollEggoText();
+    if (eggoNum != 0) return; // Don't roll multiple times during the first render.
+    rollEggoNum();
   });
   return (
     <div>
-      🍳 {eggoText.split(" ").join(" 🥚 ")} 🍳<p /> <Button onClick={rollEggoText}>🧇 Roll</Button>
+      <EggoHeader text="Try this!" />
+      <br /> {hints[eggoNum]}
+      <br />
+      <br /> <Button onClick={rollEggoNum}>🧇 Roll</Button>
+    </div>
+  );
+}
+
+function EggoHelpText() {
+  return (
+    <div>
+      <EggoHeader text="Available commands:" />
+      <br />🥚 <b>!stuck</b> - Get a random hint.
+      <br />🥚 <b>!help</b> - Get help from your friendly neighborhood Eggö bot.
     </div>
   );
 }
@@ -142,7 +166,11 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                 )}
                 <p className="bg-muted mr-2 mt-1 inline-block rounded-lg p-2 relative">
                   {message.name == "Eggö" ? (
-                    <EggoText text={message.text} />
+                    message.text == "!stuck" ? (
+                      <EggoStuckText />
+                    ) : (
+                      <EggoHelpText />
+                    )
                   ) : (
                     <Markdown
                       remarkPlugins={[remarkGfm]}
