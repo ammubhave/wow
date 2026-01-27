@@ -90,28 +90,28 @@ export class ChatRoom extends DurableObject {
       this.broadcast({type: "message", message: data});
       await this.storage.put<ChatMessage>(key, data);
 
-      const commands = ["!stuck", "!help"];
-      var matchedCommand = "";
+      // Check for Eggö commands.
+      const commands = [
+        {value: "!stuck", reaction: "angry"},
+        {value: "!help", reaction: "like"},
+      ];
+      var matchedCommand = null;
       for (const cmd of commands) {
-        if (m.text.startsWith(cmd)) {
+        if (m.text.startsWith(cmd.value)) {
           matchedCommand = cmd;
           break;
         }
       }
 
-      if (matchedCommand !== "") {
-        if (matchedCommand === "!stuck") {
-          data.reactions["angry"] = 1;
-        } else if (matchedCommand === "!help") {
-          data.reactions["like"] = 1;
-        }
+      if (matchedCommand !== null) {
+        data.reactions[matchedCommand.reaction] = 1;
         this.broadcast({type: "message", message: data});
         await this.storage.put(key, data);
 
         const botKey = uuidv7();
         const botData: ChatMessage = {
           id: botKey,
-          text: matchedCommand,
+          text: matchedCommand.value,
           name: "Eggö",
           timestamp: Date.now(),
           reactions: {},

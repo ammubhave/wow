@@ -18,6 +18,7 @@ import type {ChatMessage, ChatRoomReceivedMessage, ChatRoomSentMessage} from "@/
 
 import {useAppSelector} from "@/store";
 
+import {EggoText} from "./eggo";
 import {Button} from "./ui/button";
 import {ButtonGroup} from "./ui/button-group";
 import {Field} from "./ui/field";
@@ -27,60 +28,6 @@ import {gravatarUrl, UserHoverCard} from "./user-hover-card";
 
 function formatTime(date: Date) {
   return date.toLocaleString([], {weekday: "short", hour: "2-digit", minute: "2-digit"});
-}
-
-const hints = [
-  "1) Re-read the puzzle text. Did you use everything?",
-  "2) Re-read the puzzle title and flavor text. Are there hints there?",
-  "3) Type random parts of the puzzle into a search engine.",
-  "4) Is there a given order? If not, what's the correct order?",
-  "5) Read out loud everything that you've found so far.",
-  "6) Ask around to see if there's a reference you're missing.",
-  "7) Take a break! Do something else.",
-];
-
-function EggoHeader({text}: {text: string}) {
-  return (
-    <div>
-      <b>🧇🍳 {text} 🍳🧇</b>
-      <br />
-    </div>
-  );
-}
-
-function EggoStuckText() {
-  const [eggoNum, setEggoNum] = useState(0);
-
-  const rollEggoNum = () => {
-    if (hints.length <= 1) return;
-    let newEggoNum = eggoNum;
-    while (newEggoNum === eggoNum) {
-      newEggoNum = Math.floor(Math.random() * hints.length);
-    }
-    setEggoNum(newEggoNum);
-  };
-  useEffect(() => {
-    if (eggoNum != 0) return; // Don't roll multiple times during the first render.
-    rollEggoNum();
-  });
-  return (
-    <div>
-      <EggoHeader text="Try this!" />
-      <br /> {hints[eggoNum]}
-      <br />
-      <br /> <Button onClick={rollEggoNum}>🧇 Roll</Button>
-    </div>
-  );
-}
-
-function EggoHelpText() {
-  return (
-    <div>
-      <EggoHeader text="Available commands:" />
-      <br />🥚 <b>!stuck</b> - Get a random hint.
-      <br />🥚 <b>!help</b> - Get help from your friendly neighborhood Eggö bot.
-    </div>
-  );
 }
 
 export function Chat({puzzleId}: {puzzleId: string}) {
@@ -164,13 +111,13 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                     </span>
                   </div>
                 )}
-                <p className="bg-muted mr-2 mt-1 inline-block rounded-lg p-2 relative">
+                <p
+                  className={cn(
+                    "bg-muted mr-2 mt-1 rounded-lg p-2 relative",
+                    message.name == "Eggö" ? "flex" : "inline-block"
+                  )}>
                   {message.name == "Eggö" ? (
-                    message.text == "!stuck" ? (
-                      <EggoStuckText />
-                    ) : (
-                      <EggoHelpText />
-                    )
+                    <EggoText text={message.text} />
                   ) : (
                     <Markdown
                       remarkPlugins={[remarkGfm]}
@@ -459,7 +406,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
         <Field>
           <InputGroup>
             <InputGroupTextarea
-              placeholder="Type your message..."
+              placeholder="Type your message...&#10;!help for Eggö"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => {
