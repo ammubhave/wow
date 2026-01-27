@@ -10,7 +10,6 @@ import {
   PuzzleIcon,
   SearchIcon,
   SignalIcon,
-  SignalMediumIcon,
   StarIcon,
   TagIcon,
 } from "lucide-react";
@@ -264,7 +263,8 @@ function RouteComponent() {
                         {
                           value: null,
                           label: "None",
-                          icon: <SignalMediumIcon className="text-muted-foreground" />,
+                          icon: <SignalIcon className="text-muted-foreground" />,
+                          color: "",
                         },
                       ].map(importance => (
                         <DropdownMenuCheckboxItem
@@ -275,7 +275,8 @@ function RouteComponent() {
                                 ? prevImportances.filter(t => t !== importance.value)
                                 : [...prevImportances, importance.value]
                             );
-                          }}>
+                          }}
+                          className={importance.color}>
                           {importance.icon} {importance.label}
                         </DropdownMenuCheckboxItem>
                       ))}
@@ -818,7 +819,7 @@ function BlackboardMetaPuzzle({
                 <SelectTrigger
                   showTrigger={false}
                   className={cn(
-                    "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100/50 focus:bg-amber-100/50 dark:hover:bg-amber-950/50 dark:focus-visible:bg-amber-950/50 focus:outline-none",
+                    "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none",
                     getColorClassNamesForPuzzleImportances(metaPuzzle.importance)
                   )}>
                   <SelectValue onBlur={field.handleBlur} />
@@ -1140,7 +1141,7 @@ function BlackboardPuzzle({
                 <SelectTrigger
                   showTrigger={false}
                   className={cn(
-                    "-my-2 h-auto rounded-lg border-0 p-2 shadow-none hover:bg-amber-100/50 focus:bg-amber-100/50 dark:hover:bg-amber-950/50 dark:focus-visible:bg-amber-950/50 focus:outline-none",
+                    "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none",
                     getColorClassNamesForPuzzleImportances(puzzle.importance)
                   )}>
                   <SelectValue onBlur={field.handleBlur} />
