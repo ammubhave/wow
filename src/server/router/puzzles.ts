@@ -92,6 +92,7 @@ export const puzzlesRouter = {
           roundId,
           isMetaPuzzle: input.type === "meta-puzzle",
           parentPuzzleId: "parentPuzzleId" in input ? input.parentPuzzleId : null,
+          importance: "normal",
         })
         .returning()
         .then(rows => rows[0]);
@@ -248,7 +249,7 @@ export const puzzlesRouter = {
           puzzleId: puzzle.id,
           puzzleName: puzzle.name,
           workspaceId: puzzle.round.workspaceId,
-          field: input.importance ?? "None",
+          field: input.importance ?? "normal",
         });
       }
 
