@@ -27,6 +27,13 @@ export const auth = betterAuth({
       );
     },
   },
+  socialProviders: {
+    google: {
+      prompt: "select_account",
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+  },
   emailVerification: {
     sendVerificationEmail: async ({user, url}) => {
       const resend = new Resend(process.env.RESEND_API_KEY);
