@@ -1,26 +1,19 @@
 import {createFileRoute, Outlet} from "@tanstack/react-router";
 
 import {NavGroup, NavigationGroup} from "@/components/navigation-group";
-import {Card} from "@/components/ui/card";
 
-export const Route = createFileRoute("/_public/docs")({
+export const Route = createFileRoute("/_public/exchange")({
   component: RouteComponent,
-  head: () => ({meta: [{title: "Documentation | WOW"}]}),
+  head: () => ({meta: [{title: "Wafflehaüs Puzzle Exchange | WOW"}]}),
 });
 
 const navigation: Array<NavGroup> = [
+  {title: "Overview", links: [{title: "Introduction", href: "/exchange"}]},
   {
-    title: "Overview",
+    title: "February 2026",
     links: [
-      {title: "Introduction", href: "/docs"},
-      {title: "Blackboard", href: "/docs/blackboard"},
-    ],
-  },
-  {
-    title: "Automations",
-    links: [
-      {title: "Google Drive", href: "/docs/google-drive"},
-      {title: "Discord", href: "/docs/discord"},
+      {title: "Ladders", href: "/exchange/ladders"},
+      {title: "Eulogy Poems", href: "/exchange/eulogy-poems"},
     ],
   },
 ];
@@ -40,13 +33,7 @@ function RouteComponent() {
             ))}
           </ul>
         </nav>
-        <div className="flex flex-1 items-stretch justify-center">
-          <Card className="flex-1 p-8">
-            <div className="prose max-w-full">
-              <Outlet />
-            </div>
-          </Card>
-        </div>
+        <Outlet />
       </div>
     </div>
   );
