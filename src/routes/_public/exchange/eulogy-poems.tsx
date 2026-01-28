@@ -27,7 +27,7 @@ function RouteComponent() {
           Your browser does not support the audio element.
         </audio>
       </PuzzMain>
-      <PuzzFooter answer="ICECREAMMANICURE" author="Kate">
+      <PuzzFooter answer="ICECREAMMANICURE" author="Jacqui">
         <></>
       </PuzzFooter>
     </Puzz>
