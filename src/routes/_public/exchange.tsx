@@ -12,8 +12,8 @@ const navigation: Array<NavGroup> = [
   {
     title: "February 2026",
     links: [
-      {title: "Ladders", href: "/exchange/ladders"},
       {title: "Eulogy Poems", href: "/exchange/eulogy-poems"},
+      {title: "Ladders", href: "/exchange/ladders"},
     ],
   },
 ];

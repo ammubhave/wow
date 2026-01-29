@@ -1,3 +1,4 @@
+import {ExternalLinkIcon} from "lucide-react";
 import React, {useState} from "react";
 import {cn} from "tailwind-variants";
 
@@ -29,7 +30,7 @@ export function PuzzMain({
   almostAnswers,
 }: {
   children: React.ReactNode;
-  flavor: string;
+  flavor?: string;
   answer: string;
   almostAnswers?: Array<PuzzAlmostAnswer>;
 }) {
@@ -80,7 +81,7 @@ export function PuzzMain({
           </form.AppForm>
         </div>
         <Separator orientation="horizontal" className="my-6" />
-        <div className="italic mb-10">{flavor}</div>
+        {flavor && <div className="italic mb-10">{flavor}</div>}
         {children}
       </div>
     </PuzzCard>
@@ -182,6 +183,15 @@ export function PuzzSolution({
       </Button>
       {!solutionHidden && <div className="flex prose max-w-full">{children}</div>}
     </PuzzCard>
+  );
+}
+
+export function PuzzLink({children, link}: {children: string; link: string}) {
+  return (
+    <a target="_blank" rel="noopener noreferrer" href={link} className="underline">
+      {children}
+      <ExternalLinkIcon className="py-1 inline" />
+    </a>
   );
 }
 

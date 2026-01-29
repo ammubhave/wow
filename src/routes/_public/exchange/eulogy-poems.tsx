@@ -1,7 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
-import {ExternalLinkIcon} from "lucide-react";
 
-import {Puzz, PuzzMain, PuzzHints, PuzzSolution} from "./puzz-components";
+import {Puzz, PuzzLink, PuzzMain, PuzzHints, PuzzSolution} from "./puzz-components";
 
 export const Route = createFileRoute("/_public/exchange/eulogy-poems")({component: RouteComponent});
 
@@ -49,7 +48,7 @@ function RouteComponent() {
           {
             label: "Identification",
             hints: [
-              '"Meowdy, moon partner!" These lines are referencing Mooncat nail polishes.',
+              '"Meowdy, moon partner!" Some of these lines reference Mooncat nail polishes.',
               "What are the other lines that aren't referencing nail polishes?",
               '"For the stock market crash on the sixth of November" identifies Ben & Jerry\'s ice creams.',
             ],
@@ -60,21 +59,13 @@ function RouteComponent() {
               "What do these nail polishes have in common? The ice cream flavors?",
               "Find canonical listings of these things.",
               <>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.benjerry.com/flavors/flavor-graveyard"
-                  className="underline">
-                  The Flavor Graveyard <ExternalLinkIcon className="py-1 inline" />
-                </a>{" "}
+                <PuzzLink link="https://www.benjerry.com/flavors/flavor-graveyard">
+                  The Flavor Graveyard
+                </PuzzLink>{" "}
                 and{" "}
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://www.mooncat.com/collections/dearly-departed"
-                  className="underline">
-                  Dearly Departed Collection <ExternalLinkIcon className="py-1 inline" />
-                </a>
+                <PuzzLink link="https://www.mooncat.com/collections/dearly-departed">
+                  Dearly Departed Collection
+                </PuzzLink>{" "}
                 have text from the flavor text!
               </>,
             ],
