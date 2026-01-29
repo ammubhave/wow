@@ -118,6 +118,7 @@ export function PuzzHints({hints}: {hints: Array<PuzzHint>}) {
                 }}>
                 <span className="min-w-10">{hintsHidden[index] ? "Show" : "Hide"}</span>
               </Button>
+              <span className="ml-2">{index + 1})</span>
               <span
                 className={cn(
                   "ml-4 pl-1 mr-30",
