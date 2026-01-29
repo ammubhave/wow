@@ -10,7 +10,7 @@ import {InputGroup} from "@/components/ui/input-group";
 import {Separator} from "@/components/ui/separator";
 import {celebrate} from "@/lib/confetti";
 
-type PuzzHint = {label: string; hints: Array<string>};
+type PuzzHint = {label: string; hints: Array<string | React.ReactNode>};
 type PuzzAlmostAnswer = {answer: string; message: string};
 
 export function Puzz({children, title}: {children: React.ReactNode; title: string}) {
@@ -88,7 +88,7 @@ export function PuzzMain({
 }
 
 export function PuzzHints({hints}: {hints: Array<PuzzHint>}) {
-  type IndexedHint = {index: number; hint: string};
+  type IndexedHint = {index: number; hint: string | React.ReactNode};
   type PuzzIndexedHint = {label: string; hints: Array<IndexedHint>};
   var count = 0;
   var indexedHints: Array<PuzzIndexedHint> = [];
@@ -119,7 +119,10 @@ export function PuzzHints({hints}: {hints: Array<PuzzHint>}) {
                 <span className="min-w-10">{hintsHidden[index] ? "Show" : "Hide"}</span>
               </Button>
               <span
-                className={cn("ml-4 pl-1 mr-30", hintsHidden[index] ? "bg-black text-black" : "")}>
+                className={cn(
+                  "ml-4 pl-1 mr-30",
+                  hintsHidden[index] ? "bg-black text-black select-none pointer-events-none" : ""
+                )}>
                 {hint}
               </span>
             </div>
@@ -145,13 +148,13 @@ export function PuzzSolution({
   return (
     <PuzzCard>
       <h2 className="text-2xl font-bold">Solution</h2>
-      <div className="flex flex-col select-none text-xl font-bold gap-2">
+      <div className="flex flex-col text-xl font-bold gap-2">
         <div className="flex">
           ANSWER:{"  "}
           <span
             className={cn(
               "inline-block w-full ml-5 pl-1 mr-30",
-              answerHidden ? "bg-black text-black" : ""
+              answerHidden ? "bg-black text-black select-none pointer-events-none" : ""
             )}>
             {toAnswerFormat(answer)}
           </span>

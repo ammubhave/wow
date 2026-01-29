@@ -1,4 +1,5 @@
 import {createFileRoute} from "@tanstack/react-router";
+import {ExternalLinkIcon} from "lucide-react";
 
 import {Puzz, PuzzMain, PuzzHints, PuzzSolution} from "./puzz-components";
 
@@ -32,11 +33,62 @@ function RouteComponent() {
         <audio src="/eulogy-poems-5.mp3" controls className="mb-4">
           Your browser does not support the audio element.
         </audio>
+        <audio src="/eulogy-poems-6.mp3" controls className="mb-4">
+          Your browser does not support the audio element.
+        </audio>
       </PuzzMain>
       <PuzzHints
         hints={[
-          {label: "Getting Started", hints: ["Hint 1", "Hint 2", "Hint 3"]},
-          {label: "Still Stuck?", hints: ["Hint 4", "Hint 5"]},
+          {
+            label: "Getting Started",
+            hints: [
+              "Have you transcribed the audio? Are there any unusual lines that catch your eye?",
+              "Try entering the unusual lines in a search engine. Try quotes for exact matches.",
+            ],
+          },
+          {
+            label: "Identification",
+            hints: [
+              '"Meowdy, moon partner!" These lines are referencing Mooncat nail polishes.',
+              "What are the other lines that aren't referencing nail polishes?",
+              '"For the stock market crash on the sixth of November" identifies Ben & Jerry\'s ice creams.',
+            ],
+          },
+          {
+            label: "Data Collection",
+            hints: [
+              "What do these nail polishes have in common? The ice cream flavors?",
+              "Find canonical listings of these things.",
+              <>
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.benjerry.com/flavors/flavor-graveyard"
+                  className="underline">
+                  The Flavor Graveyard <ExternalLinkIcon className="py-1 inline" />
+                </a>{" "}
+                and{" "}
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.mooncat.com/collections/dearly-departed"
+                  className="underline">
+                  Dearly Departed Collection <ExternalLinkIcon className="py-1 inline" />
+                </a>
+                have text from the flavor text!
+              </>,
+            ],
+          },
+          {
+            label: "Extraction",
+            hints: [
+              "What's the given ordering?",
+              "Number, count, and add! Do any numbers quickly match up?",
+              "The given ordering is alphabetical by ice cream. The intended ordering is by nail polish.",
+              "How do we extract a single letter from each nail polish?",
+              "Use line number from each poem as an index into the ice cream. Order by nail polish!",
+            ],
+          },
         ]}
       />
       <PuzzSolution author="Jacqui" answer="ICECREAMMANICURE">
