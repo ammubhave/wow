@@ -10,27 +10,32 @@ function RouteComponent() {
       <h1 className="text-4xl font-bold mb-4 text-center">Wafflehaüs Puzzle Exchange!</h1>
       <Card className="flex-1 p-8">
         <div className="prose max-w-full">
-          <p>Welcome to the Wafflehaüs Puzzle Exchange!</p>
           <p>
-            Every month, Wafflehaüs will release a small number of approachable, short, Hunt-length
-            puzzles written by team members.
+            <h1>WPE! WPE! WPE!</h1>
           </p>
           <p>
-            <b>If you're interested in solving,</b> see the puzzles on the left. Feel free to solve
-            by yourself or with friends! Once you've solved the puzzle, go react to the
-            corresponding Discord message!
+            Every month, Wafflehaüs will release a small number of approachable, short, Hunt-length
+            puzzles written by team members, as well as spotlighting puzzles from other hunts.
+          </p>
+          <p>
+            <h2>Interested in solving?</h2>
+          </p>
+          <p>
+            Find the puzzles on the left. Feel free to solve by yourself or with friends! Once
+            you've solved the puzzle, go react to the corresponding Discord message!
           </p>
           <p>
             There has been a WOW workspace set up for your convenience called{" "}
             <a target="_blank" rel="noopener noreferrer" href="https://www.wafflehaus.io/wpe">
               WPE
-            </a>{" "}
-            (short for Wafflehaüs Puzzle Exchange). The password is <code>sumhint</code>. Please be
-            courteous! You're sharing this workspace with the whole team.
+            </a>
+            . The password is <code>sumhint</code>. Please be courteous! You're sharing this
+            workspace with the whole team. See instructions on the workspace itself.
           </p>
           <p>
-            <b>If you're interested in writing,</b> reach out to Allen on Discord.
+            <h2>Interested in writing?</h2>
           </p>
+          <p>Reach out to Allen on Discord!</p>
         </div>
       </Card>
     </div>
