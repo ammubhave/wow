@@ -8,7 +8,13 @@ export const Route = createFileRoute("/_public/exchange")({
 });
 
 const navigation: Array<NavGroup> = [
-  {title: "Overview", links: [{title: "Introduction", href: "/exchange"}]},
+  {
+    title: "Overview",
+    links: [
+      {title: "Introduction", href: "/exchange"},
+      {title: "Writing", href: "/exchange/writing"},
+    ],
+  },
   {
     title: "February 2026",
     links: [
