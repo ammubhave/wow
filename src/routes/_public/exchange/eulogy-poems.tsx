@@ -13,6 +13,8 @@ function RouteComponent() {
         answer="ICECREAMMANICURE"
         almostAnswers={[
           {answer: "ISCREAMMANICURE", message: "Keep going!"},
+          {answer: "MANICURE", message: "Almost!"},
+          {answer: "SCREAMMANICURE", message: "Almost!"},
           {answer: "MAINMUSICCAREER", message: "I see what you did there. Nope."},
           {answer: "REAMERICANMUSIC", message: "I see what you did there. Nope."},
           {answer: "CINERARIUMS", message: "Amusingly related, but nope."},
