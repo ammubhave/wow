@@ -181,7 +181,7 @@ export function PuzzSolution({
       <Button className="mr-10" onClick={() => setSolutionHidden(!solutionHidden)}>
         <span className="min-w-10">{solutionHidden ? "Show Solution" : "Hide Solution"}</span>
       </Button>
-      {!solutionHidden && <div className="flex prose max-w-full">{children}</div>}
+      {!solutionHidden && <div className="flex flex-col prose max-w-full">{children}</div>}
     </PuzzCard>
   );
 }
