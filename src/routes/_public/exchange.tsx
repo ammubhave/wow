@@ -20,6 +20,7 @@ const navigation: Array<NavGroup> = [
     links: [
       {title: "Eulogy Poems", href: "/exchange/eulogy-poems"},
       {title: "Ladders", href: "/exchange/ladders"},
+      {title: "Swamp Water", href: "/exchange/swamp-water"},
     ],
   },
 ];
