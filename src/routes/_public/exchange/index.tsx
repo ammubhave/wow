@@ -103,4 +103,5 @@ const navigation = [
   {title: "Eulogy Poems", href: "/exchange/eulogy-poems"},
   {title: "Ladders", href: "/exchange/ladders"},
   {title: "Swamp Water", href: "/exchange/swamp-water"},
+  {title: "The Princess And The Pea", href: "/exchange/the-princess-and-the-pea"},
 ];

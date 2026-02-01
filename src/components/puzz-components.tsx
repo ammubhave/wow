@@ -120,18 +120,34 @@ export function PuzzHints({hints}: {hints: Array<PuzzHint>}) {
                 <span className="min-w-10">{hintsHidden[index] ? "Show" : "Hide"}</span>
               </Button>
               <span className="ml-2">{index + 1})</span>
-              <span
-                className={cn(
-                  "ml-4 pl-1 mr-30",
-                  hintsHidden[index] ? "bg-black text-black select-none pointer-events-none" : ""
-                )}>
+              <PuzzHidden className="ml-4 pl-1 mr-30" hidden={hintsHidden[index]!}>
                 {hint}
-              </span>
+              </PuzzHidden>
             </div>
           ))}
         </div>
       ))}
     </PuzzCard>
+  );
+}
+
+export function PuzzHidden({
+  children,
+  className,
+  hidden,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  hidden: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        className ?? "",
+        hidden ? "bg-black text-black select-none pointer-events-none" : ""
+      )}>
+      {children}
+    </span>
   );
 }
 
@@ -153,26 +169,18 @@ export function PuzzSolution({
       <div className="flex flex-col text-xl font-bold gap-2">
         <div className="flex">
           ANSWER:{"  "}
-          <span
-            className={cn(
-              "inline-block w-full ml-5 pl-1 mr-30",
-              answerHidden ? "bg-black text-black select-none pointer-events-none" : ""
-            )}>
+          <PuzzHidden className="inline-block w-full ml-5 pl-1 mr-30" hidden={answerHidden}>
             {toAnswerFormat(answer)}
-          </span>
+          </PuzzHidden>
           <Button className="mr-10" onClick={() => setAnswerHidden(!answerHidden)}>
             <span className="min-w-10">{answerHidden ? "Show" : "Hide"}</span>
           </Button>
         </div>
         <div className="flex">
           AUTHOR:{"  "}
-          <span
-            className={cn(
-              "inline-block w-full ml-5 pl-1 mr-30",
-              authorHidden ? "bg-black text-black" : ""
-            )}>
+          <PuzzHidden className="inline-block w-full ml-5 pl-1 mr-30" hidden={authorHidden}>
             {author}
-          </span>
+          </PuzzHidden>
           <Button className="mr-10" onClick={() => setAuthorHidden(!authorHidden)}>
             <span className="min-w-10">{authorHidden ? "Show" : "Hide"}</span>
           </Button>
