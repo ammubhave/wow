@@ -18,12 +18,17 @@ const navigation: Array<NavGroup> = [
   {
     title: "February 2026",
     links: [
-      {title: "Eulogy Poems", href: "/exchange/eulogy-poems"},
-      {title: "Ladders", href: "/exchange/ladders"},
-      {title: "Swamp Water", href: "/exchange/swamp-water"},
+      puzzNav("Eulogy Poems"),
+      puzzNav("Ladders"),
+      puzzNav("Swamp Water"),
+      puzzNav("The Princess And The Pea"),
     ],
   },
 ];
+
+function puzzNav(title: string) {
+  return {title: title, href: "/exchange/" + title.toLowerCase().replace(/[^a-z]/g, "-")};
+}
 
 function RouteComponent() {
   return (
