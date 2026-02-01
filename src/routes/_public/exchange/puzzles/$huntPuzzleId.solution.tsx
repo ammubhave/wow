@@ -47,7 +47,7 @@ function RouteComponent() {
                   <Link
                     to="/exchange/puzzles/$huntPuzzleId"
                     params={{huntPuzzleId: puzzle.hunt_puzzles.id}}>
-                    {puzzle.hunts.name}
+                    {puzzle.hunt_puzzles.title}
                   </Link>
                 }
               />
