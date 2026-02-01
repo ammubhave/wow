@@ -21,7 +21,6 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/tiptap-ui-pr
 import {Separator} from "@/components/tiptap-ui-primitive/separator";
 import {useLinkPopover} from "@/components/tiptap-ui/link-popover";
 // --- Hooks ---
-import {useIsBreakpoint} from "@/hooks/use-is-breakpoint";
 import {useTiptapEditor} from "@/hooks/use-tiptap-editor";
 
 export interface LinkMainProps {
@@ -98,8 +97,6 @@ const LinkMain: React.FC<LinkMainProps> = ({
   openLink,
   isActive,
 }) => {
-  const isMobile = useIsBreakpoint();
-
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -108,8 +105,8 @@ const LinkMain: React.FC<LinkMainProps> = ({
   };
 
   return (
-    <Card style={{...(isMobile ? {boxShadow: "none", border: 0} : {})}}>
-      <CardBody style={{...(isMobile ? {padding: 0} : {})}}>
+    <Card>
+      <CardBody>
         <CardItemGroup orientation="horizontal">
           <InputGroup>
             <Input
