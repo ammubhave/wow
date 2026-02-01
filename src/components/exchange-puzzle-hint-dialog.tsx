@@ -1,3 +1,6 @@
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,7 +27,9 @@ export function ExchangePuzzleHintDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{message}</AlertDialogDescription>
+          <AlertDialogDescription className="[&_a]:underline">
+            <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Close</AlertDialogCancel>
