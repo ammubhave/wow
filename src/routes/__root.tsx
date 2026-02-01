@@ -1,5 +1,5 @@
 import {TanStackDevtools} from "@tanstack/react-devtools";
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {MutationCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {ReactQueryDevtoolsPanel} from "@tanstack/react-query-devtools";
 import {createRootRoute, HeadContent, Scripts} from "@tanstack/react-router";
 import {TanStackRouterDevtoolsPanel} from "@tanstack/react-router-devtools";
@@ -31,7 +31,13 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  }),
+});
 
 function RootDocument({children}: {children: React.ReactNode}) {
   return (

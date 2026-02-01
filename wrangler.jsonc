@@ -28,6 +28,7 @@
     "BETTER_AUTH_URL": "http://localhost:3000",
     "BETTER_AUTH_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "PNPM_VERSION": "10.24.0",
+    "ADMIN_EMAILS": "amol@amolbhave.com",
   },
   "durable_objects": {
     "bindings": [
@@ -38,6 +39,7 @@
       {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
     ],
   },
+  "r2_buckets": [{"binding": "R2", "bucket_name": "wow"}],
   "migrations": [
     {"tag": "v1", "new_classes": ["ChatRoom", "NotificationRoom", "PresenceRoom", "DiscordClient"]},
     {"tag": "v2", "new_classes": ["WorkspaceRoom"]},
@@ -68,6 +70,7 @@
         "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXqMR1-nXdolsi",
         "BETTER_AUTH_URL": "https://www.wafflehaus.io",
         "PNPM_VERSION": "10.26.2",
+        "ADMIN_EMAILS": "amol@amolbhave.com",
       },
       "durable_objects": {
         "bindings": [
@@ -78,6 +81,7 @@
           {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
         ],
       },
+      "r2_buckets": [{"binding": "R2", "bucket_name": "wow-production"}],
       "workflows": [
         {
           "name": "DeleteChannelAfterDelayWorkflow",

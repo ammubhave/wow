@@ -82,7 +82,7 @@ export function PuzzMain({
         </div>
         <Separator orientation="horizontal" className="my-6" />
         {flavor && <div className="italic mb-10">{flavor}</div>}
-        {children}
+        <div className="flex flex-col items-center text-center">{children}</div>
       </div>
     </PuzzCard>
   );

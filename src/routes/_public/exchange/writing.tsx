@@ -1,13 +1,32 @@
-import {createFileRoute} from "@tanstack/react-router";
+import {createFileRoute, Link} from "@tanstack/react-router";
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {Card} from "@/components/ui/card";
 
 export const Route = createFileRoute("/_public/exchange/writing")({component: RouteComponent});
 
 function RouteComponent() {
   return (
-    <div className="flex flex-1 flex-col items-stretch justify-center max-w-5xl">
-      <h1 className="text-4xl font-bold mb-4 text-center">Wafflehaüs Puzzle Exchange!</h1>
+    <div className="flex flex-1 flex-col gap-4 items-stretch justify-center max-w-5xl">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to="/exchange">Hunts</Link>} />
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Writing</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <h1 className="text-2xl font-bold mb-4 text-center">Wafflehaüs's Guide to Writing Puzzles</h1>
       <Card className="flex-1 p-8">
         <div className="prose max-w-full">
           <p>

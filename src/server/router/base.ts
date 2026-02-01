@@ -18,7 +18,7 @@ export type AuthenticatedContext = Omit<Context, "user"> & {
   notification: NotificationService;
 };
 
-const base = os.$context<Context>();
+export const base = os.$context<Context>();
 
 export const procedure = base.use(async ({context: ctx, next}) => {
   const session = await auth.api.getSession({headers: ctx.headers});
