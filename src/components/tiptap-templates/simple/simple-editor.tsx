@@ -41,7 +41,7 @@ import {MarkButton} from "@/components/tiptap-ui/mark-button";
 import {TextAlignButton} from "@/components/tiptap-ui/text-align-button";
 import {UndoRedoButton} from "@/components/tiptap-ui/undo-redo-button";
 // --- Styles ---
-import "@/components/tiptap-templates/simple/simple-editor.scss";
+import "@/components/tiptap-templates/simple/simple-editor.css";
 // --- Lib ---
 import {handleImageUpload, MAX_FILE_SIZE} from "@/lib/tiptap-utils";
 
