@@ -28,6 +28,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/")({
@@ -45,6 +46,9 @@ function RouteComponent() {
     defaultValues: {answer: ""},
     onSubmit: async ({value}) => {
       await submitAnswer.mutateAsync({huntPuzzleId: huntPuzzleId, answer: value.answer});
+      if (submitAnswer.data?.isCorrect) {
+        await celebrate();
+      }
     },
   });
 
