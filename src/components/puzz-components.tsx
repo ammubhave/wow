@@ -4,10 +4,13 @@ import {cn} from "tailwind-variants";
 
 import {useAppForm} from "@/components/form";
 import {Button} from "@/components/ui/button";
-import {ButtonGroup, ButtonGroupText} from "@/components/ui/button-group";
 import {Card} from "@/components/ui/card";
-import {FieldGroup} from "@/components/ui/field";
-import {InputGroup} from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {Separator} from "@/components/ui/separator";
 import {celebrate} from "@/lib/confetti";
 
@@ -58,27 +61,29 @@ export function PuzzMain({
   return (
     <PuzzCard>
       <div className="prose max-w-full">
-        <div className="text-lg font-semibold">
+        <div className="text-lg font-semibold gap-4 w-full flex flex-col items-center">
           <form.AppForm>
-            <form.Form className="flex flex-row">
-              <FieldGroup>
+            <form.Form className="max-w-lg w-full">
+              <InputGroup>
                 <form.AppField name="answer">
                   {field => (
-                    <>
-                      <ButtonGroup className="w-1/2 min-w-60">
-                        <ButtonGroupText className="min-w-16">Check:</ButtonGroupText>
-                        <InputGroup>
-                          <field.InputGroupInputField className="whitespace-pre uppercase font-mono" />
-                        </InputGroup>
-                        <form.SubmitButton>Check</form.SubmitButton>
-                      </ButtonGroup>
-                      <div>{checkResponse}</div>
-                    </>
+                    <InputGroupInput
+                      className="uppercase"
+                      value={field.state.value}
+                      onChange={value => field.handleChange(value.target.value)}
+                      onBlur={field.handleBlur}
+                    />
                   )}
                 </form.AppField>
-              </FieldGroup>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton type="submit" variant="default">
+                    Submit Answer
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
             </form.Form>
           </form.AppForm>
+          {checkResponse && <div>{checkResponse}</div>}
         </div>
         <Separator orientation="horizontal" className="my-6" />
         {flavor && <div className="italic mb-10">{flavor}</div>}
