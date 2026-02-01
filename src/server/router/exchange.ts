@@ -118,9 +118,13 @@ export const exchangeRouter = {
           where: eq(schema.huntPuzzles.id, input.huntPuzzleId),
         });
         if (!puzzle) throw new ORPCError("NOT_FOUND");
-        const isCorrect = input.answer.trim().toLowerCase() === puzzle.answer.trim().toLowerCase();
+        const isCorrect =
+          input.answer.toUpperCase().replace(/[^A-Z]/g, "") ===
+          puzzle.answer.toUpperCase().replace(/[^A-Z]/g, "");
         const partial = puzzle.partials?.find(
-          partial => input.answer.trim().toLowerCase() === partial.answer.trim().toLowerCase()
+          partial =>
+            input.answer.toUpperCase().replace(/[^A-Z]/g, "") ===
+            partial.answer.toUpperCase().replace(/[^A-Z]/g, "")
         );
         return {isCorrect, isPartial: partial !== undefined, message: partial?.message} as
           | {isCorrect: true}
