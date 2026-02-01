@@ -40,15 +40,20 @@ function RouteComponent() {
   const puzzle = useSuspenseQuery(
     orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId: huntPuzzleId}})
   ).data;
-  const submitAnswer = useMutation(orpc.exchange.puzzles.submitAnswer.mutationOptions());
+  const submitAnswer = useMutation(
+    orpc.exchange.puzzles.submitAnswer.mutationOptions({
+      onSuccess: async data => {
+        if (data.isCorrect) {
+          await celebrate();
+        }
+      },
+    })
+  );
 
   const form = useAppForm({
     defaultValues: {answer: ""},
     onSubmit: async ({value}) => {
       await submitAnswer.mutateAsync({huntPuzzleId: huntPuzzleId, answer: value.answer});
-      if (submitAnswer.data?.isCorrect) {
-        await celebrate();
-      }
     },
   });
 
