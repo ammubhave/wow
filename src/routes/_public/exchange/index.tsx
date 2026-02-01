@@ -30,8 +30,8 @@ function RouteComponent() {
           <AccordionTrigger>Interested in solving?</AccordionTrigger>
           <AccordionContent>
             <p>
-              Find the puzzles on the left. Feel free to solve by yourself or with friends! Once
-              you've solved the puzzle, go react to the corresponding Discord message!
+              Feel free to solve by yourself or with friends! Once you've solved the puzzle, go
+              react to the corresponding Discord message!
             </p>
             <p>
               There has been a WOW workspace set up for your convenience called{" "}
