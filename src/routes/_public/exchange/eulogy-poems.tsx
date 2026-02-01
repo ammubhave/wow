@@ -1,6 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
 
-import {Puzz, PuzzLink, PuzzMain, PuzzHints, PuzzSolution} from "./puzz-components";
+import {Puzz, PuzzLink, PuzzMain, PuzzHints, PuzzSolution} from "@/components/puzz-components";
 
 export const Route = createFileRoute("/_public/exchange/eulogy-poems")({component: RouteComponent});
 

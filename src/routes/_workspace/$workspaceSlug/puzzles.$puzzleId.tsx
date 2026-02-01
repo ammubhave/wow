@@ -291,9 +291,7 @@ function PuzzleInfoPanel({
               <form.AppField
                 name="importance"
                 listeners={{
-                  onChange: async ({fieldApi}) => {
-                    console.log(fieldApi.state.value);
-                    console.log(form.getFieldValue("importance"));
+                  onChange: async () => {
                     if (form.state.isValid) {
                       await form.handleSubmit();
                     }
