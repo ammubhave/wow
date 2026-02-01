@@ -17,23 +17,23 @@ function RouteComponent() {
         This is a fake meta puzzle. Reveal the feeder answers one-by-one below!
         <br />
         <br />
-        1) CINEMA COMPLEX
+        Puzzle A: CINEMA COMPLEX
         <br />
-        2) ARIOPSIS
+        Puzzle B: ARIOPSIS
         <br />
-        3) MULTIPLE
+        Puzzle C: MULTIPLE
         <br />
-        4) SNOOKER SPICE
+        Puzzle D: SNOOKER SPICE
         <br />
-        5) RAPIDOGRAPH
+        Puzzle E: RAPIDOGRAPH
         <br />
-        6) <PuzzHidden hidden={numShown < 6}>BELPAIRE</PuzzHidden>
+        Puzzle F: <PuzzHidden hidden={numShown < 6}>BELPAIRE</PuzzHidden>
         <br />
-        7) <PuzzHidden hidden={numShown < 7}>MERSIN CUP</PuzzHidden>
+        Puzzle G: <PuzzHidden hidden={numShown < 7}>MERSIN CUP</PuzzHidden>
         <br />
-        8) <PuzzHidden hidden={numShown < 8}>POCKET PASSERS</PuzzHidden>
+        Puzzle H: <PuzzHidden hidden={numShown < 8}>POCKET PASSERS</PuzzHidden>
         <br />
-        9) <PuzzHidden hidden={numShown < 9}>TIAPRIDE</PuzzHidden>
+        Puzzle I: <PuzzHidden hidden={numShown < 9}>TIAPRIDE</PuzzHidden>
         <br />
         <br />
         <Button

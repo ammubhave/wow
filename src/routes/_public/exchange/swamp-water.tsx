@@ -45,24 +45,27 @@ function RouteComponent() {
           {
             label: "Getting Started",
             hints: [
-              'Find the easy clues to answer first. You can search clues with "crossword clue" appended.',
-              'Traditional word ladder rules don\'t work. What else could "off by one" mean?',
+              "You'll need to identify the name of each soft drink on the soda fountain.",
+              "What does the title of the puzzle refer to? You'll need to use this idea to start answering the clues below. Start with the main clues and leave the aka clue halves for later.",
             ],
           },
           {
-            label: "Finishing Clues",
+            label: "Making Connections",
             hints: [
-              "Can you categorize what kinds of transitions there were?",
-              "You should end with seven different transitions. Make sure all of your answers fit.",
+              "Each clue needs to be associated with two of the soft drinks in some sort of combination.",
+              "Every soft drink has two words or parts to its name. Take one name part from each drink to make a new answer associated with a clue. Every part will be used exactly once.",
+              'As an example, Mauna Loa would be a Hawaiian Mountain, formed by mixing Hawaiian Punch and Mountain Dew. "Punch" and "Dew" are part of other clue answers.',
             ],
           },
           {
             label: "Extraction",
             hints: [
-              "Have you figured out any of the header clues? Focus on the ones you're certain about.",
-              "Count things! Do you notice any numbers matching?",
-              "A header clue answer is WREATHE. The length matches the number of transitions.",
-              "Each transition matches to a letter. Arrange the letters in the final set!",
+              "Do you notice anything unique about the dispensers on the soda fountain?",
+              "Each dispenser clues another word attached to each soft drink with an enumeration given by the number of spaces (ranging from 3 to 6).",
+              "You will need to identify these mystery words by using the aka clues and the drink combinations from earlier in the puzzle.",
+              'Each aka clue can be answered with a compound word, with the sub components of the answer being associated back with the drinks in order of the first clue answer. Since Mauna Loa = Hawaiian Mountain, you\'re looking for a compound word fitting as an answer to the clue "secondary attraction" where the first and second halves of the compound word fit onto the dispensors of Hawaiian Punch and Mountain Dew, respectively',
+              "Some of the aka answers include SWITCHBOARD, BACKBOARD, and SWITCHBACK.",
+              "Take the highlighted letter from every dispenser and read across!",
             ],
           },
         ]}
