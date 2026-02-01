@@ -1,9 +1,8 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useState} from "react";
 
+import {Puzz, PuzzHidden, PuzzMain, PuzzHints, PuzzSolution} from "@/components/puzz-components";
 import {Button} from "@/components/ui/button";
-
-import {Puzz, PuzzHidden, PuzzMain, PuzzHints, PuzzSolution} from "./puzz-components";
 
 export const Route = createFileRoute("/_public/exchange/the-princess-and-the-pea")({
   component: RouteComponent,
