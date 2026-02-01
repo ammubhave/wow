@@ -1,5 +1,6 @@
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {Suspense} from "react";
 
 import {SimpleEditor} from "@/components/tiptap-templates/simple/simple-editor";
 import {
@@ -13,7 +14,11 @@ import {
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/solution")({
-  component: RouteComponent,
+  component: () => (
+    <Suspense>
+      <RouteComponent />
+    </Suspense>
+  ),
 });
 
 function RouteComponent() {

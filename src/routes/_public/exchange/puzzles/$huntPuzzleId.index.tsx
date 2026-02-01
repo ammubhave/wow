@@ -1,7 +1,7 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronDownIcon, PencilIcon} from "lucide-react";
-import {useState} from "react";
+import {Suspense, useState} from "react";
 
 import {ExchangePuzzleHintDialog} from "@/components/exchange-puzzle-hint-dialog";
 import {useAppForm} from "@/components/form";
@@ -32,7 +32,11 @@ import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/")({
-  component: RouteComponent,
+  component: () => (
+    <Suspense>
+      <RouteComponent />
+    </Suspense>
+  ),
 });
 
 function RouteComponent() {

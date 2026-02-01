@@ -1,6 +1,7 @@
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronRightIcon, PlusIcon} from "lucide-react";
+import {Suspense} from "react";
 
 import {AddNewExchangePuzzleDialog} from "@/components/add-new-exchange-puzzle-dialog";
 import {ChangeExchangeHuntDraftSwitch} from "@/components/change-exchange-hunt-draft-switch";
@@ -16,7 +17,11 @@ import {Button} from "@/components/ui/button";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/hunts/$huntId")({
-  component: RouteComponent,
+  component: () => (
+    <Suspense>
+      <RouteComponent />
+    </Suspense>
+  ),
 });
 
 function RouteComponent() {
