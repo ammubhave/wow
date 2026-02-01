@@ -14,6 +14,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {Button} from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,7 +84,52 @@ function RouteComponent() {
         </Breadcrumb>
       </div>
       <div className="flex gap-4 flex-col items-center">
-        <div className="text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
+          <div />
+          <div className="text-2xl font-bold text-center">{puzzle.hunt_puzzles.title}</div>
+          <div className="justify-self-end flex gap-1 items-center">
+            {puzzle.hunt_puzzles.hints && puzzle.hunt_puzzles.hints.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline">
+                      Hints
+                      <ChevronDownIcon />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent
+                  className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+                  side="bottom"
+                  align="end"
+                  sideOffset={4}>
+                  <DropdownMenuGroup>
+                    {puzzle.hunt_puzzles.hints.map((hint, index) => (
+                      <DropdownMenuItem
+                        key={index}
+                        onClick={() => {
+                          setActiveHintIndex(index);
+                          setIsExchangePuzzleHintDialogOpen(true);
+                        }}>
+                        {hint.title}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <Button
+              variant="outline"
+              render={
+                <Link
+                  to="/exchange/puzzles/$huntPuzzleId/solution"
+                  params={{huntPuzzleId: puzzle.hunt_puzzles.id}}>
+                  Solution
+                </Link>
+              }
+            />
+          </div>
+        </div>
 
         <form.AppForm>
           <form.Form className="max-w-lg w-full">
@@ -103,38 +149,6 @@ function RouteComponent() {
                   Submit Answer
                 </InputGroupButton>
               </InputGroupAddon>
-              {puzzle.hunt_puzzles.hints && puzzle.hunt_puzzles.hints.length > 0 && (
-                <DropdownMenu>
-                  <InputGroupAddon align="inline-end">
-                    <DropdownMenuTrigger
-                      render={
-                        <InputGroupButton variant="outline">
-                          Hints
-                          <ChevronDownIcon />
-                        </InputGroupButton>
-                      }
-                    />
-                  </InputGroupAddon>
-                  <DropdownMenuContent
-                    className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                    side="bottom"
-                    align="end"
-                    sideOffset={4}>
-                    <DropdownMenuGroup>
-                      {puzzle.hunt_puzzles.hints.map((hint, index) => (
-                        <DropdownMenuItem
-                          key={index}
-                          onClick={() => {
-                            setActiveHintIndex(index);
-                            setIsExchangePuzzleHintDialogOpen(true);
-                          }}>
-                          {hint.title}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
             </InputGroup>
           </form.Form>
         </form.AppForm>

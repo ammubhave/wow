@@ -118,6 +118,7 @@ export const huntPuzzles = sqliteTable("hunt_puzzles", {
   answer: text().notNull(),
   partials: text({mode: "json"}).$type<{answer: string; message: string}[]>(),
   hints: text({mode: "json"}).$type<{title: string; message: string}[]>(),
+  solution: text({mode: "json"}).$type<JSONContent>(),
 });
 
 export const huntPuzzlesRelations = relations(huntPuzzles, ({one}) => ({

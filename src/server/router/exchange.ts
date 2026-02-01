@@ -80,6 +80,7 @@ export const exchangeRouter = {
           hints: z
             .array(z.object({title: z.string().min(1), message: z.string().min(1)}))
             .optional(),
+          solution: z.any().optional(),
         })
       )
       .handler(async ({input}) => {
@@ -91,6 +92,7 @@ export const exchangeRouter = {
             answer: input.answer,
             partials: input.partials,
             hints: input.hints,
+            solution: input.solution,
           })
           .where(eq(schema.huntPuzzles.id, input.huntPuzzleId))
           .returning();

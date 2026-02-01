@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import {Button} from "@/components/ui/button";
 import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/edit")({
@@ -52,6 +53,7 @@ function RouteComponent() {
     defaultValues: {
       title: puzzle.hunt_puzzles.title,
       contents: puzzle.hunt_puzzles.contents ?? undefined,
+      solution: puzzle.hunt_puzzles.solution ?? undefined,
       answer: puzzle.hunt_puzzles.answer,
       partials: puzzle.hunt_puzzles.partials ?? [],
       hints: puzzle.hunt_puzzles.hints ?? [],
@@ -61,6 +63,7 @@ function RouteComponent() {
         huntPuzzleId: puzzle.hunt_puzzles.id,
         title: value.title,
         contents: value.contents,
+        solution: value.solution,
         answer: value.answer,
         partials: value.partials,
         hints: value.hints,
@@ -184,8 +187,6 @@ function RouteComponent() {
                   </Table>
                 </AccordionContent>
               </AccordionItem>
-            </Accordion>
-            <Accordion>
               <AccordionItem>
                 <AccordionTrigger>Hints</AccordionTrigger>
                 <AccordionContent>
@@ -238,19 +239,42 @@ function RouteComponent() {
               </AccordionItem>
             </Accordion>
           </div>
-          <div className="flex relative flex-col gap-4 flex-1 min-h-[200px]">
-            <div className="absolute dark:bg-card bg-muted inset-0 overflow overflow-y-auto">
-              <form.AppField name="contents">
-                {field => (
-                  <SimpleEditor
-                    huntPuzzleId={huntPuzzleId}
-                    defaultValue={field.state.value}
-                    onChange={value => field.setValue(value)}
-                  />
-                )}
-              </form.AppField>
-            </div>
-          </div>
+          <Tabs className="flex-1 flex flex-col">
+            <TabsList>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="solution">Solution</TabsTrigger>
+            </TabsList>
+            <TabsContent
+              value="content"
+              className="flex relative flex-col gap-4 flex-1 min-h-[200px]">
+              <div className="absolute dark:bg-card bg-muted inset-0 overflow overflow-y-auto">
+                <form.AppField name="contents">
+                  {field => (
+                    <SimpleEditor
+                      huntPuzzleId={huntPuzzleId}
+                      defaultValue={field.state.value}
+                      onChange={value => field.setValue(value)}
+                    />
+                  )}
+                </form.AppField>
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="solution"
+              className="flex relative flex-col gap-4 flex-1 min-h-[200px]">
+              <div className="absolute dark:bg-card bg-muted inset-0 overflow overflow-y-auto">
+                <form.AppField name="solution">
+                  {field => (
+                    <SimpleEditor
+                      huntPuzzleId={huntPuzzleId}
+                      defaultValue={field.state.value}
+                      onChange={value => field.setValue(value)}
+                    />
+                  )}
+                </form.AppField>
+              </div>
+            </TabsContent>
+          </Tabs>
         </form.Form>
       </form.AppForm>
     </div>
