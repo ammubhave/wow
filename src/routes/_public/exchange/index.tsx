@@ -25,7 +25,7 @@ function RouteComponent() {
         Every month, Wafflehaüs releases a small number of approachable, short, Hunt-length puzzles
         written by team members, as well as spotlighting puzzles from other hunts.
       </p>
-      <Accordion multiple>
+      <Accordion multiple defaultValue={["solving", "writing"]}>
         <AccordionItem value="solving">
           <AccordionTrigger>Interested in solving?</AccordionTrigger>
           <AccordionContent>
@@ -89,33 +89,7 @@ function RouteComponent() {
             </div>
           </li>
         ))}
-        {navigation.map((puzzle, i) => (
-          <li
-            key={i}
-            className="relative flex justify-between gap-x-6 px-4 py-5 hover:bg-muted sm:px-6 dark:hover:bg-input/50">
-            <div className="flex min-w-0 gap-x-4">
-              <div className="min-w-0 flex-auto">
-                <p className="text-sm/6 font-semibold">
-                  <Link to={puzzle.href}>
-                    <span className="absolute inset-x-0 -top-px bottom-0" />
-                    {puzzle.title}
-                  </Link>
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-x-4">
-              <ChevronRightIcon aria-hidden="true" className="size-5 flex-none text-foreground" />
-            </div>
-          </li>
-        ))}
       </ul>
     </div>
   );
 }
-
-const navigation = [
-  {title: "Eulogy Poems", href: "/exchange/eulogy-poems"},
-  {title: "Ladders", href: "/exchange/ladders"},
-  {title: "Swamp Water", href: "/exchange/swamp-water"},
-  {title: "The Princess And The Pea", href: "/exchange/the-princess-and-the-pea"},
-];
