@@ -1,7 +1,7 @@
 import {ORPCError} from "@orpc/client";
 import {getRequestHeaders} from "@tanstack/react-start/server";
 import {env} from "cloudflare:workers";
-import {and, eq} from "drizzle-orm";
+import {and, asc, eq} from "drizzle-orm";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
@@ -34,8 +34,12 @@ export const exchangeRouter = {
     list: base.handler(async () => {
       const admin = await isAdmin();
       return admin
-        ? await db.select().from(schema.hunts)
-        : await db.select().from(schema.hunts).where(eq(schema.hunts.draft, false));
+        ? await db.select().from(schema.hunts).orderBy(asc(schema.hunts.createdAt))
+        : await db
+            .select()
+            .from(schema.hunts)
+            .where(eq(schema.hunts.draft, false))
+            .orderBy(asc(schema.hunts.createdAt));
     }),
     get: base.input(z.object({huntId: z.string().min(1)})).handler(async ({input}) => {
       const admin = await isAdmin();
@@ -43,7 +47,11 @@ export const exchangeRouter = {
         where: admin
           ? eq(schema.hunts.id, input.huntId)
           : and(eq(schema.hunts.id, input.huntId), eq(schema.hunts.draft, false)),
-        with: {hunt_puzzles: admin ? true : {where: eq(schema.huntPuzzles.draft, false)}},
+        with: {
+          hunt_puzzles: admin
+            ? {orderBy: asc(schema.huntPuzzles.title)}
+            : {where: eq(schema.huntPuzzles.draft, false), orderBy: asc(schema.huntPuzzles.title)},
+        },
       });
       if (!hunt) throw new ORPCError("NOT_FOUND");
       return hunt;
