@@ -104,7 +104,11 @@ export const workspaceActivityLogEntry = sqliteTable("workspace_activity_log_ent
 
 // Hunts
 
-export const hunts = sqliteTable("hunts", {...base, name: text().notNull()});
+export const hunts = sqliteTable("hunts", {
+  ...base,
+  draft: integer({mode: "boolean"}).default(true).notNull(),
+  name: text().notNull(),
+});
 
 export const huntsRelations = relations(hunts, ({many}) => ({hunt_puzzles: many(huntPuzzles)}));
 
@@ -113,6 +117,7 @@ export const huntPuzzles = sqliteTable("hunt_puzzles", {
   huntId: text()
     .notNull()
     .references(() => hunts.id, {onDelete: "cascade", onUpdate: "cascade"}),
+  draft: integer({mode: "boolean"}).default(true).notNull(),
   title: text().notNull(),
   contents: text({mode: "json"}).$type<JSONContent>(),
   answer: text().notNull(),

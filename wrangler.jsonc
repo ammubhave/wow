@@ -28,7 +28,7 @@
     "BETTER_AUTH_URL": "http://localhost:3000",
     "BETTER_AUTH_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "PNPM_VERSION": "10.24.0",
-    "ADMIN_EMAILS": "amol@amolbhave.com",
+    "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",
   },
   "durable_objects": {
     "bindings": [
@@ -70,7 +70,7 @@
         "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXqMR1-nXdolsi",
         "BETTER_AUTH_URL": "https://www.wafflehaus.io",
         "PNPM_VERSION": "10.26.2",
-        "ADMIN_EMAILS": "amol@amolbhave.com",
+        "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",
       },
       "durable_objects": {
         "bindings": [

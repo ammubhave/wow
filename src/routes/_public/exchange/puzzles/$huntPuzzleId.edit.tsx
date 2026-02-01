@@ -1,9 +1,10 @@
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute, Link} from "@tanstack/react-router";
+import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {PlusIcon, TrashIcon} from "lucide-react";
 import {Suspense} from "react";
 import {toast} from "sonner";
 
+import {ChangeExchangePuzzleDraftSwitch} from "@/components/change-exchange-puzzle-draft-switch";
 import {useAppForm} from "@/components/form";
 import {SimpleEditor} from "@/components/tiptap-templates/simple/simple-editor";
 import {
@@ -45,6 +46,14 @@ function RouteComponent() {
       },
       onError: e => {
         toast.error("Failed to update puzzle: " + e.message);
+      },
+    })
+  );
+  const navigate = useNavigate();
+  const deleteMutation = useMutation(
+    orpc.exchange.puzzles.delete.mutationOptions({
+      onSuccess: () => {
+        void navigate({to: "/exchange/hunts/$huntId", params: {huntId: puzzle.hunts.id}});
       },
     })
   );
@@ -110,13 +119,19 @@ function RouteComponent() {
       </div>
       <form.AppForm>
         <form.Form className="flex-1 flex flex-col gap-4">
-          <div className="flex">
-            <form.AppField name="title">
-              {field => <field.TextField placeholder="Enter puzzle title" className="flex-1" />}
-            </form.AppField>
-            <div>
-              <form.SubmitButton>Save</form.SubmitButton>
+          <div className="flex items-center gap-1">
+            <div className="flex-1">
+              <form.AppField name="title">
+                {field => <field.TextField placeholder="Enter puzzle title" />}
+              </form.AppField>
             </div>
+            <form.SubmitButton>Save</form.SubmitButton>
+            <Button
+              variant="outline"
+              onClick={() => deleteMutation.mutate({huntPuzzleId: puzzle.hunt_puzzles.id})}>
+              Delete
+            </Button>
+            <ChangeExchangePuzzleDraftSwitch huntPuzzleId={puzzle.hunt_puzzles.id} />
           </div>
           <div>
             <Table>

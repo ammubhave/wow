@@ -1,6 +1,6 @@
-import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {ChevronDownIcon} from "lucide-react";
+import {ChevronDownIcon, PencilIcon} from "lucide-react";
 import {useState} from "react";
 
 import {ExchangePuzzleHintDialog} from "@/components/exchange-puzzle-hint-dialog";
@@ -47,6 +47,8 @@ function RouteComponent() {
       await submitAnswer.mutateAsync({huntPuzzleId: huntPuzzleId, answer: value.answer});
     },
   });
+
+  const isAdmin = useQuery(orpc.exchange.isAdmin.queryOptions()).data ?? false;
 
   const [activeHintIndex, setActiveHintIndex] = useState<number | null>(null);
   const [isExchangePuzzleHintDialogOpen, setIsExchangePuzzleHintDialogOpen] = useState(false);
@@ -128,6 +130,19 @@ function RouteComponent() {
                 </Link>
               }
             />
+            {isAdmin && (
+              <Button
+                variant="outline"
+                render={
+                  <Link
+                    to="/exchange/puzzles/$huntPuzzleId/edit"
+                    params={{huntPuzzleId: puzzle.hunt_puzzles.id}}>
+                    <PencilIcon />
+                    Edit
+                  </Link>
+                }
+              />
+            )}
           </div>
         </div>
 

@@ -1,7 +1,8 @@
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {ChevronRightIcon} from "lucide-react";
+import {ChevronRightIcon, PlusIcon} from "lucide-react";
 
+import {AddNewExchangeHuntDialog} from "@/components/add-new-exchange-hunt-dialog";
 import {
   Accordion,
   AccordionContent,
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_public/exchange/")({component: RouteComp
 
 function RouteComponent() {
   const hunts = useSuspenseQuery(orpc.exchange.hunts.list.queryOptions()).data;
+  const isAdmin = useQuery(orpc.exchange.isAdmin.queryOptions()).data ?? false;
 
   return (
     <div className="flex flex-col gap-4 flex-1">
@@ -52,7 +54,19 @@ function RouteComponent() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      <span className="text-2xl">Hunts</span>
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-2xl">Hunts</span>
+        {isAdmin && (
+          <div className="flex items-center gap-1">
+            <AddNewExchangeHuntDialog>
+              <Button>
+                <PlusIcon />
+                Create Hunt
+              </Button>
+            </AddNewExchangeHuntDialog>
+          </div>
+        )}
+      </div>
       <ul
         role="list"
         className="divide-y divide-border overflow-hidden shadow-xs outline-1 outline-border sm:rounded-xl bg-background dark:bg-input/30 dark:shadow-none dark:outline-input dark:sm:-outline-offset-1">

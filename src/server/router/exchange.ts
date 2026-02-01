@@ -1,9 +1,11 @@
 import {ORPCError} from "@orpc/client";
+import {getRequestHeaders} from "@tanstack/react-start/server";
 import {env} from "cloudflare:workers";
-import {eq} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
+import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
@@ -18,15 +20,30 @@ const preauthorize = base.$context<AuthenticatedContext>().middleware(async ({co
   return next();
 });
 
+const isAdmin = async () => {
+  const session = await auth.api.getSession({headers: getRequestHeaders()});
+  if (!session) return false;
+  return (process.env.ADMIN_EMAILS?.split(",") || []).includes(session.user.email);
+};
+
 export const exchangeRouter = {
+  isAdmin: base.handler(async () => {
+    return await isAdmin();
+  }),
   hunts: {
     list: base.handler(async () => {
-      return await db.select().from(schema.hunts);
+      const admin = await isAdmin();
+      return admin
+        ? await db.select().from(schema.hunts)
+        : await db.select().from(schema.hunts).where(eq(schema.hunts.draft, false));
     }),
     get: base.input(z.object({huntId: z.string().min(1)})).handler(async ({input}) => {
+      const admin = await isAdmin();
       const hunt = await db.query.hunts.findFirst({
-        where: eq(schema.hunts.id, input.huntId),
-        with: {hunt_puzzles: true},
+        where: admin
+          ? eq(schema.hunts.id, input.huntId)
+          : and(eq(schema.hunts.id, input.huntId), eq(schema.hunts.draft, false)),
+        with: {hunt_puzzles: admin ? true : {where: eq(schema.huntPuzzles.draft, false)}},
       });
       if (!hunt) throw new ORPCError("NOT_FOUND");
       return hunt;
@@ -37,6 +54,24 @@ export const exchangeRouter = {
       .handler(async ({input}) => {
         const [hunt] = await db.insert(schema.hunts).values({name: input.name}).returning();
         if (!hunt) throw new ORPCError("INTERNAL_SERVER_ERROR");
+        return hunt;
+      }),
+    update: procedure
+      .use(preauthorize)
+      .input(
+        z.object({
+          huntId: z.string().min(1),
+          name: z.string().min(1).optional(),
+          draft: z.boolean().optional(),
+        })
+      )
+      .handler(async ({input}) => {
+        const [hunt] = await db
+          .update(schema.hunts)
+          .set({name: input.name, draft: input.draft})
+          .where(eq(schema.hunts.id, input.huntId))
+          .returning();
+        if (!hunt) throw new ORPCError("NOT_FOUND");
         return hunt;
       }),
   },
@@ -50,6 +85,24 @@ export const exchangeRouter = {
       if (!puzzle) throw new ORPCError("NOT_FOUND");
       return puzzle;
     }),
+    create: procedure
+      .use(preauthorize)
+      .input(z.object({huntId: z.string().min(1), title: z.string().min(1)}))
+      .handler(async ({input}) => {
+        const [puzzle] = await db
+          .insert(schema.huntPuzzles)
+          .values({huntId: input.huntId, title: input.title, answer: ""})
+          .returning();
+        if (!puzzle) throw new ORPCError("INTERNAL_SERVER_ERROR");
+        return puzzle;
+      }),
+    delete: procedure
+      .use(preauthorize)
+      .input(z.object({huntPuzzleId: z.string().min(1)}))
+      .handler(async ({input}) => {
+        await db.delete(schema.huntPuzzles).where(eq(schema.huntPuzzles.id, input.huntPuzzleId));
+        return;
+      }),
     submitAnswer: base
       .input(z.object({huntPuzzleId: z.string().min(1), answer: z.string().min(1)}))
       .handler(async ({input}) => {
@@ -71,16 +124,17 @@ export const exchangeRouter = {
       .input(
         z.object({
           huntPuzzleId: z.string().min(1),
-          title: z.string().min(1),
+          title: z.string().min(1).optional(),
           contents: z.any().optional(),
-          answer: z.string().min(1).toUpperCase(),
-          partials: z.array(
-            z.object({answer: z.string().min(1).toUpperCase(), message: z.string().min(1)})
-          ),
+          answer: z.string().min(1).toUpperCase().optional(),
+          partials: z
+            .array(z.object({answer: z.string().min(1).toUpperCase(), message: z.string().min(1)}))
+            .optional(),
           hints: z
             .array(z.object({title: z.string().min(1), message: z.string().min(1)}))
             .optional(),
           solution: z.any().optional(),
+          draft: z.boolean().optional(),
         })
       )
       .handler(async ({input}) => {
@@ -93,6 +147,7 @@ export const exchangeRouter = {
             partials: input.partials,
             hints: input.hints,
             solution: input.solution,
+            draft: input.draft,
           })
           .where(eq(schema.huntPuzzles.id, input.huntPuzzleId))
           .returning();
