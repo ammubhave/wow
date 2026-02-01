@@ -6,6 +6,7 @@ import {Image} from "@tiptap/extension-image";
 import {TaskItem, TaskList} from "@tiptap/extension-list";
 import {Subscript} from "@tiptap/extension-subscript";
 import {Superscript} from "@tiptap/extension-superscript";
+import {TableKit} from "@tiptap/extension-table";
 import {TextAlign} from "@tiptap/extension-text-align";
 import {Typography} from "@tiptap/extension-typography";
 import {Selection} from "@tiptap/extensions";
@@ -149,6 +150,7 @@ export function SimpleEditor({
           handleImageUpload(huntPuzzleId, file, onProgress, abortSignal),
         onError: error => console.error("Upload failed:", error),
       }),
+      TableKit.configure({table: {resizable: true}}),
     ],
     content: defaultValue,
     onUpdate: ({editor}) => {
