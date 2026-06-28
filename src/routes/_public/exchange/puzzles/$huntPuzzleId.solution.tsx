@@ -28,7 +28,7 @@ function RouteComponent() {
   ).data;
 
   return (
-    <div className="flex flex-1 gap-4 flex-col">
+    <div className="flex flex-1 flex-col gap-4">
       <div>
         <Breadcrumb>
           <BreadcrumbList>
@@ -64,12 +64,12 @@ function RouteComponent() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="flex gap-4 flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center gap-4">
         <div className="text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
         <span className="text-lg font-semibold">Solution</span>
-        <span className="font-mono text-primary font-black">{puzzle.hunt_puzzles.answer}</span>
+        <span className="text-primary font-mono font-black">{puzzle.hunt_puzzles.answer}</span>
       </div>
-      <div className="flex flex-col gap-4 dark:bg-card bg-muted">
+      <div className="dark:bg-card bg-muted flex flex-col gap-4">
         <SimpleEditor
           huntPuzzleId={huntPuzzleId}
           defaultValue={puzzle.hunt_puzzles.solution ?? undefined}

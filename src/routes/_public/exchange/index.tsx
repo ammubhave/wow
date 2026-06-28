@@ -19,8 +19,8 @@ function RouteComponent() {
   const isAdmin = useQuery(orpc.exchange.isAdmin.queryOptions()).data ?? false;
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <h1 className="text-2xl font-bold mb-4 text-center">Wafflehaüs Puzzle Exchange</h1>
+    <div className="flex flex-1 flex-col gap-4">
+      <h1 className="mb-4 text-center text-2xl font-bold">Wafflehaüs Puzzle Exchange</h1>
       <p>
         Every month, Wafflehaüs releases a small number of approachable, short, Hunt-length puzzles
         written by team members, as well as spotlighting puzzles from other hunts.
@@ -69,11 +69,11 @@ function RouteComponent() {
       </div>
       <ul
         role="list"
-        className="divide-y divide-border overflow-hidden shadow-xs outline-1 outline-border sm:rounded-xl bg-background dark:bg-input/30 dark:shadow-none dark:outline-input dark:sm:-outline-offset-1">
+        className="divide-border outline-border bg-background dark:bg-input/30 dark:outline-input divide-y overflow-hidden shadow-xs outline-1 sm:rounded-xl dark:shadow-none dark:sm:-outline-offset-1">
         {hunts.map(hunt => (
           <li
             key={hunt.id}
-            className="relative flex justify-between gap-x-6 px-4 py-5 hover:bg-muted sm:px-6 dark:hover:bg-input/50">
+            className="hover:bg-muted dark:hover:bg-input/50 relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
             <div className="flex min-w-0 gap-x-4">
               <div className="min-w-0 flex-auto">
                 <p className="text-sm/6 font-semibold">
@@ -85,7 +85,7 @@ function RouteComponent() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-x-4">
-              <ChevronRightIcon aria-hidden="true" className="size-5 flex-none text-foreground" />
+              <ChevronRightIcon aria-hidden="true" className="text-foreground size-5 flex-none" />
             </div>
           </li>
         ))}

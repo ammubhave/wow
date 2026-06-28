@@ -1,8 +1,7 @@
 "use client";
 
-import type {Editor} from "@tiptap/react";
-
 import {NodeSelection, TextSelection} from "@tiptap/pm/state";
+import type {Editor} from "@tiptap/react";
 import {useCallback, useEffect, useState} from "react";
 
 // --- Icons ---

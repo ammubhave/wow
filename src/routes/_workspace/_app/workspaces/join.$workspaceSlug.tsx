@@ -47,11 +47,11 @@ function RouteComponent() {
     }
   }, [organizations]);
   return (
-    <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10 relative">
+    <div className="relative flex w-full flex-1 items-center justify-center p-6 md:p-10">
       <div className="absolute inset-0">
         <PixelBlast color="#f49f1e" pixelSize={3} />
       </div>
-      <div className="w-full max-w-sm z-10">
+      <div className="z-10 w-full max-w-sm">
         <Card>
           <CardHeader>
             <CardTitle>Join Workspace {params.workspaceSlug}</CardTitle>

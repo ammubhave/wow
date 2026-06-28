@@ -65,7 +65,7 @@ export function DiscordCardContents({
               <div className="group relative flex items-start">
                 <span className="flex h-8 items-center">
                   {discordInfo.data.ok ? (
-                    <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                    <span className="bg-primary relative z-10 flex size-7 items-center justify-center rounded-full">
                       <CheckIcon aria-hidden="true" className="size-4 text-white" />
                     </span>
                   ) : (
@@ -74,7 +74,7 @@ export function DiscordCardContents({
                     </span>
                   )}
                 </span>
-                <div className="flex pl-4 flex-1 flex-col sm:flex-row gap-2 justify-between">
+                <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                   <span className="flex min-w-0 flex-col">
                     <span className="text-xs font-medium">
                       {discordInfo.data.ok
@@ -118,13 +118,13 @@ export function DiscordCardContents({
             <div>
               <div className="group relative flex items-start">
                 <span aria-hidden="true" className="flex h-8 items-center">
-                  <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
-                    <span className="size-2 rounded-full bg-primary" />
+                  <span className="border-primary relative z-10 flex size-7 items-center justify-center rounded-full border-2 bg-white">
+                    <span className="bg-primary size-2 rounded-full" />
                   </span>
                 </span>
-                <div className="pl-4 flex flex-1 flex-col sm:flex-row gap-2 justify-between">
+                <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-xs font-medium text-primary">Connect with Discord</span>
+                    <span className="text-primary text-xs font-medium">Connect with Discord</span>
                     <span className="text-xs text-gray-500">
                       You need to connect your Discord account.
                     </span>

@@ -213,7 +213,7 @@ function DetailsCard() {
               />
               <Field>
                 <FieldLabel>Invitation Link</FieldLabel>
-                <p className="text-muted-foreground text-xs flex items-center gap-2">
+                <p className="text-muted-foreground flex items-center gap-2 text-xs">
                   https://join.wafflehaus.io/{workspaceSlug}
                   <Button
                     variant="ghost"

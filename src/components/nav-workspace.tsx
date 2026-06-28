@@ -50,7 +50,7 @@ export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
         <DropdownMenuSubContent
           className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
           sideOffset={4}>
-          <DropdownMenuLabel className="text-xs flex items-center gap-2">
+          <DropdownMenuLabel className="flex items-center gap-2 text-xs">
             <Avatar>
               <AvatarFallback>
                 {workspace.eventName

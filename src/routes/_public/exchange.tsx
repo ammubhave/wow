@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_public/exchange")({
 
 function RouteComponent() {
   return (
-    <div className="max-w-[1000px] mx-auto w-full flex-1 flex flex-col">
+    <div className="mx-auto flex w-full max-w-[1000px] flex-1 flex-col">
       <Outlet />
     </div>
   );

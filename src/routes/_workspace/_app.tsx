@@ -10,7 +10,7 @@ function RouteComponent() {
     <div className="[--header-height:calc(--spacing(14))]">
       <SidebarProvider className="flex flex-col">
         <SiteHeader />
-        <div className="flex flex-1 justify-center items-center flex-col gap-4 p-4 md:gap-8 md:p-10 overflow-auto">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-auto p-4 md:gap-8 md:p-10">
           <Outlet />
         </div>
       </SidebarProvider>

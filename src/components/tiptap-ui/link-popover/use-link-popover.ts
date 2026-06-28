@@ -1,5 +1,4 @@
 import type {Editor} from "@tiptap/react";
-
 import {useCallback, useEffect, useState} from "react";
 
 // --- Icons ---
@@ -168,7 +167,7 @@ export function useLinkHandler(props: LinkHandlerProps) {
  * Custom hook for link popover state management
  */
 export function useLinkState(props: {editor: Editor | null; hideWhenUnavailable: boolean}) {
-  const {editor, hideWhenUnavailable = false} = props;
+  const {editor, hideWhenUnavailable} = props;
 
   const canSet = canSetLink(editor);
   const isActive = isLinkActive(editor);

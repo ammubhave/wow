@@ -1,5 +1,4 @@
 import type {Editor} from "@tiptap/react";
-
 import {useCallback, useEffect, useState} from "react";
 
 // --- Icons ---

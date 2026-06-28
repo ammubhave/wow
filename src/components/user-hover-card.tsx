@@ -24,7 +24,7 @@ export function UserHoverCard({
   return (
     <HoverCard>
       <HoverCardTrigger delay={200} render={children} />
-      <HoverCardContent className="flex items-center justify-center p-2 w-fit" side={side}>
+      <HoverCardContent className="flex w-fit items-center justify-center p-2" side={side}>
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={src} />
@@ -37,8 +37,8 @@ export function UserHoverCard({
                 .slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <div className="flex items-baseline flex-col">
-            <div className="font-medium text-accent-foreground">{user.name}</div>
+          <div className="flex flex-col items-baseline">
+            <div className="text-accent-foreground font-medium">{user.name}</div>
           </div>
         </div>
       </HoverCardContent>

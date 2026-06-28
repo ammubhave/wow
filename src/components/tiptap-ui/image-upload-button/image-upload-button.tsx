@@ -1,12 +1,11 @@
 import {forwardRef, useCallback} from "react";
 
+import {Badge} from "@/components/tiptap-ui-primitive/badge";
 // --- UI Primitives ---
 import type {ButtonProps} from "@/components/tiptap-ui-primitive/button";
+import {Button} from "@/components/tiptap-ui-primitive/button";
 // --- Tiptap UI ---
 import type {UseImageUploadConfig} from "@/components/tiptap-ui/image-upload-button";
-
-import {Badge} from "@/components/tiptap-ui-primitive/badge";
-import {Button} from "@/components/tiptap-ui-primitive/button";
 import {
   IMAGE_UPLOAD_SHORTCUT_KEY,
   useImageUpload,

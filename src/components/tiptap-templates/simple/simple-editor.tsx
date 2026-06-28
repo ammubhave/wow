@@ -19,6 +19,7 @@ import {useRef} from "react";
 import {HorizontalRule} from "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension";
 // --- Tiptap Node ---
 import {ImageUploadNode} from "@/components/tiptap-node/image-upload-node/image-upload-node-extension";
+
 import "@/components/tiptap-node/blockquote-node/blockquote-node.scss";
 import "@/components/tiptap-node/code-block-node/code-block-node.scss";
 import "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node.scss";
@@ -40,6 +41,7 @@ import {ListDropdownMenu} from "@/components/tiptap-ui/list-dropdown-menu";
 import {MarkButton} from "@/components/tiptap-ui/mark-button";
 import {TextAlignButton} from "@/components/tiptap-ui/text-align-button";
 import {UndoRedoButton} from "@/components/tiptap-ui/undo-redo-button";
+
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.css";
 // --- Lib ---
@@ -168,7 +170,7 @@ export function SimpleEditor({
       <EditorContent
         editor={editor}
         role="presentation"
-        className="min-h-[200px] simple-editor-content"
+        className="simple-editor-content min-h-[200px]"
       />
     </EditorContext.Provider>
   );

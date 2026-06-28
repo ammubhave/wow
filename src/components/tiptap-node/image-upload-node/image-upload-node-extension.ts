@@ -1,5 +1,4 @@
 import type {NodeType} from "@tiptap/pm/model";
-
 import {mergeAttributes, Node} from "@tiptap/react";
 import {ReactNodeViewRenderer} from "@tiptap/react";
 

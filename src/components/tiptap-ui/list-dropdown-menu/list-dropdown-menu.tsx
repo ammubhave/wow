@@ -1,11 +1,10 @@
 import {type Editor} from "@tiptap/react";
 import {useCallback, useState} from "react";
 
-// --- UI Primitives ---
-import type {ButtonProps} from "@/components/tiptap-ui-primitive/button";
-
 // --- Icons ---
 import {ChevronDownIcon} from "@/components/tiptap-icons/chevron-down-icon";
+// --- UI Primitives ---
+import type {ButtonProps} from "@/components/tiptap-ui-primitive/button";
 import {Button, ButtonGroup} from "@/components/tiptap-ui-primitive/button";
 import {Card, CardBody} from "@/components/tiptap-ui-primitive/card";
 import {

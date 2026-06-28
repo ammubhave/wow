@@ -15,7 +15,6 @@ import remarkGfm from "remark-gfm";
 import {cn} from "tailwind-variants";
 
 import type {ChatMessage, ChatRoomReceivedMessage, ChatRoomSentMessage} from "@/server/do/chat";
-
 import {useAppSelector} from "@/store";
 
 import {EggoText} from "./eggo";
@@ -72,10 +71,10 @@ export function Chat({puzzleId}: {puzzleId: string}) {
   return (
     <div className="flex flex-1 flex-col pb-4">
       <div className="flex flex-col gap-2 px-2 py-2">
-        <div className="flex flex-row flex-wrap gap-0.5 max-h-25 overflow-y-auto">
+        <div className="flex max-h-25 flex-row flex-wrap gap-0.5 overflow-y-auto">
           {presences.map(user => (
             <UserHoverCard key={user.id} user={user}>
-              <span className="inline-flex items-center gap-x-0.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-[10px] font-medium text-green-900">
+              <span className="inline-flex items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
                 <img
                   src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                   className="size-3 rounded-full"
@@ -86,9 +85,9 @@ export function Chat({puzzleId}: {puzzleId: string}) {
           ))}
         </div>
       </div>
-      <div className="px-4 flex-1 flex flex-col pt-2">
-        <div className="flex-1 relative">
-          <div className="absolute inset-0 overflow-y-auto text-xs justify-end gap-1">
+      <div className="flex flex-1 flex-col px-4 pt-2">
+        <div className="relative flex-1">
+          <div className="absolute inset-0 justify-end gap-1 overflow-y-auto text-xs">
             {messages.map((message, idx) => (
               <div
                 key={idx}
@@ -268,7 +267,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                       {message.text}
                     </Markdown>
                   )}
-                  <div className="absolute border right-0 bottom-0 bg-card invisible opacity-0 group-hover/message:visible group-hover/message:opacity-100 transition-all duration-300">
+                  <div className="bg-card invisible absolute right-0 bottom-0 border opacity-0 transition-all duration-300 group-hover/message:visible group-hover/message:opacity-100">
                     <Popover>
                       <PopoverTrigger
                         openOnHover
@@ -374,7 +373,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                     {Object.entries(message.reactions).map(([reaction, count]) => (
                       <div
                         key={reaction}
-                        className="inline-flex items-center space-x-1 px-2 py-0.5 text-xs bg-card">
+                        className="bg-card inline-flex items-center space-x-1 px-2 py-0.5 text-xs">
                         {reaction === "like" && (
                           <ThumbsUpIcon className="size-3 text-green-950" fill="limegreen" />
                         )}

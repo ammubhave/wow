@@ -19,10 +19,10 @@ export function AppSidebar({
   const workspace = useWorkspace();
   return (
     <div
-      className="relative w-full max-w-[16rem] bg-sidebar border-l border-sidebar-border"
+      className="bg-sidebar border-sidebar-border relative w-full max-w-[16rem] border-l"
       {...props}>
-      <div className="absolute inset-0 overflow-y-auto flex flex-col">
-        <div className="p-2 overflow-y-auto min-h-50">
+      <div className="absolute inset-0 flex flex-col overflow-y-auto">
+        <div className="min-h-50 overflow-y-auto p-2">
           <CommentBox
             workspaceSlug={workspaceSlug}
             comment={workspace.comment}
@@ -30,7 +30,7 @@ export function AppSidebar({
             commentUpdatedBy={workspace.commentUpdatedBy}
           />
         </div>
-        <div className="flex flex-1 p-2 flex-col gap-2 text-xs">
+        <div className="flex flex-1 flex-col gap-2 p-2 text-xs">
           {rounds
             .map(round => (
               <div key={round.id} className="grid grid-cols-2 items-center justify-center gap-2">

@@ -81,7 +81,7 @@ function RouteComponent() {
   });
 
   return (
-    <div className="flex flex-1 gap-4 flex-col">
+    <div className="flex flex-1 flex-col gap-4">
       <div>
         <Breadcrumb>
           <BreadcrumbList>
@@ -118,7 +118,7 @@ function RouteComponent() {
         </Breadcrumb>
       </div>
       <form.AppForm>
-        <form.Form className="flex-1 flex flex-col gap-4">
+        <form.Form className="flex flex-1 flex-col gap-4">
           <div className="flex items-center gap-1">
             <div className="flex-1">
               <form.AppField name="title">
@@ -254,15 +254,15 @@ function RouteComponent() {
               </AccordionItem>
             </Accordion>
           </div>
-          <Tabs className="flex-1 flex flex-col">
+          <Tabs className="flex flex-1 flex-col">
             <TabsList>
               <TabsTrigger value="content">Content</TabsTrigger>
               <TabsTrigger value="solution">Solution</TabsTrigger>
             </TabsList>
             <TabsContent
               value="content"
-              className="flex relative flex-col gap-4 flex-1 min-h-[200px]">
-              <div className="absolute dark:bg-card bg-muted inset-0 overflow overflow-y-auto">
+              className="relative flex min-h-[200px] flex-1 flex-col gap-4">
+              <div className="dark:bg-card bg-muted overflow absolute inset-0 overflow-y-auto">
                 <form.AppField name="contents">
                   {field => (
                     <SimpleEditor
@@ -276,8 +276,8 @@ function RouteComponent() {
             </TabsContent>
             <TabsContent
               value="solution"
-              className="flex relative flex-col gap-4 flex-1 min-h-[200px]">
-              <div className="absolute dark:bg-card bg-muted inset-0 overflow overflow-y-auto">
+              className="relative flex min-h-[200px] flex-1 flex-col gap-4">
+              <div className="dark:bg-card bg-muted overflow absolute inset-0 overflow-y-auto">
                 <form.AppField name="solution">
                   {field => (
                     <SimpleEditor

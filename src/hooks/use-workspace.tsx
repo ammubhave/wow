@@ -19,7 +19,7 @@ export function WorkspaceProvider({
   );
   if (!lastJsonMessage)
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <Spinner />
       </div>
     );

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_public/exchange/writing")({component: Ro
 
 function RouteComponent() {
   return (
-    <div className="flex flex-1 flex-col gap-4 items-stretch justify-center max-w-5xl">
+    <div className="flex max-w-5xl flex-1 flex-col items-stretch justify-center gap-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -26,7 +26,7 @@ function RouteComponent() {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <h1 className="text-2xl font-bold mb-4 text-center">Wafflehaüs's Guide to Writing Puzzles</h1>
+      <h1 className="mb-4 text-center text-2xl font-bold">Wafflehaüs's Guide to Writing Puzzles</h1>
       <Card className="flex-1 p-8">
         <div className="prose max-w-full">
           <p>

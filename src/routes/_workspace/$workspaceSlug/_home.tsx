@@ -16,7 +16,7 @@ function RouteComponent() {
         onValueChange={to => {
           void navigate({to});
         }}
-        className="flex-1 flex flex-col overflow-auto">
+        className="flex flex-1 flex-col overflow-auto">
         <Outlet />
       </Tabs>
     </div>

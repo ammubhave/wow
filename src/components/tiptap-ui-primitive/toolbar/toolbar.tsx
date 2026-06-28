@@ -1,6 +1,7 @@
 import {forwardRef, useCallback, useEffect, useRef, useState} from "react";
 
 import {Separator} from "@/components/tiptap-ui-primitive/separator";
+
 import "@/components/tiptap-ui-primitive/toolbar/toolbar.scss";
 import {useComposedRef} from "@/hooks/use-composed-ref";
 import {useMenuNavigation} from "@/hooks/use-menu-navigation";

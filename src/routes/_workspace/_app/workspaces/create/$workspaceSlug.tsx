@@ -31,8 +31,8 @@ function RouteComponentInner() {
   const workspaceDeleteMutation = useMutation(orpc.workspaces.delete.mutationOptions());
 
   return (
-    <div className="flex justify-center w-full">
-      <div className="max-w-3xl flex-1 flex flex-col gap-2">
+    <div className="flex w-full justify-center">
+      <div className="flex max-w-3xl flex-1 flex-col gap-2">
         <div>
           <Button
             variant="outline"

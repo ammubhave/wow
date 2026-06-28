@@ -42,7 +42,7 @@ export function NavUser({children}: {children?: React.ReactNode}) {
   const queryClient = new QueryClient();
   const user = authClient.useSession().data?.user;
   if (!user) {
-    return <div className="min-w-59.75 rounded-md h-12 animate-pulse"></div>;
+    return <div className="h-12 min-w-59.75 animate-pulse rounded-md"></div>;
   }
   const src =
     user.image ?? (user.email ? gravatarUrl(user.email, {size: 96, d: "identicon"}) : undefined);
@@ -53,7 +53,7 @@ export function NavUser({children}: {children?: React.ReactNode}) {
           render={
             <SidebarMenuButton
               size="sm"
-              className="w-60 data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground">
+              className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground w-60">
               <Avatar size="sm">
                 <AvatarImage src={src} alt={user.name ?? user.email} />
                 <AvatarFallback className="rounded-lg">
@@ -66,7 +66,7 @@ export function NavUser({children}: {children?: React.ReactNode}) {
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium text-accent-foreground">{user.name}</span>
+                <span className="text-accent-foreground truncate font-medium">{user.name}</span>
               </div>
               <ChevronsUpDownIcon />
             </SidebarMenuButton>

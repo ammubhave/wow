@@ -43,7 +43,7 @@ function RouteComponent() {
         <img
           src={screenshot}
           alt="Screenshot of the Google Drive integration in WOW"
-          className="rounded-lg max-w-[33rem] mx-auto"
+          className="mx-auto max-w-[33rem] rounded-lg"
         />
       </p>
       <ol>

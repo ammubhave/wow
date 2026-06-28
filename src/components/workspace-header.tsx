@@ -42,7 +42,7 @@ export function WorkspaceHeader() {
       <div className="flex w-full items-center gap-2">
         <Tabs
           value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
-          className="flex flex-col shrink-0 flex-1">
+          className="flex flex-1 shrink-0 flex-col">
           <div className="flex items-center gap-2">
             <TabsList>
               <TabsTrigger
@@ -87,7 +87,7 @@ export function WorkspaceHeader() {
               />
               {puzzle && (
                 <>
-                  <div className="w-full h-full px-1">
+                  <div className="h-full w-full px-1">
                     <Separator orientation="vertical" />
                   </div>
                   <TabsTrigger

@@ -66,7 +66,7 @@ function RouteComponent() {
   const [activeHintIndex, setActiveHintIndex] = useState<number | null>(null);
   const [isExchangePuzzleHintDialogOpen, setIsExchangePuzzleHintDialogOpen] = useState(false);
   return (
-    <div className="flex flex-1 gap-4 flex-col">
+    <div className="flex flex-1 flex-col gap-4">
       <div>
         <ExchangePuzzleHintDialog
           open={isExchangePuzzleHintDialogOpen}
@@ -98,11 +98,11 @@ function RouteComponent() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="flex gap-4 flex-col items-center">
+      <div className="flex flex-col items-center gap-4">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
           <div />
-          <div className="text-2xl font-bold text-center">{puzzle.hunt_puzzles.title}</div>
-          <div className="justify-self-end flex gap-1 items-center">
+          <div className="text-center text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
+          <div className="flex items-center gap-1 justify-self-end">
             {puzzle.hunt_puzzles.hints && puzzle.hunt_puzzles.hints.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -160,7 +160,7 @@ function RouteComponent() {
         </div>
 
         <form.AppForm>
-          <form.Form className="max-w-lg w-full">
+          <form.Form className="w-full max-w-lg">
             <InputGroup>
               <form.AppField name="answer">
                 {field => (
@@ -192,7 +192,7 @@ function RouteComponent() {
         )}
         {submitAnswer.isPending && <span className="text-xl font-bold">Checking answer...</span>}
       </div>
-      <div className="flex flex-col gap-4 dark:bg-card bg-muted">
+      <div className="dark:bg-card bg-muted flex flex-col gap-4">
         <SimpleEditor
           huntPuzzleId={huntPuzzleId}
           defaultValue={puzzle.hunt_puzzles.contents ?? undefined}

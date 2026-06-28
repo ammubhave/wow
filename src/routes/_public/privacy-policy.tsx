@@ -22,7 +22,7 @@ function RouteComponent() {
       <h2 className="mb-4 text-2xl font-semibold text-gray-800">1. Information We Collect</h2>
       <p className="mb-6 text-gray-700">
         We collect information in the following ways:
-        <ul className="ml-6 mt-2 list-disc">
+        <ul className="mt-2 ml-6 list-disc">
           <li>
             <strong>Personal Information:</strong> Information you provide directly, such as your
             name, email address, phone number, or payment information when creating an account or
@@ -43,7 +43,7 @@ function RouteComponent() {
       <h2 className="mb-4 text-2xl font-semibold text-gray-800">2. How We Use Your Information</h2>
       <p className="mb-6 text-gray-700">
         We use the collected information to:
-        <ul className="ml-6 mt-2 list-disc">
+        <ul className="mt-2 ml-6 list-disc">
           <li>Provide, operate, and maintain our website and services.</li>
           <li>Process transactions and manage accounts.</li>
           <li>Improve and personalize your experience on WOW.</li>
@@ -55,7 +55,7 @@ function RouteComponent() {
       <h2 className="mb-4 text-2xl font-semibold text-gray-800">3. Sharing of Information</h2>
       <p className="mb-6 text-gray-700">
         We do not share your personal information with third parties except in the following cases:
-        <ul className="ml-6 mt-2 list-disc">
+        <ul className="mt-2 ml-6 list-disc">
           <li>With your consent.</li>
           <li>
             To third-party service providers who help us run our business, such as payment

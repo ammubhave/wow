@@ -180,8 +180,8 @@ function RouteComponent() {
     <div className="flex flex-1">
       <div className="relative flex-1">
         <div className="absolute inset-0 overflow-auto">
-          <div className="flex flex-col divide-y flex-1">
-            <div className="p-2 flex gap-2">
+          <div className="flex flex-1 flex-col divide-y">
+            <div className="flex gap-2 p-2">
               <InputGroup className="flex-1">
                 <InputGroupInput value={search} onChange={e => setSearch(e.target.value)} />
                 <InputGroupAddon>
@@ -202,7 +202,7 @@ function RouteComponent() {
                       <FunnelIcon />
                       Filter
                       {filterCount > 0 && (
-                        <Badge variant="outline" className="rounded-full ml-1">
+                        <Badge variant="outline" className="ml-1 rounded-full">
                           {filterCount}
                         </Badge>
                       )}
@@ -322,8 +322,8 @@ function RouteComponent() {
                 <Table className="h-fit">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="p-0 w-8" colSpan={1} />
-                      <TableHead className="p-0 w-8" colSpan={1} />
+                      <TableHead className="w-8 p-0" colSpan={1} />
+                      <TableHead className="w-8 p-0" colSpan={1} />
                       <TableHead>Name</TableHead>
                       <TableHead className="min-w-[150px]">Solution</TableHead>
                       <TableHead>Status</TableHead>
@@ -439,12 +439,12 @@ function BlackboardRound({
             </Button>
           </div>
           {round.status === "solved" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
+            <div className="absolute inset-0 flex h-full flex-col items-center justify-center group-hover:hidden">
               <CheckIcon className="size-3.5 text-green-500" />
             </div>
           )}
         </TableCell>
-        <TableCell colSpan={3} className="font-semibold text-muted-foreground">
+        <TableCell colSpan={3} className="text-muted-foreground font-semibold">
           {round.name}
         </TableCell>
         <TableCell>
@@ -455,7 +455,7 @@ function BlackboardRound({
               {value: null, label: "None"},
               {value: "solved", label: "Solved"},
             ]}>
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -551,7 +551,7 @@ function BlackboardRound({
         <>
           <TableRow className={cn("group", isCollapsed ? "collapse" : "")}>
             <TableCell className="p-0" />
-            <TableCell className="p-0 relative">
+            <TableCell className="relative p-0">
               <div
                 className={cn(
                   "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
@@ -571,14 +571,14 @@ function BlackboardRound({
                 </Button>
               </div>
               {!isUnassignedCollapsed && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
+                <div className="absolute inset-0 flex h-full flex-col items-center justify-center group-hover:hidden">
                   <div className={cn("flex-1", isUnassignedCollapsed && "hidden")} />
                   <div
                     style={{
                       backgroundColor: isUnassignedCollapsed ? "transparent" : "grey",
                       borderColor: "grey",
                     }}
-                    className="rounded-full size-2 border"></div>
+                    className="size-2 rounded-full border"></div>
                   <div
                     style={{backgroundColor: "grey"}}
                     className={cn("w-px flex-1", isUnassignedCollapsed && "hidden")}></div>
@@ -718,7 +718,7 @@ function BlackboardMetaPuzzle({
             />
           )}
         </TableCell>
-        <TableCell className="p-0 relative">
+        <TableCell className="relative p-0">
           <div
             className={cn(
               "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
@@ -737,11 +737,11 @@ function BlackboardMetaPuzzle({
             </Button>
           </div>
           {!isCollapsed && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center h-full group-hover:hidden">
+            <div className="absolute inset-0 flex h-full flex-col items-center justify-center group-hover:hidden">
               <div className={cn("flex-1", isCollapsed && "hidden")} />
               <div
                 style={{backgroundColor: isCollapsed ? "transparent" : color, borderColor: color}}
-                className="rounded-full size-2 border"></div>
+                className="size-2 rounded-full border"></div>
               <div
                 style={{backgroundColor: color}}
                 className={cn("w-px flex-1", isCollapsed && "hidden")}></div>
@@ -764,7 +764,7 @@ function BlackboardMetaPuzzle({
           <form.AppField name="answer">
             {field => (
               <input
-                className="uppercase px-2 absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
+                className="absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950"
                 onBlur={e => {
                   field.handleChange(e.target.value.toUpperCase());
                   field.handleBlur();
@@ -785,7 +785,7 @@ function BlackboardMetaPuzzle({
                 }}
                 value={field.state.value}
                 items={getPuzzleStatusOptions()}>
-                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none">
+                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950">
                   <SelectValue onBlur={field.handleBlur} />
                 </SelectTrigger>
                 <SelectContent>
@@ -842,7 +842,7 @@ function BlackboardMetaPuzzle({
                 setIsTagsEditing(true);
                 setTimeout(() => tagsRef.current?.focus(), 0);
               }}
-              className="h-full w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
+              className="flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1 hover:bg-amber-100 dark:hover:bg-amber-950">
               {metaPuzzle.tags.map(tag => (
                 <Badge key={tag} className={getTagColor(tag)}>
                   {tag}
@@ -862,7 +862,7 @@ function BlackboardMetaPuzzle({
                 <field.ComboboxMultipleField
                   defaultOpen
                   ref={tagsRef}
-                  className="bg-amber-100 dark:bg-amber-950 border-0"
+                  className="border-0 bg-amber-100 dark:bg-amber-950"
                   items={workspace.tags}
                 />
               )}
@@ -873,7 +873,7 @@ function BlackboardMetaPuzzle({
           <div className="flex flex-row flex-wrap gap-1">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-[10px] font-medium text-green-900">
+                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                     className="size-3 rounded-full"
@@ -956,8 +956,8 @@ function BlackboardMetaPuzzle({
         <TableRow>
           <TableCell colSpan={1} />
           <TableCell className="p-0">
-            <div className="flex flex-col h-full">
-              <div className="flex-1 flex items-stretch">
+            <div className="flex h-full flex-col">
+              <div className="flex flex-1 items-stretch">
                 <div className="flex-1" />
                 <div className="w-px" style={{backgroundColor: color, borderColor: color}} />
                 <div className="flex-1" />
@@ -965,13 +965,13 @@ function BlackboardMetaPuzzle({
               <div className="flex items-center">
                 <div className="flex-1" />
                 <div className="h-px w-px" style={{backgroundColor: color, borderColor: color}} />
-                <div className="flex-1 h-px" style={{backgroundColor: color}} />
+                <div className="h-px flex-1" style={{backgroundColor: color}} />
               </div>
-              <div className="flex-1 flex items-stretch"></div>
+              <div className="flex flex-1 items-stretch"></div>
             </div>
             <span className="relative scroll-mt-20" />
           </TableCell>
-          <TableCell colSpan={6} className="text-muted-foreground italic text-xs">
+          <TableCell colSpan={6} className="text-muted-foreground text-xs italic">
             There are no visible puzzles feeding this meta puzzle.
           </TableCell>
         </TableRow>
@@ -1054,8 +1054,8 @@ function BlackboardPuzzle({
           )}
         </TableCell>
         <TableCell className="p-0">
-          <div className="flex flex-col h-full">
-            <div className="flex-1 flex items-stretch">
+          <div className="flex h-full flex-col">
+            <div className="flex flex-1 items-stretch">
               <div className="flex-1" />
               <div className="w-px" style={{backgroundColor: color, borderColor: color}} />
               <div className="flex-1" />
@@ -1063,9 +1063,9 @@ function BlackboardPuzzle({
             <div className="flex items-center">
               <div className="flex-1" />
               <div className="h-px w-px" style={{backgroundColor: color, borderColor: color}} />
-              <div className="flex-1 h-px" style={{backgroundColor: color}} />
+              <div className="h-px flex-1" style={{backgroundColor: color}} />
             </div>
-            <div className="flex-1 flex items-stretch">
+            <div className="flex flex-1 items-stretch">
               <div className="flex-1" />
               <div
                 className={cn("w-px", isLast && "hidden")}
@@ -1092,7 +1092,7 @@ function BlackboardPuzzle({
           <form.AppField name="answer">
             {field => (
               <input
-                className="px-2 uppercase absolute inset-0 items-center whitespace-normal break-all font-mono hover:bg-amber-100 focus-visible:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus-visible:outline-none"
+                className="absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950"
                 onBlur={e => {
                   field.handleChange(e.target.value.toUpperCase());
                   field.handleBlur();
@@ -1110,7 +1110,7 @@ function BlackboardPuzzle({
                 onValueChange={field.handleChange}
                 value={field.state.value}
                 items={getPuzzleStatusOptions()}>
-                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus:bg-amber-950 focus:outline-none">
+                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus:bg-amber-950">
                   <SelectValue onBlur={field.handleBlur} />
                 </SelectTrigger>
                 <SelectContent>
@@ -1164,7 +1164,7 @@ function BlackboardPuzzle({
                 setIsTagsEditing(true);
                 setTimeout(() => tagsRef.current?.focus(), 0);
               }}
-              className="h-full w-full flex gap-1 flex-wrap items-center hover:bg-amber-100 dark:hover:bg-amber-950 p-1 cursor-text">
+              className="flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1 hover:bg-amber-100 dark:hover:bg-amber-950">
               {puzzle.tags.map(tag => (
                 <Badge key={tag} className={getTagColor(tag)}>
                   {tag}
@@ -1183,7 +1183,7 @@ function BlackboardPuzzle({
                 <field.ComboboxMultipleField
                   defaultOpen
                   ref={tagsRef}
-                  className="bg-amber-100 dark:bg-amber-950 border-0"
+                  className="border-0 bg-amber-100 dark:bg-amber-950"
                   items={workspace.tags}
                 />
               )}
@@ -1194,7 +1194,7 @@ function BlackboardPuzzle({
           <div className="flex flex-row flex-wrap gap-2">
             {presences.map(user => (
               <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 dark:bg-green-800 dark:text-green-100 px-1 py-0.5 text-[10px] font-medium text-green-900">
+                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
                     className="size-3 rounded-full"

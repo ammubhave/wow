@@ -20,7 +20,7 @@ type PuzzAlmostAnswer = {answer: string; message: string};
 export function Puzz({children, title}: {children: React.ReactNode; title: string}) {
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-4 text-center">{title}</h1>
+      <h1 className="mb-4 text-center text-4xl font-bold">{title}</h1>
       <div className="flex flex-1 flex-col items-stretch justify-center gap-6">{children}</div>
     </div>
   );
@@ -61,9 +61,9 @@ export function PuzzMain({
   return (
     <PuzzCard>
       <div className="prose max-w-full">
-        <div className="text-lg font-semibold gap-4 w-full flex flex-col items-center">
+        <div className="flex w-full flex-col items-center gap-4 text-lg font-semibold">
           <form.AppForm>
-            <form.Form className="max-w-lg w-full">
+            <form.Form className="w-full max-w-lg">
               <InputGroup>
                 <form.AppField name="answer">
                   {field => (
@@ -86,7 +86,7 @@ export function PuzzMain({
           {checkResponse && <div>{checkResponse}</div>}
         </div>
         <Separator orientation="horizontal" className="my-6" />
-        {flavor && <div className="italic mb-10">{flavor}</div>}
+        {flavor && <div className="mb-10 italic">{flavor}</div>}
         <div className="flex flex-col items-center text-center">{children}</div>
       </div>
     </PuzzCard>
@@ -125,7 +125,7 @@ export function PuzzHints({hints}: {hints: Array<PuzzHint>}) {
                 <span className="min-w-10">{hintsHidden[index] ? "Show" : "Hide"}</span>
               </Button>
               <span className="ml-2">{index + 1})</span>
-              <PuzzHidden className="ml-4 pl-1 mr-30" hidden={hintsHidden[index]!}>
+              <PuzzHidden className="mr-30 ml-4 pl-1" hidden={hintsHidden[index]!}>
                 {hint}
               </PuzzHidden>
             </div>
@@ -171,10 +171,10 @@ export function PuzzSolution({
   return (
     <PuzzCard>
       <h2 className="text-2xl font-bold">Solution</h2>
-      <div className="flex flex-col text-xl font-bold gap-2">
+      <div className="flex flex-col gap-2 text-xl font-bold">
         <div className="flex">
           ANSWER:{"  "}
-          <PuzzHidden className="inline-block w-full ml-5 pl-1 mr-30" hidden={answerHidden}>
+          <PuzzHidden className="mr-30 ml-5 inline-block w-full pl-1" hidden={answerHidden}>
             {toAnswerFormat(answer)}
           </PuzzHidden>
           <Button className="mr-10" onClick={() => setAnswerHidden(!answerHidden)}>
@@ -183,7 +183,7 @@ export function PuzzSolution({
         </div>
         <div className="flex">
           AUTHOR:{"  "}
-          <PuzzHidden className="inline-block w-full ml-5 pl-1 mr-30" hidden={authorHidden}>
+          <PuzzHidden className="mr-30 ml-5 inline-block w-full pl-1" hidden={authorHidden}>
             {author}
           </PuzzHidden>
           <Button className="mr-10" onClick={() => setAuthorHidden(!authorHidden)}>
@@ -194,7 +194,7 @@ export function PuzzSolution({
       <Button className="mr-10" onClick={() => setSolutionHidden(!solutionHidden)}>
         <span className="min-w-10">{solutionHidden ? "Show Solution" : "Hide Solution"}</span>
       </Button>
-      {!solutionHidden && <div className="flex flex-col prose max-w-full">{children}</div>}
+      {!solutionHidden && <div className="prose flex max-w-full flex-col">{children}</div>}
     </PuzzCard>
   );
 }
@@ -203,7 +203,7 @@ export function PuzzLink({children, link}: {children: string; link: string}) {
   return (
     <a target="_blank" rel="noopener noreferrer" href={link} className="underline">
       {children}
-      <ExternalLinkIcon className="py-1 inline" />
+      <ExternalLinkIcon className="inline py-1" />
     </a>
   );
 }

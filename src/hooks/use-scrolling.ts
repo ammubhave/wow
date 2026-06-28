@@ -1,5 +1,4 @@
 import type {RefObject} from "react";
-
 import {useEffect, useState} from "react";
 
 type ScrollTarget = RefObject<HTMLElement> | Window | null | undefined;

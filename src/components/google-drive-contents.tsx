@@ -91,15 +91,15 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-primary"
+                    className="bg-primary absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5"
                   />
                   <div className="group relative flex items-start">
                     <span className="flex h-8 items-center">
-                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                      <span className="bg-primary relative z-10 flex size-7 items-center justify-center rounded-full">
                         <CheckIcon aria-hidden="true" className="size-4 text-white" />
                       </span>
                     </span>
-                    <div className="flex pl-4 flex-col sm:flex-row flex-1 gap-2 justify-between">
+                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                       <span className="flex min-w-0 flex-col">
                         <span className="text-xs font-medium">Connect with Google</span>
                         <span className="text-xs text-gray-500">
@@ -118,17 +118,17 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-gray-300"
+                    className="absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5 bg-gray-300"
                   />
                   <div aria-current="step" className="group relative flex items-start">
                     <span aria-hidden="true" className="flex h-8 items-center">
-                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
-                        <span className="size-2 rounded-full bg-primary" />
+                      <span className="border-primary relative z-10 flex size-7 items-center justify-center rounded-full border-2 bg-white">
+                        <span className="bg-primary size-2 rounded-full" />
                       </span>
                     </span>
-                    <div className="flex pl-4 flex-1 flex-col sm:flex-row gap-2 justify-between">
+                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                       <span className="flex min-w-0 flex-col">
-                        <span className="text-xs font-medium text-primary">
+                        <span className="text-primary text-xs font-medium">
                           Connect with Google
                         </span>
                         <span className="text-xs text-gray-500">
@@ -149,15 +149,15 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-primary"
+                    className="bg-primary absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5"
                   />
                   <div className="group relative flex items-start">
                     <span className="flex h-8 items-center">
-                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                      <span className="bg-primary relative z-10 flex size-7 items-center justify-center rounded-full">
                         <CheckIcon aria-hidden="true" className="size-4 text-white" />
                       </span>
                     </span>
-                    <div className="flex pl-4 flex-1 flex-col sm:flex-row gap-2 justify-between">
+                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                       <span className="flex min-w-0 flex-col">
                         <span className="text-xs font-medium">Select Google Drive Folder</span>
                         <span className="text-xs text-gray-500">
@@ -188,13 +188,13 @@ export function GoogleDriveCardContents({
                 <>
                   <div
                     aria-hidden="true"
-                    className="absolute left-3.5 top-4 -ml-px mt-0.5 h-full w-0.5 bg-gray-300"
+                    className="absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5 bg-gray-300"
                   />
                   <div aria-current="step" className="group relative flex items-start">
                     <span aria-hidden="true" className="flex h-8 items-center">
                       {state.data.state === 1 ? (
-                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
-                          <span className="size-2 rounded-full bg-primary" />
+                        <span className="border-primary relative z-10 flex size-7 items-center justify-center rounded-full border-2 bg-white">
+                          <span className="bg-primary size-2 rounded-full" />
                         </span>
                       ) : (
                         <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-gray-300 bg-white">
@@ -202,7 +202,7 @@ export function GoogleDriveCardContents({
                         </span>
                       )}
                     </span>
-                    <div className="pl-4 flex flex-1 items-center justify-between">
+                    <div className="flex flex-1 items-center justify-between pl-4">
                       <span className="flex min-w-0 flex-col">
                         <span
                           className={cn(
@@ -232,11 +232,11 @@ export function GoogleDriveCardContents({
                 <>
                   <div className="group relative flex items-start">
                     <span className="flex h-8 items-center">
-                      <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-primary">
+                      <span className="bg-primary relative z-10 flex size-7 items-center justify-center rounded-full">
                         <CheckIcon aria-hidden="true" className="h-5 w-5 text-white" />
                       </span>
                     </span>
-                    <div className="pl-4 flex flex-1 flex-col sm:flex-row gap-2 justify-between">
+                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                       <span className="flex min-w-0 flex-col">
                         <span className="text-xs font-medium">Select Template File</span>
                         <span className="text-xs text-gray-500">
@@ -268,8 +268,8 @@ export function GoogleDriveCardContents({
                   <div aria-current="step" className="group relative flex items-start">
                     <span aria-hidden="true" className="flex h-8 items-center">
                       {state.data.state === 2 ? (
-                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-primary bg-white">
-                          <span className="size-2 rounded-full bg-primary" />
+                        <span className="border-primary relative z-10 flex size-7 items-center justify-center rounded-full border-2 bg-white">
+                          <span className="bg-primary size-2 rounded-full" />
                         </span>
                       ) : (
                         <span className="relative z-10 flex size-7 items-center justify-center rounded-full border-2 border-gray-300 bg-white">
@@ -277,7 +277,7 @@ export function GoogleDriveCardContents({
                         </span>
                       )}
                     </span>
-                    <div className="pl-4 flex flex-1 flex-col sm:flex-row gap-2 justify-between">
+                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                       <span className="flex min-w-0 flex-col">
                         <span
                           className={cn(

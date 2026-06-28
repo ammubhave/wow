@@ -13,17 +13,17 @@ export function WorkspaceFooter() {
   const workspace = useWorkspace();
   return (
     <footer className="bg-sidebar flex w-full items-center border-t">
-      <div className="px-2 flex items-center gap-4 shrink-0">
-        <div className="flex-1 font-semibold items-center gap-2 flex">
+      <div className="flex shrink-0 items-center gap-4 px-2">
+        <div className="flex flex-1 items-center gap-2 font-semibold">
           <span className="text-xs text-nowrap">{workspace.eventName}</span>
           <span>•</span>
           <span className="text-xs text-nowrap">{workspace.teamName}</span>
         </div>
       </div>
       <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
-        <div className="flex-1 flex items-center overflow-hidden justify-end">
+        <div className="flex flex-1 items-center justify-end overflow-hidden">
           {workspace.activityLogEntries[0] && (
-            <div className="overflow-hidden px-3 flex items-center">
+            <div className="flex items-center overflow-hidden px-3">
               <Button
                 variant="ghost"
                 nativeButton={false}

@@ -57,7 +57,7 @@ function RouteComponent() {
         <PresencesWebSocket workspaceSlug={workspaceSlug}>
           <div className="flex flex-1 flex-col">
             <WorkspaceHeader />
-            <div className="flex flex-1 relative">
+            <div className="relative flex flex-1">
               <div className="absolute inset-0 flex overflow-auto">
                 <Outlet />
               </div>

@@ -19,7 +19,7 @@ function RouteComponent() {
         <img
           src={screenshot}
           alt="Screenshot of the Blackboard in WOW"
-          className="rounded-lg max-w-132 mx-auto"
+          className="mx-auto max-w-132 rounded-lg"
         />
       </p>
       <p>

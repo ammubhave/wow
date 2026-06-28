@@ -31,7 +31,7 @@ function RouteComponent() {
     );
   }, [session?.user]);
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="flex min-h-dvh flex-col">
       <Outlet />
     </div>
   );

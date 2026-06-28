@@ -1,6 +1,6 @@
 export function HelpPage() {
   return (
-    <div className="flex justify-center prose">
+    <div className="prose flex justify-center">
       <div className="max-w-4xl">
         <h2>Help Page</h2>
         <p />

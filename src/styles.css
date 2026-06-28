@@ -124,7 +124,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-sans bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
   html {
     @apply font-sans;
@@ -206,7 +206,7 @@
     overflow: hidden;
     table-layout: fixed;
     width: 100%;
-    @apply border border-border;
+    @apply border-border border;
 
     td,
     th {
@@ -216,7 +216,7 @@
       padding: 6px 8px;
       position: relative;
       vertical-align: top;
-      @apply border border-border;
+      @apply border-border border;
 
       > * {
         margin-bottom: 0;

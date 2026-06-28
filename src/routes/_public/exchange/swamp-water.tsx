@@ -11,12 +11,12 @@ function RouteComponent() {
         <img
           src="/swamp-water-1.png"
           alt="Swamp Water image 1"
-          className="rounded-lg max-w-132 mx-auto"
+          className="mx-auto max-w-132 rounded-lg"
         />
         <img
           src="/swamp-water-2.png"
           alt="Swamp Water image 2"
-          className="rounded-lg max-w-132 mx-auto"
+          className="mx-auto max-w-132 rounded-lg"
         />
         <br />
         2.64575... (aka a hoop component)

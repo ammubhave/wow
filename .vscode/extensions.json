@@ -2,6 +2,7 @@
   "recommendations": [
     "oxc.oxc-vscode",
     "typescriptteam.native-preview",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+    "VoidZero.vite-plus-extension-pack"
   ]
 }

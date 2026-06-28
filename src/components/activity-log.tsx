@@ -10,9 +10,8 @@ import {
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
-import type {WorkspaceRoomState} from "@/server/do/workspace";
-
 import {useWorkspace} from "@/hooks/use-workspace";
+import type {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {UserHoverCard} from "./user-hover-card";
 
@@ -28,7 +27,7 @@ export function ActivityLogItem({
   const now = useNow({updateInterval: 1000});
   const format = useFormatter();
   return (
-    <div className="flex gap-x-4 items-center">
+    <div className="flex items-center gap-x-4">
       {showIcon && (
         <div className="relative flex size-6 flex-none items-center justify-center">
           <div
@@ -76,10 +75,10 @@ export function ActivityLogItem({
           </div>
         </div>
       )}
-      <p className="flex-auto py-0.5 text-xs/5 text-muted-foreground">
+      <p className="text-muted-foreground flex-auto py-0.5 text-xs/5">
         {activityItem.user && (
           <UserHoverCard user={activityItem.user}>
-            <span className="cursor-default hover:text-muted-foreground font-medium text-foreground">
+            <span className="hover:text-muted-foreground text-foreground cursor-default font-medium">
               {activityItem.user.name}
             </span>
           </UserHoverCard>
@@ -101,7 +100,7 @@ export function ActivityLogItem({
             <Link
               to="/$workspaceSlug/puzzles/$puzzleId"
               params={{puzzleId: activityItem.puzzle_activity_log_entry.puzzleId} as any}
-              className="font-medium text-foreground">
+              className="text-foreground font-medium">
               {activityItem.puzzle_activity_log_entry.puzzleName}
             </Link>
             {activityItem.puzzle_activity_log_entry.field !== null && (
@@ -124,7 +123,7 @@ export function ActivityLogItem({
               : activityItem.round_activity_log_entry.subType === "delete"
                 ? "deleted"
                 : ""}{" "}
-            <span className="font-medium text-foreground">
+            <span className="text-foreground font-medium">
               {activityItem.round_activity_log_entry.roundName}
             </span>
           </>
@@ -132,7 +131,7 @@ export function ActivityLogItem({
       </p>
       <time
         dateTime={activityItem.activity_log_entry.createdAt.toString()}
-        className="flex-none py-0.5 text-xs/5 text-muted-foreground">
+        className="text-muted-foreground flex-none py-0.5 text-xs/5">
         {relativeTime
           ? format.relativeTime(activityItem.activity_log_entry.createdAt, now)
           : activityItem.activity_log_entry.createdAt.toLocaleString("en-US", {
@@ -155,7 +154,7 @@ export function ActivityLog() {
         <div className="mx-auto grid w-full max-w-6xl gap-2">
           <h1 className="text-3xl font-semibold">Activity Log</h1>
         </div>
-        <div className="w-full flex-1 flex flex-col">
+        <div className="flex w-full flex-1 flex-col">
           <div className="flow-root">
             <ul role="list" className="space-y-6">
               {workspace.activityLogEntries.map((activityItem, activityItemIdx) => (
@@ -167,7 +166,7 @@ export function ActivityLog() {
                         : "-bottom-6",
                       "absolute left-0 top-0 flex w-6 justify-center"
                     )}>
-                    <div className="w-px bg-border" />
+                    <div className="bg-border w-px" />
                   </div>
                   <ActivityLogItem activityItem={activityItem} />
                 </li>

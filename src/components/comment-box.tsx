@@ -71,7 +71,7 @@ export function CommentBox({
   };
 
   return (
-    <div className="justify-between flex-wrap relative">
+    <div className="relative flex-wrap justify-between">
       {!isEditingComment ? (
         <span>
           <div className="text-sm">
@@ -232,7 +232,7 @@ export function CommentBox({
             </DropdownMenu>
           </span>
           {commentUpdatedAt || commentUpdatedBy ? (
-            <span className="mt-2 block text-xs text-muted-foreground">
+            <span className="text-muted-foreground mt-2 block text-xs">
               Updated {commentUpdatedAt ? format.relativeTime(commentUpdatedAt, now) : ""}{" "}
               {commentUpdatedBy ? "by " + commentUpdatedBy : ""}
             </span>
@@ -245,7 +245,7 @@ export function CommentBox({
               <form.AppField
                 name="comment"
                 children={field => (
-                  <field.InputGroupTextareaField className="min-h-[120px] max-h-[360px]" />
+                  <field.InputGroupTextareaField className="max-h-[360px] min-h-[120px]" />
                 )}
               />
               <InputGroupAddon align="block-end">

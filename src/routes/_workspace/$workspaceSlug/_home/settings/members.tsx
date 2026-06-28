@@ -30,7 +30,7 @@ function RouteComponent() {
                 <AvatarImage src={member.user.image ?? gravatarUrl(member.user.email)} />
                 <AvatarFallback>{member.user.name?.[0]}</AvatarFallback>
               </Avatar>
-              <div className="flex items-baseline flex-col">
+              <div className="flex flex-col items-baseline">
                 <div className="font-medium">{member.user.name}</div>
               </div>
             </div>

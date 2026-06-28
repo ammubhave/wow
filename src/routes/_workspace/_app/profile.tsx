@@ -60,7 +60,7 @@ function ProfileCard({
     },
   });
   return (
-    <div className="flex flex-1 w-full items-center justify-center p-6 md:p-10">
+    <div className="flex w-full flex-1 items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
@@ -95,7 +95,7 @@ function ProfileCard({
                     </form.AppField>
                     <Field>
                       <FieldLabel>Profile picture</FieldLabel>
-                      <div className="flex gap-4 items-center">
+                      <div className="flex items-center gap-4">
                         <img
                           src={user.image ?? gravatarUrl(user.email, {size: 96, d: "identicon"})}
                           alt="User Avatar"

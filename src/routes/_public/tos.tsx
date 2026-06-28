@@ -23,7 +23,7 @@ function RouteComponent() {
       <p className="mb-6 text-gray-700">
         You agree to use WOW's services only for lawful purposes and in accordance with these Terms.
         You must not use our services:
-        <ul className="ml-6 mt-2 list-disc">
+        <ul className="mt-2 ml-6 list-disc">
           <li>In any way that violates any applicable law or regulation.</li>
           <li>To send unsolicited or unauthorized advertising or promotional material.</li>
           <li>

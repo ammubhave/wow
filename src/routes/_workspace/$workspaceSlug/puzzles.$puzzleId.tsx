@@ -68,7 +68,7 @@ function RouteComponent() {
                     : `https://docs.google.com/drawings/d/${puzzle.data.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
                 }
                 allow="fullscreen; geolocation; microphone; camera; payment"
-                className="min-h-[calc(100dvh-(--spacing(16)))] w-full bg-white flex-1"
+                className="min-h-[calc(100dvh-(--spacing(16)))] w-full flex-1 bg-white"
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -222,7 +222,7 @@ function PuzzleInfoPanel({
           </EditPuzzleDialog>
         </ItemActions>
       </Item>
-      <div className="text-sm gap-2 flex flex-col overflow-auto">
+      <div className="flex flex-col gap-2 overflow-auto text-sm">
         <form.AppForm>
           <form.Form>
             <FieldGroup className="gap-0">
@@ -246,7 +246,7 @@ function PuzzleInfoPanel({
                   <ButtonGroup className="w-full">
                     <ButtonGroupText className="min-w-22">Answer</ButtonGroupText>
                     <InputGroup>
-                      <field.InputGroupInputField className="whitespace-pre uppercase font-mono" />
+                      <field.InputGroupInputField className="font-mono whitespace-pre uppercase" />
                     </InputGroup>
                   </ButtonGroup>
                 )}
@@ -371,7 +371,7 @@ function PuzzleInfoPanel({
             </FieldGroup>
           </form.Form>
         </form.AppForm>
-        <div className="px-2 gap-2 flex flex-col">
+        <div className="flex flex-col gap-2 px-2">
           <CommentBox
             comment={puzzle.comment}
             commentUpdatedAt={puzzle.commentUpdatedAt}
