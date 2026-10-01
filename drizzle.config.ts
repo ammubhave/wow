@@ -3,6 +3,12 @@ import {defineConfig} from "drizzle-kit";
 
 dotenv.config({path: ".env.local"});
 
+// Schema changes go through migrations (pnpm db:generate, then db:migrate / db:migrate:prod).
+// `push` against production rebuilt tables on D1, where DROP TABLE cascade-deletes dependent rows.
+if (process.env.CLOUDFLARE_ENV === "production" && process.argv.includes("push")) {
+  throw new Error("drizzle-kit push is disabled for production: generate a migration instead.");
+}
+
 export default defineConfig({
   schema: "./src/lib/db/schema.ts",
   out: "./migrations",

@@ -27,7 +27,7 @@ Next, run the following commands to install dependencies, set up the database, a
 nvm use
 corepack enable pnpm
 pnpm install
-pnpm db:push
+pnpm db:migrate
 pnpm run dev
 ```
 
@@ -37,10 +37,21 @@ This project uses:
 
 - [Tanstack Start](https://tanstack.com/start) as the full-stack framework for React applications.
 - [Tailwind CSS](https://tailwindcss.com/) for styling.
-- [Base UI](https://baseui.design/) for the headless component library.
-- [Shadcn UI](https://shadcn.com/ui) for pre-built components.
+- [HeroUI](https://heroui.com/) and HeroUI Pro for components.
+- [Drizzle ORM](https://orm.drizzle.team/) with [Cloudflare D1](https://developers.cloudflare.com/d1/) for the database.
 - [React Bits](https://reactbits.dev/) and [Lucide](https://lucide.dev/) for small components.
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) as the hosting platform.
+
+## Database Migrations
+
+Schema changes go through Drizzle migrations in `migrations/`:
+
+1. Edit `src/lib/db/schema.ts`.
+2. `pnpm db:generate` writes a new migration. Review the SQL before committing it.
+3. `pnpm db:migrate` applies pending migrations to your local database.
+4. After merging, `pnpm db:migrate:prod` applies them to production (`node scripts/migrate-d1-prod.mjs --dry-run` lists what is pending). Apply migrations before deploying code that depends on them.
+
+`drizzle-kit push` is disabled for production. On D1, a migration that rebuilds a table (`DROP TABLE`) cascade-deletes every row that references it, because D1 ignores `PRAGMA foreign_keys=OFF`. `pnpm db:generate` and both migrate commands refuse such migrations until the dependent rows are preserved (see `scripts/2026-10-01-d1-reconcile-schema.sql`) and the migration is marked `-- d1-cascade-reviewed`.
 
 ## Secrets Management
 

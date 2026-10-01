@@ -14,8 +14,10 @@
     "prepare": "vp config",
     "decrypt": "dotenvx decrypt --env-file .env.local.encrypted --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local",
     "encrypt": "dotenvx encrypt --env-file .env.local --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local.encrypted",
-    "db:push": "mkdir -p .wrangler/state/v3/d1/miniflare-D1DatabaseObject/ && drizzle-kit push --strict",
-    "auth:generate": "touch src/lib/db/auth-schema.ts && auth generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes"
+    "auth:generate": "touch src/lib/db/auth-schema.ts && auth generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes",
+    "db:generate": "drizzle-kit generate && node scripts/check-d1-migrations.mjs",
+    "db:migrate": "mkdir -p .wrangler/state/v3/d1/miniflare-D1DatabaseObject/ && node scripts/check-d1-migrations.mjs && drizzle-kit migrate",
+    "db:migrate:prod": "node scripts/check-d1-migrations.mjs && node scripts/migrate-d1-prod.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.6",
