@@ -1,4 +1,4 @@
-import {Card, Label} from "@heroui/react";
+import {buttonVariants, Card, Label, linkVariants} from "@heroui/react";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -62,7 +62,7 @@ function ProfileCard({
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Link to="/workspaces" className="button button--outline button--sm gap-2">
+            <Link to="/workspaces" className={buttonVariants({variant: "outline", size: "sm"})}>
               <ArrowLeftIcon /> Back
             </Link>
           </div>
@@ -77,40 +77,40 @@ function ProfileCard({
             <Card.Content>
               <form.AppForm>
                 <form.Form>
-                  <div className="flex w-full flex-col gap-4">
-                    <form.AppField name="email">
-                      {field => <field.TextField label="Email" autoComplete="email" />}
-                    </form.AppField>
-                    <form.AppField name="name">
-                      {field => <field.TextField label="Name" autoComplete="name" />}
-                    </form.AppField>
-                    <div className="flex w-full flex-col gap-2">
-                      <Label>Profile picture</Label>
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={user.image ?? gravatarUrl(user.email, {size: 96, d: "identicon"})}
-                          alt="User Avatar"
-                          className="size-10 rounded-full"
-                        />
-                        <div>
-                          To update your profile picture,
-                          <br />
-                          please visit{" "}
-                          <a
-                            href="https://gravatar.com/profile"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline">
-                            Gravatar
-                          </a>
-                          .
-                        </div>
+                  <form.AppField name="email">
+                    {field => (
+                      <field.TextField variant="secondary" label="Email" autoComplete="email" />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="name">
+                    {field => (
+                      <field.TextField variant="secondary" label="Name" autoComplete="name" />
+                    )}
+                  </form.AppField>
+                  <div className="flex w-full flex-col gap-1">
+                    <Label>Profile picture</Label>
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={user.image ?? gravatarUrl(user.email, {size: 96, d: "identicon"})}
+                        alt="User Avatar"
+                        className="size-10 rounded-full"
+                      />
+                      <div>
+                        To update your profile picture,
+                        <br />
+                        please visit{" "}
+                        <a
+                          href="https://gravatar.com/profile"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={linkVariants().base()}>
+                          Gravatar
+                        </a>
+                        .
                       </div>
                     </div>
-                    <div className="flex w-full flex-col gap-4">
-                      <form.SubmitButton>Save</form.SubmitButton>
-                    </div>
                   </div>
+                  <form.SubmitButton fullWidth>Save</form.SubmitButton>
                 </form.Form>
               </form.AppForm>
             </Card.Content>

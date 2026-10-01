@@ -1,4 +1,4 @@
-import {Button, Card} from "@heroui/react";
+import {Button, buttonVariants, Card, Separator} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowLeftIcon, ArrowRightIcon} from "lucide-react";
@@ -38,7 +38,7 @@ function RouteComponentInner() {
     <div className="flex w-full justify-center">
       <div className="flex max-w-3xl flex-1 flex-col gap-2">
         <div>
-          <Link to="/workspaces" className="button button--outline button--sm gap-2">
+          <Link to="/workspaces" className={buttonVariants({variant: "outline", size: "sm"})}>
             <ArrowLeftIcon /> Back
           </Link>
         </div>
@@ -47,12 +47,13 @@ function RouteComponentInner() {
             workspaceSlug={workspaceSlug}
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
-          <div className="border-t" />
+          <Separator />
           <DiscordCardContents
             workspaceSlug={workspaceSlug}
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
-          <Card.Content className="flex items-center justify-between gap-4 border-t pt-6">
+          <Separator />
+          <Card.Footer className="justify-between gap-4">
             <Button
               variant="ghost"
               onPress={() => {
@@ -66,7 +67,7 @@ function RouteComponentInner() {
             </Button>
 
             {!workspace.googleConnected && (
-              <span className="text-muted-foreground text-xs">
+              <span className="text-muted text-xs">
                 You must connect your Google Drive account first.
               </span>
             )}
@@ -74,11 +75,11 @@ function RouteComponentInner() {
               to="/$workspaceSlug"
               params={{workspaceSlug}}
               disabled={!workspace.googleConnected}
-              className="button button--primary gap-2">
+              className={buttonVariants({variant: "primary"})}>
               Go to blackboard
               <ArrowRightIcon />
             </Link>
-          </Card.Content>
+          </Card.Footer>
         </Card>
       </div>
     </div>

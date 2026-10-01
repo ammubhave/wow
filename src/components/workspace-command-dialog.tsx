@@ -27,6 +27,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
   }, []);
   const workspace = useWorkspace();
   const navigate = useNavigate();
+  // Keyboard-only, like Spotlight: ⌘K / Ctrl+K opens it; there's deliberately no visible trigger.
   return (
     <Command>
       <Command.Backdrop isOpen={open} onOpenChange={setOpen}>

@@ -56,7 +56,7 @@ export function PuzzMain({
         <div className="flex w-full flex-col items-center gap-4 text-lg font-semibold">
           <form.AppForm>
             <form.Form className="w-full max-w-lg">
-              <TextField aria-label="Answer">
+              <TextField aria-label="Answer" variant="secondary">
                 <InputGroup>
                   <form.AppField name="answer">
                     {field => (
@@ -199,7 +199,7 @@ export function PuzzLink({children, link}: {children: string; link: string}) {
 }
 
 function PuzzCard({children}: {children: React.ReactNode}) {
-  return <Card className="p-8">{children}</Card>;
+  return <Card>{children}</Card>;
 }
 
 function toAnswerFormat(str: string) {

@@ -205,7 +205,7 @@ export function CommentBox({
             </Dropdown>
           </span>
           {commentUpdatedAt || commentUpdatedBy ? (
-            <span className="text-muted-foreground mt-2 block text-xs">
+            <span className="text-muted mt-2 block text-xs">
               Updated {commentUpdatedAt ? <RelativeTime date={commentUpdatedAt} /> : ""}{" "}
               {commentUpdatedBy ? "by " + commentUpdatedBy : ""}
             </span>

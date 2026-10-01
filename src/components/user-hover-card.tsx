@@ -25,7 +25,7 @@ export function UserHoverCard({
     <HoverCard openDelay={200}>
       <HoverCard.Trigger>{children}</HoverCard.Trigger>
       <HoverCard.Content
-        className="flex w-fit items-center justify-center p-2"
+        className="flex w-fit items-center justify-center"
         placement={side ?? "bottom"}>
         <div className="flex items-center gap-2">
           <Avatar>
@@ -40,7 +40,7 @@ export function UserHoverCard({
             </Avatar.Fallback>
           </Avatar>
           <div className="flex flex-col items-baseline">
-            <div className="text-accent-foreground font-medium">{user.name}</div>
+            <div className="text-foreground font-medium">{user.name}</div>
           </div>
         </div>
       </HoverCard.Content>

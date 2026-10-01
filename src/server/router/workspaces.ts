@@ -8,8 +8,15 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 import {fetchDiscord} from "../do/discord-client";
-import {invalidateWorkspace} from "../do/workspace";
+import {
+  getActivityLogEntries,
+  getWorkspaceRoom,
+  invalidateWorkspace,
+  type WorkspaceRoomWireState,
+} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
+
+const ACTIVITY_LOG_PAGE_SIZE = 50;
 
 export const workspacesRouter = {
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
@@ -249,6 +256,43 @@ export const workspacesRouter = {
           message: `Failed to share the Google Drive folder: ${resp.status} ${resp.statusText}`,
         });
       }
+    }),
+
+  /// The live workspace room state (also pushed over the websocket), for the initial render.
+  state: procedure
+    .input(z.object({workspaceSlug: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}): Promise<WorkspaceRoomWireState> => {
+      // The room serializes once per change; parse here so this matches the websocket messages.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the room's own serialized state.
+      return JSON.parse(
+        await getWorkspaceRoom(context.workspace.id).getState(context.workspace.id)
+      );
+    }),
+
+  /// One page of the activity log, newest first; pass the previous page's `nextCursor` for older
+  /// entries. (The room state only carries the most recent ones.)
+  activityLog: procedure
+    .input(
+      z.object({
+        workspaceSlug: z.string(),
+        cursor: z.object({createdAt: z.number(), id: z.string()}).nullish(),
+      })
+    )
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const entries = await getActivityLogEntries(context.workspace.id, {
+        before: input.cursor ?? undefined,
+        limit: ACTIVITY_LOG_PAGE_SIZE,
+      });
+      const last = entries.at(-1)?.activity_log_entry;
+      return {
+        entries,
+        nextCursor:
+          entries.length === ACTIVITY_LOG_PAGE_SIZE && last
+            ? {createdAt: last.createdAt.getTime(), id: last.id}
+            : null,
+      };
     }),
 
   getDiscordInfo: procedure

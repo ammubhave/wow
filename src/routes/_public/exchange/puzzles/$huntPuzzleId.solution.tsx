@@ -44,9 +44,9 @@ function RouteComponent() {
       <div className="flex flex-col items-center justify-center gap-4">
         <div className="text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
         <span className="text-lg font-semibold">Solution</span>
-        <span className="text-primary font-mono font-black">{puzzle.hunt_puzzles.answer}</span>
+        <span className="text-accent font-mono font-black">{puzzle.hunt_puzzles.answer}</span>
       </div>
-      <div className="dark:bg-card bg-surface-secondary flex flex-col gap-4">
+      <div className="dark:bg-surface bg-surface-secondary flex flex-col gap-4">
         <PuzzleRichTextEditor
           huntPuzzleId={huntPuzzleId}
           defaultValue={puzzle.hunt_puzzles.solution ?? undefined}

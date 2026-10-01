@@ -1,4 +1,4 @@
-import {Card} from "@heroui/react";
+import {buttonVariants, Card} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 
@@ -13,7 +13,7 @@ function RouteComponent() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Link to="/login" className="button button--outline button--sm gap-2">
+            <Link to="/login" className={buttonVariants({variant: "outline", size: "sm"})}>
               <ArrowLeftIcon aria-hidden="true" /> Back
             </Link>
           </div>

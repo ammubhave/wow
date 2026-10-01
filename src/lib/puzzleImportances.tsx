@@ -6,21 +6,22 @@ const puzzleImportances = [
     label: "Important",
     icon: <SignalIcon />,
     smallIcon: <SignalIcon className="inline py-1" />,
-    color: "bg-slate-500 dark:bg-slate-500",
+    // Theme tokens: important stands out (accent), normal is the neutral fill, obsolete fades.
+    color: "bg-accent-soft text-accent-soft-foreground",
   },
   {
     value: "normal",
     label: "Normal",
     icon: <SignalHighIcon />,
     smallIcon: <SignalHighIcon className="inline py-1" />,
-    color: "bg-slate-300 dark:bg-slate-800",
+    color: "bg-default text-default-foreground",
   },
   {
     value: "obsolete",
     label: "Obsolete",
     icon: <SignalMediumIcon />,
     smallIcon: <SignalMediumIcon className="inline py-1" />,
-    color: "bg-slate-50 dark:bg-slate-950",
+    color: "text-muted",
   },
 ];
 
@@ -37,6 +38,7 @@ export function getPuzzleImportance(importance: string | null) {
   return null;
 }
 
+/** Cell colors for an importance; unset gets none (the board shows a ghost "Normal" icon). */
 export function getColorClassNamesForPuzzleImportances(importance: string | null) {
-  return getPuzzleImportance(importance)?.color ?? getPuzzleImportance("normal")!.color;
+  return getPuzzleImportance(importance)?.color ?? "";
 }

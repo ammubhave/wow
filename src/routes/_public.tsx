@@ -1,4 +1,4 @@
-import {Button, Dropdown, Header, Label} from "@heroui/react";
+import {Button, buttonVariants, Dropdown, Header, Label} from "@heroui/react";
 import {createFileRoute, Link, Outlet} from "@tanstack/react-router";
 import {ChevronsUpDownIcon, MonitorIcon, MoonIcon, PaletteIcon, SunIcon} from "lucide-react";
 
@@ -18,7 +18,10 @@ function RouteComponent() {
         <nav className="flex flex-1 flex-row items-center gap-5 text-lg font-medium md:text-sm lg:gap-6">
           <Link
             to="/"
-            className="button button--ghost flex items-center gap-2 text-lg font-semibold md:text-base">
+            className={buttonVariants({
+              variant: "ghost",
+              className: "text-lg font-semibold md:text-base",
+            })}>
             <img src="/favicon.ico" alt="Home" className="size-6 shrink-0 rounded-full" />
           </Link>
           <div className="flex-1 text-lg font-semibold">
@@ -30,9 +33,7 @@ function RouteComponent() {
                 <PaletteIcon />
                 <ChevronsUpDownIcon />
               </Button>
-              <Dropdown.Popover
-                className="w-(--trigger-width) min-w-56 rounded-lg"
-                placement="bottom end">
+              <Dropdown.Popover className="w-(--trigger-width) min-w-56" placement="bottom end">
                 <Dropdown.Menu
                   selectedKeys={[theme]}
                   selectionMode="single"

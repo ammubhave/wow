@@ -6,7 +6,7 @@
  */
 
 import {DurableObject, env} from "cloudflare:workers";
-import {and, desc, eq, gte} from "drizzle-orm";
+import {and, desc, eq, gte, lt, or} from "drizzle-orm";
 import {z} from "zod";
 
 import {db} from "@/lib/db";
@@ -15,10 +15,20 @@ import * as schema from "@/lib/db/schema";
 // Overlap window when re-reading the activity log incrementally, so entries committed slightly out
 // of `createdAt` order are not missed (results are de-duplicated by id).
 const ACTIVITY_LOG_OVERLAP_MS = 10_000;
+// The room state carries only the newest activity entries (the footer shows the latest); the
+// activity page pages through older ones (`workspaces.activityLog`).
+const RECENT_ACTIVITY_LOG_ENTRIES = 50;
 
-/// Fetches activity log entries for the workspace, newest first. With `since`, only entries created
-/// at or after it (served by the (workspaceId, createdAt) index instead of re-reading the whole log).
-function getActivityLogEntries(workspaceId: string, since?: Date) {
+/// Position in the activity log, newest first: an entry's createdAt and id (ties broken by id).
+export type ActivityLogCursor = {createdAt: number; id: string};
+
+/// Fetches activity log entries for the workspace, newest first, served by the
+/// (workspaceId, createdAt) index: entries at or after `since`, or (for paging) up to `limit`
+/// entries older than `before`.
+export function getActivityLogEntries(
+  workspaceId: string,
+  {since, before, limit}: {since?: Date; before?: ActivityLogCursor; limit?: number} = {}
+) {
   return db
     .select({
       activity_log_entry: schema.activityLogEntry,
@@ -48,14 +58,21 @@ function getActivityLogEntries(workspaceId: string, since?: Date) {
       eq(schema.activityLogEntry.id, schema.workspaceActivityLogEntry.activityLogEntryId)
     )
     .where(
-      since
-        ? and(
-            eq(schema.activityLogEntry.workspaceId, workspaceId),
-            gte(schema.activityLogEntry.createdAt, since)
+      and(
+        eq(schema.activityLogEntry.workspaceId, workspaceId),
+        since && gte(schema.activityLogEntry.createdAt, since),
+        before &&
+          or(
+            lt(schema.activityLogEntry.createdAt, new Date(before.createdAt)),
+            and(
+              eq(schema.activityLogEntry.createdAt, new Date(before.createdAt)),
+              lt(schema.activityLogEntry.id, before.id)
+            )
           )
-        : eq(schema.activityLogEntry.workspaceId, workspaceId)
+      )
     )
-    .orderBy(desc(schema.activityLogEntry.createdAt));
+    .orderBy(desc(schema.activityLogEntry.createdAt), desc(schema.activityLogEntry.id))
+    .limit(limit ?? -1);
 }
 type ActivityLogEntries = Awaited<ReturnType<typeof getActivityLogEntries>>;
 
@@ -67,7 +84,8 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
   const [workspace, rounds, newActivityLogEntries] = await Promise.all([
     db.select().from(schema.organization).where(eq(schema.organization.id, workspaceId)).get(),
     db.query.round.findMany({where: {workspaceId}, with: {puzzles: true}}),
-    getActivityLogEntries(workspaceId, since),
+    // Cold: just the newest entries. Warm: only what's new since the newest cached one.
+    getActivityLogEntries(workspaceId, since ? {since} : {limit: RECENT_ACTIVITY_LOG_ENTRIES}),
   ]);
   if (!workspace) throw new Error(`Workspace ${workspaceId} not found`);
 
@@ -78,7 +96,7 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
     activityLogEntries = [
       ...newActivityLogEntries,
       ...previousActivityLog.filter(e => !seen.has(e.activity_log_entry.id)),
-    ];
+    ].slice(0, RECENT_ACTIVITY_LOG_ENTRIES);
   }
 
   // Broadcast to every member's browser: never include the Google OAuth credentials.
@@ -125,22 +143,22 @@ export class WorkspaceRoom extends DurableObject<Env> {
   /// Cache of the current workspace data (undefined until loaded, or after being dropped while no
   /// client was connected).
   workspace: WorkspaceRoomWireState | undefined;
-  /// Activity log kept across cache drops so reloads only read new entries.
+  /// Recent activity log, kept across cache drops so reloads only read new entries.
   activityLog: ActivityLogEntries | undefined;
   /// The reload currently running, and a single follow-up reload queued behind it.
   #running: Promise<void> | undefined;
   #queued: Promise<void> | undefined;
   #workspaceId: string | undefined;
+  /// `workspace` as sent to clients (recent activity only), serialized once per reload.
+  #message: string | undefined;
 
   /// Loads the workspace data and broadcasts it to all connected clients.
   async #load(workspaceId: string) {
     this.workspace = await getWorkspace(workspaceId, this.activityLog);
     this.activityLog = this.workspace.activityLogEntries;
-    const sockets = this.ctx.getWebSockets();
-    if (sockets.length === 0) return;
-    const message = JSON.stringify(this.workspace);
-    for (const ws of sockets) {
-      ws.send(message);
+    this.#message = JSON.stringify(this.workspace);
+    for (const ws of this.ctx.getWebSockets()) {
+      ws.send(this.#message);
     }
   }
 
@@ -180,22 +198,30 @@ export class WorkspaceRoom extends DurableObject<Env> {
       // Nobody to broadcast to: drop the cache instead of re-reading D1; the next connection
       // (`initialize`) reloads it.
       this.workspace = undefined;
+      this.#message = undefined;
       return;
     }
     await this.#reload(workspaceId);
+  }
+
+  /// The current room state as JSON (the same message clients receive), for server rendering.
+  async getState(workspaceId: string) {
+    this.#workspaceId = workspaceId;
+    if (!this.#message) await this.#reload(workspaceId);
+    return this.#message!;
   }
 
   /// Handles incoming WebSocket connections.
   /// Sends the current workspace data upon connection.
   async fetch() {
     // The cache may have been dropped by an `invalidate` between `initialize` and this call.
-    if (!this.workspace && this.#workspaceId) await this.#reload(this.#workspaceId);
-    if (!this.workspace) {
+    if (!this.#message && this.#workspaceId) await this.#reload(this.#workspaceId);
+    if (!this.#message) {
       return new Response("Workspace room not initialized", {status: 500});
     }
     const {"0": client, "1": server} = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
-    server.send(JSON.stringify(this.workspace));
+    server.send(this.#message);
     return new Response(null, {status: 101, webSocket: client});
   }
 }

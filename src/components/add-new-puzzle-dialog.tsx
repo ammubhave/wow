@@ -89,70 +89,73 @@ export function AddNewPuzzleDialog({
   return (
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
-        <Modal.Dialog className="sm:max-w-[425px]">
+        <Modal.Dialog>
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>Add new puzzle</Modal.Heading>
           </Modal.Header>
           <form.AppForm>
             <Modal.Body>
-              <form
-                id={form.formId}
-                onSubmit={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  void form.handleSubmit();
-                }}>
-                <div className="grid gap-4 py-4">
-                  <form.AppField
-                    name="name"
-                    validators={{onSubmit: z.string().min(1)}}
-                    children={field => (
-                      <field.TextField label="Name" autoFocus autoComplete="off" />
-                    )}
-                  />
-                  <form.AppField
-                    name="tags"
-                    children={field => (
-                      <field.ComboboxMultipleField label="Tags" items={workspace.tags ?? []} />
-                    )}
-                  />
-                  <form.AppField
-                    name="link"
-                    validators={{onSubmit: z.url().or(z.string().length(0))}}
-                    children={field => (
-                      <field.TextField
-                        label="Link"
-                        type="url"
-                        autoComplete="off"
-                        description="Link to this puzzle on the hunt website."
-                      />
-                    )}
-                  />
-                  <form.AppField
-                    name="worksheetType"
-                    children={field => {
-                      const items = [
-                        {value: "google_spreadsheet", label: "Google Spreadsheet"},
-                        {value: "google_drawing", label: "Google Drawing"},
-                      ];
-                      return (
-                        <field.SelectField
-                          label="Worksheet Type"
-                          description="The kind of puzzle worksheet you want to use."
-                          items={items}>
-                          {items.map(item => (
-                            <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
-                              {item.label}
-                              <ListBox.ItemIndicator />
-                            </ListBox.Item>
-                          ))}
-                        </field.SelectField>
-                      );
-                    }}
-                  />
-                </div>
-              </form>
+              <form.Form>
+                <form.AppField
+                  name="name"
+                  validators={{onSubmit: z.string().min(1)}}
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Name"
+                      autoFocus
+                      autoComplete="off"
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="tags"
+                  children={field => (
+                    <field.ComboboxMultipleField
+                      variant="secondary"
+                      label="Tags"
+                      items={workspace.tags ?? []}
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="link"
+                  validators={{onSubmit: z.url().or(z.string().length(0))}}
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Link"
+                      type="url"
+                      autoComplete="off"
+                      description="Link to this puzzle on the hunt website."
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="worksheetType"
+                  children={field => {
+                    const items = [
+                      {value: "google_spreadsheet", label: "Google Spreadsheet"},
+                      {value: "google_drawing", label: "Google Drawing"},
+                    ];
+                    return (
+                      <field.SelectField
+                        variant="secondary"
+                        label="Worksheet Type"
+                        description="The kind of puzzle worksheet you want to use."
+                        items={items}>
+                        {items.map(item => (
+                          <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
+                            {item.label}
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
+                      </field.SelectField>
+                    );
+                  }}
+                />
+              </form.Form>
             </Modal.Body>
             <Modal.Footer>
               <form.SubmitButton>Save</form.SubmitButton>

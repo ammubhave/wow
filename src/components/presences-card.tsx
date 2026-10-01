@@ -1,4 +1,5 @@
 import {HoverCard} from "@heroui-pro/react";
+import {chipVariants} from "@heroui/react";
 
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {useAppSelector} from "@/store";
@@ -10,8 +11,11 @@ export function PresencesCard({id}: {id: string}) {
   return (
     <HoverCard openDelay={500}>
       <HoverCard.Trigger>
-        <span className="inline-flex cursor-default items-center gap-x-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-nowrap text-green-700 hover:bg-green-200">
-          <svg viewBox="0 0 6 6" aria-hidden="true" className="h-1.5 w-1.5 shrink-0 fill-green-500">
+        <span
+          className={chipVariants({color: "success", variant: "soft", size: "sm"}).base({
+            className: "cursor-default text-nowrap",
+          })}>
+          <svg viewBox="0 0 6 6" aria-hidden="true" className="size-1.5 shrink-0 fill-current">
             <circle r={3} cx={3} cy={3} />
           </svg>
           {presences.length} Online

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/activity-
 
 function RouteComponent() {
   return (
-    <div className="p-8">
+    <div className="w-full p-8">
       <ActivityLog />
     </div>
   );

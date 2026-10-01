@@ -1,3 +1,6 @@
+import {ListView} from "@heroui-pro/react";
+import {Spinner} from "@heroui/react";
+import {useSuspenseInfiniteQuery} from "@tanstack/react-query";
 import {Link, useParams} from "@tanstack/react-router";
 import {
   CheckIcon,
@@ -8,11 +11,13 @@ import {
   PuzzleIcon,
 } from "lucide-react";
 import {memo} from "react";
+import {Collection, GridListLoadMoreItem} from "react-aria-components";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
 import {useWorkspace} from "@/hooks/use-workspace";
-import type {WorkspaceRoomState} from "@/server/do/workspace";
+import {orpc} from "@/lib/orpc";
+import type {ActivityLogCursor, WorkspaceRoomState} from "@/server/do/workspace";
 
 import {UserHoverCard} from "./user-hover-card";
 
@@ -87,10 +92,10 @@ export const ActivityLogItem = memo(function ActivityLogItem({
           </div>
         </div>
       )}
-      <p className="text-muted-foreground flex-auto py-0.5 text-xs/5">
+      <p className="text-muted flex-auto py-0.5 text-xs/5">
         {activityItem.user && (
           <UserHoverCard user={activityItem.user}>
-            <span className="hover:text-muted-foreground text-foreground cursor-default font-medium">
+            <span className="hover:text-muted text-foreground cursor-default font-medium">
               {activityItem.user.name}
             </span>
           </UserHoverCard>
@@ -149,7 +154,7 @@ export const ActivityLogItem = memo(function ActivityLogItem({
       </p>
       <time
         dateTime={activityItem.activity_log_entry.createdAt.toString()}
-        className="text-muted-foreground flex-none py-0.5 text-xs/5">
+        className="text-muted flex-none py-0.5 text-xs/5">
         {relativeTime ? (
           <RelativeTime date={activityItem.activity_log_entry.createdAt} />
         ) : (
@@ -167,36 +172,52 @@ export const ActivityLogItem = memo(function ActivityLogItem({
   );
 });
 
+/** Plain-text summary of an entry, for typeahead and screen readers. */
+function describe(entry: WorkspaceRoomState["activityLogEntries"][0]) {
+  const subject =
+    entry.puzzle_activity_log_entry?.puzzleName ?? entry.round_activity_log_entry?.roundName ?? "";
+  return [entry.user?.name, subject].filter(Boolean).join(" ") || "Activity";
+}
+
 export function ActivityLog() {
-  const workspace = useWorkspace();
+  const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
+  // The room state carries the newest entries live; older ones load page by page as you scroll.
+  const recent = useWorkspace().activityLogEntries;
+  const {data, fetchNextPage, hasNextPage, isFetchingNextPage} = useSuspenseInfiniteQuery(
+    orpc.workspaces.activityLog.infiniteOptions({
+      input: (cursor: ActivityLogCursor | null) => ({workspaceSlug, cursor}),
+      initialPageParam: null,
+      getNextPageParam: page => page.nextCursor,
+    })
+  );
+  const seen = new Set<string>();
+  const entries = [...recent, ...data.pages.flatMap(page => page.entries)].filter(entry => {
+    if (seen.has(entry.activity_log_entry.id)) return false;
+    seen.add(entry.activity_log_entry.id);
+    return true;
+  });
+
   return (
-    <div className="flex justify-center">
-      <div className="flex max-w-4xl flex-1 flex-col gap-4 md:gap-8">
-        <div className="mx-auto grid w-full max-w-6xl gap-2">
-          <h1 className="text-3xl font-semibold">Activity Log</h1>
-        </div>
-        <div className="flex w-full flex-1 flex-col">
-          <div className="flow-root">
-            {/* oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style: none, which makes Safari/VoiceOver drop implicit list semantics. */}
-            <ul role="list" className="space-y-6">
-              {workspace.activityLogEntries.map((activityItem, activityItemIdx) => (
-                <li key={activityItem.activity_log_entry.id} className="relative flex gap-x-4">
-                  <div
-                    className={cn(
-                      activityItemIdx === workspace.activityLogEntries.length - 1
-                        ? "h-6"
-                        : "-bottom-6",
-                      "absolute left-0 top-0 flex w-6 justify-center"
-                    )}>
-                    <div className="bg-border w-px" />
-                  </div>
-                  <ActivityLogItem activityItem={activityItem} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+      <h1 className="text-3xl font-semibold">Activity Log</h1>
+      <ListView aria-label="Activity log" variant="secondary">
+        <Collection items={entries}>
+          {entry => (
+            <ListView.Item id={entry.activity_log_entry.id} textValue={describe(entry)}>
+              <ListView.ItemContent>
+                <ActivityLogItem activityItem={entry} />
+              </ListView.ItemContent>
+            </ListView.Item>
+          )}
+        </Collection>
+        <GridListLoadMoreItem
+          isLoading={isFetchingNextPage}
+          onLoadMore={() => {
+            if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+          }}>
+          <Spinner size="sm" />
+        </GridListLoadMoreItem>
+      </ListView>
     </div>
   );
 }

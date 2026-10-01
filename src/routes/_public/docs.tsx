@@ -42,7 +42,7 @@ function RouteComponent() {
           </ul>
         </nav>
         <div className="flex flex-1 items-stretch justify-center">
-          <Card className="flex-1 p-8">
+          <Card className="flex-1">
             <div className="prose max-w-full">
               <Outlet />
             </div>

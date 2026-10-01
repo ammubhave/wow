@@ -1,46 +1,34 @@
+import {ORPCError} from "@orpc/client";
 import {createFileRoute, notFound, Outlet} from "@tanstack/react-router";
 import {redirect} from "@tanstack/react-router";
-import {createServerFn} from "@tanstack/react-start";
-import {getRequestHeaders} from "@tanstack/react-start/server";
-import {APIError} from "better-auth";
-import {z} from "zod";
 
 import {NotificationsWebSocket} from "@/components/notifications-websocket";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
 import {WorkspaceProvider} from "@/hooks/use-workspace";
-import {auth} from "@/lib/auth";
-import {authClient} from "@/lib/auth-client";
-
-export const isMember = createServerFn()
-  .validator(z.object({workspaceSlug: z.string()}))
-  .handler(async ({data: {workspaceSlug}}) => {
-    try {
-      await auth.api.getFullOrganization({
-        headers: getRequestHeaders(),
-        query: {organizationSlug: workspaceSlug},
-      });
-      return true;
-    } catch (e) {
-      if (e instanceof APIError) {
-        if (e.status === "FORBIDDEN") {
-          return false;
-        } else if (e.body?.code === "ORGANIZATION_NOT_FOUND") {
-          throw notFound();
-        }
-      }
-      throw e;
-    }
-  });
+import {orpc} from "@/lib/orpc";
+import {workspaceQueryOptions} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug")({
-  beforeLoad: async ({params}) => {
-    if (!(await isMember({data: {workspaceSlug: params.workspaceSlug}}))) {
-      throw redirect({
-        to: "/workspaces/join/$workspaceSlug",
-        params: {workspaceSlug: params.workspaceSlug},
-      });
+  // Loads the room state into the query cache before the board renders (in parallel with the
+  // favorites). Cached afterwards, so navigating within the workspace doesn't hit the server; the
+  // websocket keeps it current. The procedure also enforces membership.
+  loader: async ({context: {queryClient}, params: {workspaceSlug}}) => {
+    try {
+      await Promise.all([
+        queryClient.ensureQueryData(workspaceQueryOptions(workspaceSlug)),
+        // The board's favorites (it suspends on them); fetched in parallel rather than after.
+        queryClient.ensureQueryData(
+          orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
+        ),
+      ]);
+    } catch (error) {
+      if (error instanceof ORPCError && error.code === "FORBIDDEN") {
+        throw redirect({to: "/workspaces/join/$workspaceSlug", params: {workspaceSlug}});
+      }
+      if (error instanceof ORPCError && error.code === "NOT_FOUND") throw notFound();
+      throw error;
     }
   },
   component: RouteComponent,
@@ -48,9 +36,6 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug")({
 
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
-  const {data: session} = authClient.useSession();
-
-  if (!session) return null;
   return (
     // Keyed so switching workspaces starts from a clean slate (spinner) instead of briefly showing,
     // and mutating against, the previous workspace's state until the new socket's first message.

@@ -18,7 +18,7 @@ function DiscordForm({
 }) {
   const hydrated = useHydrated();
   return (
-    <form method="GET" action="https://discord.com/oauth2/authorize">
+    <form method="GET" action="https://discord.com/oauth2/authorize" className="flex gap-2">
       <input type="hidden" name="client_id" value={import.meta.env.VITE_DISCORD_CLIENT_ID} />
       <input type="hidden" name="permissions" value="1040" />
       <input type="hidden" name="response_type" value="code" />
@@ -65,12 +65,12 @@ export function DiscordCardContents({
               <div className="group relative flex items-start">
                 <span className="flex h-8 items-center">
                   {discordInfo.data.ok ? (
-                    <span className="bg-primary relative z-10 flex size-7 items-center justify-center rounded-full">
-                      <CheckIcon aria-hidden="true" className="size-4 text-white" />
+                    <span className="bg-accent relative z-10 flex size-7 items-center justify-center rounded-full">
+                      <CheckIcon aria-hidden="true" className="text-accent-foreground size-4" />
                     </span>
                   ) : (
-                    <span className="relative z-10 flex size-7 items-center justify-center rounded-full bg-red-600">
-                      <XIcon aria-hidden="true" className="size-4 text-white" />
+                    <span className="bg-danger relative z-10 flex size-7 items-center justify-center rounded-full">
+                      <XIcon aria-hidden="true" className="text-danger-foreground size-4" />
                     </span>
                   )}
                 </span>
@@ -81,7 +81,7 @@ export function DiscordCardContents({
                         ? "You're successfully connected to Discord."
                         : "There is a problem with your Discord connection."}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-muted text-xs">
                       {discordInfo.data.ok ? (
                         <>
                           Server Name:{" "}
@@ -97,7 +97,7 @@ export function DiscordCardContents({
                           </a>
                         </>
                       ) : (
-                        <span className="text-xs text-red-500">{discordInfo.data.error}</span>
+                        <span className="text-danger text-xs">{discordInfo.data.error}</span>
                       )}
                     </span>
                   </span>
@@ -116,21 +116,19 @@ export function DiscordCardContents({
             <div>
               <div className="group relative flex items-start">
                 <span aria-hidden="true" className="flex h-8 items-center">
-                  <span className="border-primary relative z-10 flex size-7 items-center justify-center rounded-full border-2 bg-white">
-                    <span className="bg-primary size-2 rounded-full" />
+                  <span className="border-accent bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
+                    <span className="bg-accent size-2 rounded-full" />
                   </span>
                 </span>
                 <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-primary text-xs font-medium">Connect with Discord</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-accent text-xs font-medium">Connect with Discord</span>
+                    <span className="text-muted text-xs">
                       You need to connect your Discord account.
                     </span>
                   </span>
                   <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                    <Button type="submit" className="gap-2">
-                      Connect with Discord
-                    </Button>
+                    <Button type="submit">Connect with Discord</Button>
                   </DiscordForm>
                 </div>
               </div>

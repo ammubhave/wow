@@ -41,30 +41,27 @@ export function EditRoundDialog({
       }}
       trigger={children}>
       <Modal.Container>
-        <Modal.Dialog aria-describedby={undefined} className="sm:max-w-[425px]">
+        <Modal.Dialog aria-describedby={undefined}>
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>Edit round</Modal.Heading>
           </Modal.Header>
           <Modal.Body>
             <form.AppForm>
-              <form
-                id={form.formId}
-                onSubmit={event => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  void form.handleSubmit();
-                }}>
-                <div className="flex w-full flex-col gap-4">
-                  <form.AppField
-                    name="name"
-                    validators={{onSubmit: z.string().min(1)}}
-                    children={field => (
-                      <field.TextField label="Name" autoFocus autoComplete="off" />
-                    )}
-                  />
-                </div>
-              </form>
+              <form.Form>
+                <form.AppField
+                  name="name"
+                  validators={{onSubmit: z.string().min(1)}}
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Name"
+                      autoFocus
+                      autoComplete="off"
+                    />
+                  )}
+                />
+              </form.Form>
             </form.AppForm>
           </Modal.Body>
           <Modal.Footer>

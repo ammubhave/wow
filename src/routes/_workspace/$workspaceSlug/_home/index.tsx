@@ -1,20 +1,22 @@
 import {
   Button,
+  buttonVariants,
   Chip,
   Dropdown,
   IconChevronDown,
   InputGroup,
+  type Key,
   Label,
   ListBox,
   ScrollShadow,
   Select,
+  type Selection,
   selectVariants,
   Separator,
+  tableVariants,
   TextField,
   ToggleButton,
   Tooltip,
-  type Key,
-  type Selection,
 } from "@heroui/react";
 import {useIsMutating, useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -27,6 +29,7 @@ import {
   InfoIcon,
   PuzzleIcon,
   SearchIcon,
+  SignalHighIcon,
   SignalIcon,
   StarIcon,
   TagIcon,
@@ -51,8 +54,8 @@ import {NO_PRESENCES} from "@/features/presences/presences";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {
-  getPuzzleImportances,
   getColorClassNamesForPuzzleImportances,
+  getPuzzleImportances,
 } from "@/lib/puzzleImportances";
 import {
   getBgColorClassNamesForPuzzleStatus,
@@ -68,57 +71,39 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
   component: RouteComponent,
 });
 
-// Plain semantic table primitives replacing the shadcn ui/table wrappers.
-// The blackboard table relies on row components returning fragments of <tr>s,
-// colSpan, and interactive cells, which fight React Aria's collection API, so a
-// native <table> preserves the exact behavior and styling.
+// Native table elements styled with HeroUI's table classes (`tableVariants`). The blackboard
+// relies on row components returning fragments of <tr>s, colSpan, and interactive cells, which
+// fight React Aria's collection API (and a grid's keyboard handling would get in the way of the
+// inline editors), so HeroUI's `Table` component isn't used. The "secondary" variant keeps cells
+// transparent so the row status colors show through; cells are denser than HeroUI's default.
+const tableSlots = tableVariants({variant: "secondary"});
+
 function Table({className, ...props}: React.ComponentProps<"table">) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-xs", className)}
-        {...props}
-      />
+    <div className={tableSlots.base()}>
+      <div className={tableSlots.scrollContainer()}>
+        <table className={tableSlots.content({className: cn("text-xs", className)})} {...props} />
+      </div>
     </div>
   );
 }
 
 function TableHeader({className, ...props}: React.ComponentProps<"thead">) {
-  return <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />;
+  return <thead className={tableSlots.header({className})} {...props} />;
 }
 
 function TableBody({className, ...props}: React.ComponentProps<"tbody">) {
-  return (
-    <tbody
-      data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
-      {...props}
-    />
-  );
+  return <tbody className={tableSlots.body({className})} {...props} />;
 }
 
 function TableRow({className, ...props}: React.ComponentProps<"tr">) {
-  return (
-    <tr
-      data-slot="table-row"
-      className={cn(
-        "hover:bg-surface-secondary/50 data-[state=selected]:bg-surface-secondary border-b transition-colors",
-        className
-      )}
-      {...props}
-    />
-  );
+  return <tr className={tableSlots.row({className})} {...props} />;
 }
 
 function TableHead({className, ...props}: React.ComponentProps<"th">) {
   return (
     <th
-      data-slot="table-head"
-      className={cn(
-        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0",
-        className
-      )}
+      className={tableSlots.column({className: cn("px-2 whitespace-nowrap", className)})}
       {...props}
     />
   );
@@ -127,8 +112,7 @@ function TableHead({className, ...props}: React.ComponentProps<"th">) {
 function TableCell({className, ...props}: React.ComponentProps<"td">) {
   return (
     <td
-      data-slot="table-cell"
-      className={cn("p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", className)}
+      className={tableSlots.cell({className: cn("p-2 text-xs whitespace-nowrap", className)})}
       {...props}
     />
   );
@@ -159,11 +143,11 @@ function getTagColor(tag: string): string {
 
 // Trigger classes for the in-cell Selects (shared by each stand-in and its real Select).
 const SELECT_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950";
+  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950";
 const PUZZLE_STATUS_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus:bg-amber-950";
+  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus:bg-amber-950";
 const IMPORTANCE_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none";
+  "-my-2 h-auto w-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none";
 
 // Sentinel id used by HeroUI ListBox/Select for the `null` status option, since
 // React Aria collection item ids cannot be null.
@@ -437,6 +421,32 @@ function PuzzleStatusSelect({
   );
 }
 
+const isSolvedStatus = (status: string | null) => status === "solved" || status === "backsolved";
+
+/**
+ * Importance only matters while a puzzle is unsolved, so it only styles unsolved rows (subtly):
+ * obsolete ones recede (until hovered or edited), important ones get a thin accent edge and
+ * slightly heavier text. Solved rows look the same whatever their importance.
+ */
+function getRowClassNamesForImportance(importance: string | null, status: string | null) {
+  if (isSolvedStatus(status)) return "";
+  if (importance === "obsolete") {
+    return "opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100";
+  }
+  if (importance === "important") {
+    return "font-medium [&>td:first-child]:shadow-[inset_2px_0_0_var(--color-accent)]";
+  }
+  return "";
+}
+
+/** The importance cell's color, likewise only for unsolved puzzles. */
+function getImportanceCellClassNames(importance: string | null, status: string | null) {
+  return isSolvedStatus(status) ? "" : getColorClassNamesForPuzzleImportances(importance);
+}
+
+// Unset importance: a ghost of "Normal" (instead of Select's "Select an item" placeholder).
+const UNSET_IMPORTANCE_ICON = <SignalHighIcon aria-hidden="true" className="opacity-25" />;
+
 function PuzzleImportanceSelect({
   value,
   onChange,
@@ -450,8 +460,8 @@ function PuzzleImportanceSelect({
   return (
     <DeferredSelect
       aria-label="Importance"
-      valueText={selected?.label ?? ""}
-      value={selected?.icon ?? null}
+      valueText={selected?.label ?? "None"}
+      value={selected?.icon ?? UNSET_IMPORTANCE_ICON}
       showIndicator={false}
       triggerClassName={triggerClassName}>
       {deferred => (
@@ -462,10 +472,10 @@ function PuzzleImportanceSelect({
           onChange={key => onChange(fromKey(key))}>
           <Select.Trigger className={triggerClassName}>
             <Select.Value>
-              {({state}) => {
-                const key = state.selectedKey;
-                return getPuzzleImportances().find(i => i.value === key)?.icon ?? null;
-              }}
+              {({state}) =>
+                getPuzzleImportances().find(i => i.value === state.selectedKey)?.icon ??
+                UNSET_IMPORTANCE_ICON
+              }
             </Select.Value>
           </Select.Trigger>
           <Select.Popover>
@@ -551,7 +561,7 @@ function RouteComponent() {
 
   const importanceFilterOptions = [
     ...getPuzzleImportances(),
-    {value: null, label: "None", icon: <SignalIcon className="text-muted-foreground" />, color: ""},
+    {value: null, label: "None", icon: <SignalIcon className="text-muted" />, color: ""},
   ];
 
   // Tags selection for the filter submenu (multiple-select keeps the menu open).
@@ -588,11 +598,11 @@ function RouteComponent() {
                 onChange={setSearch}>
                 <InputGroup>
                   <InputGroup.Prefix>
-                    <SearchIcon className="text-muted-foreground size-4" />
+                    <SearchIcon className="text-muted size-4" />
                   </InputGroup.Prefix>
                   <InputGroup.Input />
                   {search.length > 0 && (
-                    <InputGroup.Suffix className="pr-0">
+                    <InputGroup.Suffix className="pe-0">
                       <Button variant="ghost" size="sm" onPress={() => setSearch("")}>
                         Clear
                       </Button>
@@ -742,7 +752,17 @@ function RouteComponent() {
                       <TableHead>Name</TableHead>
                       <TableHead className="min-w-[150px]">Solution</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Importance</TableHead>
+                      <TableHead className="w-0 px-2">
+                        <Tooltip delay={300}>
+                          <Tooltip.Trigger>
+                            {/* Icon-only header keeps the column as narrow as its icons. */}
+                            <Button isIconOnly size="sm" variant="ghost" aria-label="Importance">
+                              <SignalIcon />
+                            </Button>
+                          </Tooltip.Trigger>
+                          <Tooltip.Content>Importance</Tooltip.Content>
+                        </Tooltip>
+                      </TableHead>
                       <TableHead>Tags</TableHead>
                       <TableHead>Working on this</TableHead>
                       <TableHead className="w-0">
@@ -840,8 +860,8 @@ const BlackboardRound = memo(function BlackboardRound({
         // Target of the sidebar's round links.
         id={round.id}
         className={cn(
-          "text-secondary-foreground group scroll-mt-20",
-          round.status === "solved" ? "bg-green-100 dark:bg-green-950" : "bg-secondary"
+          "text-foreground group scroll-mt-20",
+          round.status === "solved" ? "bg-green-100 dark:bg-green-950" : "bg-surface-secondary"
         )}>
         <TableCell className="-p-2 relative">
           <div
@@ -867,7 +887,7 @@ const BlackboardRound = memo(function BlackboardRound({
             </div>
           )}
         </TableCell>
-        <TableCell colSpan={3} className="text-muted-foreground font-semibold">
+        <TableCell colSpan={3} className="text-muted font-semibold">
           {round.name}
         </TableCell>
         <TableCell>
@@ -1146,13 +1166,14 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
         className={cn(
           "group scroll-mt-20",
           getBgColorClassNamesForPuzzleStatus(metaPuzzle.status),
+          getRowClassNamesForImportance(metaPuzzle.importance, metaPuzzle.status),
           isBeingCreated && "pointer-events-none cursor-wait opacity-70",
           isParentCollapsed ? "collapse" : ""
         )}>
         <TableCell className="p-0">
           {metaPuzzle.link && (
             <a
-              className="button button--icon-only button--ghost"
+              className={buttonVariants({variant: "ghost", isIconOnly: true})}
               aria-label={`Hunt link to ${metaPuzzle.name}`}
               href={metaPuzzle.link}
               target="_blank"
@@ -1228,7 +1249,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             }}
             triggerClassName={cn(
               IMPORTANCE_TRIGGER_CLASS,
-              getColorClassNamesForPuzzleImportances(metaPuzzle.importance)
+              getImportanceCellClassNames(metaPuzzle.importance, metaPuzzle.status)
             )}
           />
         </TableCell>
@@ -1265,7 +1286,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
               isSelected={isFavorite}
               onChange={value => toggleFavorite(metaPuzzle.id, value)}
               className="group/toggle">
-              <StarIcon className="stroke-muted-foreground group-data-selected/toggle:fill-primary group-data-selected/toggle:stroke-primary" />
+              <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
             </ToggleButton>
             <Dropdown>
               <Button variant="ghost" isIconOnly>
@@ -1354,7 +1375,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             </div>
             <span className="relative scroll-mt-20" />
           </TableCell>
-          <TableCell colSpan={6} className="text-muted-foreground text-xs italic">
+          <TableCell colSpan={6} className="text-muted text-xs italic">
             There are no visible puzzles feeding this meta puzzle.
           </TableCell>
         </TableRow>
@@ -1394,13 +1415,14 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       <TableRow
         className={cn(
           getBgColorClassNamesForPuzzleStatus(puzzle.status),
+          getRowClassNamesForImportance(puzzle.importance, puzzle.status),
           isBeingCreated && "pointer-events-none cursor-wait opacity-70",
           isCollapsed ? "collapse" : ""
         )}>
         <TableCell className="p-0">
           {puzzle.link && (
             <a
-              className="button button--icon-only button--ghost"
+              className={buttonVariants({variant: "ghost", isIconOnly: true})}
               title="Hunt Link to this puzzle"
               aria-label={`Hunt link to ${puzzle.name}`}
               href={puzzle.link}
@@ -1469,7 +1491,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             }}
             triggerClassName={cn(
               IMPORTANCE_TRIGGER_CLASS,
-              getColorClassNamesForPuzzleImportances(puzzle.importance)
+              getImportanceCellClassNames(puzzle.importance, puzzle.status)
             )}
           />
         </TableCell>
@@ -1506,7 +1528,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
               isSelected={isFavorite}
               onChange={value => toggleFavorite(puzzle.id, value)}
               className="group/toggle">
-              <StarIcon className="stroke-muted-foreground group-data-selected/toggle:fill-primary group-data-selected/toggle:stroke-primary" />
+              <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
             </ToggleButton>
             <Dropdown>
               <Button variant="ghost" isIconOnly>

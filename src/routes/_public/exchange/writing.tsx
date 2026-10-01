@@ -11,7 +11,7 @@ function RouteComponent() {
         <Breadcrumbs.Item>Writing</Breadcrumbs.Item>
       </Breadcrumbs>
       <h1 className="mb-4 text-center text-2xl font-bold">Wafflehaüs's Guide to Writing Puzzles</h1>
-      <Card className="flex-1 p-8">
+      <Card className="flex-1">
         <div className="prose max-w-full">
           <p>
             <i>Congratulations on writing a puzzle for the Wafflehaüs Puzzle Exchange!</i>

@@ -1,4 +1,4 @@
-import {Card} from "@heroui/react";
+import {buttonVariants, Card} from "@heroui/react";
 import {useQueryClient} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
@@ -66,7 +66,7 @@ function RouteComponent() {
     <div className="flex w-full justify-center">
       <div className="flex max-w-3xl flex-1 flex-col items-stretch gap-2">
         <div>
-          <Link to="/workspaces" className="button button--outline button--sm gap-2">
+          <Link to="/workspaces" className={buttonVariants({variant: "outline", size: "sm"})}>
             <ArrowLeftIcon /> Back
           </Link>
         </div>
@@ -81,30 +81,31 @@ function RouteComponent() {
             </Card.Header>
             <Card.Content>
               <form.Form>
-                <div className="flex w-full flex-col gap-4">
-                  <form.AppField
-                    name="teamName"
-                    validators={{onBlur: z.string().min(1)}}
-                    children={field => <field.TextField label="Team Name" />}
-                  />
-                  <form.AppField
-                    name="eventName"
-                    children={field => <field.TextField label="Event Name" />}
-                  />
-                  <form.AppField
-                    name="workspaceSlug"
-                    children={field => (
-                      <field.TextField
-                        label="Workspace ID"
-                        description="This is the ID that will be used to identify your workspace and will be used by other users to join your workspace. (E.g. myteam2025)"
-                      />
-                    )}
-                  />
-                  <form.AppField
-                    name="password"
-                    children={field => <field.TextField label="Workspace Password" />}
-                  />
-                </div>
+                <form.AppField
+                  name="teamName"
+                  validators={{onBlur: z.string().min(1)}}
+                  children={field => <field.TextField variant="secondary" label="Team Name" />}
+                />
+                <form.AppField
+                  name="eventName"
+                  children={field => <field.TextField variant="secondary" label="Event Name" />}
+                />
+                <form.AppField
+                  name="workspaceSlug"
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Workspace ID"
+                      description="This is the ID that will be used to identify your workspace and will be used by other users to join your workspace. (E.g. myteam2025)"
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="password"
+                  children={field => (
+                    <field.TextField variant="secondary" label="Workspace Password" />
+                  )}
+                />
               </form.Form>
             </Card.Content>
             <Card.Footer>

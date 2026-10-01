@@ -71,118 +71,125 @@ export function EditPuzzleDialog({
       }}
       trigger={children}>
       <Modal.Container>
-        <Modal.Dialog aria-describedby={undefined} className="sm:max-w-106.25">
+        <Modal.Dialog aria-describedby={undefined}>
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>Edit puzzle</Modal.Heading>
           </Modal.Header>
           <Modal.Body>
             <form.AppForm>
-              <form
-                id={form.formId}
-                onSubmit={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  void form.handleSubmit();
-                }}>
-                <div className="flex w-full flex-col gap-4">
-                  <form.AppField
-                    name="name"
-                    validators={{onSubmit: z.string().min(1)}}
-                    children={field => <field.TextField label="Name" autoComplete="off" />}
-                  />
-                  <form.AppField
-                    name="parentPuzzleId"
-                    children={field => {
-                      const items = [
-                        ...(workspace.rounds
-                          .flatMap(r => [
-                            {
-                              id: r.id,
-                              name:
-                                r.metaPuzzles.length > 0
-                                  ? r.name
-                                  : `${r.name} (Unassigned Puzzles)`,
-                              disabled: r.metaPuzzles.length > 0,
-                            },
-                            ...r.metaPuzzles,
-                          ])
-                          .map(p => ({
-                            value: p.id,
-                            label: p.name,
-                            disabled: "disabled" in p ? p.disabled : false,
-                          })) ?? []),
-                      ];
-                      return (
-                        <field.SelectField label="Feeds Into" items={items}>
-                          {items.map(item => (
-                            <ListBox.Item
-                              key={item.value}
-                              id={item.value ?? ""}
-                              textValue={item.label}
-                              isDisabled={item.disabled}>
-                              {item.label}
-                              <ListBox.ItemIndicator />
-                            </ListBox.Item>
-                          ))}
-                        </field.SelectField>
-                      );
-                    }}
-                  />
-                  <form.AppField
-                    name="answer"
-                    children={field => (
-                      <field.TextField label="Answer" className="font-mono" autoComplete="off" />
-                    )}
-                  />
-                  <form.AppField
-                    name="status"
-                    children={field => {
-                      return (
-                        <field.SelectField label="Status" items={getPuzzleStatusOptions()}>
-                          {getPuzzleStatusGroups().map(group => (
-                            <ListBox.Section
-                              key={group.groupLabel}
-                              aria-label={group.groupLabel}
-                              className={group.bgColorNoHover}>
-                              {group.values.map(option => (
-                                <ListBox.Item
-                                  key={option.value}
-                                  id={option.value ?? ""}
-                                  textValue={option.label}>
-                                  {option.label}
-                                  <ListBox.ItemIndicator />
-                                </ListBox.Item>
-                              ))}
-                            </ListBox.Section>
-                          ))}
-                        </field.SelectField>
-                      );
-                    }}
-                  />
-                  <form.AppField
-                    name="tags"
-                    children={field => (
-                      <field.ComboboxMultipleField label="Tags" items={workspace.tags} />
-                    )}
-                  />
-                  <form.AppField
-                    name="link"
-                    children={field => (
-                      <field.TextField
-                        label="Link"
-                        description="Link to this puzzle on the hunt website."
-                        type="url"
-                        autoComplete="off"
-                      />
-                    )}
-                  />
-                  <form.AppField
-                    name="isMetaPuzzle"
-                    children={field => <field.CheckboxField label="Is this a meta puzzle?" />}
-                  />
-                </div>
-              </form>
+              <form.Form>
+                <form.AppField
+                  name="name"
+                  validators={{onSubmit: z.string().min(1)}}
+                  children={field => (
+                    <field.TextField variant="secondary" label="Name" autoComplete="off" />
+                  )}
+                />
+                <form.AppField
+                  name="parentPuzzleId"
+                  children={field => {
+                    const items = [
+                      ...(workspace.rounds
+                        .flatMap(r => [
+                          {
+                            id: r.id,
+                            name:
+                              r.metaPuzzles.length > 0 ? r.name : `${r.name} (Unassigned Puzzles)`,
+                            disabled: r.metaPuzzles.length > 0,
+                          },
+                          ...r.metaPuzzles,
+                        ])
+                        .map(p => ({
+                          value: p.id,
+                          label: p.name,
+                          disabled: "disabled" in p ? p.disabled : false,
+                        })) ?? []),
+                    ];
+                    return (
+                      <field.SelectField variant="secondary" label="Feeds Into" items={items}>
+                        {items.map(item => (
+                          <ListBox.Item
+                            key={item.value}
+                            id={item.value ?? ""}
+                            textValue={item.label}
+                            isDisabled={item.disabled}>
+                            {item.label}
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
+                      </field.SelectField>
+                    );
+                  }}
+                />
+                <form.AppField
+                  name="answer"
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Answer"
+                      className="font-mono"
+                      autoComplete="off"
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="status"
+                  children={field => {
+                    return (
+                      <field.SelectField
+                        variant="secondary"
+                        label="Status"
+                        items={getPuzzleStatusOptions()}>
+                        {getPuzzleStatusGroups().map(group => (
+                          <ListBox.Section
+                            key={group.groupLabel}
+                            aria-label={group.groupLabel}
+                            className={group.bgColorNoHover}>
+                            {group.values.map(option => (
+                              <ListBox.Item
+                                key={option.value}
+                                id={option.value ?? ""}
+                                textValue={option.label}>
+                                {option.label}
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                            ))}
+                          </ListBox.Section>
+                        ))}
+                      </field.SelectField>
+                    );
+                  }}
+                />
+                <form.AppField
+                  name="tags"
+                  children={field => (
+                    <field.ComboboxMultipleField
+                      variant="secondary"
+                      label="Tags"
+                      items={workspace.tags}
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="link"
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Link"
+                      description="Link to this puzzle on the hunt website."
+                      type="url"
+                      autoComplete="off"
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="isMetaPuzzle"
+                  children={field => (
+                    <field.CheckboxField variant="secondary" label="Is this a meta puzzle?" />
+                  )}
+                />
+              </form.Form>
             </form.AppForm>
           </Modal.Body>
           <Modal.Footer>

@@ -18,9 +18,7 @@ export function AppSidebar({
 }: {workspaceSlug: string; rounds: WorkspaceRoomState["rounds"]} & React.ComponentProps<"div">) {
   const workspace = useWorkspace();
   return (
-    <div
-      className="bg-sidebar border-sidebar-border relative w-full max-w-[16rem] border-l"
-      {...props}>
+    <div className="bg-background relative w-full max-w-[16rem] border-l" {...props}>
       <div className="absolute inset-0 flex flex-col overflow-y-auto">
         <div className="min-h-50 overflow-y-auto p-2">
           <CommentBox
@@ -71,7 +69,7 @@ const SidebarRound = memo(function SidebarRound({
       <a
         href={"#" + round.id}
         className={cn(
-          "text-primary underline underline-offset-4",
+          "text-accent underline underline-offset-4",
           getBgColorClassNamesForPuzzleStatus(round.status)
         )}>
         {round.name}
@@ -86,7 +84,7 @@ const SidebarRound = memo(function SidebarRound({
                   // The tooltip only describes; give the bare number square a real name.
                   aria-label={`${number}. ${puzzle.name}`}
                   className={cn(
-                    "size-4 text-[8px] flex items-center justify-center text-primary border",
+                    "size-4 text-[8px] flex items-center justify-center text-accent border",
                     getBgColorClassNamesForPuzzleStatus(puzzle.status)
                   )}
                   href={"#" + puzzle.id}>

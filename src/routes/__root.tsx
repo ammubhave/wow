@@ -55,7 +55,7 @@ function RootDocument({children}: {children: React.ReactNode}) {
         <HeadContent />
       </head>
       <body>
-        {/* 16px default, as shadcn applied via [&_svg]:size-4 in buttons and menus. */}
+        {/* Lucide defaults to 24px icons; HeroUI only sizes icons inside some components (e.g. small buttons), so default every icon to 16px. */}
         <LucideProvider size={16}>
           <ThemeProvider defaultTheme="system" storageKey="ui-theme">
             <PostHogProvider

@@ -51,19 +51,13 @@ function UpdateLinksCard() {
       </Card.Header>
       <form.AppForm>
         <Card.Content>
-          <form
-            id={form.formId}
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}>
+          <form.Form>
             <form.Field name="links" mode="array">
               {field => (
                 <div className="flex flex-col gap-1">
                   {field.state.value.map((_, i) => (
                     // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array fields are bound by index (`links[${i}]`), so the index is the row's identity; the values are free-text and may be empty or duplicated, so there is no stable data key.
-                    <InputGroup key={i}>
+                    <InputGroup key={i} variant="secondary">
                       <form.AppField
                         name={`links[${i}].name`}
                         children={nameField => (
@@ -89,7 +83,7 @@ function UpdateLinksCard() {
                           />
                         )}
                       />
-                      <InputGroup.Suffix className="pr-0">
+                      <InputGroup.Suffix className="pe-0">
                         <Button
                           isIconOnly
                           variant="secondary"
@@ -112,7 +106,7 @@ function UpdateLinksCard() {
                 </div>
               )}
             </form.Field>
-          </form>
+          </form.Form>
         </Card.Content>
         <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>
@@ -187,49 +181,39 @@ function DetailsCard() {
       </Card.Header>
       <form.AppForm>
         <Card.Content>
-          <form
-            id={form.formId}
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}>
-            <div className="flex w-full flex-col gap-4">
-              <form.AppField
-                name="teamName"
-                children={field => <field.TextField label="Team Name" />}
-              />
-              <form.AppField
-                name="eventName"
-                children={field => <field.TextField label="Event Name" />}
-              />
-              <div className="flex flex-col gap-2">
-                <Label>Invitation Link</Label>
-                <p className="text-muted-foreground flex items-center gap-2 text-xs">
-                  https://join.wafflehaus.io/{workspaceSlug}
-                  <Button
-                    variant="ghost"
-                    isIconOnly
-                    type="button"
-                    aria-label="Copy invitation link"
-                    onPress={() => {
-                      toast.promise(
-                        navigator.clipboard.writeText(
-                          `https://join.wafflehaus.io/${workspaceSlug}`
-                        ),
-                        {
-                          loading: "Copying...",
-                          success: "Join link copied!",
-                          error: "Oops! Something went wrong.",
-                        }
-                      );
-                    }}>
-                    <CopyIcon />
-                  </Button>
-                </p>
-              </div>
+          <form.Form>
+            <form.AppField
+              name="teamName"
+              children={field => <field.TextField variant="secondary" label="Team Name" />}
+            />
+            <form.AppField
+              name="eventName"
+              children={field => <field.TextField variant="secondary" label="Event Name" />}
+            />
+            <div className="flex flex-col gap-1">
+              <Label>Invitation Link</Label>
+              <p className="text-muted flex items-center gap-2 text-xs">
+                https://join.wafflehaus.io/{workspaceSlug}
+                <Button
+                  variant="ghost"
+                  isIconOnly
+                  type="button"
+                  aria-label="Copy invitation link"
+                  onPress={() => {
+                    toast.promise(
+                      navigator.clipboard.writeText(`https://join.wafflehaus.io/${workspaceSlug}`),
+                      {
+                        loading: "Copying...",
+                        success: "Join link copied!",
+                        error: "Oops! Something went wrong.",
+                      }
+                    );
+                  }}>
+                  <CopyIcon />
+                </Button>
+              </p>
             </div>
-          </form>
+          </form.Form>
         </Card.Content>
         <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>
@@ -264,20 +248,14 @@ function UpdateTagsCard() {
         </Card.Description>
       </Card.Header>
       <form.AppForm>
-        <Card.Content className="space-y-4">
-          <form
-            id={form.formId}
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}>
+        <Card.Content>
+          <form.Form>
             <form.Field name="tags" mode="array">
               {field => (
                 <div className="flex flex-col gap-1">
                   {field.state.value.map((_, i) => (
                     // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array fields are bound by index (`tags[${i}]`), so the index is the row's identity; the values are free-text and may be empty or duplicated, so there is no stable data key.
-                    <InputGroup key={i}>
+                    <InputGroup key={i} variant="secondary">
                       <form.AppField
                         name={`tags[${i}]`}
                         children={tagField => (
@@ -289,7 +267,7 @@ function UpdateTagsCard() {
                           />
                         )}
                       />
-                      <InputGroup.Suffix className="pr-0">
+                      <InputGroup.Suffix className="pe-0">
                         <Button
                           isIconOnly
                           variant="secondary"
@@ -312,7 +290,7 @@ function UpdateTagsCard() {
                 </div>
               )}
             </form.Field>
-          </form>
+          </form.Form>
         </Card.Content>
         <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>

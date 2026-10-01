@@ -89,17 +89,11 @@ function WorkspacePasswordCard() {
       </Card.Header>
       <form.AppForm>
         <Card.Content>
-          <form
-            id={form.formId}
-            onSubmit={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}>
+          <form.Form>
             <form.AppField name="password" validators={{onSubmit: z.string().min(8)}}>
-              {field => <field.TextField aria-label="Workspace password" />}
+              {field => <field.TextField variant="secondary" aria-label="Workspace password" />}
             </form.AppField>
-          </form>
+          </form.Form>
         </Card.Content>
         <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>

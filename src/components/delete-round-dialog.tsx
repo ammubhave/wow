@@ -21,8 +21,8 @@ export function DeleteRoundDialog({
   const mutation = useMutation(workspaceMutations.rounds.delete());
   return (
     <ControlledAlertDialog isOpen={open} onOpenChange={setOpen} trigger={children}>
-      <AlertDialog.Container>
-        <AlertDialog.Dialog className="sm:max-w-[400px]">
+      <AlertDialog.Container size="sm">
+        <AlertDialog.Dialog>
           <AlertDialog.CloseTrigger />
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />

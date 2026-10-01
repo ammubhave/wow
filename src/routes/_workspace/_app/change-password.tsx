@@ -1,4 +1,4 @@
-import {Card} from "@heroui/react";
+import {buttonVariants, Card} from "@heroui/react";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -35,7 +35,7 @@ function RouteComponent() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Link to="/workspaces" className="button button--outline button--sm gap-2">
+            <Link to="/workspaces" className={buttonVariants({variant: "outline", size: "sm"})}>
               <ArrowLeftIcon /> Back
             </Link>
           </div>
@@ -47,29 +47,27 @@ function RouteComponent() {
             <Card.Content>
               <form.AppForm>
                 <form.Form>
-                  <div className="flex w-full flex-col gap-4">
-                    <form.AppField name="currentPassword">
-                      {field => (
-                        <field.TextField
-                          label="Current Password"
-                          type="password"
-                          autoComplete="current-password"
-                        />
-                      )}
-                    </form.AppField>
-                    <form.AppField name="newPassword">
-                      {field => (
-                        <field.TextField
-                          label="New Password"
-                          type="password"
-                          autoComplete="new-password"
-                        />
-                      )}
-                    </form.AppField>
-                    <div className="flex w-full flex-col gap-4">
-                      <form.SubmitButton>Change password</form.SubmitButton>
-                    </div>
-                  </div>
+                  <form.AppField name="currentPassword">
+                    {field => (
+                      <field.TextField
+                        variant="secondary"
+                        label="Current Password"
+                        type="password"
+                        autoComplete="current-password"
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="newPassword">
+                    {field => (
+                      <field.TextField
+                        variant="secondary"
+                        label="New Password"
+                        type="password"
+                        autoComplete="new-password"
+                      />
+                    )}
+                  </form.AppField>
+                  <form.SubmitButton fullWidth>Change password</form.SubmitButton>
                 </form.Form>
               </form.AppForm>
             </Card.Content>

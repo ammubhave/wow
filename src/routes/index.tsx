@@ -1,3 +1,4 @@
+import {buttonVariants} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 
 import {CoffeeIcon} from "@/components/coffee-icon";
@@ -17,10 +18,10 @@ function App() {
               Wafflehaüs Organized Workspaces
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center gap-4 sm:flex-row">
-              <Link className="button button--ghost" to="/docs">
+              <Link className={buttonVariants({variant: "ghost"})} to="/docs">
                 Documentation
               </Link>
-              <Link className="button button--primary" to="/workspaces">
+              <Link className={buttonVariants({variant: "primary"})} to="/workspaces">
                 My Workspaces
               </Link>
             </div>
@@ -39,10 +40,10 @@ function App() {
                   google spreadsheets, discord channels, and more.
                 </p>
                 <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Link className="button button--primary" to="/workspaces">
+                  <Link className={buttonVariants({variant: "primary"})} to="/workspaces">
                     Get Started
                   </Link>
-                  <Link to="/docs" className="button button--ghost gap-2">
+                  <Link to="/docs" className={buttonVariants({variant: "ghost"})}>
                     Learn more <span aria-hidden="true">→</span>
                   </Link>
                 </div>
@@ -54,17 +55,20 @@ function App() {
           <div className="flex max-w-7xl flex-1 flex-col flex-wrap items-center justify-between gap-4 px-8 text-sm sm:flex-row">
             <div>
               <p className="text-background flex flex-col items-center gap-4 text-sm font-semibold sm:flex-row">
-                <Link className="hover:text-primary" to="/tos">
+                <Link className="hover:text-accent" to="/tos">
                   Terms of Service
                 </Link>
-                <Link className="hover:text-primary" to="/privacy-policy">
+                <Link className="hover:text-accent" to="/privacy-policy">
                   Privacy Policy
                 </Link>
               </p>
             </div>
             <div className="max-w-md text-sm">
               <a
-                className="button button--secondary gap-2 font-['Cookie'] text-xl"
+                className={buttonVariants({
+                  variant: "secondary",
+                  className: "font-['Cookie'] text-xl",
+                })}
                 href="https://www.buymeacoffee.com/amolbhave"
                 target="_blank"
                 rel="noopener noreferrer">

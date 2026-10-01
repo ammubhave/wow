@@ -1,5 +1,13 @@
 import {Resizable} from "@heroui-pro/react/resizable";
-import {Accordion, Button, ButtonGroup, InputGroup, ListBox, Tooltip} from "@heroui/react";
+import {
+  Accordion,
+  Button,
+  ButtonGroup,
+  buttonVariants,
+  InputGroup,
+  ListBox,
+  Tooltip,
+} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {BrushIcon, EditIcon, PuzzleIcon, TableIcon} from "lucide-react";
@@ -143,7 +151,7 @@ function PuzzleInfoPanel({
         "flex min-w-0 flex-1 flex-col",
         getBgColorClassNamesForPuzzleStatusNoHover(puzzle.status)
       )}>
-      <div className="bg-surface-secondary/50 flex w-full flex-wrap items-center gap-2.5 rounded-md px-3 py-2.5 text-xs/relaxed">
+      <div className="bg-surface-secondary/50 flex w-full flex-wrap items-center gap-2.5 px-3 py-2.5 text-xs/relaxed">
         <div className="flex flex-1 flex-col gap-1">
           <div className="line-clamp-1 flex w-fit items-center gap-2 text-xs/relaxed leading-snug font-medium underline-offset-4">
             {puzzle.name}
@@ -155,7 +163,7 @@ function PuzzleInfoPanel({
               <Tooltip.Trigger>
                 <a
                   aria-label="Google spreadsheet"
-                  className="button button--icon-only button--sm button--ghost"
+                  className={buttonVariants({variant: "ghost", size: "sm", isIconOnly: true})}
                   href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
                   target="_blank"
                   rel="noopener noreferrer">
@@ -170,7 +178,7 @@ function PuzzleInfoPanel({
               <Tooltip.Trigger>
                 <a
                   aria-label="Google drawing"
-                  className="button button--icon-only button--sm button--ghost"
+                  className={buttonVariants({variant: "ghost", size: "sm", isIconOnly: true})}
                   href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
                   target="_blank"
                   rel="noopener noreferrer">
@@ -185,7 +193,7 @@ function PuzzleInfoPanel({
               <Tooltip.Trigger>
                 <a
                   aria-label="Puzzle page on the hunt website"
-                  className="button button--icon-only button--sm button--ghost"
+                  className={buttonVariants({variant: "ghost", size: "sm", isIconOnly: true})}
                   href={puzzle.link}
                   target="_blank"
                   rel="noopener noreferrer">
@@ -238,7 +246,11 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                    <span
+                      className={buttonVariants({
+                        variant: "primary",
+                        className: "pointer-events-none min-w-22 shrink-0",
+                      })}>
                       Answer
                     </span>
                     <InputGroup className="min-w-0 flex-1">
@@ -268,7 +280,11 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                    <span
+                      className={buttonVariants({
+                        variant: "primary",
+                        className: "pointer-events-none min-w-22 shrink-0",
+                      })}>
                       Status
                     </span>
                     <InputGroup className="min-w-0 flex-1">
@@ -305,7 +321,11 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                    <span
+                      className={buttonVariants({
+                        variant: "primary",
+                        className: "pointer-events-none min-w-22 shrink-0",
+                      })}>
                       Importance
                     </span>
                     <InputGroup className="min-w-0 flex-1">
@@ -348,7 +368,11 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                    <span
+                      className={buttonVariants({
+                        variant: "primary",
+                        className: "pointer-events-none min-w-22 shrink-0",
+                      })}>
                       Tags
                     </span>
                     <InputGroup className="h-auto min-w-0 flex-1">

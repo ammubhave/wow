@@ -54,39 +54,45 @@ export function MakeAccouncementDialog({
           <Modal.Body>
             <form.AppForm>
               <form.Form>
-                <div className="flex w-full flex-col gap-4">
-                  <form.AppField
-                    name="message"
-                    validators={{onSubmit: z.string().min(1)}}
-                    children={field => (
-                      <field.TextareaField label="Message" autoFocus autoComplete="off" />
-                    )}
-                  />
-                  {discordTextChannels.data && (
-                    <form.AppField
-                      name="channelId"
-                      children={field => {
-                        const items = [
-                          {value: "", label: "None"},
-                          ...discordTextChannels.data!.map(c => ({
-                            value: c.id,
-                            label: `#${c.name ?? c.id}`,
-                          })),
-                        ];
-                        return (
-                          <field.SelectField label="Discord Channel" items={items}>
-                            {items.map(item => (
-                              <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
-                                {item.label}
-                                <ListBox.ItemIndicator />
-                              </ListBox.Item>
-                            ))}
-                          </field.SelectField>
-                        );
-                      }}
+                <form.AppField
+                  name="message"
+                  validators={{onSubmit: z.string().min(1)}}
+                  children={field => (
+                    <field.TextareaField
+                      variant="secondary"
+                      label="Message"
+                      autoFocus
+                      autoComplete="off"
                     />
                   )}
-                </div>
+                />
+                {discordTextChannels.data && (
+                  <form.AppField
+                    name="channelId"
+                    children={field => {
+                      const items = [
+                        {value: "", label: "None"},
+                        ...discordTextChannels.data!.map(c => ({
+                          value: c.id,
+                          label: `#${c.name ?? c.id}`,
+                        })),
+                      ];
+                      return (
+                        <field.SelectField
+                          variant="secondary"
+                          label="Discord Channel"
+                          items={items}>
+                          {items.map(item => (
+                            <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
+                              {item.label}
+                              <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                          ))}
+                        </field.SelectField>
+                      );
+                    }}
+                  />
+                )}
               </form.Form>
             </form.AppForm>
           </Modal.Body>

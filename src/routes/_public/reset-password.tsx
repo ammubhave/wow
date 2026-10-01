@@ -44,22 +44,17 @@ function RouteComponent() {
           <Card.Content>
             <form.AppForm>
               <form.Form>
-                <div className="flex w-full flex-col gap-4">
-                  <form.AppField name="password">
-                    {field => (
-                      <field.TextField
-                        label="Password"
-                        type="password"
-                        autoComplete="new-password"
-                      />
-                    )}
-                  </form.AppField>
-                  <div className="flex w-full flex-col gap-4">
-                    <div className="flex w-full flex-col gap-2">
-                      <form.SubmitButton>Reset password</form.SubmitButton>
-                    </div>
-                  </div>
-                </div>
+                <form.AppField name="password">
+                  {field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Password"
+                      type="password"
+                      autoComplete="new-password"
+                    />
+                  )}
+                </form.AppField>
+                <form.SubmitButton fullWidth>Reset password</form.SubmitButton>
               </form.Form>
             </form.AppForm>
           </Card.Content>

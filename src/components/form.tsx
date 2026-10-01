@@ -20,6 +20,7 @@ import {
 } from "@heroui/react";
 import {createFormHook, createFormHookContexts} from "@tanstack/react-form";
 import React from "react";
+import {cn} from "tailwind-variants";
 
 const {fieldContext, formContext, useFieldContext, useFormContext} = createFormHookContexts();
 
@@ -47,15 +48,21 @@ function InputGroupTextareaField(props: React.ComponentProps<typeof InputGroup.T
   );
 }
 
+// `variant="secondary"` is HeroUI's lower-emphasis field style for fields placed on a surface
+// (Card, Surface, Modal, Popover, ...); the default "primary" is for the page background.
+type FieldVariant = "primary" | "secondary";
+
 function FormTextField({
   label,
   description,
+  variant,
   ...props
 }: {label?: string; description?: React.ReactNode | string} & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.errors.length > 0;
   return (
     <TextField
+      variant={variant}
       isInvalid={isInvalid}
       value={field.state.value}
       onChange={value => field.handleChange(value)}
@@ -71,6 +78,7 @@ function FormTextField({
 function TextareaField({
   label,
   description,
+  variant,
   ...props
 }: {label?: string; description?: React.ReactNode | string} & React.ComponentProps<
   typeof TextArea
@@ -79,6 +87,7 @@ function TextareaField({
   const isInvalid = field.state.meta.errors.length > 0;
   return (
     <TextField
+      variant={variant}
       isInvalid={isInvalid}
       value={field.state.value}
       onChange={value => field.handleChange(value)}
@@ -159,12 +168,14 @@ function ComboboxMultipleField({
   label,
   items,
   className,
+  variant,
   defaultOpen,
   onOpenChange,
 }: {
   label?: string;
   items: string[];
   className?: string;
+  variant?: FieldVariant;
   defaultOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
 }) {
@@ -174,6 +185,7 @@ function ComboboxMultipleField({
     field.handleChange(field.state.value.filter(value => !keys.has(value)));
   return (
     <Autocomplete
+      variant={variant}
       selectionMode="multiple"
       placeholder="Select tags"
       aria-label={label ? undefined : "Tags"}
@@ -245,7 +257,8 @@ function SubmitButton({children, ...props}: React.ComponentProps<typeof Button>)
   );
 }
 
-function Form(props: React.ComponentPropsWithRef<"form">) {
+// HeroUI's form layout (Form/Fieldset docs): a column of fields `gap-4` apart.
+function Form({className, ...props}: React.ComponentPropsWithRef<"form">) {
   const form = useFormContext();
   return (
     <form
@@ -255,6 +268,7 @@ function Form(props: React.ComponentPropsWithRef<"form">) {
         e.stopPropagation();
         void form.handleSubmit();
       }}
+      className={cn("flex flex-col gap-4", className)}
       {...props}
     />
   );

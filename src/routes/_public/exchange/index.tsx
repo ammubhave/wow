@@ -1,7 +1,9 @@
-import {Accordion, Button} from "@heroui/react";
+import {ItemCard, ItemCardGroup} from "@heroui-pro/react";
+import {Accordion, Button, buttonVariants, Separator} from "@heroui/react";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronDownIcon, ChevronRightIcon, PlusIcon} from "lucide-react";
+import {Fragment} from "react";
 
 import {AddNewExchangeHuntDialog} from "@/components/add-new-exchange-hunt-dialog";
 import {orpc} from "@/lib/orpc";
@@ -58,7 +60,7 @@ function RouteComponent() {
           <Accordion.Panel>
             <Accordion.Body>
               <p>Reach out to Allen on Discord!</p>
-              <Link to="/exchange/writing" className="button button--outline">
+              <Link to="/exchange/writing" className={buttonVariants({variant: "outline"})}>
                 Learn about writing WPE puzzles
               </Link>
             </Accordion.Body>
@@ -78,30 +80,25 @@ function RouteComponent() {
           </div>
         )}
       </div>
-      <ul
-        // oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style:none, which makes Safari/VoiceOver drop the implicit list role
-        role="list"
-        className="divide-border outline-border bg-background dark:bg-input/30 dark:outline-input divide-y overflow-hidden shadow-xs outline-1 sm:rounded-xl dark:shadow-none dark:sm:-outline-offset-1">
-        {hunts.map(hunt => (
-          <li
-            key={hunt.id}
-            className="hover:bg-surface-secondary dark:hover:bg-input/50 relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
-            <div className="flex min-w-0 gap-x-4">
-              <div className="min-w-0 flex-auto">
-                <p className="text-sm/6 font-semibold">
-                  <Link to="/exchange/hunts/$huntId" params={{huntId: hunt.id}}>
-                    <span className="absolute inset-x-0 -top-px bottom-0" />
-                    {hunt.name}
-                  </Link>
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-x-4">
-              <ChevronRightIcon aria-hidden="true" className="text-foreground size-5 flex-none" />
-            </div>
-          </li>
+      <ItemCardGroup className="overflow-hidden">
+        {hunts.map((hunt, i) => (
+          <Fragment key={hunt.id}>
+            {i > 0 && <Separator />}
+            <ItemCard<"a">
+              className="hover:bg-default/20 active:bg-default-hover/50 relative w-full overflow-hidden transition-colors"
+              render={props => (
+                <Link {...props} to="/exchange/hunts/$huntId" params={{huntId: hunt.id}} />
+              )}>
+              <ItemCard.Content>
+                <ItemCard.Title>{hunt.name}</ItemCard.Title>
+              </ItemCard.Content>
+              <ItemCard.Action>
+                <ChevronRightIcon aria-hidden="true" className="text-muted size-4" />
+              </ItemCard.Action>
+            </ItemCard>
+          </Fragment>
         ))}
-      </ul>
+      </ItemCardGroup>
     </div>
   );
 }

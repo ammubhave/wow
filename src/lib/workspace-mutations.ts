@@ -22,12 +22,11 @@ import {
   type QueryClient,
   queryOptions,
   replaceEqualDeep,
-  skipToken,
 } from "@tanstack/react-query";
 import {toast} from "sonner";
 import {v7 as uuid7} from "uuid";
 
-import {orpc} from "@/lib/orpc";
+import {client as rpcClient, orpc} from "@/lib/orpc";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
 import type {RouterInputs} from "@/server/router";
 
@@ -47,11 +46,14 @@ declare module "@tanstack/react-query" {
   }
 }
 
-/** The workspace room state, written by the websocket in `WorkspaceProvider` (never fetched). */
+/**
+ * The workspace room state. Fetched once (the route loader prefetches it during SSR); after that the
+ * websocket in `WorkspaceProvider` keeps it current, so it never goes stale or refetches.
+ */
 export function workspaceQueryOptions(workspaceSlug: string) {
   return queryOptions<Wire>({
     queryKey: ["workspace", workspaceSlug],
-    queryFn: skipToken,
+    queryFn: () => rpcClient.workspaces.state({workspaceSlug}),
     staleTime: Infinity,
   });
 }

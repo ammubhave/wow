@@ -8,38 +8,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Formerly provided by shadcn/tailwind.css — kept because it is still used. */
-@custom-variant data-open {
-  &:where([data-state="open"]),
-  &:where([data-open]:not([data-open="false"])) {
-    @slot;
-  }
-}
-
-/* Map legacy shadcn semantic color tokens onto HeroUI's design tokens so the
-   utility classes still used in the markup (bg-card, text-muted-foreground,
-   text-primary, bg-sidebar, ...) resolve to the HeroUI theme in light & dark. */
-@theme {
-  --color-card: var(--color-surface);
-  --color-card-foreground: var(--color-foreground);
-  --color-muted-foreground: var(--color-muted);
-  --color-primary: var(--color-accent);
-  --color-primary-foreground: var(--color-accent-foreground);
-  --color-secondary: var(--color-surface-secondary);
-  --color-secondary-foreground: var(--color-foreground);
-  --color-destructive: var(--color-danger);
-  --color-destructive-foreground: var(--color-danger-foreground);
-  --color-sidebar: var(--color-surface);
-  --color-sidebar-foreground: var(--color-foreground);
-  --color-sidebar-border: var(--color-border);
-  --color-sidebar-accent: var(--color-surface-secondary);
-  --color-sidebar-accent-foreground: var(--color-foreground);
-  --color-popover: var(--color-overlay);
-  --color-popover-foreground: var(--color-foreground);
-  --color-input: var(--color-border);
-  --color-ring: var(--color-accent);
-}
-
 :root,
 .light,
 .default,
@@ -96,7 +64,7 @@
 
 .prose {
   a {
-    @apply text-primary font-medium underline underline-offset-4;
+    @apply text-accent font-medium underline underline-offset-4;
   }
   h1 {
     @apply scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance;

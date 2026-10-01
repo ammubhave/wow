@@ -24,9 +24,7 @@ function NavLink({
       className={cn(
         "flex justify-between gap-2 py-1 pr-3 text-sm transition",
         isAnchorLink ? "pl-7" : "pl-4",
-        active
-          ? "text-zinc-900 dark:text-white"
-          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+        active ? "text-foreground" : "text-muted hover:text-foreground"
       )}>
       <span className="truncate">{children}</span>
     </Link>
@@ -39,9 +37,9 @@ export function NavigationGroup({group, className}: {group: NavGroup; className?
   const pathname = useRouterState({select: state => state.location.pathname});
   return (
     <li className={cn("relative mt-6", className)}>
-      <h2 className="text-xs font-semibold text-zinc-900 dark:text-white">{group.title}</h2>
+      <h2 className="text-foreground text-xs font-semibold">{group.title}</h2>
       <div className="relative mt-3 pl-2">
-        <div className="absolute inset-y-0 left-2 w-px bg-zinc-900/10 dark:bg-white/5" />
+        <div className="bg-separator absolute inset-y-0 left-2 w-px" />
         {/* oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style: none, which makes Safari/VoiceOver drop implicit list semantics. */}
         <ul role="list" className="border-l border-transparent">
           {group.links.map(link => (

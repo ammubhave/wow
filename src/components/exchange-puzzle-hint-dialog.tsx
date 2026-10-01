@@ -17,8 +17,8 @@ export function ExchangePuzzleHintDialog({
 }) {
   return (
     <ControlledAlertDialog isOpen={open} onOpenChange={setOpen}>
-      <AlertDialog.Container>
-        <AlertDialog.Dialog className="sm:max-w-[400px]">
+      <AlertDialog.Container size="sm">
+        <AlertDialog.Dialog>
           <AlertDialog.CloseTrigger />
           <AlertDialog.Header>
             <AlertDialog.Heading>{title}</AlertDialog.Heading>

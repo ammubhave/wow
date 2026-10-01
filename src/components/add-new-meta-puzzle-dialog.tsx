@@ -42,7 +42,7 @@ export function AddNewMetaPuzzleDialog({
   return (
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
-        <Modal.Dialog aria-describedby={undefined} className="sm:max-w-[425px]">
+        <Modal.Dialog aria-describedby={undefined}>
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>Add new meta puzzle</Modal.Heading>
@@ -50,37 +50,47 @@ export function AddNewMetaPuzzleDialog({
           <form.AppForm>
             <Modal.Body>
               <form.Form>
-                <div className="grid gap-4 py-4">
-                  <form.AppField
-                    name="name"
-                    validators={{onSubmit: z.string().min(1)}}
-                    children={field => (
-                      <field.TextField label="Name" autoFocus autoComplete="off" />
-                    )}
-                  />
-                  <form.AppField
-                    name="tags"
-                    children={field => (
-                      <field.ComboboxMultipleField label="Tags" items={workspace.tags} />
-                    )}
-                  />
-                  <form.AppField
-                    name="link"
-                    validators={{onSubmit: z.url().or(z.string().length(0))}}
-                    children={field => (
-                      <field.TextField
-                        label="Link"
-                        type="url"
-                        description="Link to this puzzle on the hunt website."
-                      />
-                    )}
-                  />
-                  <form.AppField
-                    name="assignUnassignedPuzzles"
-                    validators={{onSubmit: z.boolean()}}
-                    children={field => <field.CheckboxField label="Assign unassigned puzzles" />}
-                  />
-                </div>
+                <form.AppField
+                  name="name"
+                  validators={{onSubmit: z.string().min(1)}}
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Name"
+                      autoFocus
+                      autoComplete="off"
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="tags"
+                  children={field => (
+                    <field.ComboboxMultipleField
+                      variant="secondary"
+                      label="Tags"
+                      items={workspace.tags}
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="link"
+                  validators={{onSubmit: z.url().or(z.string().length(0))}}
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Link"
+                      type="url"
+                      description="Link to this puzzle on the hunt website."
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="assignUnassignedPuzzles"
+                  validators={{onSubmit: z.boolean()}}
+                  children={field => (
+                    <field.CheckboxField variant="secondary" label="Assign unassigned puzzles" />
+                  )}
+                />
               </form.Form>
             </Modal.Body>
             <Modal.Footer>

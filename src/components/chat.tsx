@@ -277,10 +277,10 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                   messages[idx - 1]!.name !== message.name ||
                   (messages[idx - 1] &&
                     message.timestamp - messages[idx - 1]!.timestamp > 60 * 1000)) && (
-                  <div className="flex items-baseline justify-between space-x-2">
+                  <div className="flex items-baseline justify-between gap-2">
                     <span className="font-semibold">{message.name}</span>
                     <span
-                      className="text-muted-foreground text-xs"
+                      className="text-muted text-xs"
                       title={new Date(message.timestamp).toLocaleString()}>
                       {formatTime(new Date(message.timestamp))}
                     </span>
@@ -299,7 +299,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                       {message.text}
                     </Markdown>
                   )}
-                  <div className="bg-card invisible absolute right-0 bottom-0 border opacity-0 transition-all duration-300 group-hover/message:visible group-hover/message:opacity-100">
+                  <div className="bg-surface invisible absolute right-0 bottom-0 border opacity-0 transition-all duration-300 group-hover/message:visible group-hover/message:opacity-100">
                     <ReactionPopover
                       onReact={reaction => {
                         sendJsonMessage({
@@ -316,7 +316,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                     {Object.entries(message.reactions).map(([reaction, count]) => (
                       <div
                         key={reaction}
-                        className="bg-card inline-flex items-center space-x-1 px-2 py-0.5 text-xs">
+                        className="bg-surface inline-flex items-center gap-1 px-2 py-0.5 text-xs">
                         {reaction === "like" && (
                           <ThumbsUpIcon className="size-3 text-green-950" fill="limegreen" />
                         )}

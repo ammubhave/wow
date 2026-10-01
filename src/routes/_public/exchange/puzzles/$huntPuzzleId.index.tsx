@@ -1,4 +1,4 @@
-import {Breadcrumbs, Button, Dropdown, InputGroup, Label} from "@heroui/react";
+import {Breadcrumbs, Button, buttonVariants, Dropdown, InputGroup, Label} from "@heroui/react";
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronDownIcon, PencilIcon} from "lucide-react";
@@ -88,9 +88,7 @@ function RouteComponent() {
                   Hints
                   <ChevronDownIcon />
                 </Button>
-                <Dropdown.Popover
-                  className="w-(--trigger-width) min-w-56 rounded-lg"
-                  placement="bottom end">
+                <Dropdown.Popover className="w-(--trigger-width) min-w-56" placement="bottom end">
                   <Dropdown.Menu
                     onAction={key => {
                       setActiveHintIndex(Number(key));
@@ -109,14 +107,14 @@ function RouteComponent() {
             <Link
               to="/exchange/puzzles/$huntPuzzleId/solution"
               params={{huntPuzzleId: puzzle.hunt_puzzles.id}}
-              className="button button--outline">
+              className={buttonVariants({variant: "outline"})}>
               Solution
             </Link>
             {isAdmin && (
               <Link
                 to="/exchange/puzzles/$huntPuzzleId/edit"
                 params={{huntPuzzleId: puzzle.hunt_puzzles.id}}
-                className="button button--outline gap-2">
+                className={buttonVariants({variant: "outline"})}>
                 <PencilIcon />
                 Edit
               </Link>
@@ -138,7 +136,7 @@ function RouteComponent() {
                   />
                 )}
               </form.AppField>
-              <InputGroup.Suffix className="pr-0">
+              <InputGroup.Suffix className="pe-0">
                 <Button type="submit" isPending={submitAnswer.isPending}>
                   Submit Answer
                 </Button>
@@ -158,7 +156,7 @@ function RouteComponent() {
         )}
         {submitAnswer.isPending && <span className="text-xl font-bold">Checking answer...</span>}
       </div>
-      <div className="dark:bg-card bg-surface-secondary flex flex-col gap-4">
+      <div className="dark:bg-surface bg-surface-secondary flex flex-col gap-4">
         <PuzzleRichTextEditor
           huntPuzzleId={huntPuzzleId}
           defaultValue={puzzle.hunt_puzzles.contents ?? undefined}

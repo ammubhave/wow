@@ -1,103 +1,69 @@
-import {Avatar, Dropdown, Header, Label, Separator} from "@heroui/react";
-import {useMutation} from "@tanstack/react-query";
-import {GalleryVerticalEndIcon, Share2Icon, PlusIcon} from "lucide-react";
-import {toast} from "sonner";
+import {Avatar, Button, Dropdown, Label, Separator} from "@heroui/react";
+import {ChevronsUpDownIcon, GalleryVerticalEndIcon, PlusIcon} from "lucide-react";
 
 import {useWorkspace} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
-import {orpc} from "@/lib/orpc";
 
-export function NavWorkspace({workspaceSlug}: {workspaceSlug: string}) {
-  const workspaces = authClient.useListOrganizations();
+function initials(name: string | null | undefined) {
+  return (name ?? "")
+    .split(" ")
+    .map(word => word[0]?.toLocaleUpperCase())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("");
+}
+
+/**
+ * The current workspace (in the footer), opening a menu to switch, create or list workspaces.
+ * Kept out of the header: solvers stay in one workspace for a whole hunt.
+ */
+export function WorkspaceSwitcher({workspaceSlug}: {workspaceSlug: string}) {
   const workspace = useWorkspace();
-  const shareGoogleDriveFolderMutation = useMutation(
-    orpc.workspaces.shareGoogleDriveFolder.mutationOptions()
-  );
-  const user = authClient.useSession().data?.user;
+  const workspaces = authClient.useListOrganizations().data ?? [];
+  const others = workspaces.filter(ws => ws.slug !== workspaceSlug);
 
-  if (!workspaces.data || !user) return null;
   return (
-    <>
-      <Dropdown.Item
-        id="share-google-drive-folder"
-        textValue="Share Google Drive folder"
-        onAction={() => {
-          toast.promise(
-            shareGoogleDriveFolderMutation.mutateAsync({workspaceSlug, email: user.email}),
-            {
-              loading: "Sharing Google Drive folder...",
-              success: "Success! Google Drive folder has been shared.",
-              error: "Oops! Something went wrong.",
-            }
-          );
-        }}>
-        <Share2Icon />
-        <Label>Share Google Drive folder</Label>
-      </Dropdown.Item>
-      <Dropdown.SubmenuTrigger>
-        <Dropdown.Item id="workspaces" textValue="Workspaces">
-          <GalleryVerticalEndIcon />
-          <Label>Workspaces</Label>
-          <Dropdown.SubmenuIndicator />
-        </Dropdown.Item>
-        <Dropdown.Popover className="w-(--trigger-width) min-w-56 rounded-lg">
-          <Dropdown.Menu>
-            <Dropdown.Section>
-              <Header className="flex items-center gap-2 text-xs">
-                <Avatar>
-                  <Avatar.Fallback>
-                    {workspace.eventName
-                      ?.split(" ")
-                      .map(word => word[0]?.toLocaleUpperCase())
-                      .filter(c => !!c)
-                      .slice(0, 2)
-                      .join("")}
-                  </Avatar.Fallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight font-bold">
-                  <span className="truncate">{workspace.eventName}</span>
-                  <span className="truncate text-xs">{workspace.teamName}</span>
-                </div>
-              </Header>
-            </Dropdown.Section>
-            {workspaces.data.length > 1 && <Separator />}
-            {workspaces.data
-              .filter(ws => ws.slug !== workspaceSlug)
-              .map(ws => (
+    <Dropdown>
+      <Button variant="ghost" size="sm" className="min-w-0 font-semibold">
+        <span className="truncate">{workspace.eventName}</span>
+        <span aria-hidden="true">•</span>
+        <span className="truncate">{workspace.teamName}</span>
+        <ChevronsUpDownIcon className="text-muted shrink-0" />
+      </Button>
+      {/* containerPadding 0: the trigger hugs the viewport edge, so the default 12px keep-out would
+          shift the menu off its left edge. */}
+      <Dropdown.Popover className="min-w-64" placement="top start" containerPadding={0}>
+        <Dropdown.Menu aria-label="Workspaces">
+          {others.length > 0 && (
+            <Dropdown.Section aria-label="Other workspaces">
+              {others.map(ws => (
                 <Dropdown.Item
                   key={ws.id}
                   id={ws.id}
                   textValue={ws.eventName ?? ws.slug}
-                  className="gap-2 p-2"
                   href={`/${ws.slug}`}>
-                  <Avatar>
-                    <Avatar.Fallback>
-                      {ws.eventName
-                        ?.split(" ")
-                        .map(word => word[0]?.toLocaleUpperCase())
-                        .filter(c => !!c)
-                        .slice(0, 2)
-                        .join("")}
-                    </Avatar.Fallback>
+                  <Avatar size="sm">
+                    <Avatar.Fallback>{initials(ws.eventName)}</Avatar.Fallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{ws.eventName}</span>
-                    <span className="truncate text-xs">{ws.teamName}</span>
+                  <div className="grid min-w-0 flex-1 text-left leading-tight">
+                    <Label className="truncate">{ws.eventName}</Label>
+                    <span className="text-muted truncate text-xs">{ws.teamName}</span>
                   </div>
                 </Dropdown.Item>
               ))}
-            <Separator />
-            <Dropdown.Item id="all-workspaces" textValue="All workspaces" href="/workspaces">
-              <GalleryVerticalEndIcon />
-              <Label>All workspaces</Label>
-            </Dropdown.Item>
-            <Dropdown.Item id="add-workspace" textValue="Add workspace" href="/workspaces/create">
-              <PlusIcon />
-              <Label>Add workspace</Label>
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown.SubmenuTrigger>
-    </>
+            </Dropdown.Section>
+          )}
+          {others.length > 0 && <Separator />}
+          <Dropdown.Item id="all-workspaces" textValue="All workspaces" href="/workspaces">
+            <GalleryVerticalEndIcon />
+            <Label>All workspaces</Label>
+          </Dropdown.Item>
+          <Dropdown.Item id="add-workspace" textValue="New workspace" href="/workspaces/create">
+            <PlusIcon />
+            <Label>New workspace</Label>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   );
 }

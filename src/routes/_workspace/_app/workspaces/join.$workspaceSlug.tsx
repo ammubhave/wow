@@ -59,18 +59,22 @@ function RouteComponent() {
           <Card.Content>
             <form.AppForm>
               <form.Form>
-                <div className="flex w-full flex-col gap-4">
-                  <div className="border-border flex w-full flex-col gap-1 rounded-md border p-4">
-                    <div className="text-sm font-medium">{workspace.teamName}</div>
-                    <div className="text-muted-foreground text-sm">{workspace.eventName}</div>
-                  </div>
-                  <form.AppField name="password">
-                    {field => <field.TextField label="Workspace Password" type="password" />}
-                  </form.AppField>
-                  <div className="flex w-full flex-col gap-4">
-                    <form.SubmitButton>Join</form.SubmitButton>
-                  </div>
-                </div>
+                <Card variant="secondary">
+                  <Card.Header>
+                    <Card.Title>{workspace.teamName}</Card.Title>
+                    <Card.Description>{workspace.eventName}</Card.Description>
+                  </Card.Header>
+                </Card>
+                <form.AppField name="password">
+                  {field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Workspace Password"
+                      type="password"
+                    />
+                  )}
+                </form.AppField>
+                <form.SubmitButton fullWidth>Join</form.SubmitButton>
               </form.Form>
             </form.AppForm>
           </Card.Content>

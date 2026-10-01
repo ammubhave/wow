@@ -92,8 +92,8 @@ function RouteComponent() {
         </Breadcrumbs>
       </div>
       <form.AppForm>
-        <form.Form className="flex flex-1 flex-col gap-4">
-          <div className="flex items-center gap-1">
+        <form.Form className="flex-1">
+          <div className="flex items-center gap-2">
             <div className="flex-1">
               <form.AppField name="title">
                 {field => <field.TextField aria-label="Title" placeholder="Enter puzzle title" />}
@@ -285,7 +285,7 @@ function RouteComponent() {
               </Tabs.List>
             </Tabs.ListContainer>
             <Tabs.Panel id="content" className="relative flex min-h-[200px] flex-1 flex-col gap-4">
-              <div className="dark:bg-card bg-surface-secondary overflow absolute inset-0 overflow-y-auto">
+              <div className="dark:bg-surface bg-surface-secondary overflow absolute inset-0 overflow-y-auto">
                 <form.AppField name="contents">
                   {field => (
                     <PuzzleRichTextEditor
@@ -298,7 +298,7 @@ function RouteComponent() {
               </div>
             </Tabs.Panel>
             <Tabs.Panel id="solution" className="relative flex min-h-[200px] flex-1 flex-col gap-4">
-              <div className="dark:bg-card bg-surface-secondary overflow absolute inset-0 overflow-y-auto">
+              <div className="dark:bg-surface bg-surface-secondary overflow absolute inset-0 overflow-y-auto">
                 <form.AppField name="solution">
                   {field => (
                     <PuzzleRichTextEditor
