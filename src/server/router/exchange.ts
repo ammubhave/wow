@@ -1,7 +1,6 @@
-import {ORPCError} from "@orpc/client";
-import {getRequestHeaders} from "@tanstack/react-start/server";
+import {ORPCError, os} from "@orpc/server";
 import {env} from "cloudflare:workers";
-import {and, asc, eq} from "drizzle-orm";
+import {asc, eq} from "drizzle-orm";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
@@ -9,30 +8,36 @@ import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
-import {AuthenticatedContext, base, procedure} from "./base";
+import {base, procedure, type Session} from "./base";
 
-const preauthorize = base.$context<AuthenticatedContext>().middleware(async ({context, next}) => {
+const preauthorize = os.$context<{session: Session}>().middleware(async ({context, next}) => {
   const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",") || [];
-  console.log("Admin emails:", ADMIN_EMAILS, "User email:", context.session.user.email);
   if (!ADMIN_EMAILS.includes(context.session.user.email)) {
     throw new ORPCError("FORBIDDEN");
   }
   return next();
 });
 
-const isAdmin = async () => {
-  const session = await auth.api.getSession({headers: getRequestHeaders()});
+const isAdmin = async (headers: Headers) => {
+  const session = await auth.api.getSession({headers});
   if (!session) return false;
   return (process.env.ADMIN_EMAILS?.split(",") || []).includes(session.user.email);
 };
 
+type SubmitAnswerResult =
+  | {isCorrect: true}
+  | {isCorrect: false; isPartial: true; message: string}
+  | {isCorrect: false; isPartial: false};
+
+const normalizeAnswer = (answer: string) => answer.toUpperCase().replace(/[^A-Z]/g, "");
+
 export const exchangeRouter = {
-  isAdmin: base.handler(async () => {
-    return await isAdmin();
+  isAdmin: base.handler(async ({context}) => {
+    return await isAdmin(context.headers);
   }),
   hunts: {
-    list: base.handler(async () => {
-      const admin = await isAdmin();
+    list: base.handler(async ({context}) => {
+      const admin = await isAdmin(context.headers);
       return admin
         ? await db.select().from(schema.hunts).orderBy(asc(schema.hunts.createdAt))
         : await db
@@ -41,16 +46,14 @@ export const exchangeRouter = {
             .where(eq(schema.hunts.draft, false))
             .orderBy(asc(schema.hunts.createdAt));
     }),
-    get: base.input(z.object({huntId: z.string().min(1)})).handler(async ({input}) => {
-      const admin = await isAdmin();
+    get: base.input(z.object({huntId: z.string().min(1)})).handler(async ({context, input}) => {
+      const admin = await isAdmin(context.headers);
       const hunt = await db.query.hunts.findFirst({
-        where: admin
-          ? eq(schema.hunts.id, input.huntId)
-          : and(eq(schema.hunts.id, input.huntId), eq(schema.hunts.draft, false)),
+        where: admin ? {id: input.huntId} : {id: input.huntId, draft: false},
         with: {
           hunt_puzzles: admin
-            ? {orderBy: asc(schema.huntPuzzles.title)}
-            : {where: eq(schema.huntPuzzles.draft, false), orderBy: asc(schema.huntPuzzles.title)},
+            ? {orderBy: {title: "asc"}}
+            : {where: {draft: false}, orderBy: {title: "asc"}},
         },
       });
       if (!hunt) throw new ORPCError("NOT_FOUND");
@@ -84,15 +87,24 @@ export const exchangeRouter = {
       }),
   },
   puzzles: {
-    get: base.input(z.object({huntPuzzleId: z.string().min(1)})).handler(async ({input}) => {
-      const [puzzle] = await db
-        .select()
-        .from(schema.huntPuzzles)
-        .innerJoin(schema.hunts, eq(schema.huntPuzzles.huntId, schema.hunts.id))
-        .where(eq(schema.huntPuzzles.id, input.huntPuzzleId));
-      if (!puzzle) throw new ORPCError("NOT_FOUND");
-      return puzzle;
-    }),
+    get: base
+      .input(z.object({huntPuzzleId: z.string().min(1)}))
+      .handler(async ({context, input}) => {
+        const [puzzle] = await db
+          .select()
+          .from(schema.huntPuzzles)
+          .innerJoin(schema.hunts, eq(schema.huntPuzzles.huntId, schema.hunts.id))
+          .where(eq(schema.huntPuzzles.id, input.huntPuzzleId));
+        if (!puzzle) throw new ORPCError("NOT_FOUND");
+        // Draft puzzles (or puzzles of draft hunts) are only visible to admins, as in `hunts.get`.
+        if (
+          (puzzle.hunt_puzzles.draft || puzzle.hunts.draft) &&
+          !(await isAdmin(context.headers))
+        ) {
+          throw new ORPCError("NOT_FOUND");
+        }
+        return puzzle;
+      }),
     create: procedure
       .use(preauthorize)
       .input(z.object({huntId: z.string().min(1), title: z.string().min(1)}))
@@ -113,23 +125,17 @@ export const exchangeRouter = {
       }),
     submitAnswer: base
       .input(z.object({huntPuzzleId: z.string().min(1), answer: z.string().min(1)}))
-      .handler(async ({input}) => {
+      .handler(async ({input}): Promise<SubmitAnswerResult> => {
         const puzzle = await db.query.huntPuzzles.findFirst({
-          where: eq(schema.huntPuzzles.id, input.huntPuzzleId),
+          where: {id: input.huntPuzzleId},
+          columns: {answer: true, partials: true},
         });
         if (!puzzle) throw new ORPCError("NOT_FOUND");
-        const isCorrect =
-          input.answer.toUpperCase().replace(/[^A-Z]/g, "") ===
-          puzzle.answer.toUpperCase().replace(/[^A-Z]/g, "");
-        const partial = puzzle.partials?.find(
-          partial =>
-            input.answer.toUpperCase().replace(/[^A-Z]/g, "") ===
-            partial.answer.toUpperCase().replace(/[^A-Z]/g, "")
-        );
-        return {isCorrect, isPartial: partial !== undefined, message: partial?.message} as
-          | {isCorrect: true}
-          | {isCorrect: false; isPartial: true; message: string}
-          | {isCorrect: false; isPartial: false};
+        const submitted = normalizeAnswer(input.answer);
+        if (submitted === normalizeAnswer(puzzle.answer)) return {isCorrect: true};
+        const partial = puzzle.partials?.find(p => submitted === normalizeAnswer(p.answer));
+        if (partial) return {isCorrect: false, isPartial: true, message: partial.message};
+        return {isCorrect: false, isPartial: false};
       }),
     update: procedure
       .use(preauthorize)

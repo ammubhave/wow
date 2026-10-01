@@ -27,7 +27,7 @@
     "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXjlC9B02DfnTb",
     "BETTER_AUTH_URL": "http://localhost:3000",
     "BETTER_AUTH_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "PNPM_VERSION": "10.24.0",
+    "PNPM_VERSION": "12.8.1",
     "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",
   },
   "durable_objects": {
@@ -69,7 +69,7 @@
         "GOOGLE_CLIENT_ID": "933519172272-h905jlmbp8m1egsjs5ocsri5fhihs94b.apps.googleusercontent.com",
         "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXqMR1-nXdolsi",
         "BETTER_AUTH_URL": "https://www.wafflehaus.io",
-        "PNPM_VERSION": "10.26.2",
+        "PNPM_VERSION": "12.8.1",
         "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",
       },
       "durable_objects": {

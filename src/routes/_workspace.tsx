@@ -1,5 +1,5 @@
 import {createFileRoute, Outlet, redirect} from "@tanstack/react-router";
-import posthog from "posthog-js";
+import {posthog} from "posthog-js";
 import {useEffect} from "react";
 
 import {authClient} from "@/lib/auth-client";
@@ -16,20 +16,20 @@ export const Route = createFileRoute("/_workspace")({
 });
 
 function RouteComponent() {
-  const session = authClient.useSession().data;
+  const user = authClient.useSession().data?.user;
   useEffect(() => {
-    if (!session) return;
+    if (!user) return;
     posthog.identify(
-      session.user.id,
+      user.id,
       {
-        email: session.user.email,
-        emailVerified: session.user.emailVerified,
-        name: session.user.name,
-        updatedAt: session.user.updatedAt,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        name: user.name,
+        updatedAt: user.updatedAt,
       },
-      {createdAt: session.user.createdAt}
+      {createdAt: user.createdAt}
     );
-  }, [session?.user]);
+  }, [user]);
   return (
     <div className="flex min-h-dvh flex-col">
       <Outlet />

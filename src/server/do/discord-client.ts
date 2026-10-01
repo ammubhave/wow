@@ -36,6 +36,9 @@ export class DiscordClient extends DurableObject {
     }[];
   }) {
     await this.ctx.blockConcurrencyWhile(async () => {
+      // Discord API calls below are intentionally sequential: channel creation order determines
+      // channel position, and Discord rate-limits channel create/update/delete per guild.
+      /* oxlint-disable no-await-in-loop */
       const allPuzzles = workspace.rounds
         .map(round => ({
           name: round.name,
@@ -135,6 +138,7 @@ export class DiscordClient extends DurableObject {
           await this.deleteChannel(channelId);
         }
       }
+      /* oxlint-enable no-await-in-loop */
     });
   }
 
@@ -195,7 +199,11 @@ export class DiscordClient extends DurableObject {
       )
       .parse(await response.json())
       .filter(channel => channel.name.startsWith("🧩 "))
-      .map(channel => ({...channel, name: channel.name.replace("🧩 ", "")}));
+      .map(channel => {
+        // Freshly parsed objects, so mutating in place is safe.
+        channel.name = channel.name.replace("🧩 ", "");
+        return channel;
+      });
   }
 
   async deleteAllChannels(discordGuildId: string) {
@@ -204,6 +212,8 @@ export class DiscordClient extends DurableObject {
       return;
     }
     for (const channel of channels) {
+      // Sequential on purpose: Discord rate-limits channel deletes per guild.
+      // oxlint-disable-next-line no-await-in-loop
       await this.deleteChannel(channel.id);
     }
   }

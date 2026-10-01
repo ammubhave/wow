@@ -1,8 +1,9 @@
+import {Resizable} from "@heroui-pro/react/resizable";
+import {Accordion, Button, ButtonGroup, InputGroup, ListBox, Tooltip} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {BrushIcon, EditIcon, PuzzleIcon, TableIcon} from "lucide-react";
 import {useState} from "react";
-import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
 import {Chat} from "@/components/chat";
@@ -10,24 +11,8 @@ import {CommentBox} from "@/components/comment-box";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {PresencesWebSocket} from "@/components/presences-websocket";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {Button} from "@/components/ui/button";
-import {ButtonGroup, ButtonGroupText} from "@/components/ui/button-group";
-import {FieldGroup} from "@/components/ui/field";
-import {InputGroup} from "@/components/ui/input-group";
-import {Item, ItemActions, ItemContent, ItemTitle} from "@/components/ui/item";
-import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "@/components/ui/resizable";
-import {SelectGroup, SelectItem} from "@/components/ui/select";
-import {SidebarInset} from "@/components/ui/sidebar";
-import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useWorkspace} from "@/hooks/use-workspace";
-import {client, orpc} from "@/lib/orpc";
+import {client} from "@/lib/orpc";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {
   getBgColorClassNamesForPuzzleStatusNoHover,
@@ -35,6 +20,7 @@ import {
   getPuzzleStatusOptions,
 } from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
+import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzleId")({
   component: RouteComponent,
@@ -56,12 +42,14 @@ function RouteComponent() {
   }
 
   return (
-    <SidebarInset>
-      <PresencesWebSocket workspaceSlug={workspaceSlug!} puzzleId={puzzleId!}>
+    <main className="flex flex-1 flex-col">
+      <PresencesWebSocket workspaceSlug={workspaceSlug} puzzleId={puzzleId}>
         <div className="flex flex-1">
-          <ResizablePanelGroup orientation="horizontal">
-            <ResizablePanel defaultSize={80}>
+          <Resizable orientation="horizontal">
+            <Resizable.Panel defaultSize={80}>
+              {/* oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets/Drawings editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it. */}
               <iframe
+                title={`${puzzle.data.name} ${puzzle.data.googleSpreadsheetId ? "spreadsheet" : "drawing"}`}
                 src={
                   puzzle.data.googleSpreadsheetId
                     ? `https://docs.google.com/spreadsheets/d/${puzzle.data.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
@@ -70,23 +58,30 @@ function RouteComponent() {
                 allow="fullscreen; geolocation; microphone; camera; payment"
                 className="min-h-[calc(100dvh-(--spacing(16)))] w-full flex-1 bg-white"
               />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={20}>
-              <ResizablePanelGroup orientation="vertical">
-                <ResizablePanel defaultSize={30} className="flex">
-                  <PuzzleInfoPanel workspaceSlug={workspaceSlug!} puzzle={puzzle.data} />
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={60} className="flex flex-col">
-                  <Chat puzzleId={puzzleId} />
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+            </Resizable.Panel>
+            <Resizable.Handle type="drag" />
+            <Resizable.Panel defaultSize={20}>
+              <Resizable orientation="vertical">
+                <Resizable.Panel defaultSize={30} className="flex">
+                  {/* Keyed so the form (and chat history) never carry over between puzzles: a
+                      touched form stops following its default values, so it would otherwise keep
+                      showing, and on the next change submit, the previous puzzle's fields. */}
+                  <PuzzleInfoPanel
+                    key={puzzleId}
+                    workspaceSlug={workspaceSlug}
+                    puzzle={puzzle.data}
+                  />
+                </Resizable.Panel>
+                <Resizable.Handle type="drag" />
+                <Resizable.Panel defaultSize={60} className="flex flex-col">
+                  <Chat key={puzzleId} puzzleId={puzzleId} />
+                </Resizable.Panel>
+              </Resizable>
+            </Resizable.Panel>
+          </Resizable>
         </div>
       </PresencesWebSocket>
-    </SidebarInset>
+    </main>
   );
 }
 
@@ -109,32 +104,34 @@ function PuzzleInfoPanel({
     answer: string | null;
     status: string | null;
     importance: string | null;
-    childPuzzles: {answer: string | null; name: string}[];
+    childPuzzles: {id: string; answer: string | null; name: string}[];
     isMetaPuzzle: boolean;
     tags: string[];
   };
 }) {
   const workspace = useWorkspace();
-  const puzzleUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
+  const puzzleUpdateMutation = useMutation(workspaceMutations.puzzles.update());
+  // Each field commits as soon as it's edited. In between, the form is reset (untouched) so it
+  // keeps following `puzzle` — this change's overlay, then the server and other solvers' edits —
+  // and only a field that is actually being typed into holds on to its own value.
   const form = useAppForm({
     defaultValues: {
       answer: puzzle.answer ?? "",
-      status: puzzle.status,
+      // React Aria collection keys can't be null, so the "None" status option uses "".
+      status: puzzle.status ?? "",
       importance: puzzle.importance,
       tags: puzzle.tags,
     },
     onSubmit: ({value}) => {
-      toast.promise(
-        puzzleUpdateMutation.mutateAsync({
-          workspaceSlug,
-          id: puzzle.id,
-          answer: value.answer,
-          status: value.status,
-          importance: value.importance,
-          tags: value.tags,
-        }),
-        {loading: "Updating puzzle...", error: "Oops! Something went wrong."}
-      );
+      puzzleUpdateMutation.mutate({
+        workspaceSlug,
+        id: puzzle.id,
+        answer: value.answer,
+        status: value.status || null,
+        importance: value.importance,
+        tags: value.tags,
+      });
+      form.reset(value);
     },
   });
 
@@ -143,72 +140,59 @@ function PuzzleInfoPanel({
   return (
     <div
       className={cn(
-        "flex flex-1 flex-col",
+        "flex min-w-0 flex-1 flex-col",
         getBgColorClassNamesForPuzzleStatusNoHover(puzzle.status)
       )}>
-      <Item variant="muted">
-        <ItemContent>
-          <ItemTitle>{puzzle.name}</ItemTitle>
-        </ItemContent>
-        <ItemActions>
+      <div className="bg-surface-secondary/50 flex w-full flex-wrap items-center gap-2.5 rounded-md px-3 py-2.5 text-xs/relaxed">
+        <div className="flex flex-1 flex-col gap-1">
+          <div className="line-clamp-1 flex w-fit items-center gap-2 text-xs/relaxed leading-snug font-medium underline-offset-4">
+            {puzzle.name}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
           {puzzle.googleSpreadsheetId && (
             <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    render={
-                      <a
-                        href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
-                        target="_blank"
-                        rel="noopener noreferrer">
-                        <TableIcon />
-                      </a>
-                    }
-                  />
-                }
-              />
-              <TooltipContent>Link to the puzzle's Google spreadsheet</TooltipContent>
+              <Tooltip.Trigger>
+                <a
+                  aria-label="Google spreadsheet"
+                  className="button button--icon-only button--sm button--ghost"
+                  href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?gid=0#gid=0`}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <TableIcon />
+                </a>
+              </Tooltip.Trigger>
+              <Tooltip.Content>Link to the puzzle's Google spreadsheet</Tooltip.Content>
             </Tooltip>
           )}
           {puzzle.googleDrawingId && (
             <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    render={
-                      <a
-                        href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
-                        target="_blank"
-                        rel="noopener noreferrer">
-                        <BrushIcon />
-                      </a>
-                    }
-                  />
-                }
-              />
-              <TooltipContent>Link to the puzzle's Google drawing</TooltipContent>
+              <Tooltip.Trigger>
+                <a
+                  aria-label="Google drawing"
+                  className="button button--icon-only button--sm button--ghost"
+                  href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?gid=0#gid=0`}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <BrushIcon />
+                </a>
+              </Tooltip.Trigger>
+              <Tooltip.Content>Link to the puzzle's Google drawing</Tooltip.Content>
             </Tooltip>
           )}
           {puzzle.link && (
             <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    render={
-                      <a href={puzzle.link} target="_blank" rel="noopener noreferrer">
-                        <PuzzleIcon />
-                      </a>
-                    }
-                  />
-                }
-              />
-              <TooltipContent>Link to the puzzle page on the hunt website</TooltipContent>
+              <Tooltip.Trigger>
+                <a
+                  aria-label="Puzzle page on the hunt website"
+                  className="button button--icon-only button--sm button--ghost"
+                  href={puzzle.link}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <PuzzleIcon />
+                </a>
+              </Tooltip.Trigger>
+              <Tooltip.Content>Link to the puzzle page on the hunt website</Tooltip.Content>
             </Tooltip>
           )}
           <EditPuzzleDialog
@@ -216,25 +200,35 @@ function PuzzleInfoPanel({
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
             setOpen={setIsEditPuzzleDialogOpen}>
-            <Button size="icon-sm" variant="ghost">
+            <Button size="sm" isIconOnly variant="ghost" aria-label="Edit puzzle">
               <EditIcon />
             </Button>
           </EditPuzzleDialog>
-        </ItemActions>
-      </Item>
+        </div>
+      </div>
       <div className="flex flex-col gap-2 overflow-auto text-sm">
         <form.AppForm>
           <form.Form>
-            <FieldGroup className="gap-0">
+            <div className="flex w-full flex-col gap-0">
               <form.AppField
                 name="answer"
                 listeners={{
                   onBlur: async ({fieldApi}) => {
                     // onBlur is called whenever focus is lost. Only actually submit the form if the
-                    // field value changed.
-                    if (fieldApi.state.value !== puzzle.answer && form.state.isValid) {
+                    // field value changed. (A missing answer is shown as "", so compare against
+                    // that: otherwise tabbing through an empty answer marks the puzzle solved.)
+                    if (fieldApi.state.value === (puzzle.answer ?? "")) {
+                      // Blurring marks the field touched; untouch it so it follows `puzzle` again.
+                      form.reset();
+                      return;
+                    }
+                    if (form.state.isValid) {
                       const currentStatus = form.getFieldValue("status");
-                      if (currentStatus !== "solved" && currentStatus !== "backsolved") {
+                      if (
+                        fieldApi.state.value !== "" &&
+                        currentStatus !== "solved" &&
+                        currentStatus !== "backsolved"
+                      ) {
                         form.setFieldValue("status", "solved");
                       }
 
@@ -244,9 +238,14 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-22">Answer</ButtonGroupText>
-                    <InputGroup>
-                      <field.InputGroupInputField className="font-mono whitespace-pre uppercase" />
+                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                      Answer
+                    </span>
+                    <InputGroup className="min-w-0 flex-1">
+                      <field.InputGroupInputField
+                        aria-label="Answer"
+                        className="font-mono whitespace-pre uppercase"
+                      />
                     </InputGroup>
                   </ButtonGroup>
                 )}
@@ -269,19 +268,26 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-22">Status</ButtonGroupText>
-                    <InputGroup>
+                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                      Status
+                    </span>
+                    <InputGroup className="min-w-0 flex-1">
                       <field.SelectField
+                        aria-label="Status"
                         className="border-0 bg-transparent"
                         items={getPuzzleStatusOptions()}>
                         {getPuzzleStatusGroups().map(group => (
-                          <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
+                          <ListBox.Section key={group.groupLabel} className={group.bgColorNoHover}>
                             {group.values.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
+                              <ListBox.Item
+                                key={option.value ?? ""}
+                                id={option.value ?? ""}
+                                textValue={option.label}>
                                 {option.label}
-                              </SelectItem>
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
                             ))}
-                          </SelectGroup>
+                          </ListBox.Section>
                         ))}
                       </field.SelectField>
                     </InputGroup>
@@ -299,9 +305,12 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-22">Importance</ButtonGroupText>
-                    <InputGroup>
+                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                      Importance
+                    </span>
+                    <InputGroup className="min-w-0 flex-1">
                       <field.SelectField
+                        aria-label="Importance"
                         className="border-0 bg-transparent"
                         items={getPuzzleImportances().map(importance => {
                           return {
@@ -314,12 +323,14 @@ function PuzzleInfoPanel({
                           };
                         })}>
                         {getPuzzleImportances().map(importance => (
-                          <SelectItem
+                          <ListBox.Item
                             key={importance.value}
-                            value={importance.value}
+                            id={importance.value}
+                            textValue={importance.label}
                             className={importance.color}>
                             {importance.icon} {importance.label}
-                          </SelectItem>
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
                         ))}
                       </field.SelectField>
                     </InputGroup>
@@ -329,7 +340,7 @@ function PuzzleInfoPanel({
               <form.AppField
                 name="tags"
                 listeners={{
-                  onChange: async _ => {
+                  onChange: async () => {
                     if (form.state.isValid) {
                       await form.handleSubmit();
                     }
@@ -337,8 +348,10 @@ function PuzzleInfoPanel({
                 }}
                 children={field => (
                   <ButtonGroup className="w-full">
-                    <ButtonGroupText className="min-w-22">Tags</ButtonGroupText>
-                    <InputGroup className="h-auto">
+                    <span className="button button--md button--primary pointer-events-none min-w-22 shrink-0">
+                      Tags
+                    </span>
+                    <InputGroup className="h-auto min-w-0 flex-1">
                       <field.ComboboxMultipleField
                         className="border-0 bg-transparent"
                         items={workspace.tags}
@@ -350,25 +363,40 @@ function PuzzleInfoPanel({
               {puzzle.childPuzzles.length > 0 && (
                 <div>
                   <Accordion>
-                    <AccordionItem>
-                      <AccordionTrigger>Feeder Puzzle Answers</AccordionTrigger>
-                      <AccordionContent>
-                        <Table>
-                          <TableBody>
-                            {puzzle.childPuzzles.map(childPuzzle => (
-                              <TableRow key={childPuzzle.name}>
-                                <TableCell>{childPuzzle.name}</TableCell>
-                                <TableCell className="font-mono">{childPuzzle.answer}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </AccordionContent>
-                    </AccordionItem>
+                    <Accordion.Item>
+                      <Accordion.Heading>
+                        <Accordion.Trigger>
+                          Feeder Puzzle Answers
+                          <Accordion.Indicator />
+                        </Accordion.Trigger>
+                      </Accordion.Heading>
+                      <Accordion.Panel>
+                        <Accordion.Body>
+                          <div className="relative w-full overflow-x-auto">
+                            <table className="w-full caption-bottom text-xs">
+                              <tbody>
+                                {puzzle.childPuzzles.map(childPuzzle => (
+                                  <tr
+                                    key={childPuzzle.id}
+                                    className="hover:bg-surface-secondary/50 border-b transition-colors">
+                                    <td className="p-2 align-middle whitespace-nowrap">
+                                      {childPuzzle.name}
+                                    </td>
+                                    <td className="p-2 align-middle font-mono whitespace-nowrap">
+                                      {childPuzzle.answer}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </Accordion.Body>
+                      </Accordion.Panel>
+                    </Accordion.Item>
                   </Accordion>
                 </div>
               )}
-            </FieldGroup>
+            </div>
           </form.Form>
         </form.AppForm>
         <div className="flex flex-col gap-2 px-2">

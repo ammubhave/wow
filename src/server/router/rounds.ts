@@ -1,13 +1,12 @@
-import {ORPCError} from "@orpc/client";
+import {ORPCError} from "@orpc/server";
 import {waitUntil} from "cloudflare:workers";
-import {and, asc, eq, isNull} from "drizzle-orm";
+import {and, eq, isNull} from "drizzle-orm";
 import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import {invariant} from "@/lib/invariant";
 
-import {getWorkspaceRoom} from "../do/workspace";
+import {invalidateWorkspace} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
 
 export const roundsRouter = {
@@ -16,27 +15,29 @@ export const roundsRouter = {
     .use(preauthorize)
     .handler(async ({context}) => {
       const rounds = await db.query.round.findMany({
-        where: (t, {eq}) => eq(t.workspaceId, context.workspace.id),
+        where: {workspaceId: context.workspace.id},
         with: {puzzles: {with: {childPuzzles: true}}},
-        orderBy: t => [asc(t.name)],
+        orderBy: {name: "asc"},
       });
-      return rounds.map(round => ({
-        ...round,
-        unassignedPuzzles: round.puzzles.filter(
-          puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
-        ),
-        metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
-      }));
+      return rounds.map(round =>
+        Object.assign(round, {
+          unassignedPuzzles: round.puzzles.filter(
+            puzzle => !puzzle.isMetaPuzzle && puzzle.parentPuzzleId === null
+          ),
+          metaPuzzles: round.puzzles.filter(puzzle => puzzle.isMetaPuzzle),
+        })
+      );
     }),
 
   create: procedure
-    .input(z.object({workspaceSlug: z.string(), name: z.string()}))
+    // `id` is client-generated so the optimistic round and the real one share an id.
+    .input(z.object({workspaceSlug: z.string(), id: z.uuid().optional(), name: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
       // Create round in database
       const round = await db
         .insert(schema.round)
-        .values({workspaceId: context.workspace.id, name: input.name})
+        .values({id: input.id, workspaceId: context.workspace.id, name: input.name})
         .returning()
         .get();
       await context.activityLog.createRound({
@@ -45,7 +46,7 @@ export const roundsRouter = {
         roundId: round.id,
         roundName: round.name,
       });
-      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+      await invalidateWorkspace(context.workspace.id);
       waitUntil(context.discord.sync(context.workspace.id));
       return round;
     }),
@@ -69,9 +70,9 @@ export const roundsRouter = {
           and(eq(schema.round.id, input.id), eq(schema.round.workspaceId, context.workspace.id))
         )
         .returning({workspaceId: schema.round.workspaceId});
-      invariant(result);
+      if (!result) throw new ORPCError("NOT_FOUND");
       const {workspaceId} = result;
-      await (await getWorkspaceRoom(workspaceId)).invalidate();
+      await invalidateWorkspace(workspaceId);
       waitUntil(context.discord.sync(workspaceId));
     }),
 
@@ -80,7 +81,8 @@ export const roundsRouter = {
     .use(preauthorize)
     .handler(async ({context, input}) => {
       const round = await db.query.round.findFirst({
-        where: (t, {eq, and}) => and(eq(t.id, input.id), eq(t.workspaceId, context.workspace.id)),
+        where: {id: input.id, workspaceId: context.workspace.id},
+        columns: {id: true, name: true, workspaceId: true},
       });
       if (!round) throw new ORPCError("NOT_FOUND");
       await context.activityLog.createRound({
@@ -92,7 +94,7 @@ export const roundsRouter = {
 
       // Delete round from database
       await db.delete(schema.round).where(eq(schema.round.id, input.id));
-      await (await getWorkspaceRoom(round.workspaceId)).invalidate();
+      await invalidateWorkspace(round.workspaceId);
       waitUntil(context.discord.sync(round.workspaceId));
     }),
 
@@ -100,8 +102,14 @@ export const roundsRouter = {
     .input(z.object({workspaceSlug: z.string(), parentPuzzleId: z.string()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
+      // Scope to the caller's workspace: the id comes from input.
       const parentPuzzle = await db.query.puzzle.findFirst({
-        where: (t, {eq}) => eq(t.id, input.parentPuzzleId),
+        where: {
+          id: input.parentPuzzleId,
+          isMetaPuzzle: true,
+          round: {workspaceId: context.workspace.id},
+        },
+        columns: {id: true, roundId: true},
       });
       if (!parentPuzzle) throw new ORPCError("NOT_FOUND");
       await db
@@ -114,7 +122,7 @@ export const roundsRouter = {
             eq(schema.puzzle.isMetaPuzzle, false)
           )
         );
-      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+      await invalidateWorkspace(context.workspace.id);
       waitUntil(context.discord.sync(context.workspace.id));
     }),
 };

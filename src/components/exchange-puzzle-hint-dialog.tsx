@@ -1,15 +1,8 @@
+import {AlertDialog, Button} from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import {ControlledAlertDialog} from "./controlled-dialog";
 
 export function ExchangePuzzleHintDialog({
   open,
@@ -23,18 +16,25 @@ export function ExchangePuzzleHintDialog({
   message: string;
 }) {
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription className="[&_a]:underline">
-            <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Close</AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ControlledAlertDialog isOpen={open} onOpenChange={setOpen}>
+      <AlertDialog.Container>
+        <AlertDialog.Dialog className="sm:max-w-[400px]">
+          <AlertDialog.CloseTrigger />
+          <AlertDialog.Header>
+            <AlertDialog.Heading>{title}</AlertDialog.Heading>
+          </AlertDialog.Header>
+          <AlertDialog.Body>
+            <div className="[&_a]:underline">
+              <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+            </div>
+          </AlertDialog.Body>
+          <AlertDialog.Footer>
+            <Button slot="close" variant="tertiary">
+              Close
+            </Button>
+          </AlertDialog.Footer>
+        </AlertDialog.Dialog>
+      </AlertDialog.Container>
+    </ControlledAlertDialog>
   );
 }

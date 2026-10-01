@@ -1,4 +1,4 @@
-import {drizzleAdapter} from "better-auth/adapters/drizzle";
+import {drizzleAdapter} from "@better-auth/drizzle-adapter/relations-v2";
 import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
 import {captcha} from "better-auth/plugins";
@@ -12,7 +12,7 @@ import * as schema from "./db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
-  experimental: {joins: true},
+  advanced: {database: {joins: true}},
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({user, url}) => {
@@ -51,9 +51,15 @@ export const auth = betterAuth({
     additionalFields: {notificationsDisabled: {type: "boolean", defaultValue: false}},
     changeEmail: {enabled: true},
   },
-  trustedOrigins: ["https://www.wafflehaus.io", "http://localhost:3000"],
+  // In dev, trust any localhost port so `vp dev --port <n>` works (e.g. for Google sign-in).
+  trustedOrigins: [
+    "https://www.wafflehaus.io",
+    ...(import.meta.env?.DEV ? ["http://localhost:*"] : ["http://localhost:3000"]),
+  ],
   plugins: [
-    ...(process.env.TURNSTILE_SECRET_KEY
+    // Captcha is optional: only enforce it when both the secret and the site key the auth pages
+    // render with (same `import.meta.env` value as `src/components/captcha.tsx`) are configured.
+    ...(process.env.TURNSTILE_SECRET_KEY && import.meta.env?.VITE_PUBLIC_TURNSTILE_SITE_KEY
       ? [
           captcha({
             provider: "cloudflare-turnstile",
@@ -70,13 +76,13 @@ export const auth = betterAuth({
     organization({
       membershipLimit: 500,
       organizationHooks: {
-        beforeCreateOrganization: async ({organization}) => {
+        beforeCreateOrganization: async ({organization: org}) => {
           const reservedSlugs = ["exchange"];
-          if (reservedSlugs.includes(organization.slug?.toLowerCase() ?? "")) {
-            throw new Error(`Workspace ID cannot be ${organization.slug?.toLowerCase()}.`);
+          if (reservedSlugs.includes(org.slug?.toLowerCase() ?? "")) {
+            throw new Error(`Workspace ID cannot be ${org.slug?.toLowerCase()}.`);
           }
         },
-        afterCreateOrganization: async ({organization}) => {
+        afterCreateOrganization: async ({organization: org}) => {
           await db
             .update(schema.organization)
             .set({
@@ -87,7 +93,7 @@ export const auth = betterAuth({
                 {name: "util.in", url: "https://util.in"},
               ],
             })
-            .where(eq(schema.organization.id, organization.id));
+            .where(eq(schema.organization.id, org.id));
         },
       },
       schema: {
@@ -99,9 +105,11 @@ export const auth = betterAuth({
             comment: {type: "string", required: false},
             commentUpdatedAt: {type: "date", required: false},
             commentUpdatedBy: {type: "string", required: false},
-            googleAccessToken: {type: "string", required: false},
-            googleRefreshToken: {type: "string", required: false},
-            googleTokenExpiresAt: {type: "date", required: false},
+            // OAuth credentials: server-only. Never returned by the auth API (e.g.
+            // `organization.list()`) and not settable through it.
+            googleAccessToken: {type: "string", required: false, returned: false, input: false},
+            googleRefreshToken: {type: "string", required: false, returned: false, input: false},
+            googleTokenExpiresAt: {type: "date", required: false, returned: false, input: false},
             googleFolderId: {type: "string", required: false},
             googleTemplateFileId: {type: "string", required: false},
             discordGuildId: {type: "string", required: false},

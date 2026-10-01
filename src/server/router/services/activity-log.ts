@@ -1,11 +1,14 @@
+import {v7 as uuid7} from "uuid";
+
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import {invariant} from "@/lib/invariant";
 
-import {AuthenticatedContext} from "../base";
+import type {Session} from "../base";
 
+// Each entry is a base row plus a subtype row. The id is generated here so both inserts go in one
+// atomic D1 batch (one round trip, and no orphaned base row if the second insert fails).
 export class ActivityLogService {
-  constructor(private readonly ctx: AuthenticatedContext) {}
+  constructor(private readonly session: Session) {}
 
   async createRound({
     subType,
@@ -18,14 +21,13 @@ export class ActivityLogService {
     workspaceId: string;
     roundName: string;
   }) {
-    const [result] = await db
-      .insert(schema.activityLogEntry)
-      .values({userId: this.ctx.session.user.id, workspaceId})
-      .returning({id: schema.activityLogEntry.id});
-    invariant(result);
-    await db
-      .insert(schema.roundActivityLogEntry)
-      .values({activityLogEntryId: result.id, subType, roundId, roundName});
+    const id = uuid7();
+    await db.batch([
+      db.insert(schema.activityLogEntry).values({id, userId: this.session.user.id, workspaceId}),
+      db
+        .insert(schema.roundActivityLogEntry)
+        .values({activityLogEntryId: id, subType, roundId, roundName}),
+    ]);
   }
 
   async createPuzzle({
@@ -41,24 +43,20 @@ export class ActivityLogService {
     workspaceId: string;
     field?: string;
   }) {
-    const [result] = await db
-      .insert(schema.activityLogEntry)
-      .values({userId: this.ctx.session.user.id, workspaceId})
-      .returning({id: schema.activityLogEntry.id});
-    invariant(result);
-    await db
-      .insert(schema.puzzleActivityLogEntry)
-      .values({activityLogEntryId: result.id, subType, puzzleId, puzzleName, field});
+    const id = uuid7();
+    await db.batch([
+      db.insert(schema.activityLogEntry).values({id, userId: this.session.user.id, workspaceId}),
+      db
+        .insert(schema.puzzleActivityLogEntry)
+        .values({activityLogEntryId: id, subType, puzzleId, puzzleName, field}),
+    ]);
   }
 
   async createWorkspace({subType, workspaceId}: {subType: "join"; workspaceId: string}) {
-    const [result] = await db
-      .insert(schema.activityLogEntry)
-      .values({userId: this.ctx.session.user.id, workspaceId})
-      .returning({id: schema.activityLogEntry.id});
-    invariant(result);
-    await db
-      .insert(schema.workspaceActivityLogEntry)
-      .values({activityLogEntryId: result.id, subType});
+    const id = uuid7();
+    await db.batch([
+      db.insert(schema.activityLogEntry).values({id, userId: this.session.user.id, workspaceId}),
+      db.insert(schema.workspaceActivityLogEntry).values({activityLogEntryId: id, subType}),
+    ]);
   }
 }

@@ -1,21 +1,14 @@
+import {Button, Card} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {toast} from "sonner";
+import {z} from "zod";
 
 import {DiscordCardContents} from "@/components/discord-card-contents";
 import {useAppForm} from "@/components/form";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
-import {Button} from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {useWorkspace} from "@/hooks/use-workspace";
-import {orpc} from "@/lib/orpc";
+import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
   component: RouteComponent,
@@ -37,17 +30,17 @@ function RouteComponent() {
 function DeleteWorkspaceCard() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Delete Workspace</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title>Delete Workspace</Card.Title>
+        <Card.Description>
           This will delete the workspace and all its data. This action is irreversible.
-        </CardDescription>
-      </CardHeader>
-      <CardFooter>
-        <Button variant="destructive" disabled>
+        </Card.Description>
+      </Card.Header>
+      <Card.Footer>
+        <Button variant="danger" isDisabled>
           Contact support to delete your workspace
         </Button>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   );
 }
@@ -55,19 +48,19 @@ function DeleteWorkspaceCard() {
 function ArchiveWorkspaceCard() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Archive Workspace</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title>Archive Workspace</Card.Title>
+        <Card.Description>
           This will archive the workspace and all its data. It will not show up in the list of
           active workspace and its contents will become read-only. You can unarchive the workspace
           at any time.
-        </CardDescription>
-      </CardHeader>
-      <CardFooter>
-        <Button variant="secondary" disabled>
+        </Card.Description>
+      </Card.Header>
+      <Card.Footer>
+        <Button variant="secondary" isDisabled>
           Coming Soon
         </Button>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   );
 }
@@ -75,26 +68,27 @@ function ArchiveWorkspaceCard() {
 function WorkspacePasswordCard() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
-  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
+  const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
     defaultValues: {password: workspace.password ?? ""},
     onSubmit: ({value}) => {
-      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
-        loading: "Saving...",
-        success: "Success! The workspace password has been updated.",
-        error: "Oops! Something went wrong.",
-      });
+      mutation.mutate(
+        {workspaceSlug, ...value},
+        {onSuccess: () => toast.success("The workspace password has been updated.")}
+      );
+      // Untouched again, the form follows the workspace (now showing this change) from here on.
+      form.reset(value);
     },
   });
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Workspace Password</CardTitle>
-        <CardDescription>The workspace password is used to join the workspace.</CardDescription>
-      </CardHeader>
+      <Card.Header>
+        <Card.Title>Workspace Password</Card.Title>
+        <Card.Description>The workspace password is used to join the workspace.</Card.Description>
+      </Card.Header>
       <form.AppForm>
-        <CardContent>
+        <Card.Content>
           <form
             id={form.formId}
             onSubmit={e => {
@@ -102,12 +96,14 @@ function WorkspacePasswordCard() {
               e.stopPropagation();
               void form.handleSubmit();
             }}>
-            <form.AppField name="password">{field => <field.TextField />}</form.AppField>
+            <form.AppField name="password" validators={{onSubmit: z.string().min(8)}}>
+              {field => <field.TextField aria-label="Workspace password" />}
+            </form.AppField>
           </form>
-        </CardContent>
-        <CardFooter>
+        </Card.Content>
+        <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>
-        </CardFooter>
+        </Card.Footer>
       </form.AppForm>
     </Card>
   );

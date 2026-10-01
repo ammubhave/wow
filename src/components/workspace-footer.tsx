@@ -6,7 +6,6 @@ import {useWorkspace} from "@/hooks/use-workspace";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
 
 import {ActivityLogItem} from "./activity-log";
-import {Button} from "./ui/button";
 
 export function WorkspaceFooter() {
   const {workspaceSlug} = Route.useParams();
@@ -24,15 +23,12 @@ export function WorkspaceFooter() {
         <div className="flex flex-1 items-center justify-end overflow-hidden">
           {workspace.activityLogEntries[0] && (
             <div className="flex items-center overflow-hidden px-3">
-              <Button
-                variant="ghost"
-                nativeButton={false}
-                render={
-                  <Link to="/$workspaceSlug/activity-log" params={{workspaceSlug}}>
-                    <HistoryIcon className="text-muted-foreground shrink-0" />
-                  </Link>
-                }
-              />
+              <Link
+                className="button button--ghost"
+                to="/$workspaceSlug/activity-log"
+                params={{workspaceSlug}}>
+                <HistoryIcon className="text-muted-foreground shrink-0" />
+              </Link>
               <ActivityLogItem
                 relativeTime
                 showIcon={false}

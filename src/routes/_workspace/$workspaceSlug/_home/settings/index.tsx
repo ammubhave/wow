@@ -1,28 +1,13 @@
+import {Button, Card, InputGroup, Label, Separator} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {CopyIcon, PlusIcon, TrashIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
-import {Button} from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {Field, FieldGroup, FieldLabel} from "@/components/ui/field";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import {Separator} from "@/components/ui/separator";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
+import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/")({
   component: RouteComponent,
@@ -42,29 +27,30 @@ function RouteComponent() {
 function UpdateLinksCard() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
-  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
+  const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
     defaultValues: {links: workspace.links.map(({name, url}) => ({name, url})) ?? []},
     onSubmit: ({value}) => {
-      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
-        loading: "Saving...",
-        success: "Success! Your changes have been saved.",
-        error: "Oops! Something went wrong.",
-      });
+      mutation.mutate(
+        {workspaceSlug, ...value},
+        {onSuccess: () => toast.success("Your changes have been saved.")}
+      );
+      // Untouched again, the form follows the workspace (now showing this change) from here on.
+      form.reset(value);
     },
   });
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Links</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title>Links</Card.Title>
+        <Card.Description>
           Add links to this workspace to be displayed in the navigation bar. For example, you can
           add a link to the puzzle hunt website.
-        </CardDescription>
-      </CardHeader>
+        </Card.Description>
+      </Card.Header>
       <form.AppForm>
-        <CardContent>
+        <Card.Content>
           <form
             id={form.formId}
             onSubmit={e => {
@@ -76,14 +62,16 @@ function UpdateLinksCard() {
               {field => (
                 <div className="flex flex-col gap-1">
                   {field.state.value.map((_, i) => (
+                    // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array fields are bound by index (`links[${i}]`), so the index is the row's identity; the values are free-text and may be empty or duplicated, so there is no stable data key.
                     <InputGroup key={i}>
                       <form.AppField
                         name={`links[${i}].name`}
-                        children={field => (
-                          <InputGroupInput
-                            value={field.state.value}
-                            onChange={e => field.handleChange(e.target.value)}
-                            onBlur={field.handleBlur}
+                        children={nameField => (
+                          <InputGroup.Input
+                            value={nameField.state.value}
+                            onChange={e => nameField.handleChange(e.target.value)}
+                            onBlur={nameField.handleBlur}
+                            aria-label={`Link ${i + 1} name`}
                             placeholder="Name"
                           />
                         )}
@@ -91,30 +79,33 @@ function UpdateLinksCard() {
                       <Separator orientation="vertical" />
                       <form.AppField
                         name={`links[${i}].url`}
-                        children={field => (
-                          <InputGroupInput
-                            value={field.state.value}
-                            onChange={e => field.handleChange(e.target.value)}
-                            onBlur={field.handleBlur}
+                        children={urlField => (
+                          <InputGroup.Input
+                            value={urlField.state.value}
+                            onChange={e => urlField.handleChange(e.target.value)}
+                            onBlur={urlField.handleBlur}
+                            aria-label={`Link ${i + 1} URL`}
                             placeholder="URL"
                           />
                         )}
                       />
-                      <InputGroupAddon align="inline-end">
-                        <InputGroupButton
+                      <InputGroup.Suffix className="pr-0">
+                        <Button
+                          isIconOnly
                           variant="secondary"
-                          size="icon-xs"
-                          onClick={() => field.removeValue(i)}>
+                          size="sm"
+                          aria-label="Remove link"
+                          onPress={() => field.removeValue(i)}>
                           <TrashIcon />
-                        </InputGroupButton>
-                      </InputGroupAddon>
+                        </Button>
+                      </InputGroup.Suffix>
                     </InputGroup>
                   ))}
                   <Button
                     className="w-fit"
                     type="button"
                     variant="ghost"
-                    onClick={() => field.pushValue({name: "", url: ""})}>
+                    onPress={() => field.pushValue({name: "", url: ""})}>
                     <PlusIcon />
                     Add link
                   </Button>
@@ -122,10 +113,10 @@ function UpdateLinksCard() {
               )}
             </form.Field>
           </form>
-        </CardContent>
-        <CardFooter>
+        </Card.Content>
+        <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>
-        </CardFooter>
+        </Card.Footer>
       </form.AppForm>
     </Card>
   );
@@ -137,16 +128,16 @@ function LeaveWorkspaceCard() {
   const leaveMutation = useMutation(orpc.workspaces.leave.mutationOptions());
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Leave Workspace</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title>Leave Workspace</Card.Title>
+        <Card.Description>
           Leave this workspace. You will no longer be able to access it.
-        </CardDescription>
-      </CardHeader>
-      <CardFooter>
+        </Card.Description>
+      </Card.Header>
+      <Card.Footer>
         <Button
-          variant="destructive"
-          onClick={() => {
+          variant="danger"
+          onPress={() => {
             toast.promise(
               leaveMutation.mutateAsync(
                 {workspaceSlug},
@@ -165,36 +156,37 @@ function LeaveWorkspaceCard() {
           }}>
           Leave
         </Button>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   );
 }
 function DetailsCard() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
-  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
+  const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
     defaultValues: {
       teamName: workspace.teamName ?? undefined,
       eventName: workspace.eventName ?? undefined,
     },
     onSubmit: ({value}) => {
-      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
-        loading: "Saving...",
-        success: "Success! Your changes have been saved.",
-        error: "Oops! Something went wrong.",
-      });
+      mutation.mutate(
+        {workspaceSlug, ...value},
+        {onSuccess: () => toast.success("Your changes have been saved.")}
+      );
+      // Untouched again, the form follows the workspace (now showing this change) from here on.
+      form.reset(value);
     },
   });
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Details</CardTitle>
-        <CardDescription>General information about this workspace.</CardDescription>
-      </CardHeader>
+      <Card.Header>
+        <Card.Title>Details</Card.Title>
+        <Card.Description>General information about this workspace.</Card.Description>
+      </Card.Header>
       <form.AppForm>
-        <CardContent>
+        <Card.Content>
           <form
             id={form.formId}
             onSubmit={e => {
@@ -202,7 +194,7 @@ function DetailsCard() {
               e.stopPropagation();
               void form.handleSubmit();
             }}>
-            <FieldGroup>
+            <div className="flex w-full flex-col gap-4">
               <form.AppField
                 name="teamName"
                 children={field => <field.TextField label="Team Name" />}
@@ -211,15 +203,16 @@ function DetailsCard() {
                 name="eventName"
                 children={field => <field.TextField label="Event Name" />}
               />
-              <Field>
-                <FieldLabel>Invitation Link</FieldLabel>
+              <div className="flex flex-col gap-2">
+                <Label>Invitation Link</Label>
                 <p className="text-muted-foreground flex items-center gap-2 text-xs">
                   https://join.wafflehaus.io/{workspaceSlug}
                   <Button
                     variant="ghost"
-                    size="icon"
+                    isIconOnly
                     type="button"
-                    onClick={() => {
+                    aria-label="Copy invitation link"
+                    onPress={() => {
                       toast.promise(
                         navigator.clipboard.writeText(
                           `https://join.wafflehaus.io/${workspaceSlug}`
@@ -234,13 +227,13 @@ function DetailsCard() {
                     <CopyIcon />
                   </Button>
                 </p>
-              </Field>
-            </FieldGroup>
+              </div>
+            </div>
           </form>
-        </CardContent>
-        <CardFooter>
+        </Card.Content>
+        <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>
-        </CardFooter>
+        </Card.Footer>
       </form.AppForm>
     </Card>
   );
@@ -249,28 +242,29 @@ function DetailsCard() {
 function UpdateTagsCard() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
-  const mutation = useMutation(orpc.workspaces.update.mutationOptions());
+  const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
     defaultValues: {tags: workspace.tags},
     onSubmit: ({value}) => {
-      toast.promise(mutation.mutateAsync({workspaceSlug, ...value}), {
-        loading: "Saving...",
-        success: "Success! Your changes have been saved.",
-        error: "Oops! Something went wrong.",
-      });
+      mutation.mutate(
+        {workspaceSlug, ...value},
+        {onSuccess: () => toast.success("Your changes have been saved.")}
+      );
+      // Untouched again, the form follows the workspace (now showing this change) from here on.
+      form.reset(value);
     },
   });
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Tags</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title>Tags</Card.Title>
+        <Card.Description>
           Add tags to this workspace to help categorize and organize the puzzles.
-        </CardDescription>
-      </CardHeader>
+        </Card.Description>
+      </Card.Header>
       <form.AppForm>
-        <CardContent className="space-y-4">
+        <Card.Content className="space-y-4">
           <form
             id={form.formId}
             onSubmit={e => {
@@ -282,32 +276,36 @@ function UpdateTagsCard() {
               {field => (
                 <div className="flex flex-col gap-1">
                   {field.state.value.map((_, i) => (
+                    // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array fields are bound by index (`tags[${i}]`), so the index is the row's identity; the values are free-text and may be empty or duplicated, so there is no stable data key.
                     <InputGroup key={i}>
                       <form.AppField
                         name={`tags[${i}]`}
-                        children={field => (
-                          <InputGroupInput
-                            value={field.state.value}
-                            onChange={e => field.handleChange(e.target.value)}
-                            onBlur={field.handleBlur}
+                        children={tagField => (
+                          <InputGroup.Input
+                            value={tagField.state.value}
+                            onChange={e => tagField.handleChange(e.target.value)}
+                            onBlur={tagField.handleBlur}
+                            aria-label={`Tag ${i + 1}`}
                           />
                         )}
                       />
-                      <InputGroupAddon align="inline-end">
-                        <InputGroupButton
+                      <InputGroup.Suffix className="pr-0">
+                        <Button
+                          isIconOnly
                           variant="secondary"
-                          size="icon-xs"
-                          onClick={() => field.removeValue(i)}>
+                          size="sm"
+                          aria-label="Remove tag"
+                          onPress={() => field.removeValue(i)}>
                           <TrashIcon />
-                        </InputGroupButton>
-                      </InputGroupAddon>
+                        </Button>
+                      </InputGroup.Suffix>
                     </InputGroup>
                   ))}
                   <Button
                     className="w-fit"
                     type="button"
                     variant="ghost"
-                    onClick={() => field.pushValue("")}>
+                    onPress={() => field.pushValue("")}>
                     <PlusIcon />
                     Add tag
                   </Button>
@@ -315,10 +313,10 @@ function UpdateTagsCard() {
               )}
             </form.Field>
           </form>
-        </CardContent>
-        <CardFooter>
+        </Card.Content>
+        <Card.Footer>
           <form.SubmitButton>Save</form.SubmitButton>
-        </CardFooter>
+        </Card.Footer>
       </form.AppForm>
     </Card>
   );

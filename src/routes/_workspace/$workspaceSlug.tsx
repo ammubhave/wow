@@ -14,7 +14,7 @@ import {auth} from "@/lib/auth";
 import {authClient} from "@/lib/auth-client";
 
 export const isMember = createServerFn()
-  .inputValidator(z.object({workspaceSlug: z.string()}))
+  .validator(z.object({workspaceSlug: z.string()}))
   .handler(async ({data: {workspaceSlug}}) => {
     try {
       await auth.api.getFullOrganization({
@@ -36,7 +36,7 @@ export const isMember = createServerFn()
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug")({
   beforeLoad: async ({params}) => {
-    if (!isMember({data: {workspaceSlug: params.workspaceSlug}})) {
+    if (!(await isMember({data: {workspaceSlug: params.workspaceSlug}}))) {
       throw redirect({
         to: "/workspaces/join/$workspaceSlug",
         params: {workspaceSlug: params.workspaceSlug},
@@ -52,7 +52,9 @@ function RouteComponent() {
 
   if (!session) return null;
   return (
-    <WorkspaceProvider workspaceSlug={workspaceSlug}>
+    // Keyed so switching workspaces starts from a clean slate (spinner) instead of briefly showing,
+    // and mutating against, the previous workspace's state until the new socket's first message.
+    <WorkspaceProvider key={workspaceSlug} workspaceSlug={workspaceSlug}>
       <NotificationsWebSocket workspaceSlug={workspaceSlug}>
         <PresencesWebSocket workspaceSlug={workspaceSlug}>
           <div className="flex flex-1 flex-col">

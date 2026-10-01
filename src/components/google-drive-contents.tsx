@@ -1,12 +1,12 @@
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {DrivePicker, DrivePickerDocsView} from "@googleworkspace/drive-picker-react";
+import {Button, buttonVariants, Card, Skeleton} from "@heroui/react";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import {useHydrated} from "@tanstack/react-router";
 import {CheckIcon} from "lucide-react";
-import useDrivePicker from "react-google-drive-picker";
+import {useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
-import {Button} from "@/components/ui/button";
-import {CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
 
 export function GoogleDriveCardContents({
@@ -16,59 +16,12 @@ export function GoogleDriveCardContents({
   workspaceSlug: string;
   redirectUrl: string;
 }) {
-  const [openPicker] = useDrivePicker();
-  const queryClient = useQueryClient();
-  const folderMutation = useMutation(
-    orpc.workspaces.setGoogleFolderId.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries();
-      },
-    })
-  );
-  const fileMutation = useMutation(
-    orpc.workspaces.setGoogleTemplateFileId.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries();
-      },
-    })
-  );
-  const handleOpenFolderPicker = () => {
-    openPicker({
-      clientId: import.meta.env.VITE_GOOGLE_API_CLIENT_ID as string,
-      developerKey: import.meta.env.VITE_GOOGLE_API_KEY as string,
-      viewId: "FOLDERS",
-      appId: "933519172272",
-      setIncludeFolders: true,
-      setSelectFolderEnabled: true,
-      callbackFunction: data => {
-        if (data.action === "picked") {
-          toast.promise(folderMutation.mutateAsync({workspaceSlug, folderId: data.docs[0]!.id}), {
-            loading: "Selecting folder...",
-            success: "Success! The folder has been selected.",
-            error: "Oops! Something went wrong.",
-          });
-        }
-      },
-    });
-  };
-  const handleOpenFilePicker = () => {
-    openPicker({
-      clientId: import.meta.env.VITE_GOOGLE_API_CLIENT_ID as string,
-      developerKey: import.meta.env.VITE_GOOGLE_API_KEY as string,
-      viewId: "SPREADSHEETS",
-      appId: "933519172272",
-      setIncludeFolders: true,
-      callbackFunction: data => {
-        if (data.action === "picked") {
-          toast.promise(fileMutation.mutateAsync({workspaceSlug, fileId: data.docs[0]!.id}), {
-            loading: "Selecting template file...",
-            success: "Success! The template file has been selected.",
-            error: "Oops! Something went wrong.",
-          });
-        }
-      },
-    });
-  };
+  const [openPicker, setOpenPicker] = useState<"folder" | "file" | null>(null);
+  // Queries are invalidated after every successful mutation by the global MutationCache (router.tsx).
+  const folderMutation = useMutation(orpc.workspaces.setGoogleFolderId.mutationOptions());
+  const fileMutation = useMutation(orpc.workspaces.setGoogleTemplateFileId.mutationOptions());
+  const handleOpenFolderPicker = () => setOpenPicker("folder");
+  const handleOpenFilePicker = () => setOpenPicker("file");
 
   const state = useQuery(
     orpc.workspaces.getGoogleTokenState.queryOptions({input: {workspaceSlug}})
@@ -76,15 +29,58 @@ export function GoogleDriveCardContents({
 
   return (
     <>
-      <CardHeader>
-        <CardTitle>Google Drive Connection</CardTitle>
-        <CardDescription>
+      {openPicker && (
+        <DrivePicker
+          client-id={import.meta.env.VITE_GOOGLE_API_CLIENT_ID}
+          developer-key={import.meta.env.VITE_GOOGLE_API_KEY}
+          app-id="933519172272"
+          onPicked={event => {
+            setOpenPicker(null);
+            const id = event.detail.docs[0]?.id;
+            if (!id) return;
+            toast.promise(
+              openPicker === "folder"
+                ? folderMutation.mutateAsync({workspaceSlug, folderId: id})
+                : fileMutation.mutateAsync({workspaceSlug, fileId: id}),
+              openPicker === "folder"
+                ? {
+                    loading: "Selecting folder...",
+                    success: "Success! The folder has been selected.",
+                    error: "Oops! Something went wrong.",
+                  }
+                : {
+                    loading: "Selecting template file...",
+                    success: "Success! The template file has been selected.",
+                    error: "Oops! Something went wrong.",
+                  }
+            );
+          }}
+          onCanceled={() => setOpenPicker(null)}
+          onOauthError={() => {
+            setOpenPicker(null);
+            toast.error("Couldn't connect to Google Drive. Please try again.");
+          }}>
+          {openPicker === "folder" ? (
+            <DrivePickerDocsView
+              view-id="FOLDERS"
+              include-folders="true"
+              select-folder-enabled="true"
+            />
+          ) : (
+            <DrivePickerDocsView view-id="SPREADSHEETS" include-folders="true" />
+          )}
+        </DrivePicker>
+      )}
+      <Card.Header>
+        <Card.Title>Google Drive Connection</Card.Title>
+        <Card.Description>
           You can connect your Google Drive account to this workspace. This allows your workspace to
           automatically create new spreadsheets whenever you create a new puzzle.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
         {state.data ? (
+          // oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style: none, which makes Safari/VoiceOver drop implicit list semantics.
           <ol role="list" className="overflow-hidden">
             <li className="relative pb-8">
               {state.data.state === 1 || state.data.state === 2 || state.data.state === 3 ? (
@@ -162,22 +158,20 @@ export function GoogleDriveCardContents({
                         <span className="text-xs font-medium">Select Google Drive Folder</span>
                         <span className="text-xs text-gray-500">
                           Folder:{" "}
-                          <Button
-                            variant="secondary"
-                            className="h-auto px-2 py-0"
-                            render={
-                              <a
-                                href={state.data.folderLink}
-                                target="_blank"
-                                rel="noopener noreferrer">
-                                {state.data.folderName}
-                              </a>
-                            }
-                          />
+                          <a
+                            className={buttonVariants({
+                              variant: "secondary",
+                              className: "h-auto px-2 py-0",
+                            })}
+                            href={state.data.folderLink}
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            {state.data.folderName}
+                          </a>
                         </span>
                       </span>
                       <div>
-                        <Button variant="secondary" onClick={handleOpenFolderPicker}>
+                        <Button variant="secondary" onPress={handleOpenFolderPicker}>
                           Reselect Folder
                         </Button>
                       </div>
@@ -216,9 +210,9 @@ export function GoogleDriveCardContents({
                         </span>
                       </span>
                       <Button
-                        disabled={state.data.state !== 1}
-                        variant={state.data.state === 1 ? "default" : "secondary"}
-                        onClick={handleOpenFolderPicker}>
+                        isDisabled={state.data.state !== 1}
+                        variant={state.data.state === 1 ? "primary" : "secondary"}
+                        onPress={handleOpenFolderPicker}>
                         Select Folder
                       </Button>
                     </div>
@@ -241,22 +235,20 @@ export function GoogleDriveCardContents({
                         <span className="text-xs font-medium">Select Template File</span>
                         <span className="text-xs text-gray-500">
                           File:{" "}
-                          <Button
-                            variant="secondary"
-                            className="h-auto px-2 py-0"
-                            render={
-                              <a
-                                href={state.data.fileLink}
-                                target="_blank"
-                                rel="noopener noreferrer">
-                                {state.data.fileName}
-                              </a>
-                            }
-                          />
+                          <a
+                            className={buttonVariants({
+                              variant: "secondary",
+                              className: "h-auto px-2 py-0",
+                            })}
+                            href={state.data.fileLink}
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            {state.data.fileName}
+                          </a>
                         </span>
                       </span>
                       <div>
-                        <Button variant="secondary" onClick={handleOpenFilePicker}>
+                        <Button variant="secondary" onPress={handleOpenFilePicker}>
                           Reselect File
                         </Button>
                       </div>
@@ -292,9 +284,9 @@ export function GoogleDriveCardContents({
                       </span>
                       <div>
                         <Button
-                          disabled={state.data.state !== 2}
-                          variant={state.data.state === 2 ? "default" : "secondary"}
-                          onClick={handleOpenFilePicker}>
+                          isDisabled={state.data.state !== 2}
+                          variant={state.data.state === 2 ? "primary" : "secondary"}
+                          onPress={handleOpenFilePicker}>
                           Select File
                         </Button>
                       </div>
@@ -307,7 +299,7 @@ export function GoogleDriveCardContents({
         ) : (
           <Skeleton className="h-[165.5px] w-full" />
         )}
-      </CardContent>
+      </Card.Content>
     </>
   );
 }
@@ -321,13 +313,14 @@ function ConnectToGoogleForm({
   redirectUrl: string;
   children: React.ReactNode;
 }) {
+  const hydrated = useHydrated();
   return (
     <form method="GET" action="https://accounts.google.com/o/oauth2/v2/auth">
       <input type="hidden" name="client_id" value={import.meta.env.VITE_GOOGLE_API_CLIENT_ID} />
       <input
         type="hidden"
         name="redirect_uri"
-        value={`${typeof window !== "undefined" ? window.location.origin : ""}/api/oauth/google`}
+        value={hydrated ? `${window.location.origin}/api/oauth/google` : ""}
       />
       <input type="hidden" name="scope" value="https://www.googleapis.com/auth/drive.file" />
       <input type="hidden" name="response_type" value="code" />

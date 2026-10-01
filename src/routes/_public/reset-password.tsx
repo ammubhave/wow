@@ -1,10 +1,9 @@
+import {Card} from "@heroui/react";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {toast} from "sonner";
-import z from "zod";
+import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_public/reset-password")({
@@ -36,16 +35,16 @@ function RouteComponent() {
     <div className="flex w-full flex-1 items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <Card>
-          <CardHeader>
-            <CardTitle>Set new password</CardTitle>
-            <CardDescription>
+          <Card.Header>
+            <Card.Title>Set new password</Card.Title>
+            <Card.Description>
               Enter your new password below to reset your account password
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </Card.Description>
+          </Card.Header>
+          <Card.Content>
             <form.AppForm>
               <form.Form>
-                <FieldGroup>
+                <div className="flex w-full flex-col gap-4">
                   <form.AppField name="password">
                     {field => (
                       <field.TextField
@@ -55,15 +54,15 @@ function RouteComponent() {
                       />
                     )}
                   </form.AppField>
-                  <FieldGroup>
-                    <Field>
+                  <div className="flex w-full flex-col gap-4">
+                    <div className="flex w-full flex-col gap-2">
                       <form.SubmitButton>Reset password</form.SubmitButton>
-                    </Field>
-                  </FieldGroup>
-                </FieldGroup>
+                    </div>
+                  </div>
+                </div>
               </form.Form>
             </form.AppForm>
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
     </div>

@@ -1,13 +1,17 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {env, waitUntil} from "cloudflare:workers";
 
+function hasDefaultCache(c: CacheStorage): c is CacheStorage & {default: Cache} {
+  return "default" in c;
+}
+
 export const Route = createFileRoute("/api/exchange/puzzles/$huntPuzzleId/assets/$assetId")({
   server: {
     handlers: {
       GET: async ({request, params: {huntPuzzleId, assetId}}) => {
-        const cacheKey = new Request(request.url.toString(), request);
-        if (!("default" in caches)) throw new Error("Caches not available");
-        const cache = caches.default as Cache;
+        const cacheKey = new Request(request.url, request);
+        if (!hasDefaultCache(caches)) throw new Error("Caches not available");
+        const cache = caches.default;
         let response = await cache.match(cacheKey);
         if (response) {
           return response;

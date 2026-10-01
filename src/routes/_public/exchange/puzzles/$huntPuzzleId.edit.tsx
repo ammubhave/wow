@@ -1,38 +1,29 @@
+import {Accordion, Breadcrumbs, Button, Tabs} from "@heroui/react";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
+import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {PlusIcon, TrashIcon} from "lucide-react";
 import {Suspense} from "react";
 import {toast} from "sonner";
 
 import {ChangeExchangePuzzleDraftSwitch} from "@/components/change-exchange-puzzle-draft-switch";
 import {useAppForm} from "@/components/form";
-import {SimpleEditor} from "@/components/tiptap-templates/simple/simple-editor";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {Button} from "@/components/ui/button";
-import {Table, TableBody, TableCell, TableRow} from "@/components/ui/table";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/edit")({
-  component: () => (
-    <Suspense>
+  component: KeyedRouteComponent,
+});
+
+// Remount per puzzle so the form and the (uncontrolled) rich text editors don't keep showing the
+// previous puzzle when navigating directly between puzzles (e.g. via browser history).
+function KeyedRouteComponent() {
+  const {huntPuzzleId} = Route.useParams();
+  return (
+    <Suspense key={huntPuzzleId}>
       <RouteComponent />
     </Suspense>
-  ),
-});
+  );
+}
 
 function RouteComponent() {
   const {huntPuzzleId} = Route.useParams();
@@ -55,6 +46,9 @@ function RouteComponent() {
       onSuccess: () => {
         void navigate({to: "/exchange/hunts/$huntId", params: {huntId: puzzle.hunts.id}});
       },
+      onError: e => {
+        toast.error("Failed to delete puzzle: " + e.message);
+      },
     })
   );
 
@@ -68,204 +62,233 @@ function RouteComponent() {
       hints: puzzle.hunt_puzzles.hints ?? [],
     },
     onSubmit: async ({value}) => {
-      await mutation.mutateAsync({
-        huntPuzzleId: puzzle.hunt_puzzles.id,
-        title: value.title,
-        contents: value.contents,
-        solution: value.solution,
-        answer: value.answer,
-        partials: value.partials,
-        hints: value.hints,
-      });
+      // Errors are reported by `onError`.
+      await mutation
+        .mutateAsync({
+          huntPuzzleId: puzzle.hunt_puzzles.id,
+          title: value.title,
+          contents: value.contents,
+          solution: value.solution,
+          answer: value.answer,
+          partials: value.partials,
+          hints: value.hints,
+        })
+        .catch(() => {});
     },
   });
 
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link to="/exchange">Hunts</Link>} />
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                render={
-                  <Link to="/exchange/hunts/$huntId" params={{huntId: puzzle.hunts.id}}>
-                    {puzzle.hunts.name}
-                  </Link>
-                }
-              />
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                render={
-                  <Link
-                    to="/exchange/puzzles/$huntPuzzleId"
-                    params={{huntPuzzleId: puzzle.hunt_puzzles.id}}>
-                    {puzzle.hunt_puzzles.title}
-                  </Link>
-                }
-              />
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Edit</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <Breadcrumbs>
+          <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
+          <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunts.id}`}>
+            {puzzle.hunts.name}
+          </Breadcrumbs.Item>
+          <Breadcrumbs.Item href={`/exchange/puzzles/${puzzle.hunt_puzzles.id}`}>
+            {puzzle.hunt_puzzles.title}
+          </Breadcrumbs.Item>
+          <Breadcrumbs.Item>Edit</Breadcrumbs.Item>
+        </Breadcrumbs>
       </div>
       <form.AppForm>
         <form.Form className="flex flex-1 flex-col gap-4">
           <div className="flex items-center gap-1">
             <div className="flex-1">
               <form.AppField name="title">
-                {field => <field.TextField placeholder="Enter puzzle title" />}
+                {field => <field.TextField aria-label="Title" placeholder="Enter puzzle title" />}
               </form.AppField>
             </div>
             <form.SubmitButton>Save</form.SubmitButton>
             <Button
               variant="outline"
-              onClick={() => deleteMutation.mutate({huntPuzzleId: puzzle.hunt_puzzles.id})}>
+              isPending={deleteMutation.isPending}
+              onPress={() => deleteMutation.mutate({huntPuzzleId: puzzle.hunt_puzzles.id})}>
               Delete
             </Button>
             <ChangeExchangePuzzleDraftSwitch huntPuzzleId={puzzle.hunt_puzzles.id} />
           </div>
           <div>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell>Answer</TableCell>
-                  <TableCell>
+            <table>
+              <tbody>
+                <tr>
+                  <td>Answer</td>
+                  <td>
                     <form.AppField name="answer">
-                      {field => <field.TextField placeholder="ANSWER" className="uppercase" />}
+                      {field => (
+                        <field.TextField
+                          aria-label="Answer"
+                          placeholder="ANSWER"
+                          className="uppercase"
+                        />
+                      )}
                     </form.AppField>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
             <Accordion>
-              <AccordionItem>
-                <AccordionTrigger>Partials</AccordionTrigger>
-                <AccordionContent>
-                  <Table>
-                    <TableBody>
-                      <form.Field name="partials" mode="array">
-                        {field => (
-                          <>
-                            {field.state.value.map((_, i) => (
-                              <TableRow key={i}>
-                                <TableCell>
-                                  <form.AppField name={`partials[${i}].answer`}>
-                                    {subField => (
-                                      <subField.TextField
-                                        placeholder="PARTIAL ANSWER"
-                                        className="uppercase"
-                                      />
-                                    )}
-                                  </form.AppField>
-                                </TableCell>
-                                <TableCell>
-                                  <form.AppField name={`partials[${i}].message`}>
-                                    {subField => <subField.TextField placeholder="Message" />}
-                                  </form.AppField>
-                                </TableCell>
-                                <TableCell>
+              <Accordion.Item id="partials">
+                <Accordion.Heading>
+                  <Accordion.Trigger>
+                    Partials
+                    <Accordion.Indicator />
+                  </Accordion.Trigger>
+                </Accordion.Heading>
+                <Accordion.Panel>
+                  <Accordion.Body>
+                    <table>
+                      <tbody>
+                        <form.Field name="partials" mode="array">
+                          {field => (
+                            <>
+                              {field.state.value.map((_, i) => (
+                                // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array rows are addressed by index (`name[i].field`) and items have no id
+                                <tr key={i}>
+                                  <td>
+                                    <form.AppField name={`partials[${i}].answer`}>
+                                      {subField => (
+                                        <subField.TextField
+                                          aria-label="Partial answer"
+                                          placeholder="PARTIAL ANSWER"
+                                          className="uppercase"
+                                        />
+                                      )}
+                                    </form.AppField>
+                                  </td>
+                                  <td>
+                                    <form.AppField name={`partials[${i}].message`}>
+                                      {subField => (
+                                        <subField.TextField
+                                          aria-label="Partial message"
+                                          placeholder="Message"
+                                        />
+                                      )}
+                                    </form.AppField>
+                                  </td>
+                                  <td>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      isIconOnly
+                                      aria-label="Remove partial"
+                                      onPress={() => field.removeValue(i)}>
+                                      <TrashIcon />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                              <tr>
+                                <td colSpan={2}>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => field.removeValue(i)}>
-                                    <TrashIcon />
+                                    onPress={() => {
+                                      field.pushValue({answer: "", message: ""});
+                                    }}>
+                                    <PlusIcon />
+                                    Add
                                   </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow>
-                              <TableCell colSpan={2}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    field.pushValue({answer: "", message: ""});
-                                  }}>
-                                  <PlusIcon />
-                                  Add
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          </>
-                        )}
-                      </form.Field>
-                    </TableBody>
-                  </Table>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem>
-                <AccordionTrigger>Hints</AccordionTrigger>
-                <AccordionContent>
-                  <Table>
-                    <TableBody>
-                      <form.Field name="hints" mode="array">
-                        {field => (
-                          <>
-                            {field.state.value.map((_, i) => (
-                              <TableRow key={i}>
-                                <TableCell>
-                                  <form.AppField name={`hints[${i}].title`}>
-                                    {subField => <subField.TextField placeholder="Title" />}
-                                  </form.AppField>
-                                </TableCell>
-                                <TableCell>
-                                  <form.AppField name={`hints[${i}].message`}>
-                                    {subField => <subField.TextField placeholder="Message" />}
-                                  </form.AppField>
-                                </TableCell>
-                                <TableCell>
+                                </td>
+                              </tr>
+                            </>
+                          )}
+                        </form.Field>
+                      </tbody>
+                    </table>
+                  </Accordion.Body>
+                </Accordion.Panel>
+              </Accordion.Item>
+              <Accordion.Item id="hints">
+                <Accordion.Heading>
+                  <Accordion.Trigger>
+                    Hints
+                    <Accordion.Indicator />
+                  </Accordion.Trigger>
+                </Accordion.Heading>
+                <Accordion.Panel>
+                  <Accordion.Body>
+                    <table>
+                      <tbody>
+                        <form.Field name="hints" mode="array">
+                          {field => (
+                            <>
+                              {field.state.value.map((_, i) => (
+                                // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array rows are addressed by index (`name[i].field`) and items have no id
+                                <tr key={i}>
+                                  <td>
+                                    <form.AppField name={`hints[${i}].title`}>
+                                      {subField => (
+                                        <subField.TextField
+                                          aria-label="Hint title"
+                                          placeholder="Title"
+                                        />
+                                      )}
+                                    </form.AppField>
+                                  </td>
+                                  <td>
+                                    <form.AppField name={`hints[${i}].message`}>
+                                      {subField => (
+                                        <subField.TextField
+                                          aria-label="Hint message"
+                                          placeholder="Message"
+                                        />
+                                      )}
+                                    </form.AppField>
+                                  </td>
+                                  <td>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      isIconOnly
+                                      aria-label="Remove hint"
+                                      onPress={() => field.removeValue(i)}>
+                                      <TrashIcon />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                              <tr>
+                                <td colSpan={2}>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => field.removeValue(i)}>
-                                    <TrashIcon />
+                                    onPress={() => {
+                                      field.pushValue({title: "", message: ""});
+                                    }}>
+                                    <PlusIcon />
+                                    Add
                                   </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow>
-                              <TableCell colSpan={2}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    field.pushValue({title: "", message: ""});
-                                  }}>
-                                  <PlusIcon />
-                                  Add
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          </>
-                        )}
-                      </form.Field>
-                    </TableBody>
-                  </Table>
-                </AccordionContent>
-              </AccordionItem>
+                                </td>
+                              </tr>
+                            </>
+                          )}
+                        </form.Field>
+                      </tbody>
+                    </table>
+                  </Accordion.Body>
+                </Accordion.Panel>
+              </Accordion.Item>
             </Accordion>
           </div>
-          <Tabs className="flex flex-1 flex-col">
-            <TabsList>
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="solution">Solution</TabsTrigger>
-            </TabsList>
-            <TabsContent
-              value="content"
-              className="relative flex min-h-[200px] flex-1 flex-col gap-4">
-              <div className="dark:bg-card bg-muted overflow absolute inset-0 overflow-y-auto">
+          <Tabs defaultSelectedKey="content" className="flex flex-1 flex-col">
+            <Tabs.ListContainer>
+              <Tabs.List aria-label="Puzzle content">
+                <Tabs.Tab id="content">
+                  Content
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+                <Tabs.Tab id="solution">
+                  Solution
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+            <Tabs.Panel id="content" className="relative flex min-h-[200px] flex-1 flex-col gap-4">
+              <div className="dark:bg-card bg-surface-secondary overflow absolute inset-0 overflow-y-auto">
                 <form.AppField name="contents">
                   {field => (
-                    <SimpleEditor
+                    <PuzzleRichTextEditor
                       huntPuzzleId={huntPuzzleId}
                       defaultValue={field.state.value}
                       onChange={value => field.setValue(value)}
@@ -273,14 +296,12 @@ function RouteComponent() {
                   )}
                 </form.AppField>
               </div>
-            </TabsContent>
-            <TabsContent
-              value="solution"
-              className="relative flex min-h-[200px] flex-1 flex-col gap-4">
-              <div className="dark:bg-card bg-muted overflow absolute inset-0 overflow-y-auto">
+            </Tabs.Panel>
+            <Tabs.Panel id="solution" className="relative flex min-h-[200px] flex-1 flex-col gap-4">
+              <div className="dark:bg-card bg-surface-secondary overflow absolute inset-0 overflow-y-auto">
                 <form.AppField name="solution">
                   {field => (
-                    <SimpleEditor
+                    <PuzzleRichTextEditor
                       huntPuzzleId={huntPuzzleId}
                       defaultValue={field.state.value}
                       onChange={value => field.setValue(value)}
@@ -288,7 +309,7 @@ function RouteComponent() {
                   )}
                 </form.AppField>
               </div>
-            </TabsContent>
+            </Tabs.Panel>
           </Tabs>
         </form.Form>
       </form.AppForm>

@@ -1,8 +1,7 @@
+import {Avatar, Card} from "@heroui/react";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {orpc} from "@/lib/orpc";
 
@@ -18,17 +17,17 @@ function RouteComponent() {
   ).data;
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Members ({members.length})</CardTitle>
-        <CardDescription>Members of this workspace.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <Card.Header>
+        <Card.Title>Members ({members.length})</Card.Title>
+        <Card.Description>Members of this workspace.</Card.Description>
+      </Card.Header>
+      <Card.Content className="flex flex-col gap-3">
         {members.map(member => (
           <div key={member.user.id} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Avatar>
-                <AvatarImage src={member.user.image ?? gravatarUrl(member.user.email)} />
-                <AvatarFallback>{member.user.name?.[0]}</AvatarFallback>
+                <Avatar.Image src={member.user.image ?? gravatarUrl(member.user.email)} />
+                <Avatar.Fallback>{member.user.name?.[0]}</Avatar.Fallback>
               </Avatar>
               <div className="flex flex-col items-baseline">
                 <div className="font-medium">{member.user.name}</div>
@@ -36,7 +35,7 @@ function RouteComponent() {
             </div>
           </div>
         ))}
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }

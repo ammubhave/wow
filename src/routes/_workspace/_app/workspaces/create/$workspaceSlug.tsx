@@ -1,13 +1,11 @@
+import {Button, Card} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowLeftIcon, ArrowRightIcon} from "lucide-react";
 import {toast} from "sonner";
-import {cn} from "tailwind-variants";
 
 import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent} from "@/components/ui/card";
 import {useWorkspace, WorkspaceProvider} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
@@ -28,37 +26,36 @@ function RouteComponent() {
 function RouteComponentInner() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
-  const workspaceDeleteMutation = useMutation(orpc.workspaces.delete.mutationOptions());
+  const navigate = Route.useNavigate();
+  const workspaceDeleteMutation = useMutation(
+    orpc.workspaces.delete.mutationOptions({
+      // The workspace no longer exists, so don't leave the user on its setup page.
+      onSuccess: () => navigate({to: "/workspaces"}),
+    })
+  );
 
   return (
     <div className="flex w-full justify-center">
       <div className="flex max-w-3xl flex-1 flex-col gap-2">
         <div>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-label="Go Back"
-            render={
-              <Link to="/workspaces">
-                <ArrowLeftIcon /> Back
-              </Link>
-            }
-          />
+          <Link to="/workspaces" className="button button--outline button--sm gap-2">
+            <ArrowLeftIcon /> Back
+          </Link>
         </div>
         <Card>
           <GoogleDriveCardContents
-            workspaceSlug={workspaceSlug!}
+            workspaceSlug={workspaceSlug}
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
           <div className="border-t" />
           <DiscordCardContents
-            workspaceSlug={workspaceSlug!}
+            workspaceSlug={workspaceSlug}
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
-          <CardContent className="flex items-center justify-between gap-4 border-t pt-6">
+          <Card.Content className="flex items-center justify-between gap-4 border-t pt-6">
             <Button
               variant="ghost"
-              onClick={() => {
+              onPress={() => {
                 toast.promise(workspaceDeleteMutation.mutateAsync({workspaceSlug}), {
                   loading: "Deleting workspace...",
                   success: "Success! Your workspace has been deleted.",
@@ -68,24 +65,20 @@ function RouteComponentInner() {
               Delete workspace
             </Button>
 
-            {!workspace.googleAccessToken && (
+            {!workspace.googleConnected && (
               <span className="text-muted-foreground text-xs">
                 You must connect your Google Drive account first.
               </span>
             )}
-            <Button
-              className={cn(
-                "gap-2",
-                !workspace.googleAccessToken && "pointer-events-none opacity-50"
-              )}
-              render={
-                <Link to="/$workspaceSlug" params={{workspaceSlug}}>
-                  Go to blackboard
-                  <ArrowRightIcon />
-                </Link>
-              }
-            />
-          </CardContent>
+            <Link
+              to="/$workspaceSlug"
+              params={{workspaceSlug}}
+              disabled={!workspace.googleConnected}
+              className="button button--primary gap-2">
+              Go to blackboard
+              <ArrowRightIcon />
+            </Link>
+          </Card.Content>
         </Card>
       </div>
     </div>

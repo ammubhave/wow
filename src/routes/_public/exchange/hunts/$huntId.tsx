@@ -1,3 +1,4 @@
+import {Breadcrumbs, Button} from "@heroui/react";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronRightIcon, PlusIcon} from "lucide-react";
@@ -5,15 +6,6 @@ import {Suspense} from "react";
 
 import {AddNewExchangePuzzleDialog} from "@/components/add-new-exchange-puzzle-dialog";
 import {ChangeExchangeHuntDraftSwitch} from "@/components/change-exchange-hunt-draft-switch";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {Button} from "@/components/ui/button";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/hunts/$huntId")({
@@ -31,17 +23,10 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink render={<Link to="/exchange">Hunts</Link>} />
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{hunt.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <Breadcrumbs>
+        <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
+        <Breadcrumbs.Item>{hunt.name}</Breadcrumbs.Item>
+      </Breadcrumbs>
       <div className="flex items-center justify-between">
         <span className="text-2xl">{hunt.name}</span>
         {isAdmin && (
@@ -57,12 +42,13 @@ function RouteComponent() {
         )}
       </div>
       <ul
+        // oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style:none, which makes Safari/VoiceOver drop the implicit list role
         role="list"
         className="divide-border outline-border bg-background dark:bg-input/30 dark:outline-input divide-y overflow-hidden shadow-xs outline-1 sm:rounded-xl dark:shadow-none dark:sm:-outline-offset-1">
         {hunt.hunt_puzzles.map(puzzle => (
           <li
             key={puzzle.id}
-            className="hover:bg-muted dark:hover:bg-input/50 relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
+            className="hover:bg-surface-secondary dark:hover:bg-input/50 relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
             <div className="flex min-w-0 gap-x-4">
               <div className="min-w-0 flex-auto">
                 <p className="text-sm/6 font-semibold">

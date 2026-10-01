@@ -1,9 +1,8 @@
+import {Button, buttonVariants, Card, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
+import {useHydrated} from "@tanstack/react-router";
 import {CheckIcon, XIcon} from "lucide-react";
 
-import {Button} from "@/components/ui/button";
-import {CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Skeleton} from "@/components/ui/skeleton";
 import {orpc} from "@/lib/orpc";
 
 import {DisconnectDiscordDialog} from "./disconnect-discord-dialog";
@@ -17,6 +16,7 @@ function DiscordForm({
   redirectUrl: string;
   workspaceSlug: string;
 }) {
+  const hydrated = useHydrated();
   return (
     <form method="GET" action="https://discord.com/oauth2/authorize">
       <input type="hidden" name="client_id" value={import.meta.env.VITE_DISCORD_CLIENT_ID} />
@@ -25,7 +25,7 @@ function DiscordForm({
       <input
         type="hidden"
         name="redirect_uri"
-        value={`${typeof window !== "undefined" ? window.location.origin : ""}/api/oauth/discord`}
+        value={hydrated ? `${window.location.origin}/api/oauth/discord` : ""}
       />
       <input type="hidden" name="integration_type" value="0" />
       <input type="hidden" name="scope" value="bot" />
@@ -51,14 +51,14 @@ export function DiscordCardContents({
   );
   return (
     <>
-      <CardHeader>
-        <CardTitle>Discord</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title>Discord</Card.Title>
+        <Card.Description>
           You can connect your Discord account to this workspace. This allows the workspace to
           automatically create voice channels whenever you create a new puzzle.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
         {!discordInfo.isLoading ? (
           discordInfo.data?.ok !== undefined ? (
             <div>
@@ -85,18 +85,16 @@ export function DiscordCardContents({
                       {discordInfo.data.ok ? (
                         <>
                           Server Name:{" "}
-                          <Button
-                            variant="secondary"
-                            className="h-auto px-2 py-0"
-                            render={
-                              <a
-                                href={`https://discord.com/channels/${discordInfo.data.data.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer">
-                                {discordInfo.data.data.name}
-                              </a>
-                            }
-                          />
+                          <a
+                            className={buttonVariants({
+                              variant: "secondary",
+                              className: "h-auto px-2 py-0",
+                            })}
+                            href={`https://discord.com/channels/${discordInfo.data?.data?.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            {discordInfo.data?.data?.name}
+                          </a>
                         </>
                       ) : (
                         <span className="text-xs text-red-500">{discordInfo.data.error}</span>
@@ -108,7 +106,7 @@ export function DiscordCardContents({
                       Reconnect
                     </Button>
                     <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
-                      <Button variant="destructive">Disconnect</Button>
+                      <Button variant="danger">Disconnect</Button>
                     </DisconnectDiscordDialog>
                   </DiscordForm>
                 </div>
@@ -130,7 +128,7 @@ export function DiscordCardContents({
                     </span>
                   </span>
                   <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                    <Button type="submit" variant="default" className="gap-2">
+                    <Button type="submit" className="gap-2">
                       Connect with Discord
                     </Button>
                   </DiscordForm>
@@ -141,7 +139,7 @@ export function DiscordCardContents({
         ) : (
           <Skeleton className="h-8 w-full" />
         )}
-      </CardContent>
+      </Card.Content>
     </>
   );
 }

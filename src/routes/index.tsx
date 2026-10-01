@@ -1,7 +1,6 @@
 import {createFileRoute, Link} from "@tanstack/react-router";
 
 import {CoffeeIcon} from "@/components/coffee-icon";
-import {Button} from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({component: App});
 
@@ -14,12 +13,16 @@ function App() {
         <header>
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-4 px-4 sm:justify-between sm:px-6 lg:flex-nowrap lg:px-8">
             <div className="relative z-20 flex flex-col items-center gap-4 text-lg font-medium text-black sm:flex-row">
-              <img src="/wafflehaus.png" className="rounded-full" width={48} height={48} />
+              <img src="/wafflehaus.png" alt="" className="rounded-full" width={48} height={48} />
               Wafflehaüs Organized Workspaces
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center gap-4 sm:flex-row">
-              <Button variant="ghost" render={<Link to="/docs">Documentation</Link>} />
-              <Button render={<Link to="/workspaces">My Workspaces</Link>} />
+              <Link className="button button--ghost" to="/docs">
+                Documentation
+              </Link>
+              <Link className="button button--primary" to="/workspaces">
+                My Workspaces
+              </Link>
             </div>
           </div>
         </header>
@@ -36,16 +39,12 @@ function App() {
                   google spreadsheets, discord channels, and more.
                 </p>
                 <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Button render={<Link to="/workspaces">Get Started</Link>} />
-                  <Button
-                    variant="ghost"
-                    className="gap-2"
-                    render={
-                      <Link to="/docs">
-                        Learn more <span aria-hidden="true">→</span>
-                      </Link>
-                    }
-                  />
+                  <Link className="button button--primary" to="/workspaces">
+                    Get Started
+                  </Link>
+                  <Link to="/docs" className="button button--ghost gap-2">
+                    Learn more <span aria-hidden="true">→</span>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -64,16 +63,14 @@ function App() {
               </p>
             </div>
             <div className="max-w-md text-sm">
-              <Button
-                variant="secondary"
-                className="gap-2 font-['Cookie'] text-xl"
-                render={
-                  <a href="https://www.buymeacoffee.com/amolbhave" target="_blank">
-                    <CoffeeIcon />
-                    Buy me a puzzle
-                  </a>
-                }
-              />
+              <a
+                className="button button--secondary gap-2 font-['Cookie'] text-xl"
+                href="https://www.buymeacoffee.com/amolbhave"
+                target="_blank"
+                rel="noopener noreferrer">
+                <CoffeeIcon aria-hidden="true" />
+                Buy me a puzzle
+              </a>
             </div>
           </div>
         </div>

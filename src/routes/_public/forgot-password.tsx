@@ -1,14 +1,12 @@
-import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
+import {Card} from "@heroui/react";
+import type {TurnstileInstance} from "@marsidev/react-turnstile";
 import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {useRef} from "react";
 import {toast} from "sonner";
 
+import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
-import {useTheme} from "@/components/theme-provider";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 import {getSession} from "@/lib/auth-server";
 
@@ -30,60 +28,51 @@ function RouteComponent() {
         email: value.email,
         redirectTo: "/reset-password",
         fetchOptions: {
-          headers: {"x-captcha-response": value.token},
+          headers: captchaHeaders(value.token),
           onSuccess: async () => {
             await router.navigate({to: "/forgot-password-check-email"});
           },
           onError: async error => {
+            turnstileRef.current?.reset();
             toast.error(error.error.message);
           },
         },
       });
     },
   });
-  const {theme} = useTheme();
   const turnstileRef = useRef<TurnstileInstance>(null);
   return (
     <div className="flex w-full flex-1 items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label="Go Back"
-              render={
-                <Link to="/login">
-                  <ArrowLeftIcon /> Back
-                </Link>
-              }
-            />
+            <Link to="/login" className="button button--outline button--sm gap-2">
+              <ArrowLeftIcon aria-hidden="true" /> Back
+            </Link>
           </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Forgot password?</CardTitle>
-              <CardDescription>Enter your email below to send reset instructions</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <Card.Header>
+              <Card.Title>Forgot password?</Card.Title>
+              <Card.Description>Enter your email below to send reset instructions</Card.Description>
+            </Card.Header>
+            <Card.Content>
               <form.AppForm>
                 <form.Form>
-                  <FieldGroup>
+                  <div className="flex w-full flex-col gap-4">
                     <form.AppField name="email">
                       {field => <field.TextField label="Email" autoComplete="email" />}
                     </form.AppField>
-                    <Turnstile
+                    <Captcha
                       ref={turnstileRef}
-                      siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
-                      options={{theme: theme === "system" ? "auto" : theme, size: "flexible"}}
-                      onSuccess={token => form.setFieldValue("token", token)}
+                      onToken={token => form.setFieldValue("token", token)}
                     />
-                    <Field>
+                    <div className="flex w-full flex-col gap-2">
                       <form.SubmitButton>Reset password</form.SubmitButton>
-                    </Field>
-                  </FieldGroup>
+                    </div>
+                  </div>
                 </form.Form>
               </form.AppForm>
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       </div>

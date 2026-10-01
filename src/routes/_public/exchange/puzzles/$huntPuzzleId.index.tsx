@@ -1,43 +1,30 @@
+import {Breadcrumbs, Button, Dropdown, InputGroup, Label} from "@heroui/react";
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronDownIcon, PencilIcon} from "lucide-react";
 import {Suspense, useState} from "react";
+import {toast} from "sonner";
 
 import {ExchangePuzzleHintDialog} from "@/components/exchange-puzzle-hint-dialog";
 import {useAppForm} from "@/components/form";
-import {SimpleEditor} from "@/components/tiptap-templates/simple/simple-editor";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {Button} from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/")({
-  component: () => (
-    <Suspense>
+  component: KeyedRouteComponent,
+});
+
+// Remount per puzzle so the form and the (uncontrolled) rich text editors don't keep showing the
+// previous puzzle when navigating directly between puzzles (e.g. via browser history).
+function KeyedRouteComponent() {
+  const {huntPuzzleId} = Route.useParams();
+  return (
+    <Suspense key={huntPuzzleId}>
       <RouteComponent />
     </Suspense>
-  ),
-});
+  );
+}
 
 function RouteComponent() {
   const {huntPuzzleId} = Route.useParams();
@@ -51,13 +38,19 @@ function RouteComponent() {
           await celebrate();
         }
       },
+      onError: () => {
+        toast.error("Oops! Something went wrong.");
+      },
     })
   );
 
   const form = useAppForm({
     defaultValues: {answer: ""},
     onSubmit: async ({value}) => {
-      await submitAnswer.mutateAsync({huntPuzzleId: huntPuzzleId, answer: value.answer});
+      // Errors are reported by `onError`.
+      await submitAnswer
+        .mutateAsync({huntPuzzleId: huntPuzzleId, answer: value.answer})
+        .catch(() => {});
     },
   });
 
@@ -76,27 +69,13 @@ function RouteComponent() {
             activeHintIndex !== null ? puzzle.hunt_puzzles.hints![activeHintIndex]!.message : ""
           }
         />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link to="/exchange">Hunts</Link>} />
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                render={
-                  <Link to="/exchange/hunts/$huntId" params={{huntId: puzzle.hunts.id}}>
-                    {puzzle.hunts.name}
-                  </Link>
-                }
-              />
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{puzzle.hunt_puzzles.title}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <Breadcrumbs>
+          <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
+          <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunts.id}`}>
+            {puzzle.hunts.name}
+          </Breadcrumbs.Item>
+          <Breadcrumbs.Item>{puzzle.hunt_puzzles.title}</Breadcrumbs.Item>
+        </Breadcrumbs>
       </div>
       <div className="flex flex-col items-center gap-4">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
@@ -104,57 +83,43 @@ function RouteComponent() {
           <div className="text-center text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
           <div className="flex items-center gap-1 justify-self-end">
             {puzzle.hunt_puzzles.hints && puzzle.hunt_puzzles.hints.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button variant="outline">
-                      Hints
-                      <ChevronDownIcon />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent
-                  className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                  side="bottom"
-                  align="end"
-                  sideOffset={4}>
-                  <DropdownMenuGroup>
+              <Dropdown>
+                <Button variant="outline">
+                  Hints
+                  <ChevronDownIcon />
+                </Button>
+                <Dropdown.Popover
+                  className="w-(--trigger-width) min-w-56 rounded-lg"
+                  placement="bottom end">
+                  <Dropdown.Menu
+                    onAction={key => {
+                      setActiveHintIndex(Number(key));
+                      setIsExchangePuzzleHintDialogOpen(true);
+                    }}>
                     {puzzle.hunt_puzzles.hints.map((hint, index) => (
-                      <DropdownMenuItem
-                        key={index}
-                        onClick={() => {
-                          setActiveHintIndex(index);
-                          setIsExchangePuzzleHintDialogOpen(true);
-                        }}>
-                        {hint.title}
-                      </DropdownMenuItem>
+                      // oxlint-disable-next-line react/no-array-index-key -- hints have no id; the index is the hint's identity (it is also the item id / activeHintIndex) and the list is static
+                      <Dropdown.Item key={index} id={index} textValue={hint.title}>
+                        <Label>{hint.title}</Label>
+                      </Dropdown.Item>
                     ))}
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
             )}
-            <Button
-              variant="outline"
-              render={
-                <Link
-                  to="/exchange/puzzles/$huntPuzzleId/solution"
-                  params={{huntPuzzleId: puzzle.hunt_puzzles.id}}>
-                  Solution
-                </Link>
-              }
-            />
+            <Link
+              to="/exchange/puzzles/$huntPuzzleId/solution"
+              params={{huntPuzzleId: puzzle.hunt_puzzles.id}}
+              className="button button--outline">
+              Solution
+            </Link>
             {isAdmin && (
-              <Button
-                variant="outline"
-                render={
-                  <Link
-                    to="/exchange/puzzles/$huntPuzzleId/edit"
-                    params={{huntPuzzleId: puzzle.hunt_puzzles.id}}>
-                    <PencilIcon />
-                    Edit
-                  </Link>
-                }
-              />
+              <Link
+                to="/exchange/puzzles/$huntPuzzleId/edit"
+                params={{huntPuzzleId: puzzle.hunt_puzzles.id}}
+                className="button button--outline gap-2">
+                <PencilIcon />
+                Edit
+              </Link>
             )}
           </div>
         </div>
@@ -164,7 +129,8 @@ function RouteComponent() {
             <InputGroup>
               <form.AppField name="answer">
                 {field => (
-                  <InputGroupInput
+                  <InputGroup.Input
+                    aria-label="Answer"
                     className="uppercase"
                     value={field.state.value}
                     onChange={value => field.handleChange(value.target.value)}
@@ -172,11 +138,11 @@ function RouteComponent() {
                   />
                 )}
               </form.AppField>
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton type="submit" variant="default">
+              <InputGroup.Suffix className="pr-0">
+                <Button type="submit" isPending={submitAnswer.isPending}>
                   Submit Answer
-                </InputGroupButton>
-              </InputGroupAddon>
+                </Button>
+              </InputGroup.Suffix>
             </InputGroup>
           </form.Form>
         </form.AppForm>
@@ -192,8 +158,8 @@ function RouteComponent() {
         )}
         {submitAnswer.isPending && <span className="text-xl font-bold">Checking answer...</span>}
       </div>
-      <div className="dark:bg-card bg-muted flex flex-col gap-4">
-        <SimpleEditor
+      <div className="dark:bg-card bg-surface-secondary flex flex-col gap-4">
+        <PuzzleRichTextEditor
           huntPuzzleId={huntPuzzleId}
           defaultValue={puzzle.hunt_puzzles.contents ?? undefined}
         />

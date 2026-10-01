@@ -1,4 +1,4 @@
-import {Link} from "@tanstack/react-router";
+import {Link, useParams} from "@tanstack/react-router";
 import {
   CheckIcon,
   FolderMinusIcon,
@@ -7,6 +7,7 @@ import {
   OctagonAlertIcon,
   PuzzleIcon,
 } from "lucide-react";
+import {memo} from "react";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
@@ -15,7 +16,18 @@ import type {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {UserHoverCard} from "./user-hover-card";
 
-export function ActivityLogItem({
+/**
+ * "5 minutes ago"-style text that keeps itself current. The ticking clock lives here, not in the
+ * caller, so only this text re-renders on each tick. Relative-time output is coarse (seconds only
+ * for the first minute), so a 10s tick is plenty.
+ */
+export function RelativeTime({date}: {date: Date | string | number}) {
+  const now = useNow({updateInterval: 10_000});
+  const format = useFormatter();
+  return format.relativeTime(new Date(date), now);
+}
+
+export const ActivityLogItem = memo(function ActivityLogItem({
   activityItem,
   showIcon = true,
   relativeTime = false,
@@ -24,7 +36,7 @@ export function ActivityLogItem({
   showIcon?: boolean;
   relativeTime?: boolean;
 }) {
-  const now = useNow({updateInterval: 1000});
+  const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
   const format = useFormatter();
   return (
     <div className="flex items-center gap-x-4">
@@ -97,12 +109,18 @@ export function ActivityLogItem({
                     : activityItem.puzzle_activity_log_entry.subType === "updateAnswer"
                       ? "updated the answer of"
                       : ""}{" "}
-            <Link
-              to="/$workspaceSlug/puzzles/$puzzleId"
-              params={{puzzleId: activityItem.puzzle_activity_log_entry.puzzleId} as any}
-              className="text-foreground font-medium">
-              {activityItem.puzzle_activity_log_entry.puzzleName}
-            </Link>
+            {activityItem.puzzle_activity_log_entry.puzzleId ? (
+              <Link
+                to="/$workspaceSlug/puzzles/$puzzleId"
+                params={{workspaceSlug, puzzleId: activityItem.puzzle_activity_log_entry.puzzleId}}
+                className="text-foreground font-medium">
+                {activityItem.puzzle_activity_log_entry.puzzleName}
+              </Link>
+            ) : (
+              <span className="text-foreground font-medium">
+                {activityItem.puzzle_activity_log_entry.puzzleName}
+              </span>
+            )}
             {activityItem.puzzle_activity_log_entry.field !== null && (
               <>
                 {" "}
@@ -132,19 +150,22 @@ export function ActivityLogItem({
       <time
         dateTime={activityItem.activity_log_entry.createdAt.toString()}
         className="text-muted-foreground flex-none py-0.5 text-xs/5">
-        {relativeTime
-          ? format.relativeTime(activityItem.activity_log_entry.createdAt, now)
-          : activityItem.activity_log_entry.createdAt.toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "numeric",
-            })}
+        {relativeTime ? (
+          <RelativeTime date={activityItem.activity_log_entry.createdAt} />
+        ) : (
+          // Arrives as an ISO string over the workspace websocket (JSON), despite the Date type.
+          format.dateTime(new Date(activityItem.activity_log_entry.createdAt), {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+          })
+        )}
       </time>
     </div>
   );
-}
+});
 
 export function ActivityLog() {
   const workspace = useWorkspace();
@@ -156,6 +177,7 @@ export function ActivityLog() {
         </div>
         <div className="flex w-full flex-1 flex-col">
           <div className="flow-root">
+            {/* oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style: none, which makes Safari/VoiceOver drop implicit list semantics. */}
             <ul role="list" className="space-y-6">
               {workspace.activityLogEntries.map((activityItem, activityItemIdx) => (
                 <li key={activityItem.activity_log_entry.id} className="relative flex gap-x-4">

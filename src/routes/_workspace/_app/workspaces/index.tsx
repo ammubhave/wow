@@ -1,11 +1,10 @@
+import {Skeleton} from "@heroui/react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowRightIcon, ChevronRightIcon, PlusIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
-import {Button} from "@/components/ui/button";
-import {Skeleton} from "@/components/ui/skeleton";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
@@ -46,26 +45,30 @@ function RouteComponent() {
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-xl font-semibold tracking-tight">My workspaces</h1>
           </div>
+          {/* oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style:none, which makes Safari/VoiceOver drop the implicit list role */}
           <ul role="list" className="divide-border ring-border divide-y overflow-hidden ring-1">
+            {/* A <ul> may only contain <li>s, so the loading and empty states are list items too. */}
             {!myWorkspaces.data?.data ? (
-              <Skeleton className="flex h-36 justify-between gap-x-6 px-4 py-5 sm:px-6" />
+              <li>
+                <Skeleton className="flex h-36 justify-between gap-x-6 px-4 py-5 sm:px-6" />
+              </li>
             ) : myWorkspaces.data.data.length === 0 ? (
-              <div className="relative block w-full rounded-lg p-12 text-center">
+              <li className="relative block w-full rounded-lg p-12 text-center">
                 <p className="text-muted-foreground mt-1 text-sm">
                   You are not a member of any workspaces. Join an existing one or create a new one
                   to get started.
                 </p>
-              </div>
+              </li>
             ) : (
               myWorkspaces.data.data.map(workspace => (
                 <li
                   key={workspace.id}
-                  className="hover:bg-muted relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
+                  className="hover:bg-surface-secondary relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
                   <div className="flex min-w-0 gap-x-4">
                     <div className="min-w-0 flex-auto">
                       <p className="text-xs/relaxed leading-6">
                         <Link
-                          {...(!workspace.googleAccessToken || !workspace.googleFolderId
+                          {...(!workspace.googleFolderId
                             ? ({
                                 to: "/workspaces/create/$workspaceSlug",
                                 params: {workspaceSlug: workspace.slug},
@@ -124,7 +127,7 @@ function RouteComponent() {
                   />
                 )}
               />
-              <form.SubmitButton className="gap-2" variant="default">
+              <form.SubmitButton fullWidth>
                 <ArrowRightIcon />
                 Join workspace
               </form.SubmitButton>
@@ -135,16 +138,10 @@ function RouteComponent() {
               <span className="w-full border-t" />
             </div>
           </div>
-          <Button
-            className="gap-2"
-            variant="outline"
-            render={
-              <Link to="/workspaces/create">
-                <PlusIcon />
-                Create a new workspace
-              </Link>
-            }
-          />
+          <Link className="button button--outline button--full-width" to="/workspaces/create">
+            <PlusIcon />
+            Create a new workspace
+          </Link>
         </div>
       </div>
     </div>

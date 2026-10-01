@@ -1,4 +1,4 @@
-import {ORPCError} from "@orpc/client";
+import {ORPCError} from "@orpc/server";
 import {waitUntil} from "cloudflare:workers";
 import {and, eq, isNull} from "drizzle-orm";
 import {z} from "zod";
@@ -7,8 +7,66 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
 
-import {getWorkspaceRoom} from "../do/workspace";
+import {invalidateWorkspace} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
+
+/** Creates the puzzle's Google Drive worksheet (if Drive is connected) and records its id. */
+async function createPuzzleWorksheet(
+  context: {google: {getAccessToken: (workspaceId: string) => Promise<string | null | undefined>}},
+  workspace: {id: string; googleFolderId: string | null; googleTemplateFileId: string | null},
+  puzzle: {id: string},
+  input: {name: string; worksheetType: "google_spreadsheet" | "google_drawing"}
+) {
+  const googleAccessToken = await context.google.getAccessToken(workspace.id);
+  if (!googleAccessToken) return;
+  let resp;
+  if (workspace.googleTemplateFileId && input.worksheetType === "google_spreadsheet") {
+    resp = await (
+      await fetch(
+        `https://www.googleapis.com/drive/v3/files/${workspace.googleTemplateFileId}/copy`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: `${input.name} [${puzzle.id}]`,
+            parents: [workspace.googleFolderId],
+          }),
+        }
+      )
+    ).json();
+  } else {
+    resp = await (
+      await fetch(`https://www.googleapis.com/drive/v3/files`, {
+        method: "POST",
+        headers: {Authorization: `Bearer ${googleAccessToken}`, "Content-Type": "application/json"},
+        body: JSON.stringify({
+          name: `${input.name} [${puzzle.id}]`,
+          parents: [workspace.googleFolderId],
+          mimeType:
+            input.worksheetType === "google_spreadsheet"
+              ? "application/vnd.google-apps.spreadsheet"
+              : "application/vnd.google-apps.drawing",
+        }),
+      })
+    ).json();
+  }
+
+  await db
+    .update(schema.puzzle)
+    .set({
+      googleSpreadsheetId:
+        input.worksheetType === "google_spreadsheet"
+          ? z.object({id: z.string()}).parse(resp).id
+          : null,
+      googleDrawingId:
+        input.worksheetType === "google_drawing" ? z.object({id: z.string()}).parse(resp).id : null,
+    })
+    .where(eq(schema.puzzle.id, puzzle.id));
+  await invalidateWorkspace(workspace.id);
+}
 
 export const puzzlesRouter = {
   create: procedure
@@ -28,6 +86,8 @@ export const puzzlesRouter = {
         ]),
         z.object({
           workspaceSlug: z.string(),
+          // Client-generated so the optimistic row and the real one share an id.
+          id: z.uuid().optional(),
           name: z.string(),
           tags: z.array(z.string()),
           link: z.url().or(z.string().length(0)),
@@ -37,48 +97,36 @@ export const puzzlesRouter = {
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
-      let workspace;
-      if ("roundId" in input) {
-        workspace = (
-          await db
-            .select()
-            .from(schema.organization)
-            .innerJoin(schema.round, eq(schema.organization.id, schema.round.workspaceId))
-            .where(
-              and(
-                eq(schema.round.id, input.roundId),
-                eq(schema.organization.slug, input.workspaceSlug)
-              )
-            )
-        )[0]?.organization;
-      } else {
-        workspace = (
-          await db
-            .select()
-            .from(schema.organization)
-            .innerJoin(schema.round, eq(schema.organization.id, schema.round.workspaceId))
-            .innerJoin(schema.puzzle, eq(schema.round.id, schema.puzzle.roundId))
-            .where(
-              and(
-                eq(schema.puzzle.id, input.parentPuzzleId),
-                eq(schema.puzzle.isMetaPuzzle, true),
-                eq(schema.organization.slug, input.workspaceSlug)
-              )
-            )
-        )[0]?.organization;
-      }
-      if (!workspace) {
-        throw new ORPCError("NOT_FOUND");
-      }
-
+      const workspace = context.workspace;
+      // Resolve the round, scoped to the caller's workspace (ids come from input).
       const roundId =
         "roundId" in input
-          ? input.roundId
-          : await db
-              .select({roundId: schema.puzzle.roundId})
-              .from(schema.puzzle)
-              .where(eq(schema.puzzle.id, input.parentPuzzleId))
-              .then(rows => rows[0]?.roundId);
+          ? (
+              await db
+                .select({id: schema.round.id})
+                .from(schema.round)
+                .where(
+                  and(
+                    eq(schema.round.id, input.roundId),
+                    eq(schema.round.workspaceId, workspace.id)
+                  )
+                )
+                .get()
+            )?.id
+          : (
+              await db
+                .select({roundId: schema.puzzle.roundId})
+                .from(schema.puzzle)
+                .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+                .where(
+                  and(
+                    eq(schema.puzzle.id, input.parentPuzzleId),
+                    eq(schema.puzzle.isMetaPuzzle, true),
+                    eq(schema.round.workspaceId, workspace.id)
+                  )
+                )
+                .get()
+            )?.roundId;
       if (!roundId) {
         throw new ORPCError("NOT_FOUND", {message: "Round not found"});
       }
@@ -86,6 +134,7 @@ export const puzzlesRouter = {
       const puzzle = await db
         .insert(schema.puzzle)
         .values({
+          id: input.id,
           name: input.name,
           tags: input.tags,
           link: input.link,
@@ -98,67 +147,18 @@ export const puzzlesRouter = {
         .then(rows => rows[0]);
       invariant(puzzle);
 
-      const googleAccessToken = await context.google.getAccessToken(workspace.id);
-      if (googleAccessToken) {
-        let resp;
-        if (workspace.googleTemplateFileId && input.worksheetType === "google_spreadsheet") {
-          resp = await (
-            await fetch(
-              `https://www.googleapis.com/drive/v3/files/${workspace.googleTemplateFileId}/copy`,
-              {
-                method: "POST",
-                headers: {Authorization: `Bearer ${googleAccessToken}`},
-                body: JSON.stringify({
-                  name: `${input.name} [${puzzle.id}]`,
-                  parents: [workspace.googleFolderId],
-                }),
-              }
-            )
-          ).json();
-        } else {
-          resp = await (
-            await fetch(`https://www.googleapis.com/drive/v3/files`, {
-              method: "POST",
-              headers: {Authorization: `Bearer ${googleAccessToken}`},
-              body: JSON.stringify({
-                name: `${input.name} [${puzzle.id}]`,
-                parents: [workspace.googleFolderId],
-                mimeType:
-                  input.worksheetType === "google_spreadsheet"
-                    ? "application/vnd.google-apps.spreadsheet"
-                    : "application/vnd.google-apps.drawing",
-              }),
-            })
-          ).json();
-        }
-
+      // Independent of Google Drive being connected.
+      if (input.type === "meta-puzzle" && input.assignUnassignedPuzzles) {
         await db
           .update(schema.puzzle)
-          .set({
-            googleSpreadsheetId:
-              input.worksheetType === "google_spreadsheet"
-                ? z.object({id: z.string()}).parse(resp).id
-                : null,
-            googleDrawingId:
-              input.worksheetType === "google_drawing"
-                ? z.object({id: z.string()}).parse(resp).id
-                : null,
-          })
-          .where(eq(schema.puzzle.id, puzzle.id));
-        if (input.type === "meta-puzzle") {
-          if (input.assignUnassignedPuzzles) {
-            await db
-              .update(schema.puzzle)
-              .set({parentPuzzleId: puzzle.id})
-              .where(
-                and(
-                  eq(schema.puzzle.roundId, roundId),
-                  isNull(schema.puzzle.parentPuzzleId),
-                  eq(schema.puzzle.isMetaPuzzle, false)
-                )
-              );
-          }
-        }
+          .set({parentPuzzleId: puzzle.id})
+          .where(
+            and(
+              eq(schema.puzzle.roundId, roundId),
+              isNull(schema.puzzle.parentPuzzleId),
+              eq(schema.puzzle.isMetaPuzzle, false)
+            )
+          );
       }
       await context.activityLog.createPuzzle({
         subType: "create",
@@ -166,7 +166,14 @@ export const puzzlesRouter = {
         puzzleName: puzzle.name,
         workspaceId: workspace.id,
       });
-      await (await getWorkspaceRoom(workspace.id)).invalidate();
+      // Respond (and broadcast the new row) right away; the Drive worksheet can take a second or two,
+      // so it is created in the background and broadcast again once its id is known.
+      await invalidateWorkspace(workspace.id);
+      waitUntil(
+        createPuzzleWorksheet(context, workspace, puzzle, input).catch((error: unknown) =>
+          console.error("Failed to create the puzzle's Google Drive worksheet", error)
+        )
+      );
       waitUntil(context.discord.sync(workspace.id));
 
       return puzzle;
@@ -198,6 +205,7 @@ export const puzzlesRouter = {
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
+      const workspaceId = context.workspace.id;
       const puzzle = await db
         .select({
           id: schema.puzzle.id,
@@ -205,38 +213,83 @@ export const puzzlesRouter = {
           answer: schema.puzzle.answer,
           status: schema.puzzle.status,
           importance: schema.puzzle.importance,
-          round: {workspaceId: schema.round.workspaceId},
+          roundId: schema.puzzle.roundId,
+          isMetaPuzzle: schema.puzzle.isMetaPuzzle,
         })
         .from(schema.puzzle)
         .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-        .where(
-          and(eq(schema.puzzle.id, input.id), eq(schema.round.workspaceId, context.workspace.id))
-        )
-        .then(rows => rows[0]);
-      invariant(puzzle);
+        .where(and(eq(schema.puzzle.id, input.id), eq(schema.round.workspaceId, workspaceId)))
+        .get();
+      if (!puzzle) throw new ORPCError("NOT_FOUND");
+
+      // `parentPuzzleId` is either a round id (move to that round, unassigned) or a puzzle id
+      // (assign to that meta, moving into its round). Both are scoped to the caller's workspace.
+      let roundId = undefined;
+      if (input.parentPuzzleId !== undefined && input.parentPuzzleId !== null) {
+        if (input.parentPuzzleId === puzzle.id) {
+          throw new ORPCError("BAD_REQUEST", {message: "A puzzle can't be its own parent."});
+        }
+        const [targetRound, targetParent] = await Promise.all([
+          db
+            .select({id: schema.round.id})
+            .from(schema.round)
+            .where(
+              and(
+                eq(schema.round.id, input.parentPuzzleId),
+                eq(schema.round.workspaceId, workspaceId)
+              )
+            )
+            .get(),
+          db
+            .select({roundId: schema.puzzle.roundId})
+            .from(schema.puzzle)
+            .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+            .where(
+              and(
+                eq(schema.puzzle.id, input.parentPuzzleId),
+                eq(schema.round.workspaceId, workspaceId)
+              )
+            )
+            .get(),
+        ]);
+        if (targetRound) {
+          roundId = targetRound.id;
+          input.parentPuzzleId = null;
+        } else if (targetParent) {
+          roundId = targetParent.roundId;
+        } else {
+          throw new ORPCError("NOT_FOUND", {message: "Round or parent puzzle not found"});
+        }
+      }
+
+      const activityLogWrites: Promise<void>[] = [];
       if (input.answer !== undefined && input.answer !== "" && input.answer !== puzzle.answer) {
-        await context.activityLog.createPuzzle({
-          subType: "updateAnswer",
-          puzzleId: puzzle.id,
-          puzzleName: puzzle.name,
-          workspaceId: puzzle.round.workspaceId,
-          field: input.answer ?? "",
-        });
+        activityLogWrites.push(
+          context.activityLog.createPuzzle({
+            subType: "updateAnswer",
+            puzzleId: puzzle.id,
+            puzzleName: puzzle.name,
+            workspaceId,
+            field: input.answer ?? "",
+          })
+        );
       }
       if (input.status !== undefined && input.status !== puzzle.status) {
-        await context.activityLog.createPuzzle({
-          subType: "updateStatus",
-          puzzleId: puzzle.id,
-          puzzleName: puzzle.name,
-          workspaceId: puzzle.round.workspaceId,
-          field: input.status ?? "None",
-        });
+        activityLogWrites.push(
+          context.activityLog.createPuzzle({
+            subType: "updateStatus",
+            puzzleId: puzzle.id,
+            puzzleName: puzzle.name,
+            workspaceId,
+            field: input.status ?? "None",
+          })
+        );
 
         const inputSolved = input.status === "solved" || input.status === "backsolved";
         const puzzleSolved = puzzle.status === "solved" || puzzle.status === "backsolved";
         if (inputSolved && inputSolved !== puzzleSolved) {
           waitUntil(
-            context.notification.broadcast(puzzle.round.workspaceId, {
+            context.notification.broadcast(workspaceId, {
               type: "solved",
               message: `Puzzle ${puzzle.name} was solved!`,
             })
@@ -244,36 +297,17 @@ export const puzzlesRouter = {
         }
       }
       if (input.importance !== undefined && input.importance !== puzzle.importance) {
-        await context.activityLog.createPuzzle({
-          subType: "updateImportance",
-          puzzleId: puzzle.id,
-          puzzleName: puzzle.name,
-          workspaceId: puzzle.round.workspaceId,
-          field: input.importance ?? "normal",
-        });
+        activityLogWrites.push(
+          context.activityLog.createPuzzle({
+            subType: "updateImportance",
+            puzzleId: puzzle.id,
+            puzzleName: puzzle.name,
+            workspaceId,
+            field: input.importance ?? "normal",
+          })
+        );
       }
-
-      // Update puzzle in database
-      let roundId = undefined;
-      if (input.parentPuzzleId !== undefined && input.parentPuzzleId !== null) {
-        roundId = (
-          await db
-            .select({id: schema.round.id})
-            .from(schema.round)
-            .where(eq(schema.round.id, input.parentPuzzleId))
-        )[0]?.id;
-        if (roundId) {
-          input.parentPuzzleId = null;
-        } else {
-          roundId = (
-            await db
-              .select({roundId: schema.puzzle.roundId})
-              .from(schema.puzzle)
-              .where(eq(schema.puzzle.id, input.parentPuzzleId))
-          )[0]?.roundId;
-          invariant(roundId);
-        }
-      }
+      await Promise.all(activityLogWrites);
 
       let commentUpdatedAt = undefined;
       let commentUpdatedBy = undefined;
@@ -298,8 +332,15 @@ export const puzzlesRouter = {
           tags: input.tags,
         })
         .where(eq(schema.puzzle.id, input.id));
-      await (await getWorkspaceRoom(puzzle.round.workspaceId)).invalidate();
-      waitUntil(context.discord.sync(puzzle.round.workspaceId));
+      await invalidateWorkspace(workspaceId);
+      // Discord channels only depend on round membership, name, status and meta-ness: skip the
+      // sync (which re-reads every round and puzzle) for comment/tag/link/answer-only edits.
+      const affectsDiscord =
+        (roundId !== undefined && roundId !== puzzle.roundId) ||
+        (input.name !== undefined && input.name !== puzzle.name) ||
+        (input.status !== undefined && input.status !== puzzle.status) ||
+        (input.isMetaPuzzle !== undefined && input.isMetaPuzzle !== puzzle.isMetaPuzzle);
+      if (affectsDiscord) waitUntil(context.discord.sync(workspaceId));
     }),
 
   delete: procedure
@@ -319,8 +360,8 @@ export const puzzlesRouter = {
           and(eq(schema.puzzle.id, input.id), eq(schema.round.workspaceId, context.workspace.id))
         )
         .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-        .then(rows => rows[0]);
-      invariant(puzzle);
+        .get();
+      if (!puzzle) throw new ORPCError("NOT_FOUND");
       await context.activityLog.createPuzzle({
         subType: "delete",
         puzzleId: puzzle.id,
@@ -330,16 +371,24 @@ export const puzzlesRouter = {
 
       await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input.id));
 
-      if (puzzle.googleSpreadsheetId || puzzle.googleDrawingId) {
-        const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
-        if (googleAccessToken) {
-          await fetch(
-            `https://www.googleapis.com/drive/v3/files/${puzzle.googleSpreadsheetId || puzzle.googleDrawingId}`,
-            {method: "DELETE", headers: {Authorization: `Bearer ${googleAccessToken}`}}
-          );
-        }
+      const googleFileId = puzzle.googleSpreadsheetId || puzzle.googleDrawingId;
+      if (googleFileId) {
+        // Off the response path: the puzzle is already gone from the workspace.
+        waitUntil(
+          (async () => {
+            const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
+            if (!googleAccessToken) return;
+            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${googleFileId}`, {
+              method: "DELETE",
+              headers: {Authorization: `Bearer ${googleAccessToken}`},
+            });
+            if (!resp.ok && resp.status !== 404) {
+              console.error(`Failed to delete Google file ${googleFileId}: ${resp.status}`);
+            }
+          })()
+        );
       }
-      await (await getWorkspaceRoom(puzzle.round.workspaceId)).invalidate();
+      await invalidateWorkspace(puzzle.round.workspaceId);
       waitUntil(context.discord.sync(puzzle.round.workspaceId));
     }),
   get: procedure

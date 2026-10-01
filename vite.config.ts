@@ -21,9 +21,17 @@ const config = defineConfig({
     trailingComma: "es5",
   },
   lint: {
-    plugins: ["unicorn", "typescript", "oxc"],
-    categories: {},
+    // No react-perf plugin: React Compiler (see `viteReact({compiler: true})`) memoizes inline
+    // functions/objects/JSX props, which is what those rules guard against.
+    plugins: ["unicorn", "typescript", "oxc", "react", "jsx-a11y", "import", "promise"],
+    categories: {correctness: "warn", suspicious: "warn", perf: "warn"},
     rules: {
+      // Automatic JSX runtime: React doesn't need to be in scope.
+      "react/react-in-jsx-scope": "off",
+      // TanStack Form's documented API is `<form.Field children={field => ...} />`.
+      "react/no-children-prop": "off",
+      // Autofocus on HeroUI components (e.g. a dialog's first field when it opens) is intended UX.
+      "jsx-a11y/no-autofocus": ["warn", {ignoreNonDOM: true}],
       "for-direction": "warn",
       "no-async-promise-executor": "warn",
       "no-caller": "warn",
@@ -157,7 +165,7 @@ const config = defineConfig({
     cloudflare({viteEnvironment: {name: "ssr"}}),
     tailwindcss(),
     tanstackStart(),
-    viteReact(),
+    viteReact({compiler: true}),
   ],
   build: {sourcemap: true},
   optimizeDeps: {exclude: ["@tanstack/start-server-core"]},

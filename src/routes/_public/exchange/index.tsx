@@ -1,15 +1,9 @@
+import {Accordion, Button} from "@heroui/react";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {ChevronRightIcon, PlusIcon} from "lucide-react";
+import {ChevronDownIcon, ChevronRightIcon, PlusIcon} from "lucide-react";
 
 import {AddNewExchangeHuntDialog} from "@/components/add-new-exchange-hunt-dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {Button} from "@/components/ui/button";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/")({component: RouteComponent});
@@ -25,34 +19,51 @@ function RouteComponent() {
         Every month, Wafflehaüs releases a small number of approachable, short, Hunt-length puzzles
         written by team members, as well as spotlighting puzzles from other hunts.
       </p>
-      <Accordion multiple defaultValue={["solving", "writing"]}>
-        <AccordionItem value="solving">
-          <AccordionTrigger>Interested in solving?</AccordionTrigger>
-          <AccordionContent>
-            <p>
-              Feel free to solve by yourself or with friends! Once you've solved the puzzle, go
-              react to the corresponding Discord message!
-            </p>
-            <p>
-              There has been a WOW workspace set up for your convenience called{" "}
-              <a target="_blank" rel="noopener noreferrer" href="https://www.wafflehaus.io/wpe">
-                WPE
-              </a>
-              . The password is <code>sumhint</code>. Please be courteous! You're sharing this
-              workspace with the whole team. See instructions on the workspace itself.
-            </p>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="writing">
-          <AccordionTrigger>Interested in writing?</AccordionTrigger>
-          <AccordionContent>
-            <p>Reach out to Allen on Discord!</p>
-            <Button
-              variant="outline"
-              render={<Link to="/exchange/writing">Learn about writing WPE puzzles</Link>}
-            />
-          </AccordionContent>
-        </AccordionItem>
+      <Accordion allowsMultipleExpanded defaultExpandedKeys={["solving", "writing"]}>
+        <Accordion.Item id="solving">
+          <Accordion.Heading>
+            <Accordion.Trigger>
+              Interested in solving?
+              <Accordion.Indicator>
+                <ChevronDownIcon />
+              </Accordion.Indicator>
+            </Accordion.Trigger>
+          </Accordion.Heading>
+          <Accordion.Panel>
+            <Accordion.Body>
+              <p>
+                Feel free to solve by yourself or with friends! Once you've solved the puzzle, go
+                react to the corresponding Discord message!
+              </p>
+              <p>
+                There has been a WOW workspace set up for your convenience called{" "}
+                <a target="_blank" rel="noopener noreferrer" href="https://www.wafflehaus.io/wpe">
+                  WPE
+                </a>
+                . The password is <code>sumhint</code>. Please be courteous! You're sharing this
+                workspace with the whole team. See instructions on the workspace itself.
+              </p>
+            </Accordion.Body>
+          </Accordion.Panel>
+        </Accordion.Item>
+        <Accordion.Item id="writing">
+          <Accordion.Heading>
+            <Accordion.Trigger>
+              Interested in writing?
+              <Accordion.Indicator>
+                <ChevronDownIcon />
+              </Accordion.Indicator>
+            </Accordion.Trigger>
+          </Accordion.Heading>
+          <Accordion.Panel>
+            <Accordion.Body>
+              <p>Reach out to Allen on Discord!</p>
+              <Link to="/exchange/writing" className="button button--outline">
+                Learn about writing WPE puzzles
+              </Link>
+            </Accordion.Body>
+          </Accordion.Panel>
+        </Accordion.Item>
       </Accordion>
       <div className="flex items-center justify-between gap-1">
         <span className="text-2xl">Hunts</span>
@@ -68,12 +79,13 @@ function RouteComponent() {
         )}
       </div>
       <ul
+        // oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style:none, which makes Safari/VoiceOver drop the implicit list role
         role="list"
         className="divide-border outline-border bg-background dark:bg-input/30 dark:outline-input divide-y overflow-hidden shadow-xs outline-1 sm:rounded-xl dark:shadow-none dark:sm:-outline-offset-1">
         {hunts.map(hunt => (
           <li
             key={hunt.id}
-            className="hover:bg-muted dark:hover:bg-input/50 relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
+            className="hover:bg-surface-secondary dark:hover:bg-input/50 relative flex justify-between gap-x-6 px-4 py-5 sm:px-6">
             <div className="flex min-w-0 gap-x-4">
               <div className="min-w-0 flex-auto">
                 <p className="text-sm/6 font-semibold">

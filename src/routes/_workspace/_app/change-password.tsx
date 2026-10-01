@@ -1,11 +1,9 @@
+import {Card} from "@heroui/react";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_workspace/_app/change-password")({
@@ -37,26 +35,19 @@ function RouteComponent() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label="Go Back"
-              render={
-                <Link to="/workspaces">
-                  <ArrowLeftIcon /> Back
-                </Link>
-              }
-            />
+            <Link to="/workspaces" className="button button--outline button--sm gap-2">
+              <ArrowLeftIcon /> Back
+            </Link>
           </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Change password</CardTitle>
-              <CardDescription>Set a new password for your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <Card.Header>
+              <Card.Title>Change password</Card.Title>
+              <Card.Description>Set a new password for your account.</Card.Description>
+            </Card.Header>
+            <Card.Content>
               <form.AppForm>
                 <form.Form>
-                  <FieldGroup>
+                  <div className="flex w-full flex-col gap-4">
                     <form.AppField name="currentPassword">
                       {field => (
                         <field.TextField
@@ -75,13 +66,13 @@ function RouteComponent() {
                         />
                       )}
                     </form.AppField>
-                    <FieldGroup>
+                    <div className="flex w-full flex-col gap-4">
                       <form.SubmitButton>Change password</form.SubmitButton>
-                    </FieldGroup>
-                  </FieldGroup>
+                    </div>
+                  </div>
                 </form.Form>
               </form.AppForm>
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       </div>

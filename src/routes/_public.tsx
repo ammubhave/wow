@@ -1,20 +1,14 @@
+import {Button, Dropdown, Header, Label} from "@heroui/react";
 import {createFileRoute, Link, Outlet} from "@tanstack/react-router";
 import {ChevronsUpDownIcon, MonitorIcon, MoonIcon, PaletteIcon, SunIcon} from "lucide-react";
 
 import {useTheme} from "@/components/theme-provider";
-import {Button} from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {SidebarMenuButton} from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/_public")({component: RouteComponent});
+
+function isTheme(value: unknown): value is "light" | "dark" | "system" {
+  return value === "light" || value === "dark" || value === "system";
+}
 
 function RouteComponent() {
   const {theme, setTheme} = useTheme();
@@ -22,51 +16,52 @@ function RouteComponent() {
     <div className="flex h-screen flex-col">
       <header className="bg-background sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-4 md:px-6">
         <nav className="flex flex-1 flex-row items-center gap-5 text-lg font-medium md:text-sm lg:gap-6">
-          <Button
-            variant="ghost"
-            render={
-              <Link to="/" className="flex items-center gap-2 text-lg font-semibold md:text-base">
-                <img src="/favicon.ico" className="size-6 shrink-0 rounded-full" />
-              </Link>
-            }
-          />
+          <Link
+            to="/"
+            className="button button--ghost flex items-center gap-2 text-lg font-semibold md:text-base">
+            <img src="/favicon.ico" alt="Home" className="size-6 shrink-0 rounded-full" />
+          </Link>
           <div className="flex-1 text-lg font-semibold">
             <span className="font-semi-bold text-lg">Wafflehaüs Organized Workspaces</span>
           </div>
           <div>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <SidebarMenuButton size="sm">
-                    <PaletteIcon />
-                    <ChevronsUpDownIcon />
-                  </SidebarMenuButton>
-                }
-              />
-              <DropdownMenuContent
-                className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}>
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-                    <DropdownMenuRadioItem value="light">
-                      <SunIcon />
-                      Light
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="dark">
-                      <MoonIcon />
-                      Dark
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="system">
-                      <MonitorIcon />
-                      System
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Dropdown>
+              <Button variant="ghost" size="sm" aria-label="Theme">
+                <PaletteIcon />
+                <ChevronsUpDownIcon />
+              </Button>
+              <Dropdown.Popover
+                className="w-(--trigger-width) min-w-56 rounded-lg"
+                placement="bottom end">
+                <Dropdown.Menu
+                  selectedKeys={[theme]}
+                  selectionMode="single"
+                  disallowEmptySelection
+                  onSelectionChange={key => {
+                    const value = key instanceof Set ? key.values().next().value : undefined;
+                    if (isTheme(value)) setTheme(value);
+                  }}>
+                  <Dropdown.Section>
+                    <Header>Appearance</Header>
+                    <Dropdown.Item id="light">
+                      <Dropdown.ItemIndicator />
+                      <SunIcon className="text-muted size-4 shrink-0" />
+                      <Label>Light</Label>
+                    </Dropdown.Item>
+                    <Dropdown.Item id="dark">
+                      <Dropdown.ItemIndicator />
+                      <MoonIcon className="text-muted size-4 shrink-0" />
+                      <Label>Dark</Label>
+                    </Dropdown.Item>
+                    <Dropdown.Item id="system">
+                      <Dropdown.ItemIndicator />
+                      <MonitorIcon className="text-muted size-4 shrink-0" />
+                      <Label>System</Label>
+                    </Dropdown.Item>
+                  </Dropdown.Section>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
         </nav>
       </header>

@@ -1,6 +1,5 @@
-import {useEffect, useState} from "react";
-
-import {Button} from "./ui/button";
+import {Button} from "@heroui/react";
+import {useState} from "react";
 
 export function EggoText({text}: {text: string}) {
   if (text === "!help") {
@@ -84,27 +83,29 @@ const hints = [
 ];
 
 function EggoStuckText() {
-  const [eggoNum, setEggoNum] = useState(0);
+  // Start on a random hint other than #1. Only rendered client-side (chat arrives over a websocket),
+  // so the random initial value can't cause a hydration mismatch.
+  const [eggoNum, setEggoNum] = useState(() =>
+    hints.length <= 1 ? 0 : 1 + Math.floor(Math.random() * (hints.length - 1))
+  );
 
+  // Like the initial value, a roll never lands on #1 (the original implementation used index 0 as
+  // an "unrolled" sentinel and immediately re-rolled whenever it came up) or on the current hint.
   const rollEggoNum = () => {
-    if (hints.length <= 1) return;
+    if (hints.length <= 2) return;
     let newEggoNum = eggoNum;
     while (newEggoNum === eggoNum) {
-      newEggoNum = Math.floor(Math.random() * hints.length);
+      newEggoNum = 1 + Math.floor(Math.random() * (hints.length - 1));
     }
     setEggoNum(newEggoNum);
   };
-  useEffect(() => {
-    if (eggoNum != 0) return; // Don't roll multiple times during the first render.
-    rollEggoNum();
-  });
   return (
     <div>
       <EggoHeader>Try this!</EggoHeader>
       <EggoLine>
         #{eggoNum + 1} - {hints[eggoNum]}
       </EggoLine>
-      <br /> <Button onClick={rollEggoNum}>🧇 Roll</Button>
+      <br /> <Button onPress={rollEggoNum}>🧇 Roll</Button>
     </div>
   );
 }

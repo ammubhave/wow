@@ -1,15 +1,11 @@
 import {DurableObject} from "cloudflare:workers";
 import {Hono} from "hono";
-import z from "zod";
+import {z} from "zod";
 
 import {authMiddleware} from "@/server/auth";
 import {HonoEnv} from "@/server/context";
 
 export class PresenceRoom extends DurableObject<Env> {
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
-  }
-
   async fetch(request: Request) {
     const app = new Hono<HonoEnv>();
     app.use(authMiddleware);
@@ -17,9 +13,18 @@ export class PresenceRoom extends DurableObject<Env> {
       const url = new URL(request.url);
       const workspaceSlug = z.string().parse(url.searchParams.get("workspaceSlug"));
       const puzzleId = z.string().nullable().parse(url.searchParams.get("puzzleId"));
+      const session = c.var.session;
+      if (!session) return c.body(null, 401);
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
-      server.serializeAttachment({user: c.var.session!.user, puzzleId, workspaceSlug});
+      // Broadcast to every participant: keep only what the presence UI renders, not the full
+      // session user (email verification state, settings, ...).
+      const {id, name, email, image} = session.user;
+      server.serializeAttachment({
+        user: {id, name, email, image: image ?? null},
+        puzzleId,
+        workspaceSlug,
+      });
       this.broadcast();
       return new Response(null, {status: 101, webSocket: client});
     });

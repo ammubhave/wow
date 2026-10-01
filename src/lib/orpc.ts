@@ -10,12 +10,12 @@ import {router} from "@/server/router";
 /**
  * This is part of the Optimize SSR setup.
  *
- * @see {@link https://orpc.unnoq.com/docs/adapters/tanstack-start#optimize-ssr}
+ * @see {@link https://orpc.dev/docs/adapters/tanstack-start#optimize-ssr}
  */
 const getORPCClient = createIsomorphicFn()
   .server(() => createRouterClient(router, {context: async () => ({headers: getRequestHeaders()})}))
   .client((): RouterClient<typeof router> => {
-    const link = new RPCLink({url: `${window.location.origin}/api/rpc`});
+    const link = new RPCLink({url: "/api/rpc"});
 
     return createORPCClient(link);
   });

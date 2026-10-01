@@ -1,22 +1,29 @@
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {eq} from "drizzle-orm";
-import z from "zod";
+import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {invalidateWorkspace} from "@/server/do/workspace";
+import {authorizeWorkspaceRequest, safeRedirectPath} from "@/server/workspace-access";
 
 export const Route = createFileRoute("/api/oauth/google")({
   server: {
     handlers: {
       GET: async ({request}) => {
         const url = new URL(request.url);
-        const {redirectUrl, workspaceSlug} = z
+        const state = z
           .object({redirectUrl: z.string(), workspaceSlug: z.string()})
-          .parse(
-            Object.fromEntries(
-              new URLSearchParams(z.string().parse(url.searchParams.get("state"))).entries()
-            )
+          .safeParse(
+            Object.fromEntries(new URLSearchParams(url.searchParams.get("state") ?? "").entries())
           );
+        if (!state.success) return new Response("Invalid OAuth state", {status: 400});
+        const {redirectUrl: rawRedirectUrl, workspaceSlug} = state.data;
+        // `redirectUrl` comes from the (client-controlled) state: only allow same-origin paths.
+        const redirectUrl = safeRedirectPath(rawRedirectUrl, request.url);
+        // The state is client-controlled too: only a member may connect an account to a workspace.
+        const authz = await authorizeWorkspaceRequest(request, workspaceSlug);
+        if (authz.response) return authz.response;
         if (url.searchParams.get("error")) {
           let errorMessage = url.searchParams.get("error")!;
           if (errorMessage === "access_denied") {
@@ -54,7 +61,9 @@ export const Route = createFileRoute("/api/oauth/google")({
             googleTokenExpiresAt: new Date(Date.now() + (tokens.expires_in - 60) * 1000),
             googleRefreshToken: tokens.refresh_token,
           })
-          .where(eq(schema.organization.slug, workspaceSlug));
+          .where(eq(schema.organization.id, authz.workspace.id));
+        // `googleConnected` is part of the broadcast workspace state.
+        await invalidateWorkspace(authz.workspace.id);
         return redirect({href: redirectUrl});
       },
     },

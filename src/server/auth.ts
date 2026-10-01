@@ -16,7 +16,7 @@ export const protectedMiddleware = createMiddleware<HonoEnv>(async (c, next) => 
   if (!c.var.session) {
     return c.body(null, 401);
   }
-  await next();
+  return next();
 });
 
 const app = new Hono<HonoEnv>();

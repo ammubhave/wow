@@ -1,7 +1,7 @@
+import {Card} from "@heroui/react";
 import {createFileRoute, Outlet} from "@tanstack/react-router";
 
 import {NavGroup, NavigationGroup} from "@/components/navigation-group";
-import {Card} from "@/components/ui/card";
 
 export const Route = createFileRoute("/_public/docs")({
   component: RouteComponent,
@@ -30,6 +30,7 @@ function RouteComponent() {
     <div className="flex flex-1 items-stretch justify-center">
       <div className="flex max-w-5xl flex-1 gap-8">
         <nav className="min-w-48">
+          {/* oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style:none, which makes Safari/VoiceOver drop the implicit list role */}
           <ul role="list">
             {navigation.map((group, groupIndex) => (
               <NavigationGroup

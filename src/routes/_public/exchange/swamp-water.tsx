@@ -10,12 +10,12 @@ function RouteComponent() {
       <PuzzMain answer="RESTAURANT">
         <img
           src="/swamp-water-1.png"
-          alt="Swamp Water image 1"
+          alt="Swamp Water soda fountain, part 1"
           className="mx-auto max-w-132 rounded-lg"
         />
         <img
           src="/swamp-water-2.png"
-          alt="Swamp Water image 2"
+          alt="Swamp Water soda fountain, part 2"
           className="mx-auto max-w-132 rounded-lg"
         />
         <br />

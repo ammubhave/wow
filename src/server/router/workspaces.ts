@@ -8,7 +8,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 import {fetchDiscord} from "../do/discord-client";
-import {getWorkspaceRoom} from "../do/workspace";
+import {invalidateWorkspace} from "../do/workspace";
 import {preauthorize, procedure} from "./base";
 
 export const workspacesRouter = {
@@ -25,7 +25,12 @@ export const workspacesRouter = {
     .input(z.object({workspaceSlug: z.string(), password: z.string()}))
     .handler(async ({context, input}) => {
       const workspace = await db
-        .select()
+        .select({
+          id: schema.organization.id,
+          name: schema.organization.name,
+          slug: schema.organization.slug,
+          googleFolderId: schema.organization.googleFolderId,
+        })
         .from(schema.organization)
         .where(
           and(
@@ -41,33 +46,37 @@ export const workspacesRouter = {
         body: {userId: context.session.user.id, role: "admin", organizationId: workspace.id},
       });
 
-      const googleAccessToken = await context.google.getAccessToken(workspace.id);
-      waitUntil(
-        Promise.all([
-          (async () => {
-            const resp = await fetch(
-              `https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}/permissions?sendNotificationEmail=false`,
-              {
-                method: "POST",
-                headers: {Authorization: `Bearer ${googleAccessToken}`},
-                body: JSON.stringify({
-                  type: "user",
-                  emailAddress: context.session.user.email,
-                  role: "writer",
-                }),
-              }
-            );
-            if (!resp.ok) {
-              throw new Error(
-                `Failed to share folder ${workspace.googleFolderId} for user ${context.session.user.email}: ${resp.status}: ${resp.statusText}: ${await resp.text()}`
-              );
-            }
-          })(),
-          context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"}),
-        ])
-      );
-      await (await getWorkspaceRoom(workspace.id)).invalidate();
-      return workspace;
+      const shareFolder = async () => {
+        if (!workspace.googleFolderId) return;
+        const googleAccessToken = await context.google.getAccessToken(workspace.id);
+        if (!googleAccessToken) return;
+        const resp = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}/permissions?sendNotificationEmail=false`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${googleAccessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              type: "user",
+              emailAddress: context.session.user.email,
+              role: "writer",
+            }),
+          }
+        );
+        if (!resp.ok) {
+          throw new Error(
+            `Failed to share folder ${workspace.googleFolderId} for user ${context.session.user.email}: ${resp.status}: ${resp.statusText}: ${await resp.text()}`
+          );
+        }
+      };
+      waitUntil(shareFolder());
+      // Awaited before invalidating so the broadcast state includes the "join" entry.
+      await context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"});
+      await invalidateWorkspace(workspace.id);
+      // Never return the full row: it holds the Google OAuth tokens and the join password.
+      return {id: workspace.id, name: workspace.name, slug: workspace.slug};
     }),
 
   update: procedure
@@ -110,7 +119,7 @@ export const workspacesRouter = {
         .where(eq(schema.organization.id, context.workspace.id))
         .returning();
       if (!workspace) throw new ORPCError("NOT_FOUND");
-      await (await getWorkspaceRoom(workspace.id)).invalidate();
+      await invalidateWorkspace(workspace.id);
     }),
 
   delete: procedure
@@ -187,7 +196,7 @@ export const workspacesRouter = {
         .update(schema.organization)
         .set({googleFolderId: input.folderId})
         .where(eq(schema.organization.id, context.workspace.id));
-      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+      await invalidateWorkspace(context.workspace.id);
     }),
 
   setGoogleTemplateFileId: procedure
@@ -198,34 +207,31 @@ export const workspacesRouter = {
         .update(schema.organization)
         .set({googleTemplateFileId: input.fileId})
         .where(eq(schema.organization.id, context.workspace.id));
-      await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+      await invalidateWorkspace(context.workspace.id);
     }),
 
   shareGoogleDriveFolder: procedure
     .input(z.object({workspaceSlug: z.string(), email: z.email()}))
     .use(preauthorize)
     .handler(async ({context, input}) => {
-      const workspace = await db.query.organization.findFirst({
-        where: (t, {eq}) => eq(t.slug, input.workspaceSlug),
-      });
-      if (!workspace) throw new ORPCError("NOT_FOUND");
-      const googleAccessToken = await context.google.getAccessToken(context.workspace.id);
+      const workspace = context.workspace;
+      const googleAccessToken = await context.google.getAccessToken(workspace.id);
       if (!workspace.googleFolderId || !googleAccessToken) {
         throw new ORPCError("FORBIDDEN", {
           message: "Google drive connection is not correctly configured.",
         });
       }
+      const permissionIdResp = await fetch(
+        `https://www.googleapis.com/drive/v2/permissionIds/${encodeURIComponent(input.email)}`,
+        {method: "GET", headers: {Authorization: `Bearer ${googleAccessToken}`}}
+      );
+      if (!permissionIdResp.ok) {
+        throw new ORPCError("BAD_GATEWAY", {message: "Failed to look up Google account."});
+      }
       const {id: permissionId} = z
         .object({kind: z.literal("drive#permissionId"), id: z.string()})
-        .parse(
-          await (
-            await fetch(`https://www.googleapis.com/drive/v2/permissionIds/${input.email}`, {
-              method: "GET",
-              headers: {Authorization: `Bearer ${googleAccessToken}`},
-            })
-          ).json()
-        );
-      await fetch(
+        .parse(await permissionIdResp.json());
+      const resp = await fetch(
         `https://www.googleapis.com/drive/v2/files/${workspace.googleFolderId}/permissions?${new URLSearchParams(
           {sendNotificationEmails: "false"}
         ).toString()}`,
@@ -238,6 +244,11 @@ export const workspacesRouter = {
           body: JSON.stringify({id: permissionId, role: "writer", type: "user"}),
         }
       );
+      if (!resp.ok) {
+        throw new ORPCError("BAD_GATEWAY", {
+          message: `Failed to share the Google Drive folder: ${resp.status} ${resp.statusText}`,
+        });
+      }
     }),
 
   getDiscordInfo: procedure
@@ -310,7 +321,9 @@ export const workspacesRouter = {
         return member;
       }),
     set: procedure
-      .input(z.object({workspaceSlug: z.string(), favoritePuzzleIds: z.array(z.string())}))
+      .input(
+        z.object({workspaceSlug: z.string(), favoritePuzzleIds: z.array(z.string()).max(1000)})
+      )
       .use(preauthorize)
       .handler(async ({context, input}) => {
         await db
@@ -370,7 +383,7 @@ export const workspacesRouter = {
           .update(schema.organization)
           .set({discordGuildId: null})
           .where(eq(schema.organization.id, context.workspace.id));
-        await (await getWorkspaceRoom(context.workspace.id)).invalidate();
+        await invalidateWorkspace(context.workspace.id);
       }),
   },
 };

@@ -1,19 +1,35 @@
+import {RouterProvider} from "@heroui/react";
 import {TanStackDevtools} from "@tanstack/react-devtools";
-import {MutationCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import type {QueryClient} from "@tanstack/react-query";
 import {ReactQueryDevtoolsPanel} from "@tanstack/react-query-devtools";
-import {createRootRoute, HeadContent, Scripts} from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  type NavigateOptions,
+  Scripts,
+  type ToOptions,
+  useRouter,
+} from "@tanstack/react-router";
 import {TanStackRouterDevtoolsPanel} from "@tanstack/react-router-devtools";
+import {LucideProvider} from "lucide-react";
 import {PostHogProvider} from "posthog-js/react";
 import {Provider as ReactReduxProvider} from "react-redux";
+import {Toaster} from "sonner";
 import {IntlProvider} from "use-intl";
 
-import {ThemeProvider} from "@/components/theme-provider";
-import {Toaster} from "@/components/ui/sonner";
+import {ThemeProvider, useTheme} from "@/components/theme-provider";
 import {store} from "@/store";
 
 import appCss from "../styles.css?url";
 
-export const Route = createRootRoute({
+declare module "react-aria-components" {
+  interface RouterConfig {
+    href: string;
+    routerOptions: Omit<NavigateOptions, keyof ToOptions>;
+  }
+}
+
+export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
   head: () => ({
     meta: [
       {charSet: "utf-8"},
@@ -31,25 +47,19 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
-const queryClient = new QueryClient({
-  mutationCache: new MutationCache({
-    onSuccess: () => {
-      void queryClient.invalidateQueries();
-    },
-  }),
-});
-
 function RootDocument({children}: {children: React.ReactNode}) {
+  const router = useRouter();
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        <QueryClientProvider client={queryClient}>
+        {/* 16px default, as shadcn applied via [&_svg]:size-4 in buttons and menus. */}
+        <LucideProvider size={16}>
           <ThemeProvider defaultTheme="system" storageKey="ui-theme">
             <PostHogProvider
-              apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY as string}
+              apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
               options={{
                 api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
                 defaults: "2025-05-24",
@@ -57,9 +67,12 @@ function RootDocument({children}: {children: React.ReactNode}) {
                 debug: import.meta.env.MODE === "development",
               }}>
               <ReactReduxProvider store={store}>
-                <IntlProvider locale="en">{children}</IntlProvider>
+                <RouterProvider navigate={(to, options) => router.navigate({...options, to})}>
+                  <IntlProvider locale="en">{children}</IntlProvider>
+                </RouterProvider>
               </ReactReduxProvider>
             </PostHogProvider>
+            <ThemedToaster />
           </ThemeProvider>
           <TanStackDevtools
             config={{position: "bottom-right"}}
@@ -68,10 +81,14 @@ function RootDocument({children}: {children: React.ReactNode}) {
               {name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel />},
             ]}
           />
-          <Toaster richColors />
           <Scripts />
-        </QueryClientProvider>
+        </LucideProvider>
       </body>
     </html>
   );
+}
+
+function ThemedToaster() {
+  const {theme} = useTheme();
+  return <Toaster theme={theme} richColors expand closeButton swipeDirections={[]} />;
 }

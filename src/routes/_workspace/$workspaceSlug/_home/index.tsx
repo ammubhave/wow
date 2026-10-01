@@ -1,4 +1,22 @@
-import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {
+  Button,
+  Chip,
+  Dropdown,
+  IconChevronDown,
+  InputGroup,
+  Label,
+  ListBox,
+  ScrollShadow,
+  Select,
+  selectVariants,
+  Separator,
+  TextField,
+  ToggleButton,
+  Tooltip,
+  type Key,
+  type Selection,
+} from "@heroui/react";
+import {useIsMutating, useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {sha256} from "js-sha256";
 import {
@@ -13,8 +31,8 @@ import {
   StarIcon,
   TagIcon,
 } from "lucide-react";
-import {useEffect, useRef, useState} from "react";
-import {toast} from "sonner";
+import * as React from "react";
+import {memo, useState} from "react";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
 
@@ -28,34 +46,8 @@ import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
-import {ScrollArea} from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {Toggle} from "@/components/ui/toggle";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
+import {NO_PRESENCES} from "@/features/presences/presences";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {
@@ -67,13 +59,80 @@ import {
   getPuzzleStatusGroups,
   getPuzzleStatusOptions,
 } from "@/lib/puzzleStatuses";
+import {setFavoritesMutationOptions, workspaceMutations} from "@/lib/workspace-mutations";
 import {WorkspaceRoomState} from "@/server/do/workspace";
-import {RouterOutputs} from "@/server/router";
+import type {RouterInputs, RouterOutputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
   component: RouteComponent,
 });
+
+// Plain semantic table primitives replacing the shadcn ui/table wrappers.
+// The blackboard table relies on row components returning fragments of <tr>s,
+// colSpan, and interactive cells, which fight React Aria's collection API, so a
+// native <table> preserves the exact behavior and styling.
+function Table({className, ...props}: React.ComponentProps<"table">) {
+  return (
+    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+      <table
+        data-slot="table"
+        className={cn("w-full caption-bottom text-xs", className)}
+        {...props}
+      />
+    </div>
+  );
+}
+
+function TableHeader({className, ...props}: React.ComponentProps<"thead">) {
+  return <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />;
+}
+
+function TableBody({className, ...props}: React.ComponentProps<"tbody">) {
+  return (
+    <tbody
+      data-slot="table-body"
+      className={cn("[&_tr:last-child]:border-0", className)}
+      {...props}
+    />
+  );
+}
+
+function TableRow({className, ...props}: React.ComponentProps<"tr">) {
+  return (
+    <tr
+      data-slot="table-row"
+      className={cn(
+        "hover:bg-surface-secondary/50 data-[state=selected]:bg-surface-secondary border-b transition-colors",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableHead({className, ...props}: React.ComponentProps<"th">) {
+  return (
+    <th
+      data-slot="table-head"
+      className={cn(
+        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableCell({className, ...props}: React.ComponentProps<"td">) {
+  return (
+    <td
+      data-slot="table-cell"
+      className={cn("p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", className)}
+      {...props}
+    />
+  );
+}
 
 const TAG_COLORS = [
   "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
@@ -98,6 +157,336 @@ function getTagColor(tag: string): string {
   return TAG_COLORS[index]!;
 }
 
+// Trigger classes for the in-cell Selects (shared by each stand-in and its real Select).
+const SELECT_TRIGGER_CLASS =
+  "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950";
+const PUZZLE_STATUS_TRIGGER_CLASS =
+  "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus:bg-amber-950";
+const IMPORTANCE_TRIGGER_CLASS =
+  "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none";
+
+// Sentinel id used by HeroUI ListBox/Select for the `null` status option, since
+// React Aria collection item ids cannot be null.
+const NONE_KEY = "__none__";
+
+// Maps a collection key back to its value, translating the `NONE_KEY` sentinel to `null`.
+function fromKey(key: Key | null): string | null {
+  return key === null || key === NONE_KEY ? null : String(key);
+}
+
+// `favoritePuzzleIds` is an untyped JSON column, so narrow it to the string ids we store.
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
+
+// Filters return the original array when nothing was removed, so rows whose data didn't change
+// receive identical props and are skipped by memoization.
+function filtered<T>(items: T[], keep: (item: T) => boolean) {
+  const result = items.filter(keep);
+  return result.length === items.length ? items : result;
+}
+
+/**
+ * Toggles one puzzle in the member's favorites. The current list is read from the query cache at
+ * press time (not captured at render), so toggling two rows in quick succession can't drop the
+ * first change, and rows don't need to subscribe to the favorites query just to build the list.
+ */
+function useToggleFavorite(workspaceSlug: string) {
+  const queryClient = useQueryClient();
+  const {mutate} = useMutation(setFavoritesMutationOptions());
+  return (puzzleId: string, isFavorite: boolean) => {
+    const queryKey = orpc.workspaces.members.get.queryKey({input: {workspaceSlug}});
+    const others = toStringArray(queryClient.getQueryData(queryKey)?.favoritePuzzleIds).filter(
+      id => id !== puzzleId
+    );
+    mutate({workspaceSlug, favoritePuzzleIds: isFavorite ? [...others, puzzleId] : others});
+  };
+}
+
+/** True while this row's optimistic create hasn't been confirmed (it can't be edited yet). */
+function useIsBeingCreated(
+  id: string,
+  mutationKey: readonly unknown[] = orpc.puzzles.create.mutationKey()
+) {
+  return (
+    useIsMutating({
+      mutationKey,
+      predicate: ({state: {variables}}) =>
+        typeof variables === "object" &&
+        variables !== null &&
+        "id" in variables &&
+        variables.id === id,
+    }) > 0
+  );
+}
+
+const ANSWER_INPUT_CLASS =
+  "absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950";
+
+/**
+ * Shows the (optimistic) answer; while focused it edits a local draft, committed on blur or Enter
+ * (Escape discards it). Committing per keystroke would log half-typed answers to the activity feed.
+ */
+function AnswerInput({
+  puzzleName,
+  value,
+  onCommit,
+}: {
+  puzzleName: string;
+  value: string | null;
+  onCommit: (answer: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    setDraft(null);
+    const answer = draft.toUpperCase();
+    if (answer !== (value ?? "")) onCommit(answer);
+  };
+  return (
+    <input
+      aria-label={`Answer for ${puzzleName}`}
+      className={ANSWER_INPUT_CLASS}
+      value={draft ?? value ?? ""}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        else if (e.key === "Escape") setDraft(null);
+      }}
+    />
+  );
+}
+
+/** The tag chips; pressing them opens an editor that saves each added/removed tag immediately. */
+function TagsCell({
+  puzzleName,
+  value,
+  tags,
+  onCommit,
+}: {
+  puzzleName: string;
+  value: string[];
+  tags: string[];
+  onCommit: (tags: string[]) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const form = useAppForm({defaultValues: {tags: value}});
+  if (!isEditing) {
+    return (
+      <button
+        type="button"
+        // Named explicitly: with no tags the button would otherwise have no accessible name.
+        aria-label={`Edit tags for ${puzzleName}${value.length > 0 ? `: ${value.join(", ")}` : ""}`}
+        onClick={() => {
+          // Start from the latest tags, which may have changed since the last edit.
+          form.reset({tags: value});
+          setIsEditing(true);
+        }}
+        className="flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1 hover:bg-amber-100 dark:hover:bg-amber-950">
+        {value.map(tag => (
+          <Chip key={tag} size="sm" className={getTagColor(tag)}>
+            {tag}
+          </Chip>
+        ))}
+      </button>
+    );
+  }
+  return (
+    <form.AppField
+      name="tags"
+      listeners={{onChange: ({value: next}) => onCommit(next), onBlur: () => setIsEditing(false)}}
+      children={field => (
+        <field.ComboboxMultipleField
+          defaultOpen
+          onOpenChange={isOpen => {
+            if (!isOpen) setIsEditing(false);
+          }}
+          className="border-0 bg-amber-100 dark:bg-amber-950"
+          items={tags}
+        />
+      )}
+    />
+  );
+}
+
+type DeferredSelectProps = {
+  autoFocus: boolean;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+};
+
+/**
+ * Every board row has a status and an importance Select, and a react-aria Select builds its whole
+ * option collection even while closed, which dominates the board's initial mount. Until the user
+ * first reaches for one, this renders a plain button with the same markup and classes as the HeroUI
+ * Select (so it looks, and Ctrl+F-searches, identically), then swaps in the real Select:
+ * - mouse hover mounts it silently, so the click itself lands on the real trigger;
+ * - keyboard focus mounts it focused;
+ * - a click, tap, or screen-reader activation mounts it focused, then opens it.
+ * Once mounted it stays mounted.
+ */
+function DeferredSelect({
+  "aria-label": ariaLabel,
+  valueText,
+  triggerClassName,
+  value,
+  showIndicator = true,
+  children,
+}: {
+  "aria-label": string;
+  /** Text of the selected option, for the stand-in's accessible name. */
+  valueText: string;
+  triggerClassName: string | undefined;
+  /** What the real `Select.Value` would render. */
+  value: React.ReactNode;
+  showIndicator?: boolean;
+  children: (props: DeferredSelectProps) => React.ReactNode;
+}) {
+  const [activation, setActivation] = useState<{autoFocus: boolean} | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  if (activation) {
+    return children({autoFocus: activation.autoFocus, isOpen, onOpenChange: setIsOpen});
+  }
+  const activateAndOpen = () => {
+    setActivation({autoFocus: true});
+    // Open on the next frame, once the real trigger has mounted and taken focus, so the popover
+    // records it as the element to return focus to on close.
+    requestAnimationFrame(() => setIsOpen(true));
+  };
+  const slots = selectVariants();
+  return (
+    <div data-slot="select" className={slots.base()}>
+      <button
+        type="button"
+        data-slot="select-trigger"
+        aria-label={valueText ? `${valueText} ${ariaLabel}` : ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={false}
+        className={cn(slots.trigger(), triggerClassName)}
+        onPointerEnter={e => {
+          if (e.pointerType === "mouse") setActivation({autoFocus: false});
+        }}
+        onPointerDown={e => {
+          // Only reached if the click beat the hover-triggered swap.
+          if (e.pointerType === "mouse") activateAndOpen();
+        }}
+        onFocus={e => {
+          if (e.currentTarget.matches(":focus-visible")) setActivation({autoFocus: true});
+        }}
+        onClick={activateAndOpen}>
+        <span data-slot="select-value" className={slots.value()}>
+          {value}
+        </span>
+        {showIndicator && (
+          <IconChevronDown data-slot="select-default-indicator" className={slots.indicator()} />
+        )}
+      </button>
+    </div>
+  );
+}
+
+const PUZZLE_STATUS_OPTIONS = getPuzzleStatusOptions();
+
+function PuzzleStatusSelect({
+  value,
+  onChange,
+  triggerClassName,
+}: {
+  value: string | null;
+  onChange: (value: string | null) => void;
+  triggerClassName: string | undefined;
+}) {
+  const label = PUZZLE_STATUS_OPTIONS.find(option => option.value === value)?.label ?? "";
+  return (
+    <DeferredSelect
+      aria-label="Status"
+      valueText={label}
+      value={label}
+      triggerClassName={triggerClassName}>
+      {deferred => (
+        <Select
+          {...deferred}
+          aria-label="Status"
+          value={value ?? NONE_KEY}
+          onChange={key => onChange(fromKey(key))}>
+          <Select.Trigger className={triggerClassName}>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {getPuzzleStatusGroups().map(group => (
+                <ListBox.Section key={group.groupLabel} className={group.bgColorNoHover}>
+                  {group.values.map(option => (
+                    <ListBox.Item
+                      key={option.value ?? NONE_KEY}
+                      id={option.value ?? NONE_KEY}
+                      textValue={option.label}>
+                      {option.label}
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                  ))}
+                </ListBox.Section>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      )}
+    </DeferredSelect>
+  );
+}
+
+function PuzzleImportanceSelect({
+  value,
+  onChange,
+  triggerClassName,
+}: {
+  value: string | null;
+  onChange: (value: string | null) => void;
+  triggerClassName: string | undefined;
+}) {
+  const selected = getPuzzleImportances().find(importance => importance.value === value);
+  return (
+    <DeferredSelect
+      aria-label="Importance"
+      valueText={selected?.label ?? ""}
+      value={selected?.icon ?? null}
+      showIndicator={false}
+      triggerClassName={triggerClassName}>
+      {deferred => (
+        <Select
+          {...deferred}
+          aria-label="Importance"
+          value={value ?? NONE_KEY}
+          onChange={key => onChange(fromKey(key))}>
+          <Select.Trigger className={triggerClassName}>
+            <Select.Value>
+              {({state}) => {
+                const key = state.selectedKey;
+                return getPuzzleImportances().find(i => i.value === key)?.icon ?? null;
+              }}
+            </Select.Value>
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {getPuzzleImportances().map(importance => (
+                <ListBox.Item
+                  key={importance.value}
+                  id={importance.value}
+                  textValue={importance.label}>
+                  {importance.icon} {importance.label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      )}
+    </DeferredSelect>
+  );
+}
+
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
@@ -110,63 +499,47 @@ function RouteComponent() {
   const [tags, setTags] = useLocalStorage<(string | null)[]>("tags", []);
   const [importances, setImportances] = useLocalStorage<(string | null)[]>("importances", []);
 
-  const favoritePuzzleIds = (useQuery(
-    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
-  ).data?.favoritePuzzleIds ?? []) as string[];
+  // Read once here and handed to rows as booleans: a per-row subscription would re-render every
+  // row whenever any favorite changes. (Suspends like the rows used to, so stars never flash.)
+  const favoritePuzzleIds = toStringArray(
+    useSuspenseQuery(orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})).data
+      .favoritePuzzleIds
+  );
+  const favoriteSet = new Set(favoritePuzzleIds);
 
-  const rounds = workspace.rounds.map(r => ({
-    ...r,
-    puzzles: r.puzzles
-      .map((p, puzzleIndex) => ({...p, puzzleIndex: puzzleIndex + 1}))
-      .filter(
-        p =>
-          p.name.toLowerCase().includes(search.toLowerCase()) &&
-          (tags.length === 0 ||
-            tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
-          (importances.length === 0 || importances.includes(p.importance)) &&
-          (!hideObsolete || p.importance !== "obsolete") &&
-          (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
-          (!onlyShowFavorites || favoritePuzzleIds.includes(p.id))
-      ),
-    metaPuzzles: r.metaPuzzles
-      .map(m => ({
-        ...m,
-        childPuzzles: m.childPuzzles
-          .map((p, puzzleIndex) => ({...p, puzzleIndex}))
-          .filter(
-            p =>
-              p.name.toLowerCase().includes(search.toLowerCase()) &&
-              (tags.length === 0 ||
-                tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
-              (importances.length === 0 || importances.includes(p.importance)) &&
-              (!hideObsolete || p.importance !== "obsolete") &&
-              (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
-              (!onlyShowFavorites || favoritePuzzleIds.includes(p.id))
-          ),
-      }))
-      .filter(
-        m =>
-          (m.childPuzzles.length > 0 ||
-            (m.name.toLowerCase().includes(search.toLowerCase()) &&
-              (tags.length === 0 ||
-                tags.some(tag => (tag === null ? m.tags.length === 0 : m.tags.includes(tag)))) &&
-              (importances.length === 0 || importances.includes(m.importance)) &&
-              (!hideObsolete || m.importance !== "obsolete") &&
-              (!hideSolved || (m.status !== "solved" && m.status !== "backsolved")) &&
-              (!onlyShowFavorites || favoritePuzzleIds.includes(m.id)))) &&
-          (!hideSolvedMetas || m.status !== "solved")
-      ),
-    unassignedPuzzles: r.unassignedPuzzles.filter(
-      p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) &&
-        (tags.length === 0 ||
-          tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
-        (importances.length === 0 || importances.includes(p.importance)) &&
-        (!hideObsolete || p.importance !== "obsolete") &&
-        (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
-        (!onlyShowFavorites || favoritePuzzleIds.includes(p.id))
-    ),
-  }));
+  type Filterable = {
+    id: string;
+    name: string;
+    tags: string[];
+    importance: string | null;
+    status: string | null;
+  };
+  const query = search.toLowerCase();
+  const matches = (p: Filterable) =>
+    p.name.toLowerCase().includes(query) &&
+    (tags.length === 0 ||
+      tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
+    (importances.length === 0 || importances.includes(p.importance)) &&
+    (!hideObsolete || p.importance !== "obsolete") &&
+    (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
+    (!onlyShowFavorites || favoriteSet.has(p.id));
+  const rounds = workspace.rounds.map(r => {
+    const puzzles = filtered(r.puzzles, matches);
+    const metaPuzzles = filtered(
+      r.metaPuzzles.map(m => {
+        const childPuzzles = filtered(m.childPuzzles, matches);
+        return childPuzzles === m.childPuzzles ? m : {...m, childPuzzles};
+      }),
+      m => (m.childPuzzles.length > 0 || matches(m)) && (!hideSolvedMetas || m.status !== "solved")
+    );
+    const unassignedPuzzles = filtered(r.unassignedPuzzles, matches);
+    return puzzles === r.puzzles &&
+      unassignedPuzzles === r.unassignedPuzzles &&
+      metaPuzzles.length === r.metaPuzzles.length &&
+      metaPuzzles.every((m, i) => m === r.metaPuzzles[i])
+      ? r
+      : {...r, puzzles, metaPuzzles, unassignedPuzzles};
+  });
 
   let filterCount = 0;
   if (tags.length > 0) filterCount += 1;
@@ -176,148 +549,190 @@ function RouteComponent() {
   if (importances.length > 0) filterCount += 1;
   if (onlyShowFavorites) filterCount += 1;
 
+  const importanceFilterOptions = [
+    ...getPuzzleImportances(),
+    {value: null, label: "None", icon: <SignalIcon className="text-muted-foreground" />, color: ""},
+  ];
+
+  // Tags selection for the filter submenu (multiple-select keeps the menu open).
+  const tagSelectionKeys = new Set<Key>(tags.map(tag => (tag === null ? NONE_KEY : tag)));
+  const onTagSelectionChange = (keys: Selection) => {
+    if (keys === "all") {
+      setTags([...workspace.tags, null]);
+      return;
+    }
+    setTags([...keys].map(fromKey));
+  };
+
+  const importanceSelectionKeys = new Set<Key>(
+    importances.map(value => (value === null ? NONE_KEY : value))
+  );
+  const onImportanceSelectionChange = (keys: Selection) => {
+    if (keys === "all") {
+      setImportances([...getPuzzleImportances().map(i => i.value), null]);
+      return;
+    }
+    setImportances([...keys].map(fromKey));
+  };
+
   return (
     <div className="flex flex-1">
       <div className="relative flex-1">
         <div className="absolute inset-0 overflow-auto">
           <div className="flex flex-1 flex-col divide-y">
             <div className="flex gap-2 p-2">
-              <InputGroup className="flex-1">
-                <InputGroupInput value={search} onChange={e => setSearch(e.target.value)} />
-                <InputGroupAddon>
-                  <SearchIcon className="text-muted-foreground" />
-                </InputGroupAddon>
-                {search.length > 0 && (
-                  <InputGroupAddon align="inline-end">
-                    <Button variant="link" onClick={() => setSearch("")}>
-                      Clear
-                    </Button>
-                  </InputGroupAddon>
-                )}
-              </InputGroup>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button variant="outline">
-                      <FunnelIcon />
-                      Filter
-                      {filterCount > 0 && (
-                        <Badge variant="outline" className="ml-1 rounded-full">
-                          {filterCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent className="w-fit">
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <TagIcon />
-                      Tags
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      {workspace.tags.map(tag => (
-                        <DropdownMenuCheckboxItem
-                          key={tag}
-                          checked={tags.includes(tag)}
-                          onClick={() => {
-                            setTags(prevTags =>
-                              prevTags.includes(tag)
-                                ? prevTags.filter(t => t !== tag)
-                                : [...prevTags, tag]
-                            );
+              <TextField
+                aria-label="Search puzzles"
+                className="flex-1"
+                value={search}
+                onChange={setSearch}>
+                <InputGroup>
+                  <InputGroup.Prefix>
+                    <SearchIcon className="text-muted-foreground size-4" />
+                  </InputGroup.Prefix>
+                  <InputGroup.Input />
+                  {search.length > 0 && (
+                    <InputGroup.Suffix className="pr-0">
+                      <Button variant="ghost" size="sm" onPress={() => setSearch("")}>
+                        Clear
+                      </Button>
+                    </InputGroup.Suffix>
+                  )}
+                </InputGroup>
+              </TextField>
+              <Dropdown>
+                <Button variant="outline">
+                  <FunnelIcon />
+                  Filter
+                  {filterCount > 0 && (
+                    <Chip className="ml-1 rounded-full" size="sm" variant="secondary">
+                      {filterCount}
+                    </Chip>
+                  )}
+                </Button>
+                <Dropdown.Popover className="w-fit">
+                  <Dropdown.Menu>
+                    <Dropdown.SubmenuTrigger>
+                      <Dropdown.Item id="tags-submenu" textValue="Tags">
+                        <TagIcon />
+                        <Label>Tags</Label>
+                        <Dropdown.SubmenuIndicator />
+                      </Dropdown.Item>
+                      <Dropdown.Popover>
+                        <Dropdown.Menu
+                          onAction={key => {
+                            if (key === "tags-select-all") setTags([...workspace.tags, null]);
+                            else if (key === "tags-reset") setTags([]);
                           }}>
-                          {tag}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                      <DropdownMenuCheckboxItem
-                        checked={tags.includes(null)}
-                        onClick={() => {
-                          setTags(prevTags =>
-                            prevTags.includes(null)
-                              ? prevTags.filter(t => t !== null)
-                              : [...prevTags, null]
-                          );
-                        }}>
-                        (Untagged)
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        closeOnClick={false}
-                        onClick={() => setTags([...workspace.tags, null])}>
-                        Select all
-                      </DropdownMenuItem>
-                      <DropdownMenuItem closeOnClick={false} onClick={() => setTags([])}>
-                        Reset filter
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <SignalIcon />
-                      Importance
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      {[
-                        ...getPuzzleImportances(),
-                        {
-                          value: null,
-                          label: "None",
-                          icon: <SignalIcon className="text-muted-foreground" />,
-                          color: "",
-                        },
-                      ].map(importance => (
-                        <DropdownMenuCheckboxItem
-                          checked={importances.includes(importance.value)}
-                          onClick={() => {
-                            setImportances(prevImportances =>
-                              prevImportances.includes(importance.value)
-                                ? prevImportances.filter(t => t !== importance.value)
-                                : [...prevImportances, importance.value]
-                            );
-                          }}
-                          className={importance.color}>
-                          {importance.icon} {importance.label}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        closeOnClick={false}
-                        onClick={() =>
-                          setImportances([
-                            ...getPuzzleImportances().map(importance => importance.value),
-                            null,
-                          ])
-                        }>
-                        Select all
-                      </DropdownMenuItem>
-                      <DropdownMenuItem closeOnClick={false} onClick={() => setImportances([])}>
-                        Reset filter
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                  <DropdownMenuCheckboxItem checked={hideSolved} onCheckedChange={setHideSolved}>
-                    Hide solved puzzles
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={hideObsolete}
-                    onCheckedChange={setHideObsolete}>
-                    Hide obsolete puzzles
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={hideSolvedMetas}
-                    onCheckedChange={setHideSolvedMetas}>
-                    Hide solved meta puzzles
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={onlyShowFavorites}
-                    onCheckedChange={setOnlyShowFavorites}>
-                    Only show favorites
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                          <Dropdown.Section
+                            selectionMode="multiple"
+                            selectedKeys={tagSelectionKeys}
+                            onSelectionChange={onTagSelectionChange}>
+                            {workspace.tags.map(tag => (
+                              <Dropdown.Item key={tag} id={tag} textValue={tag}>
+                                <Dropdown.ItemIndicator />
+                                <Label>{tag}</Label>
+                              </Dropdown.Item>
+                            ))}
+                            <Dropdown.Item id={NONE_KEY} textValue="(Untagged)">
+                              <Dropdown.ItemIndicator />
+                              <Label>(Untagged)</Label>
+                            </Dropdown.Item>
+                          </Dropdown.Section>
+                          <Separator />
+                          <Dropdown.Item id="tags-select-all" textValue="Select all">
+                            <Label>Select all</Label>
+                          </Dropdown.Item>
+                          <Dropdown.Item id="tags-reset" textValue="Reset filter">
+                            <Label>Reset filter</Label>
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown.Popover>
+                    </Dropdown.SubmenuTrigger>
+                    <Dropdown.SubmenuTrigger>
+                      <Dropdown.Item id="importance-submenu" textValue="Importance">
+                        <SignalIcon />
+                        <Label>Importance</Label>
+                        <Dropdown.SubmenuIndicator />
+                      </Dropdown.Item>
+                      <Dropdown.Popover>
+                        <Dropdown.Menu
+                          onAction={key => {
+                            if (key === "importance-select-all")
+                              setImportances([
+                                ...getPuzzleImportances().map(importance => importance.value),
+                                null,
+                              ]);
+                            else if (key === "importance-reset") setImportances([]);
+                          }}>
+                          <Dropdown.Section
+                            selectionMode="multiple"
+                            selectedKeys={importanceSelectionKeys}
+                            onSelectionChange={onImportanceSelectionChange}>
+                            {importanceFilterOptions.map(importance => (
+                              <Dropdown.Item
+                                key={importance.value ?? NONE_KEY}
+                                id={importance.value ?? NONE_KEY}
+                                textValue={importance.label}
+                                className={importance.color}>
+                                <Dropdown.ItemIndicator />
+                                {importance.icon}
+                                <Label>{importance.label}</Label>
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown.Section>
+                          <Separator />
+                          <Dropdown.Item id="importance-select-all" textValue="Select all">
+                            <Label>Select all</Label>
+                          </Dropdown.Item>
+                          <Dropdown.Item id="importance-reset" textValue="Reset filter">
+                            <Label>Reset filter</Label>
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown.Popover>
+                    </Dropdown.SubmenuTrigger>
+                    <Dropdown.Section
+                      selectionMode="multiple"
+                      selectedKeys={
+                        new Set<Key>(
+                          [
+                            hideSolved && "hideSolved",
+                            hideObsolete && "hideObsolete",
+                            hideSolvedMetas && "hideSolvedMetas",
+                            onlyShowFavorites && "onlyShowFavorites",
+                          ].filter(key => key !== false)
+                        )
+                      }
+                      onSelectionChange={keys => {
+                        const set = keys === "all" ? null : keys;
+                        const has = (k: string) => (set === null ? true : set.has(k));
+                        setHideSolved(has("hideSolved"));
+                        setHideObsolete(has("hideObsolete"));
+                        setHideSolvedMetas(has("hideSolvedMetas"));
+                        setOnlyShowFavorites(has("onlyShowFavorites"));
+                      }}>
+                      <Dropdown.Item id="hideSolved" textValue="Hide solved puzzles">
+                        <Dropdown.ItemIndicator />
+                        <Label>Hide solved puzzles</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item id="hideObsolete" textValue="Hide obsolete puzzles">
+                        <Dropdown.ItemIndicator />
+                        <Label>Hide obsolete puzzles</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item id="hideSolvedMetas" textValue="Hide solved meta puzzles">
+                        <Dropdown.ItemIndicator />
+                        <Label>Hide solved meta puzzles</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item id="onlyShowFavorites" textValue="Only show favorites">
+                        <Dropdown.ItemIndicator />
+                        <Label>Only show favorites</Label>
+                      </Dropdown.Item>
+                    </Dropdown.Section>
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
             </div>
-            <ScrollArea className="flex-1">
+            <ScrollShadow className="flex-1">
               <div className="overflow-hidden">
                 <Table className="h-fit">
                   <TableHeader>
@@ -332,26 +747,30 @@ function RouteComponent() {
                       <TableHead>Working on this</TableHead>
                       <TableHead className="w-0">
                         <div className="-my-1 flex items-center justify-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <Button variant="ghost" size="icon" className="-my-3">
-                                  <EllipsisIcon />
-                                  <span className="sr-only">Toggle menu</span>
-                                </Button>
-                              }
+                          <Dropdown>
+                            <Button variant="ghost" isIconOnly className="-my-3">
+                              <EllipsisIcon />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            <Dropdown.Popover className="w-fit" placement="bottom end">
+                              <Dropdown.Menu>
+                                <Dropdown.Item
+                                  id="add-new-round"
+                                  textValue="Add new round"
+                                  onAction={() => setIsAddNewRoundDialogOpen(true)}>
+                                  <Label>Add new round</Label>
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown>
+                          {/* Mounted only while open: rows would otherwise each keep several idle dialogs. */}
+                          {isAddNewRoundDialogOpen && (
+                            <AddNewRoundDialog
+                              workspaceSlug={workspaceSlug}
+                              open={isAddNewRoundDialogOpen}
+                              setOpen={setIsAddNewRoundDialogOpen}
                             />
-                            <DropdownMenuContent align="end" className="w-fit">
-                              <DropdownMenuItem onClick={() => setIsAddNewRoundDialogOpen(true)}>
-                                Add new round
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <AddNewRoundDialog
-                            workspaceSlug={workspaceSlug!}
-                            open={isAddNewRoundDialogOpen}
-                            setOpen={setIsAddNewRoundDialogOpen}
-                          />
+                          )}
                         </div>
                       </TableHead>
                     </TableRow>
@@ -360,18 +779,20 @@ function RouteComponent() {
                     {rounds.map(round => (
                       <BlackboardRound
                         key={round.id}
-                        workspaceSlug={workspaceSlug!}
+                        workspaceSlug={workspaceSlug}
                         round={round}
+                        tags={workspace.tags}
+                        favoritePuzzleIds={favoriteSet}
                       />
                     ))}
                     {/* Gets rid of the scroll bar when the last row is hidden. */}
                     <TableRow>
-                      <TableCell colSpan={7} className="py-0" />
+                      <TableCell colSpan={9} className="py-0" />
                     </TableRow>
                   </TableBody>
                 </Table>
               </div>
-            </ScrollArea>
+            </ScrollShadow>
           </div>
         </div>
       </div>
@@ -380,14 +801,21 @@ function RouteComponent() {
   );
 }
 
-function BlackboardRound({
+// Rows are memoized and take `tags` as a prop instead of reading the workspace context, so a
+// websocket update only re-renders the rows whose data changed.
+const BlackboardRound = memo(function BlackboardRound({
   workspaceSlug,
   round,
+  tags,
+  favoritePuzzleIds,
 }: {
   workspaceSlug: string;
   round: WorkspaceRoomState["rounds"][0];
+  tags: string[];
+  favoritePuzzleIds: ReadonlySet<string>;
 }) {
-  const roundsUpdateMutation = useMutation(orpc.rounds.update.mutationOptions());
+  const {mutate: updateRound} = useMutation(workspaceMutations.rounds.update());
+  const isBeingCreated = useIsBeingCreated(round.id, orpc.rounds.create.mutationKey());
   const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] = useState(false);
   const [isAddNewUnassignedPuzzleDialogOpen, setIsAddNewUnassignedPuzzleDialogOpen] =
     useState(false);
@@ -403,23 +831,16 @@ function BlackboardRound({
   );
 
   function onStatusChange(value: string | null) {
-    if (round.status !== value) {
-      toast.promise(
-        roundsUpdateMutation.mutateAsync({workspaceSlug, id: round.id, status: value}),
-        {
-          loading: "Updating round status...",
-          success: "Success! Round status updated.",
-          error: "Oops! Something went wrong.",
-        }
-      );
-    }
+    if (round.status !== value) updateRound({workspaceSlug, id: round.id, status: value});
   }
 
   return (
     <>
       <TableRow
+        // Target of the sidebar's round links.
+        id={round.id}
         className={cn(
-          "text-secondary-foreground group",
+          "text-secondary-foreground group scroll-mt-20",
           round.status === "solved" ? "bg-green-100 dark:bg-green-950" : "bg-secondary"
         )}>
         <TableCell className="-p-2 relative">
@@ -430,9 +851,11 @@ function BlackboardRound({
             )}>
             <Button
               variant="ghost"
-              size="icon"
+              isIconOnly
+              aria-label={`Toggle round ${round.name}`}
+              aria-expanded={!isCollapsed}
               className="relative scroll-mt-20 select-none"
-              onClick={() => {
+              onPress={() => {
                 setIsCollapsed(!isCollapsed);
               }}>
               <ChevronRightIcon className={cn("transition", !isCollapsed && "rotate-90")} />
@@ -448,95 +871,131 @@ function BlackboardRound({
           {round.name}
         </TableCell>
         <TableCell>
-          <Select
-            onValueChange={onStatusChange}
-            value={round.status}
-            items={[
-              {value: null, label: "None"},
-              {value: "solved", label: "Solved"},
-            ]}>
-            <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              <SelectItem value="solved" className={getBgColorClassNamesForPuzzleStatus("solved")}>
-                Solved
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <DeferredSelect
+            aria-label="Round status"
+            valueText={round.status === "solved" ? "Solved" : "None"}
+            value={round.status === "solved" ? "Solved" : "None"}
+            triggerClassName={SELECT_TRIGGER_CLASS}>
+            {deferred => (
+              <Select
+                {...deferred}
+                aria-label="Round status"
+                value={round.status ?? NONE_KEY}
+                onChange={value => onStatusChange(fromKey(value))}>
+                <Select.Trigger className={SELECT_TRIGGER_CLASS}>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    <ListBox.Item id={NONE_KEY} textValue="None">
+                      None
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                    <ListBox.Item
+                      id="solved"
+                      textValue="Solved"
+                      className={getBgColorClassNamesForPuzzleStatus("solved")}>
+                      Solved
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                  </ListBox>
+                </Select.Popover>
+              </Select>
+            )}
+          </DeferredSelect>
         </TableCell>
         <TableCell colSpan={3} />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button disabled={round.id === ""} variant="ghost" size="icon">
-                    <EllipsisIcon />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-fit">
-                <DropdownMenuItem onClick={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
-                  Add new meta puzzle
-                </DropdownMenuItem>
-                {round.metaPuzzles.length > 0 ? (
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <DropdownMenuItem className="opacity-50" closeOnClick={false}>
-                          Add new unassigned puzzle
-                          <DropdownMenuShortcut>
-                            <InfoIcon />
-                          </DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                      }
-                    />
-                    <TooltipContent side="left">
-                      You can only add unassigned puzzles when there are no meta puzzles in the
-                      round.
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <DropdownMenuItem onClick={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
-                    Add new unassigned puzzle
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => setIsEditRoundDialogOpen(true)}>
-                  Edit round
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDeleteRoundDialogOpen(true)}>
-                  Delete round
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Dropdown>
+              <Button isDisabled={isBeingCreated} variant="ghost" isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
+                  <Dropdown.Item
+                    id="add-meta"
+                    textValue="Add new meta puzzle"
+                    onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
+                    <Label>Add new meta puzzle</Label>
+                  </Dropdown.Item>
+                  {round.metaPuzzles.length > 0 ? (
+                    <Dropdown.Item
+                      id="add-unassigned-disabled"
+                      textValue="Add new unassigned puzzle"
+                      isDisabled
+                      // Disabled menu items get `pointer-events: none`; re-enable them so the
+                      // explanatory tooltip can still be hovered.
+                      className="pointer-events-auto!">
+                      <Label>Add new unassigned puzzle</Label>
+                      <Tooltip>
+                        <Tooltip.Trigger>
+                          <InfoIcon className="ms-auto" />
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="left">
+                          You can only add unassigned puzzles when there are no meta puzzles in the
+                          round.
+                        </Tooltip.Content>
+                      </Tooltip>
+                    </Dropdown.Item>
+                  ) : (
+                    <Dropdown.Item
+                      id="add-unassigned"
+                      textValue="Add new unassigned puzzle"
+                      onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                      <Label>Add new unassigned puzzle</Label>
+                    </Dropdown.Item>
+                  )}
+                  <Dropdown.Item
+                    id="edit-round"
+                    textValue="Edit round"
+                    onAction={() => setIsEditRoundDialogOpen(true)}>
+                    <Label>Edit round</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="delete-round"
+                    textValue="Delete round"
+                    onAction={() => setIsDeleteRoundDialogOpen(true)}>
+                    <Label>Delete round</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
-          <AddNewMetaPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            roundId={round.id}
-            open={isAddNewMetaPuzzleDialogOpen}
-            setOpen={setIsAddNewMetaPuzzleDialogOpen}
-          />
-          <AddNewPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            roundId={round.id}
-            open={isAddNewUnassignedPuzzleDialogOpen}
-            setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
-          />
-          <EditRoundDialog
-            workspaceSlug={workspaceSlug}
-            round={round}
-            open={isEditRoundDialogOpen}
-            setOpen={setIsEditRoundDialogOpen}
-          />
-          <DeleteRoundDialog
-            workspaceSlug={workspaceSlug}
-            roundId={round.id}
-            open={isDeleteRoundDialogOpen}
-            setOpen={setIsDeleteRoundDialogOpen}
-          />
+          {isAddNewMetaPuzzleDialogOpen && (
+            <AddNewMetaPuzzleDialog
+              workspaceSlug={workspaceSlug}
+              roundId={round.id}
+              open={isAddNewMetaPuzzleDialogOpen}
+              setOpen={setIsAddNewMetaPuzzleDialogOpen}
+            />
+          )}
+          {isAddNewUnassignedPuzzleDialogOpen && (
+            <AddNewPuzzleDialog
+              workspaceSlug={workspaceSlug}
+              roundId={round.id}
+              open={isAddNewUnassignedPuzzleDialogOpen}
+              setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
+            />
+          )}
+          {isEditRoundDialogOpen && (
+            <EditRoundDialog
+              workspaceSlug={workspaceSlug}
+              round={round}
+              open={isEditRoundDialogOpen}
+              setOpen={setIsEditRoundDialogOpen}
+            />
+          )}
+          {isDeleteRoundDialogOpen && (
+            <DeleteRoundDialog
+              workspaceSlug={workspaceSlug}
+              roundId={round.id}
+              open={isDeleteRoundDialogOpen}
+              setOpen={setIsDeleteRoundDialogOpen}
+            />
+          )}
         </TableCell>
       </TableRow>
       {round.metaPuzzles.map(metaPuzzle => (
@@ -545,6 +1004,8 @@ function BlackboardRound({
           workspaceSlug={workspaceSlug}
           metaPuzzle={metaPuzzle}
           isParentCollapsed={isCollapsed}
+          tags={tags}
+          favoritePuzzleIds={favoritePuzzleIds}
         />
       ))}
       {round.unassignedPuzzles.length > 0 && (
@@ -559,10 +1020,12 @@ function BlackboardRound({
                 )}>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  isIconOnly
+                  aria-label="Toggle unassigned puzzles"
+                  aria-expanded={!isUnassignedCollapsed}
                   className="relative scroll-mt-20 select-none"
                   style={{color: "grey"}}
-                  onClick={_e => {
+                  onPress={() => {
                     setIsUnassignedCollapsed(v => !v);
                   }}>
                   <ChevronRightIcon
@@ -590,28 +1053,31 @@ function BlackboardRound({
             </TableCell>
             <TableCell>
               <div className="-my-3 flex items-center justify-end">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button disabled={round.id === ""} variant="ghost" size="icon">
-                        <EllipsisIcon />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end" className="w-fit">
-                    <DropdownMenuItem onClick={() => setIsAssignUnassignedPuzzlesDialogOpen(true)}>
-                      Assign all unassigned puzzles
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Dropdown>
+                  <Button isDisabled={isBeingCreated} variant="ghost" isIconOnly>
+                    <EllipsisIcon />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                  <Dropdown.Popover className="w-fit" placement="bottom end">
+                    <Dropdown.Menu>
+                      <Dropdown.Item
+                        id="assign-all"
+                        textValue="Assign all unassigned puzzles"
+                        onAction={() => setIsAssignUnassignedPuzzlesDialogOpen(true)}>
+                        <Label>Assign all unassigned puzzles</Label>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown.Popover>
+                </Dropdown>
               </div>
-              <AssignUnassignedPuzzlesDialog
-                workspaceSlug={workspaceSlug}
-                roundId={round.id}
-                open={isAssignedUnassignedPuzzlesDialogOpen}
-                setOpen={setIsAssignUnassignedPuzzlesDialogOpen}
-              />
+              {isAssignedUnassignedPuzzlesDialogOpen && (
+                <AssignUnassignedPuzzlesDialog
+                  workspaceSlug={workspaceSlug}
+                  roundId={round.id}
+                  open={isAssignedUnassignedPuzzlesDialogOpen}
+                  setOpen={setIsAssignUnassignedPuzzlesDialogOpen}
+                />
+              )}
             </TableCell>
           </TableRow>
           {round.unassignedPuzzles.map(puzzle => (
@@ -622,34 +1088,39 @@ function BlackboardRound({
               puzzle={puzzle}
               isCollapsed={isCollapsed || isUnassignedCollapsed}
               isLast={puzzle === round.unassignedPuzzles[round.unassignedPuzzles.length - 1]}
+              tags={tags}
+              isFavorite={favoritePuzzleIds.has(puzzle.id)}
             />
           ))}
         </>
       )}
     </>
   );
-}
+});
 
-function BlackboardMetaPuzzle({
+const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   workspaceSlug,
   metaPuzzle,
   isParentCollapsed,
+  tags,
+  favoritePuzzleIds,
 }: {
   workspaceSlug: string;
   metaPuzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0];
   isParentCollapsed: boolean;
+  tags: string[];
+  favoritePuzzleIds: ReadonlySet<string>;
 }) {
-  const workspace = useWorkspace();
-  const puzzlesUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
+  const {mutate: updatePuzzle} = useMutation(workspaceMutations.puzzles.update());
+  const update = (patch: Omit<RouterInputs["puzzles"]["update"], "workspaceSlug" | "id">) =>
+    updatePuzzle({workspaceSlug, id: metaPuzzle.id, ...patch});
+  const isBeingCreated = useIsBeingCreated(metaPuzzle.id);
   const [isAddNewPuzzleFeedingThisMetaDialogOpen, setIsAddNewPuzzleFeedingThisMetaDialogOpen] =
     useState(false);
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
-  const [isTagsEditing, setIsTagsEditing] = useState(false);
-  const favoritePuzzles: string[] = (useSuspenseQuery(
-    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
-  ).data.favoritePuzzleIds ?? []) as string[];
-  const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
+  const isFavorite = favoritePuzzleIds.has(metaPuzzle.id);
+  const toggleFavorite = useToggleFavorite(workspaceSlug);
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${metaPuzzle.id}`, false);
   const color = ((id: string) => {
@@ -664,58 +1135,30 @@ function BlackboardMetaPuzzle({
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   })(metaPuzzle.id);
 
-  const form = useAppForm({
-    defaultValues: {
-      answer: metaPuzzle.answer ?? "",
-      status: metaPuzzle.status,
-      importance: metaPuzzle.importance,
-      tags: metaPuzzle.tags,
-    },
-    onSubmit: ({value}) => {
-      toast.promise(
-        puzzlesUpdateMutation.mutateAsync({workspaceSlug, id: metaPuzzle.id, ...value}),
-        {
-          loading: "Updating meta puzzle...",
-          success: "Success! Meta puzzle updated.",
-          error: "Oops! Something went wrong.",
-        }
-      );
-    },
-    listeners: {
-      onBlur: async ({formApi}) => {
-        if (formApi.state.isValid) {
-          await formApi.handleSubmit();
-        }
-      },
-    },
-  });
-  useEffect(() => {
-    form.reset();
-  }, [metaPuzzle.answer, metaPuzzle.status, metaPuzzle.importance, metaPuzzle.tags]);
-  const presences = useAppSelector(state => state.presences.value)[metaPuzzle.id] ?? [];
-  const tagsRef = useRef<HTMLInputElement | null>(null);
+  const presences = useAppSelector(state => state.presences.value[metaPuzzle.id]) ?? NO_PRESENCES;
 
   return (
     <>
       <TableRow
+        // Target of the sidebar's puzzle links. (Not on the toggle button: that's display:none
+        // while the meta is expanded, and a hidden element can't be scrolled to.)
+        id={metaPuzzle.id}
         className={cn(
-          "group",
+          "group scroll-mt-20",
           getBgColorClassNamesForPuzzleStatus(metaPuzzle.status),
-          metaPuzzle.id === "" && "pointer-events-none cursor-wait",
+          isBeingCreated && "pointer-events-none cursor-wait opacity-70",
           isParentCollapsed ? "collapse" : ""
         )}>
         <TableCell className="p-0">
           {metaPuzzle.link && (
-            <Button
-              variant="ghost"
-              size="icon"
-              nativeButton={false}
-              render={
-                <a href={metaPuzzle.link} target="_blank" rel="noopener noreferrer">
-                  <PuzzleIcon className="text-blue-600" />
-                </a>
-              }
-            />
+            <a
+              className="button button--icon-only button--ghost"
+              aria-label={`Hunt link to ${metaPuzzle.name}`}
+              href={metaPuzzle.link}
+              target="_blank"
+              rel="noopener noreferrer">
+              <PuzzleIcon className="text-blue-600" />
+            </a>
           )}
         </TableCell>
         <TableCell className="relative p-0">
@@ -726,11 +1169,12 @@ function BlackboardMetaPuzzle({
             )}>
             <Button
               variant="ghost"
-              size="icon"
-              id={metaPuzzle.id}
+              isIconOnly
+              aria-label={`Toggle meta puzzle ${metaPuzzle.name}`}
+              aria-expanded={!isCollapsed}
               className="relative scroll-mt-20 select-none"
               style={{color}}
-              onClick={() => {
+              onPress={() => {
                 setIsCollapsed(v => !v);
               }}>
               <ChevronRightIcon className={cn("transition", !isCollapsed && "rotate-90")} />
@@ -761,113 +1205,40 @@ function BlackboardMetaPuzzle({
           )}
         </TableCell>
         <TableCell className="relative">
-          <form.AppField name="answer">
-            {field => (
-              <input
-                className="absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950"
-                onBlur={e => {
-                  field.handleChange(e.target.value.toUpperCase());
-                  field.handleBlur();
-                }}
-                onChange={e => field.handleChange(e.target.value)}
-                value={field.state.value}
-              />
-            )}
-          </form.AppField>
+          <AnswerInput
+            puzzleName={metaPuzzle.name}
+            value={metaPuzzle.answer}
+            onCommit={answer => update({answer})}
+          />
         </TableCell>
         <TableCell>
-          <form.AppField name="status">
-            {field => (
-              <Select
-                onValueChange={value => {
-                  field.handleChange(value);
-                  field.handleBlur();
-                }}
-                value={field.state.value}
-                items={getPuzzleStatusOptions()}>
-                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950">
-                  <SelectValue onBlur={field.handleBlur} />
-                </SelectTrigger>
-                <SelectContent>
-                  {getPuzzleStatusGroups().map(group => (
-                    <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
-                      {group.values.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </form.AppField>
+          <PuzzleStatusSelect
+            value={metaPuzzle.status}
+            onChange={status => {
+              if (status !== metaPuzzle.status) update({status});
+            }}
+            triggerClassName={SELECT_TRIGGER_CLASS}
+          />
         </TableCell>
         <TableCell>
-          <form.AppField name="importance">
-            {field => (
-              <Select
-                onValueChange={value => {
-                  field.handleChange(value);
-                  field.handleBlur();
-                }}
-                value={field.state.value}
-                items={getPuzzleImportances().map(importance => ({
-                  value: importance.value,
-                  label: importance.icon,
-                }))}>
-                <SelectTrigger
-                  showTrigger={false}
-                  className={cn(
-                    "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none",
-                    getColorClassNamesForPuzzleImportances(metaPuzzle.importance)
-                  )}>
-                  <SelectValue onBlur={field.handleBlur} />
-                </SelectTrigger>
-                <SelectContent>
-                  {getPuzzleImportances().map(importance => (
-                    <SelectItem value={importance.value}>
-                      {importance.icon} {importance.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <PuzzleImportanceSelect
+            value={metaPuzzle.importance}
+            onChange={importance => {
+              if (importance !== metaPuzzle.importance) update({importance});
+            }}
+            triggerClassName={cn(
+              IMPORTANCE_TRIGGER_CLASS,
+              getColorClassNamesForPuzzleImportances(metaPuzzle.importance)
             )}
-          </form.AppField>
+          />
         </TableCell>
         <TableCell className="p-0">
-          {!isTagsEditing ? (
-            <button
-              onClick={() => {
-                setIsTagsEditing(true);
-                setTimeout(() => tagsRef.current?.focus(), 0);
-              }}
-              className="flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1 hover:bg-amber-100 dark:hover:bg-amber-950">
-              {metaPuzzle.tags.map(tag => (
-                <Badge key={tag} className={getTagColor(tag)}>
-                  {tag}
-                </Badge>
-              ))}
-            </button>
-          ) : (
-            <form.AppField
-              name="tags"
-              listeners={{
-                onBlur: ({fieldApi}) => {
-                  setIsTagsEditing(false);
-                  fieldApi.handleBlur();
-                },
-              }}
-              children={field => (
-                <field.ComboboxMultipleField
-                  defaultOpen
-                  ref={tagsRef}
-                  className="border-0 bg-amber-100 dark:bg-amber-950"
-                  items={workspace.tags}
-                />
-              )}
-            />
-          )}
+          <TagsCell
+            puzzleName={metaPuzzle.name}
+            value={metaPuzzle.tags}
+            tags={tags}
+            onCommit={next => update({tags: next})}
+          />
         </TableCell>
         <TableCell className="py-1">
           <div className="flex flex-row flex-wrap gap-1">
@@ -876,6 +1247,7 @@ function BlackboardMetaPuzzle({
                 <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
+                    alt=""
                     className="size-3 rounded-full"
                   />
                   {user.name}
@@ -886,70 +1258,81 @@ function BlackboardMetaPuzzle({
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
-            <Toggle
-              defaultPressed={favoritePuzzles.includes(metaPuzzle.id)}
-              onPressedChange={async value => {
-                await setFavoritePuzzlesMutation.mutateAsync({
-                  workspaceSlug,
-                  favoritePuzzleIds: value
-                    ? [...favoritePuzzles, metaPuzzle.id]
-                    : favoritePuzzles.filter(id => id !== metaPuzzle.id),
-                });
-              }}
+            <ToggleButton
+              variant="ghost"
+              isIconOnly
+              aria-label="Favorite"
+              isSelected={isFavorite}
+              onChange={value => toggleFavorite(metaPuzzle.id, value)}
               className="group/toggle">
-              <StarIcon className="stroke-muted-foreground group-data-pressed/toggle:fill-primary group-data-pressed/toggle:stroke-primary" />
-            </Toggle>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon">
-                    <EllipsisIcon />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-fit">
-                <DropdownMenuItem onClick={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
-                  Add new puzzle feeding this meta puzzle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsEditPuzzleDialogOpen(true)}>
-                  Edit this meta puzzle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDeletePuzzleDialogOpen(true)}>
-                  Delete this meta puzzle
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <StarIcon className="stroke-muted-foreground group-data-selected/toggle:fill-primary group-data-selected/toggle:stroke-primary" />
+            </ToggleButton>
+            <Dropdown>
+              <Button variant="ghost" isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
+                  <Dropdown.Item
+                    id="add-feeding"
+                    textValue="Add new puzzle feeding this meta puzzle"
+                    onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
+                    <Label>Add new puzzle feeding this meta puzzle</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="edit-meta"
+                    textValue="Edit this meta puzzle"
+                    onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                    <Label>Edit this meta puzzle</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="delete-meta"
+                    textValue="Delete this meta puzzle"
+                    onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                    <Label>Delete this meta puzzle</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
-          <AddNewPuzzleDialog
-            workspaceSlug={workspaceSlug!}
-            roundId={metaPuzzle.roundId}
-            parentPuzzleId={metaPuzzle.id}
-            open={isAddNewPuzzleFeedingThisMetaDialogOpen}
-            setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
-          />
-          <EditPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzle={metaPuzzle}
-            open={isEditPuzzleDialogOpen}
-            setOpen={setIsEditPuzzleDialogOpen}
-          />
-          <DeletePuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzleId={metaPuzzle.id}
-            open={isDeletePuzzleDialogOpen}
-            setOpen={setIsDeletePuzzleDialogOpen}
-          />
+          {isAddNewPuzzleFeedingThisMetaDialogOpen && (
+            <AddNewPuzzleDialog
+              workspaceSlug={workspaceSlug}
+              roundId={metaPuzzle.roundId}
+              parentPuzzleId={metaPuzzle.id}
+              open={isAddNewPuzzleFeedingThisMetaDialogOpen}
+              setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
+            />
+          )}
+          {isEditPuzzleDialogOpen && (
+            <EditPuzzleDialog
+              workspaceSlug={workspaceSlug}
+              puzzle={metaPuzzle}
+              open={isEditPuzzleDialogOpen}
+              setOpen={setIsEditPuzzleDialogOpen}
+            />
+          )}
+          {isDeletePuzzleDialogOpen && (
+            <DeletePuzzleDialog
+              workspaceSlug={workspaceSlug}
+              puzzleId={metaPuzzle.id}
+              open={isDeletePuzzleDialogOpen}
+              setOpen={setIsDeletePuzzleDialogOpen}
+            />
+          )}
         </TableCell>
       </TableRow>
       {metaPuzzle.childPuzzles.map((puzzle, idx) => (
         <BlackboardPuzzle
-          key={idx}
+          key={puzzle.id}
           workspaceSlug={workspaceSlug}
           color={color}
           puzzle={puzzle}
           isCollapsed={isParentCollapsed || isCollapsed}
           isLast={idx === metaPuzzle.childPuzzles.length - 1}
+          tags={tags}
+          isFavorite={favoritePuzzleIds.has(puzzle.id)}
         />
       ))}
       {metaPuzzle.childPuzzles.length === 0 && !isParentCollapsed && !isCollapsed && (
@@ -978,79 +1361,53 @@ function BlackboardMetaPuzzle({
       )}
     </>
   );
-}
+});
 
-function BlackboardPuzzle({
+const BlackboardPuzzle = memo(function BlackboardPuzzle({
   workspaceSlug,
   puzzle,
   color,
   isCollapsed,
   isLast,
+  tags,
+  isFavorite,
 }: {
   workspaceSlug: string;
   puzzle: RouterOutputs["rounds"]["list"][0]["puzzles"][0]["childPuzzles"][0];
   color?: string;
   isCollapsed?: boolean;
   isLast?: boolean;
+  tags: string[];
+  isFavorite: boolean;
 }) {
-  const workspace = useWorkspace();
-  const puzzleUpdateMutation = useMutation(orpc.puzzles.update.mutationOptions());
+  const {mutate: updatePuzzle} = useMutation(workspaceMutations.puzzles.update());
+  const update = (patch: Omit<RouterInputs["puzzles"]["update"], "workspaceSlug" | "id">) =>
+    updatePuzzle({workspaceSlug, id: puzzle.id, ...patch});
+  const isBeingCreated = useIsBeingCreated(puzzle.id);
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
-  const [isTagsEditing, setIsTagsEditing] = useState(false);
-  const favoritePuzzles: string[] = (useSuspenseQuery(
-    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
-  ).data.favoritePuzzleIds ?? []) as string[];
-  const setFavoritePuzzlesMutation = useMutation(orpc.workspaces.members.set.mutationOptions());
-  const form = useAppForm({
-    defaultValues: {
-      answer: puzzle.answer ?? "",
-      status: puzzle.status,
-      importance: puzzle.importance,
-      tags: puzzle.tags,
-    },
-    onSubmit: ({value}) => {
-      toast.promise(puzzleUpdateMutation.mutateAsync({workspaceSlug, id: puzzle.id, ...value}), {
-        loading: "Updating puzzle...",
-        success: "Success! Puzzle updated.",
-        error: "Oops! Something went wrong.",
-      });
-    },
-    listeners: {
-      onChange: async ({formApi}) => {
-        if (formApi.state.isValid) {
-          await formApi.handleSubmit();
-        }
-      },
-      onChangeDebounceMs: 500,
-    },
-  });
-  const presences = useAppSelector(state => state.presences.value[puzzle.id] ?? []);
-  const tagsRef = useRef<HTMLInputElement | null>(null);
+  const toggleFavorite = useToggleFavorite(workspaceSlug);
+  const presences = useAppSelector(state => state.presences.value[puzzle.id]) ?? NO_PRESENCES;
 
   return (
     <>
       <TableRow
         className={cn(
           getBgColorClassNamesForPuzzleStatus(puzzle.status),
-          puzzle.id === "" && "pointer-events-none cursor-wait",
+          isBeingCreated && "pointer-events-none cursor-wait opacity-70",
           isCollapsed ? "collapse" : ""
         )}>
         <TableCell className="p-0">
           {puzzle.link && (
-            <Button
-              variant="ghost"
-              size="icon"
-              render={
-                <a
-                  title="Hunt Link to this puzzle"
-                  href={puzzle.link}
-                  target="_blank"
-                  rel="noopener noreferrer">
-                  <PuzzleIcon className="text-blue-600" />
-                </a>
-              }
-            />
+            <a
+              className="button button--icon-only button--ghost"
+              title="Hunt Link to this puzzle"
+              aria-label={`Hunt link to ${puzzle.name}`}
+              href={puzzle.link}
+              target="_blank"
+              rel="noopener noreferrer">
+              <PuzzleIcon className="text-blue-600" />
+            </a>
           )}
         </TableCell>
         <TableCell className="p-0">
@@ -1089,106 +1446,40 @@ function BlackboardPuzzle({
           )}
         </TableCell>
         <TableCell className="relative">
-          <form.AppField name="answer">
-            {field => (
-              <input
-                className="absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950"
-                onBlur={e => {
-                  field.handleChange(e.target.value.toUpperCase());
-                  field.handleBlur();
-                }}
-                onChange={e => field.handleChange(e.target.value)}
-                value={field.state.value}
-              />
-            )}
-          </form.AppField>
+          <AnswerInput
+            puzzleName={puzzle.name}
+            value={puzzle.answer}
+            onCommit={answer => update({answer})}
+          />
         </TableCell>
         <TableCell>
-          <form.AppField name="status">
-            {field => (
-              <Select
-                onValueChange={field.handleChange}
-                value={field.state.value}
-                items={getPuzzleStatusOptions()}>
-                <SelectTrigger className="-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus:bg-amber-950">
-                  <SelectValue onBlur={field.handleBlur} />
-                </SelectTrigger>
-                <SelectContent>
-                  {getPuzzleStatusGroups().map(group => (
-                    <SelectGroup key={group.groupLabel} className={group.bgColorNoHover}>
-                      {group.values.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </form.AppField>
+          <PuzzleStatusSelect
+            value={puzzle.status}
+            onChange={status => {
+              if (status !== puzzle.status) update({status});
+            }}
+            triggerClassName={PUZZLE_STATUS_TRIGGER_CLASS}
+          />
         </TableCell>
         <TableCell>
-          <form.AppField name="importance">
-            {field => (
-              <Select
-                onValueChange={field.handleChange}
-                value={field.state.value}
-                items={getPuzzleImportances().map(importance => ({
-                  value: importance.value,
-                  label: importance.icon,
-                }))}>
-                <SelectTrigger
-                  showTrigger={false}
-                  className={cn(
-                    "-my-2 h-auto rounded-none border-0 p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none",
-                    getColorClassNamesForPuzzleImportances(puzzle.importance)
-                  )}>
-                  <SelectValue onBlur={field.handleBlur} />
-                </SelectTrigger>
-                <SelectContent>
-                  {getPuzzleImportances().map(importance => (
-                    <SelectItem value={importance.value}>
-                      {importance.icon} {importance.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <PuzzleImportanceSelect
+            value={puzzle.importance}
+            onChange={importance => {
+              if (importance !== puzzle.importance) update({importance});
+            }}
+            triggerClassName={cn(
+              IMPORTANCE_TRIGGER_CLASS,
+              getColorClassNamesForPuzzleImportances(puzzle.importance)
             )}
-          </form.AppField>
+          />
         </TableCell>
         <TableCell className="p-0">
-          {!isTagsEditing ? (
-            <button
-              onClick={() => {
-                setIsTagsEditing(true);
-                setTimeout(() => tagsRef.current?.focus(), 0);
-              }}
-              className="flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1 hover:bg-amber-100 dark:hover:bg-amber-950">
-              {puzzle.tags.map(tag => (
-                <Badge key={tag} className={getTagColor(tag)}>
-                  {tag}
-                </Badge>
-              ))}
-            </button>
-          ) : (
-            <form.AppField
-              name="tags"
-              listeners={{
-                onBlur: () => {
-                  setIsTagsEditing(false);
-                },
-              }}
-              children={field => (
-                <field.ComboboxMultipleField
-                  defaultOpen
-                  ref={tagsRef}
-                  className="border-0 bg-amber-100 dark:bg-amber-950"
-                  items={workspace.tags}
-                />
-              )}
-            />
-          )}
+          <TagsCell
+            puzzleName={puzzle.name}
+            value={puzzle.tags}
+            tags={tags}
+            onCommit={next => update({tags: next})}
+          />
         </TableCell>
         <TableCell className="py-1">
           <div className="flex flex-row flex-wrap gap-2">
@@ -1197,6 +1488,7 @@ function BlackboardPuzzle({
                 <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
                   <img
                     src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
+                    alt=""
                     className="size-3 rounded-full"
                   />
                   {user.name}
@@ -1207,52 +1499,56 @@ function BlackboardPuzzle({
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
-            <Toggle
-              defaultPressed={favoritePuzzles.includes(puzzle.id)}
-              onPressedChange={async value => {
-                await setFavoritePuzzlesMutation.mutateAsync({
-                  workspaceSlug,
-                  favoritePuzzleIds: value
-                    ? [...favoritePuzzles, puzzle.id]
-                    : favoritePuzzles.filter(id => id !== puzzle.id),
-                });
-              }}
+            <ToggleButton
+              variant="ghost"
+              isIconOnly
+              aria-label="Favorite"
+              isSelected={isFavorite}
+              onChange={value => toggleFavorite(puzzle.id, value)}
               className="group/toggle">
-              <StarIcon className="stroke-muted-foreground group-data-pressed/toggle:fill-primary group-data-pressed/toggle:stroke-primary" />
-            </Toggle>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon">
-                    <EllipsisIcon />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-fit">
-                <DropdownMenuItem onClick={() => setIsEditPuzzleDialogOpen(true)}>
-                  Edit this puzzle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDeletePuzzleDialogOpen(true)}>
-                  Delete this puzzle
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <StarIcon className="stroke-muted-foreground group-data-selected/toggle:fill-primary group-data-selected/toggle:stroke-primary" />
+            </ToggleButton>
+            <Dropdown>
+              <Button variant="ghost" isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
+                  <Dropdown.Item
+                    id="edit-puzzle"
+                    textValue="Edit this puzzle"
+                    onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                    <Label>Edit this puzzle</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="delete-puzzle"
+                    textValue="Delete this puzzle"
+                    onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                    <Label>Delete this puzzle</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
-          <EditPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzle={puzzle}
-            open={isEditPuzzleDialogOpen}
-            setOpen={setIsEditPuzzleDialogOpen}
-          />
-          <DeletePuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzleId={puzzle.id}
-            open={isDeletePuzzleDialogOpen}
-            setOpen={setIsDeletePuzzleDialogOpen}
-          />
+          {isEditPuzzleDialogOpen && (
+            <EditPuzzleDialog
+              workspaceSlug={workspaceSlug}
+              puzzle={puzzle}
+              open={isEditPuzzleDialogOpen}
+              setOpen={setIsEditPuzzleDialogOpen}
+            />
+          )}
+          {isDeletePuzzleDialogOpen && (
+            <DeletePuzzleDialog
+              workspaceSlug={workspaceSlug}
+              puzzleId={puzzle.id}
+              open={isDeletePuzzleDialogOpen}
+              setOpen={setIsDeletePuzzleDialogOpen}
+            />
+          )}
         </TableCell>
       </TableRow>
     </>
   );
-}
+});

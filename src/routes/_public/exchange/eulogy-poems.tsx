@@ -1,3 +1,4 @@
+// oxlint-disable jsx-a11y/media-has-caption -- the audio clips are the puzzle content itself; no caption tracks exist and transcripts would give away the puzzle
 import {createFileRoute} from "@tanstack/react-router";
 
 import {Puzz, PuzzLink, PuzzMain, PuzzHints, PuzzSolution} from "@/components/puzz-components";

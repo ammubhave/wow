@@ -1,3 +1,4 @@
+import {Card} from "@heroui/react";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {useEffect} from "react";
@@ -5,9 +6,6 @@ import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
 import PixelBlast from "@/components/pixel-blast";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {FieldGroup} from "@/components/ui/field";
-import {Item, ItemContent, ItemDescription, ItemTitle} from "@/components/ui/item";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
@@ -41,11 +39,12 @@ function RouteComponent() {
     })
   );
   const organizations = authClient.useListOrganizations().data;
+  const workspaceSlug = params.workspaceSlug;
   useEffect(() => {
-    if (organizations && organizations.findIndex(org => org.slug === params.workspaceSlug) !== -1) {
-      void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: params.workspaceSlug}});
+    if (organizations && organizations.some(org => org.slug === workspaceSlug)) {
+      void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug}});
     }
-  }, [organizations]);
+  }, [organizations, workspaceSlug, router]);
   return (
     <div className="relative flex w-full flex-1 items-center justify-center p-6 md:p-10">
       <div className="absolute inset-0">
@@ -53,30 +52,28 @@ function RouteComponent() {
       </div>
       <div className="z-10 w-full max-w-sm">
         <Card>
-          <CardHeader>
-            <CardTitle>Join Workspace {params.workspaceSlug}</CardTitle>
-            <CardDescription>Enter the workspace password to join.</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <Card.Header>
+            <Card.Title>Join Workspace {params.workspaceSlug}</Card.Title>
+            <Card.Description>Enter the workspace password to join.</Card.Description>
+          </Card.Header>
+          <Card.Content>
             <form.AppForm>
               <form.Form>
-                <FieldGroup>
-                  <Item variant="outline">
-                    <ItemContent>
-                      <ItemTitle>{workspace.teamName}</ItemTitle>
-                      <ItemDescription>{workspace.eventName}</ItemDescription>
-                    </ItemContent>
-                  </Item>
+                <div className="flex w-full flex-col gap-4">
+                  <div className="border-border flex w-full flex-col gap-1 rounded-md border p-4">
+                    <div className="text-sm font-medium">{workspace.teamName}</div>
+                    <div className="text-muted-foreground text-sm">{workspace.eventName}</div>
+                  </div>
                   <form.AppField name="password">
                     {field => <field.TextField label="Workspace Password" type="password" />}
                   </form.AppField>
-                  <FieldGroup>
+                  <div className="flex w-full flex-col gap-4">
                     <form.SubmitButton>Join</form.SubmitButton>
-                  </FieldGroup>
-                </FieldGroup>
+                  </div>
+                </div>
               </form.Form>
             </form.AppForm>
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
     </div>

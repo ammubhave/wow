@@ -1,12 +1,12 @@
-import MD5 from "crypto-js/md5";
-
-import {Avatar, AvatarFallback, AvatarImage} from "./ui/avatar";
-import {HoverCard, HoverCardContent, HoverCardTrigger} from "./ui/hover-card";
+import {HoverCard} from "@heroui-pro/react";
+import {Avatar} from "@heroui/react";
+import {sha256} from "js-sha256";
 
 export function gravatarUrl(email: string, opts?: {size?: number; d?: string}) {
   const size = opts?.size ?? 96;
   const d = opts?.d ?? "identicon";
-  const hash = MD5(email.trim().toLowerCase()).toString();
+  // Gravatar accepts SHA-256 hashes of the trimmed, lowercased email.
+  const hash = sha256(email.trim().toLowerCase());
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=${encodeURIComponent(d)}`;
 }
 
@@ -22,26 +22,28 @@ export function UserHoverCard({
   const src =
     user.image ?? (user.email ? gravatarUrl(user.email, {size: 96, d: "identicon"}) : undefined);
   return (
-    <HoverCard>
-      <HoverCardTrigger delay={200} render={children} />
-      <HoverCardContent className="flex w-fit items-center justify-center p-2" side={side}>
+    <HoverCard openDelay={200}>
+      <HoverCard.Trigger>{children}</HoverCard.Trigger>
+      <HoverCard.Content
+        className="flex w-fit items-center justify-center p-2"
+        placement={side ?? "bottom"}>
         <div className="flex items-center gap-2">
           <Avatar>
-            <AvatarImage src={src} />
-            <AvatarFallback>
+            <Avatar.Image src={src} />
+            <Avatar.Fallback>
               {user.name
                 .trim()
                 .split(" ")
                 .map(n => n[0]?.toUpperCase())
                 .join("")
                 .slice(0, 2)}
-            </AvatarFallback>
+            </Avatar.Fallback>
           </Avatar>
           <div className="flex flex-col items-baseline">
             <div className="text-accent-foreground font-medium">{user.name}</div>
           </div>
         </div>
-      </HoverCardContent>
+      </HoverCard.Content>
     </HoverCard>
   );
 }

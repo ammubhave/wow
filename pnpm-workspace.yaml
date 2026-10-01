@@ -1,20 +1,14 @@
-onlyBuiltDependencies:
-  - "@prisma/client"
-  - "@prisma/engines"
-  - better-sqlite3
-  - esbuild
-  - msw
-  - prisma
-  - protobufjs
-  - sharp
-  - workerd
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@latest
-  vitest: 4.1.9
-  vite-plus: latest
+  vite: npm:@voidzero-dev/vite-plus-core@^1.0.0
+  # Must match the exact vitest version vite-plus depends on.
+  vitest: 5.0.1
+  vite-plus: ^1.0.0
 overrides:
   vite: "catalog:"
   vitest: "catalog:"
+  react: "^19.3.0"
+  react-dom: "^19.3.0"
+  react-aria-components: "^1.21.1"
 peerDependencyRules:
   allowAny:
     - vite
@@ -22,3 +16,16 @@ peerDependencyRules:
   allowedVersions:
     vite: "*"
     vitest: "*"
+
+allowBuilds:
+  "@heroui-pro/react": true
+  esbuild: true
+  heroui-pro: true
+  sharp: true
+  workerd: true
+  # Install scripts we don't need: prebuilt binaries are shipped (@parcel/watcher, zowe keyring),
+  # donation banner, test-only worker copy.
+  "@parcel/watcher": false
+  "@zowe/secrets-for-zowe-sdk": false
+  core-js: false
+  msw: false

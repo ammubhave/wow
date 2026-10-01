@@ -1,8 +1,6 @@
+import {Card} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
-
-import {Button} from "@/components/ui/button";
-import {Card, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 
 export const Route = createFileRoute("/_public/forgot-password-check-email")({
   component: RouteComponent,
@@ -15,25 +13,18 @@ function RouteComponent() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label="Go Back"
-              render={
-                <Link to="/login">
-                  <ArrowLeftIcon /> Back
-                </Link>
-              }
-            />
+            <Link to="/login" className="button button--outline button--sm gap-2">
+              <ArrowLeftIcon aria-hidden="true" /> Back
+            </Link>
           </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Check your email</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title>Check your email</Card.Title>
+              <Card.Description>
                 We sent reset instructions to your email. Please check your inbox and follow the
                 instructions to reset your password.
-              </CardDescription>
-            </CardHeader>
+              </Card.Description>
+            </Card.Header>
           </Card>
         </div>
       </div>

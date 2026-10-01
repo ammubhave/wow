@@ -1,8 +1,8 @@
-import {Link, useChildMatches} from "@tanstack/react-router";
+import {Separator, Tabs} from "@heroui/react";
+import {useChildMatches} from "@tanstack/react-router";
 import {ExternalLinkIcon, InfoIcon, HomeIcon, SettingsIcon, HistoryIcon} from "lucide-react";
 import {useEffect} from "react";
 
-import {Separator} from "@/components/ui/separator";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
@@ -10,8 +10,6 @@ import {useAppDispatch, useAppSelector} from "@/store";
 
 import {NavUser} from "./nav-user";
 import {NavWorkspace} from "./nav-workspace";
-import {Button} from "./ui/button";
-import {Tabs, TabsList, TabsTrigger} from "./ui/tabs";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
 export function WorkspaceHeader() {
@@ -29,7 +27,7 @@ export function WorkspaceHeader() {
     if (newPuzzleId) {
       dispatch(setLastActivePuzzle(newPuzzleId));
     }
-  }, [newPuzzleId]);
+  }, [dispatch, newPuzzleId]);
   const lastActivePuzzleId = useAppSelector(state => state.lastActivePuzzle.value);
 
   const puzzleId = newPuzzleId ?? lastActivePuzzleId;
@@ -41,82 +39,64 @@ export function WorkspaceHeader() {
       <WorkspaceCommandDialog workspaceSlug={workspaceSlug} />
       <div className="flex w-full items-center gap-2">
         <Tabs
-          value={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
-          className="flex flex-1 shrink-0 flex-col">
-          <div className="flex items-center gap-2">
-            <TabsList>
-              <TabsTrigger
-                value=""
-                render={
-                  <div>
-                    <img src="/favicon.ico" className="size-5 shrink-0 rounded-full" />
-                  </div>
-                }
-              />
-              <TabsTrigger
-                value="/$workspaceSlug/"
-                render={
-                  <Link to="/$workspaceSlug" params={{workspaceSlug}}>
-                    <HomeIcon />
-                  </Link>
-                }
-              />
-              <TabsTrigger
-                value="/$workspaceSlug/settings"
-                render={
-                  <Link to="/$workspaceSlug/settings" params={{workspaceSlug}}>
-                    <SettingsIcon />
-                  </Link>
-                }
-              />
-              <TabsTrigger
-                value="/$workspaceSlug/activity-log"
-                render={
-                  <Link to="/$workspaceSlug/activity-log" params={{workspaceSlug}}>
-                    <HistoryIcon />
-                  </Link>
-                }
-              />
-              <TabsTrigger
-                value="/$workspaceSlug/help-page"
-                render={
-                  <Link to="/$workspaceSlug/help-page" params={{workspaceSlug}}>
-                    <InfoIcon />
-                  </Link>
-                }
-              />
+          selectedKey={childMatches[1]?.fullPath ?? childMatches[0]?.fullPath}
+          className="flex-1 shrink-0">
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Workspace navigation">
+              <Tabs.Tab id="">
+                <img src="/favicon.ico" alt="WOW" className="size-5 shrink-0 rounded-full" />
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="/$workspaceSlug/" href={`/${workspaceSlug}`} aria-label="Home">
+                <HomeIcon />
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab
+                id="/$workspaceSlug/settings"
+                href={`/${workspaceSlug}/settings`}
+                aria-label="Settings">
+                <SettingsIcon />
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab
+                id="/$workspaceSlug/activity-log"
+                href={`/${workspaceSlug}/activity-log`}
+                aria-label="Activity log">
+                <HistoryIcon />
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab
+                id="/$workspaceSlug/help-page"
+                href={`/${workspaceSlug}/help-page`}
+                aria-label="Help">
+                <InfoIcon />
+                <Tabs.Indicator />
+              </Tabs.Tab>
               {puzzle && (
-                <>
-                  <div className="h-full w-full px-1">
-                    <Separator orientation="vertical" />
-                  </div>
-                  <TabsTrigger
-                    value="/$workspaceSlug/puzzles/$puzzleId"
-                    render={
-                      <Link
-                        to="/$workspaceSlug/puzzles/$puzzleId"
-                        params={{workspaceSlug, puzzleId: puzzle.id}}>
-                        {puzzle.name}
-                      </Link>
-                    }
-                  />
-                </>
+                // Plain DOM children of a react-aria collection are never rendered, so
+                // the separator must live inside the Tab. Force it visible even when
+                // this tab is selected (HeroUI hides separators on selected tabs).
+                <Tabs.Tab
+                  id="/$workspaceSlug/puzzles/$puzzleId"
+                  href={`/${workspaceSlug}/puzzles/${puzzle.id}`}>
+                  <Tabs.Separator className="opacity-100!" />
+                  {puzzle.name}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
               )}
-            </TabsList>
-          </div>
+            </Tabs.List>
+          </Tabs.ListContainer>
         </Tabs>
         <div className="flex items-center gap-1">
-          {workspace.links.map((link, index) => (
-            <Button
-              key={index}
-              nativeButton={false}
-              variant="ghost"
-              render={
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                  {link.name} <ExternalLinkIcon />
-                </a>
-              }
-            />
+          {workspace.links.map(link => (
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button button--ghost gap-2"
+              key={`${link.name}\n${link.url}`}>
+              {link.name} <ExternalLinkIcon />
+            </a>
           ))}
         </div>
         <Separator orientation="vertical" />

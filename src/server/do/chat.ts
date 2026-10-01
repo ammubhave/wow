@@ -7,7 +7,7 @@ import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
 
 const chatRoomSentMessageSchema = z.union([
-  z.object({type: z.literal("send"), text: z.string()}),
+  z.object({type: z.literal("send"), text: z.string().min(1).max(4000)}),
   z.object({
     type: z.literal("react"),
     messageId: z.string(),
@@ -45,7 +45,8 @@ function putAttachment(ws: WebSocket, data: Attachment) {
   ws.serializeAttachment({...ws.deserializeAttachment(), ...data});
 }
 function getAttachment(ws: WebSocket): Attachment {
-  return ws.deserializeAttachment() as Attachment;
+  // deserializeAttachment() is typed `any`; attachments are only ever written by putAttachment above.
+  return ws.deserializeAttachment();
 }
 
 export class ChatRoom extends DurableObject {
@@ -76,7 +77,12 @@ export class ChatRoom extends DurableObject {
   async webSocketMessage(ws: WebSocket, message: string) {
     await this.resetAlarm();
     const attachment = getAttachment(ws);
-    const m = chatRoomSentMessageSchema.parse(JSON.parse(message));
+    let m: ChatRoomSentMessage;
+    try {
+      m = chatRoomSentMessageSchema.parse(JSON.parse(message));
+    } catch {
+      return; // Ignore malformed messages instead of throwing in the DO.
+    }
 
     if (m.type === "send") {
       const key = uuidv7();
@@ -95,7 +101,7 @@ export class ChatRoom extends DurableObject {
         {value: "!stuck", reaction: "angry"},
         {value: "!help", reaction: "like"},
       ];
-      var matchedCommand = null;
+      let matchedCommand = null;
       for (const cmd of commands) {
         if (m.text.startsWith(cmd.value)) {
           matchedCommand = cmd;

@@ -1,3 +1,4 @@
+import {ScriptOnce} from "@tanstack/react-router";
 import {createContext, useContext, useEffect} from "react";
 import {useLocalStorage} from "usehooks-ts";
 
@@ -17,38 +18,40 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] =
-    typeof window === "undefined"
-      ? ["system" as const, () => {}]
-      : useLocalStorage<Theme>(storageKey, defaultTheme);
+  const [theme, setTheme] = useLocalStorage<Theme>(storageKey, defaultTheme, {
+    initializeWithValue: false,
+  });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const root = window.document.documentElement;
 
     root.classList.remove("light", "dark");
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-
-      root.classList.add(systemTheme);
-      return;
+      // Follow OS-level light/dark changes while the page is open.
+      const query = window.matchMedia("(prefers-color-scheme: dark)");
+      const applySystemTheme = () => {
+        root.classList.remove("light", "dark");
+        root.classList.add(query.matches ? "dark" : "light");
+      };
+      applySystemTheme();
+      query.addEventListener("change", applySystemTheme);
+      return () => query.removeEventListener("change", applySystemTheme);
     }
 
     root.classList.add(theme);
+    return undefined;
   }, [theme]);
 
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      setTheme(theme);
-    },
-  };
+  const value: ThemeProviderState = {theme, setTheme};
 
   return (
+    // oxlint-disable-next-line react/jsx-no-constructed-context-values -- React Compiler memoizes `value` (it only changes with `theme`).
     <ThemeProviderContext.Provider {...props} value={value}>
+      {/* Apply the stored theme before first paint to avoid a flash of the wrong theme. */}
+      <ScriptOnce>
+        {`try{var t=JSON.parse(localStorage.getItem(${JSON.stringify(storageKey)}))||${JSON.stringify(defaultTheme)};if(t==="system")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.classList.add(t)}catch(e){}`}
+      </ScriptOnce>
       {children}
     </ThemeProviderContext.Provider>
   );

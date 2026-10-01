@@ -1,4 +1,4 @@
-import {ORPCError} from "@orpc/client";
+import {ORPCError} from "@orpc/server";
 import {env} from "cloudflare:workers";
 import {eq} from "drizzle-orm";
 import {z} from "zod";
@@ -7,11 +7,10 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 export class GoogleService {
-  constructor() {}
-
   async getAccessToken(workspaceId: string) {
     const workspace = await db.query.organization.findFirst({
-      where: (t, {eq}) => eq(t.id, workspaceId),
+      where: {id: workspaceId},
+      columns: {googleAccessToken: true, googleRefreshToken: true, googleTokenExpiresAt: true},
     });
     if (!workspace) throw new ORPCError("NOT_FOUND");
     if (!workspace.googleAccessToken || !workspace.googleTokenExpiresAt) {

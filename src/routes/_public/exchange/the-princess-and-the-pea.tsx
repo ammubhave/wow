@@ -1,15 +1,15 @@
+import {Button} from "@heroui/react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useState} from "react";
 
 import {Puzz, PuzzHidden, PuzzMain, PuzzHints, PuzzSolution} from "@/components/puzz-components";
-import {Button} from "@/components/ui/button";
 
 export const Route = createFileRoute("/_public/exchange/the-princess-and-the-pea")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  var [numShown, setNumShown] = useState(5);
+  const [numShown, setNumShown] = useState(5);
   return (
     <Puzz title="The Princess And The Pea">
       <PuzzMain answer="HERBALTEA" flavor="The 👑👑👑es can't seem to fall asleep...">
@@ -37,8 +37,8 @@ function RouteComponent() {
         <br />
         <Button
           className="mr-10"
-          onClick={() => setNumShown(numShown + 1)}
-          disabled={numShown >= 9}>
+          onPress={() => setNumShown(numShown + 1)}
+          isDisabled={numShown >= 9}>
           <span className="min-w-10">{numShown < 9 ? "Reveal another" : "No more to show"}</span>
         </Button>
       </PuzzMain>

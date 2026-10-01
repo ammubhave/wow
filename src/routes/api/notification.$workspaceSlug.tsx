@@ -1,21 +1,19 @@
-import {ORPCError} from "@orpc/client";
 import {createFileRoute} from "@tanstack/react-router";
 import {env} from "cloudflare:workers";
 
-import {auth} from "@/lib/auth";
+import {authorizeWorkspaceRequest, requireWebSocketUpgrade} from "@/server/workspace-access";
 
 export const Route = createFileRoute("/api/notification/$workspaceSlug")({
   server: {
     handlers: {
       GET: async ({request, params: {workspaceSlug}}) => {
-        const workspace = await auth.api.getFullOrganization({
-          headers: request.headers,
-          query: {organizationSlug: workspaceSlug},
-        });
-        if (!workspace) throw new ORPCError("NOT_FOUND");
-        return await env.NOTIFICATION_ROOMS.getByName(workspace.id, {locationHint: "enam"}).fetch(
-          request
-        );
+        const notUpgrade = requireWebSocketUpgrade(request);
+        if (notUpgrade) return notUpgrade;
+        const authz = await authorizeWorkspaceRequest(request, workspaceSlug);
+        if (authz.response) return authz.response;
+        return await env.NOTIFICATION_ROOMS.getByName(authz.workspace.id, {
+          locationHint: "enam",
+        }).fetch(request);
       },
     },
   },

@@ -1,11 +1,23 @@
-import useWebSocket from "react-use-websocket";
+// react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
+import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {toast} from "sonner";
-import z from "zod";
+import {z} from "zod";
 
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
 
-import {toastDismissBroadcastChannel} from "./ui/sonner";
+const toastDismissBroadcastChannel =
+  typeof window !== "undefined" ? new BroadcastChannel("sonner-dismiss") : null;
+if (toastDismissBroadcastChannel) {
+  toastDismissBroadcastChannel.addEventListener("message", event => {
+    toast.dismiss(event.data);
+  });
+}
+
+const notificationSchema = z.discriminatedUnion("type", [
+  z.object({type: z.literal("solved"), message: z.string()}),
+  z.object({type: z.literal("announcement"), message: z.string()}),
+]);
 
 export function NotificationsWebSocket({
   workspaceSlug,
@@ -16,36 +28,41 @@ export function NotificationsWebSocket({
 }) {
   const notificationsEnabled = authClient.useSession().data?.user.notificationsDisabled === false;
 
-  useWebSocket(
-    `${typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}` : ""}/api/notification/${workspaceSlug}`,
-    {
-      share: false,
-      shouldReconnect: () => true,
-      onMessage: async data => {
-        const payload = z
-          .discriminatedUnion("type", [
-            z.object({type: z.literal("solved"), message: z.string()}),
-            z.object({type: z.literal("announcement"), message: z.string()}),
-          ])
-          .parse(JSON.parse(data.data));
-        if (payload.type === "solved") {
-          if (notificationsEnabled) {
-            await celebrate();
-            toast.success(payload.message);
-          }
-        } else if (payload.type === "announcement") {
-          if (notificationsEnabled) {
-            toast.info("Announcement", {
-              description: payload.message,
-              duration: Infinity,
-              onDismiss: t => {
-                toastDismissBroadcastChannel?.postMessage(t.id);
-              },
-            });
-          }
+  useWebSocket(`/api/notification/${workspaceSlug}`, {
+    share: false,
+    shouldReconnect: () => true,
+    // Nothing reads `lastMessage`; skip storing it so messages don't re-render the subtree.
+    filter: () => false,
+    onMessage: async data => {
+      let json: unknown;
+      try {
+        json = JSON.parse(data.data);
+      } catch {
+        return;
+      }
+      // A malformed message is dropped rather than surfacing as an unhandled rejection.
+      const parsed = notificationSchema.safeParse(json);
+      if (!parsed.success) return;
+      const payload = parsed.data;
+      if (payload.type === "solved") {
+        if (notificationsEnabled) {
+          // The toast must still show if the (lazily loaded) confetti fails.
+          await celebrate().catch(() => {});
+          toast.success(payload.message);
         }
-      },
-    }
-  );
+      } else if (payload.type === "announcement") {
+        if (notificationsEnabled) {
+          toast.info("Announcement", {
+            description: payload.message,
+            duration: Infinity,
+            onDismiss: t => {
+              // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel.postMessage takes no targetOrigin (same-origin only).
+              toastDismissBroadcastChannel?.postMessage(t.id);
+            },
+          });
+        }
+      }
+    },
+  });
   return children;
 }

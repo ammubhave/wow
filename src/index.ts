@@ -30,7 +30,7 @@ export default {
     const data: {id: string; type: number; name?: string}[] = await (
       await fetchDiscord(`/guilds/${workspace.discordGuildId}/channels`)
     ).json();
-    const [channel] = data.filter(c => c.type === 0 && c.name === "email-updates");
+    const channel = data.find(c => c.type === 0 && c.name === "email-updates");
     if (!channel) {
       message.setReject("Channel '#email-updates' not found");
       return;

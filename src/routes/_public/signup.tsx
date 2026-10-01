@@ -1,12 +1,11 @@
-import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
+import {Card} from "@heroui/react";
+import type {TurnstileInstance} from "@marsidev/react-turnstile";
 import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
 import {useRef} from "react";
 import {toast} from "sonner";
 
+import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
-import {useTheme} from "@/components/theme-provider";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldDescription, FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 import {getSession} from "@/lib/auth-server";
 
@@ -34,7 +33,7 @@ function RouteComponent() {
         password: value.password,
         notificationsDisabled: false,
         fetchOptions: {
-          headers: {"x-captcha-response": value.token},
+          headers: captchaHeaders(value.token),
           onSuccess: async () => {
             await router.navigate({to: "/login"});
           },
@@ -46,20 +45,19 @@ function RouteComponent() {
       });
     },
   });
-  const {theme} = useTheme();
   const turnstileRef = useRef<TurnstileInstance>(null);
   return (
     <div className="flex w-full flex-1 items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <Card>
-          <CardHeader>
-            <CardTitle>Create an account</CardTitle>
-            <CardDescription>Enter your information below to create your account</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <Card.Header>
+            <Card.Title>Create an account</Card.Title>
+            <Card.Description>Enter your information below to create your account</Card.Description>
+          </Card.Header>
+          <Card.Content>
             <form.AppForm>
               <form.Form>
-                <FieldGroup>
+                <div className="flex w-full flex-col gap-4">
                   <form.AppField name="name">
                     {field => <field.TextField label="Name" autoComplete="name" />}
                   </form.AppField>
@@ -82,24 +80,22 @@ function RouteComponent() {
                       />
                     )}
                   </form.AppField>
-                  <Turnstile
+                  <Captcha
                     ref={turnstileRef}
-                    siteKey={import.meta.env.VITE_PUBLIC_TURNSTILE_SITE_KEY}
-                    options={{theme: theme === "system" ? "auto" : theme, size: "flexible"}}
-                    onSuccess={token => form.setFieldValue("token", token)}
+                    onToken={token => form.setFieldValue("token", token)}
                   />
-                  <FieldGroup>
-                    <Field>
+                  <div className="flex w-full flex-col gap-4">
+                    <div className="flex w-full flex-col gap-2">
                       <form.SubmitButton>Create Account</form.SubmitButton>
-                      <FieldDescription className="px-6 text-center">
+                      <p className="text-muted [&>a:hover]:text-primary px-6 text-center text-xs/relaxed [&>a]:underline [&>a]:underline-offset-4">
                         Already have an account? <Link to="/login">Sign in</Link>
-                      </FieldDescription>
-                    </Field>
-                  </FieldGroup>
-                </FieldGroup>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </form.Form>
             </form.AppForm>
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
     </div>

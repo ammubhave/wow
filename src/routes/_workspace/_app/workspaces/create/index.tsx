@@ -1,20 +1,11 @@
+import {Card} from "@heroui/react";
 import {useQueryClient} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
-import z from "zod";
+import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
-import {Button} from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {FieldGroup} from "@/components/ui/field";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
@@ -22,7 +13,7 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   head: () => ({meta: [{title: "Create Workspace | WOW"}]}),
 });
 
-const reservedSlugs = ["exchange"];
+const reservedSlugs = new Set(["exchange"]);
 
 function RouteComponent() {
   const router = useRouter();
@@ -34,7 +25,7 @@ function RouteComponent() {
         toast.error("Workspace ID is already taken. Please choose another one.");
         return;
       }
-      if (reservedSlugs.includes(value.workspaceSlug.toLowerCase())) {
+      if (reservedSlugs.has(value.workspaceSlug.toLowerCase())) {
         toast.error(
           `Workspace ID cannot be ${value.workspaceSlug.toLowerCase()}. Please choose another one.`
         );
@@ -75,29 +66,22 @@ function RouteComponent() {
     <div className="flex w-full justify-center">
       <div className="flex max-w-3xl flex-1 flex-col items-stretch gap-2">
         <div>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-label="Go Back"
-            render={
-              <Link to="/workspaces">
-                <ArrowLeftIcon /> Back
-              </Link>
-            }
-          />
+          <Link to="/workspaces" className="button button--outline button--sm gap-2">
+            <ArrowLeftIcon /> Back
+          </Link>
         </div>
         <form.AppForm>
           <Card>
-            <CardHeader>
-              <CardTitle>Create workspace</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title>Create workspace</Card.Title>
+              <Card.Description>
                 You need to provide a team name and an event name to create your workspace. You also
                 need to provide a password that other users can use to join your workspace.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
               <form.Form>
-                <FieldGroup>
+                <div className="flex w-full flex-col gap-4">
                   <form.AppField
                     name="teamName"
                     validators={{onBlur: z.string().min(1)}}
@@ -120,12 +104,12 @@ function RouteComponent() {
                     name="password"
                     children={field => <field.TextField label="Workspace Password" />}
                   />
-                </FieldGroup>
+                </div>
               </form.Form>
-            </CardContent>
-            <CardFooter>
+            </Card.Content>
+            <Card.Footer>
               <form.SubmitButton>Create</form.SubmitButton>
-            </CardFooter>
+            </Card.Footer>
           </Card>
         </form.AppForm>
       </div>

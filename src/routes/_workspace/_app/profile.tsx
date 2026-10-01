@@ -1,11 +1,9 @@
+import {Card, Label} from "@heroui/react";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {ArrowLeftIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Field, FieldGroup, FieldLabel} from "@/components/ui/field";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {authClient} from "@/lib/auth-client";
 
@@ -64,37 +62,30 @@ function ProfileCard({
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-2">
           <div>
-            <Button
-              variant="outline"
-              size="sm"
-              aria-label="Go Back"
-              render={
-                <Link to="/workspaces">
-                  <ArrowLeftIcon /> Back
-                </Link>
-              }
-            />
+            <Link to="/workspaces" className="button button--outline button--sm gap-2">
+              <ArrowLeftIcon /> Back
+            </Link>
           </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title>Profile</Card.Title>
+              <Card.Description>
                 Update your profile information. You may need to logout and log back in to see some
                 changes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
               <form.AppForm>
                 <form.Form>
-                  <FieldGroup>
+                  <div className="flex w-full flex-col gap-4">
                     <form.AppField name="email">
                       {field => <field.TextField label="Email" autoComplete="email" />}
                     </form.AppField>
                     <form.AppField name="name">
                       {field => <field.TextField label="Name" autoComplete="name" />}
                     </form.AppField>
-                    <Field>
-                      <FieldLabel>Profile picture</FieldLabel>
+                    <div className="flex w-full flex-col gap-2">
+                      <Label>Profile picture</Label>
                       <div className="flex items-center gap-4">
                         <img
                           src={user.image ?? gravatarUrl(user.email, {size: 96, d: "identicon"})}
@@ -115,14 +106,14 @@ function ProfileCard({
                           .
                         </div>
                       </div>
-                    </Field>
-                    <FieldGroup>
+                    </div>
+                    <div className="flex w-full flex-col gap-4">
                       <form.SubmitButton>Save</form.SubmitButton>
-                    </FieldGroup>
-                  </FieldGroup>
+                    </div>
+                  </div>
                 </form.Form>
               </form.AppForm>
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       </div>
