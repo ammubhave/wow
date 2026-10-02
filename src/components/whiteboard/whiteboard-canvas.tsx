@@ -22,14 +22,6 @@ import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {useTheme} from "@/components/theme-provider";
 import type {WhiteboardReceivedMessage, WhiteboardSentMessage} from "@/server/do/whiteboard";
 
-// Fonts come from our own domain (copied into public/ on install), not Excalidraw's CDN.
-declare global {
-  interface Window {
-    EXCALIDRAW_ASSET_PATH?: string | string[];
-  }
-}
-window.EXCALIDRAW_ASSET_PATH = `${window.location.origin}/excalidraw-assets/`;
-
 // Cost: every message to the room is billed, so strokes are batched and cursors throttled.
 const ELEMENTS_FLUSH_MS = 200;
 const POINTER_THROTTLE_MS = 100;

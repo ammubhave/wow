@@ -1,4 +1,7 @@
 import {
+  ChatAttachment,
+  ChatAttachmentGroup,
+  ChatAttachmentInput,
   ChatConversation,
   ChatLoader,
   ChatMessage,
@@ -8,9 +11,10 @@ import {
 } from "@heroui-pro/react";
 import {Button, Popover} from "@heroui/react";
 import {MessagesSquareIcon, SmilePlusIcon} from "lucide-react";
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 // react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
 import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
+import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
 import {NO_PRESENCES} from "@/features/presences/presences";
@@ -23,6 +27,7 @@ import type {
 import {useAppSelector} from "@/store";
 
 import {EggoText} from "./eggo";
+import {ImageLightbox} from "./image-lightbox";
 import {LazyMarkdown} from "./lazy-markdown";
 import {UserPresenceChip, userAvatarSrc, userInitials} from "./user-hover-card";
 
@@ -45,6 +50,45 @@ function formatTime(date: Date) {
   return date.toLocaleString([], {weekday: "short", hour: "2-digit", minute: "2-digit"});
 }
 
+type PendingImage = {key: string; file: File; src: string};
+
+const MAX_IMAGES = 10;
+// Matches the server's limit; bigger images are scaled down and re-encoded before upload.
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_SIDE = 2560;
+
+const imageUrl = (puzzleId: string, id: string) => `/api/chat/${puzzleId}/images/${id}`;
+
+/** Shrinks an image that's over the upload limit (big screenshots), keeping it legible. */
+async function fitImage(file: File): Promise<Blob> {
+  if (file.size <= MAX_IMAGE_BYTES) return file;
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = new OffscreenCanvas(
+    Math.round(bitmap.width * scale),
+    Math.round(bitmap.height * scale)
+  );
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await canvas.convertToBlob({type: "image/webp", quality: 0.85});
+  if (blob.size > MAX_IMAGE_BYTES) throw new Error("That image is too large to share.");
+  return blob;
+}
+
+/** Uploads an image (stored by the SHA-256 of its bytes) and returns its id. */
+async function uploadImage(puzzleId: string, file: File) {
+  const blob = await fitImage(file);
+  const digest = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+  const id = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+  const response = await fetch(imageUrl(puzzleId, id), {
+    method: "PUT",
+    headers: {"Content-Type": blob.type},
+    body: blob,
+  });
+  if (!response.ok) throw new Error("Couldn't upload the image.");
+  return id;
+}
+
 function startsGroup(messages: ChatMessageData[], idx: number) {
   const message = messages[idx]!;
   const previous = messages[idx - 1];
@@ -59,7 +103,33 @@ export function Chat({puzzleId}: {puzzleId: string}) {
   // null until the room's snapshot arrives.
   const [messages, setMessages] = useState<ChatMessageData[] | null>(null);
   const [input, setInput] = useState("");
+  const [images, setImages] = useState<PendingImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const mountedAt = useMountedAt();
+
+  // Previews are blob: URLs; release whatever is still pending when the chat closes.
+  const imagesRef = useRef(images);
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+  useEffect(() => () => imagesRef.current.forEach(image => URL.revokeObjectURL(image.src)), []);
+
+  const addImages = (files: File[]) => {
+    const added = files
+      .filter(file => file.type.startsWith("image/"))
+      .map(file => ({key: crypto.randomUUID(), file, src: URL.createObjectURL(file)}));
+    setImages(current => {
+      const next = [...current, ...added];
+      next.slice(MAX_IMAGES).forEach(image => URL.revokeObjectURL(image.src));
+      return next.slice(0, MAX_IMAGES);
+    });
+  };
+  const removeImage = (key: string) =>
+    setImages(current => {
+      const removed = current.find(image => image.key === key);
+      if (removed) URL.revokeObjectURL(removed.src);
+      return current.filter(image => image.key !== key);
+    });
 
   const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(`/api/chat/${puzzleId}`, {
     share: false,
@@ -84,10 +154,24 @@ export function Chat({puzzleId}: {puzzleId: string}) {
 
   const send = (message: ChatRoomSentMessage) => sendJsonMessage(message);
 
-  const handleSend = () => {
-    if (input.trim()) {
+  const handleSend = async () => {
+    if (isUploading || (!input.trim() && images.length === 0)) return;
+    if (images.length === 0) {
       send({type: "send", text: input});
       setInput("");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const ids = await Promise.all(images.map(image => uploadImage(puzzleId, image.file)));
+      send({type: "send", text: input, images: ids});
+      setInput("");
+      images.forEach(image => URL.revokeObjectURL(image.src));
+      setImages([]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't upload the image.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -125,8 +209,10 @@ export function Chat({puzzleId}: {puzzleId: string}) {
               return (
                 <ChatMessage.Assistant
                   key={message.id}
+                  // `group`: the reaction button appears while the message is hovered or focused.
                   className={cn(
-                    isFirstInGroup ? "pt-3 pb-0.5" : "py-0.5",
+                    "group hover:bg-surface-secondary/60 relative -mx-2 rounded-lg px-2",
+                    isFirstInGroup ? "mt-2 pt-1 pb-0.5" : "py-0.5",
                     message.timestamp > mountedAt && ARRIVE_FROM_BOTTOM
                   )}>
                   <ChatMessage.Avatar
@@ -147,22 +233,26 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                         </time>
                       </div>
                     )}
-                    <div className="flex items-start gap-1">
-                      <ChatMessage.Content className="min-w-0 flex-1 wrap-anywhere">
-                        {message.name === EGGO ? (
-                          <EggoText text={message.text} />
-                        ) : (
-                          <LazyMarkdown>{message.text}</LazyMarkdown>
-                        )}
-                      </ChatMessage.Content>
-                      <ChatMessage.Actions>
-                        <ReactionPicker
-                          onReact={reaction =>
-                            send({type: "react", messageId: message.id, reaction})
-                          }
+                    <ChatMessage.Content className="flex min-w-0 flex-1 flex-col gap-1.5 wrap-anywhere">
+                      {message.name === EGGO ? (
+                        <EggoText text={message.text} />
+                      ) : (
+                        message.text && <LazyMarkdown>{message.text}</LazyMarkdown>
+                      )}
+                      {message.images?.map(id => (
+                        <ImageLightbox
+                          key={id}
+                          src={imageUrl(puzzleId, id)}
+                          alt={`Shared by ${message.name}`}
                         />
-                      </ChatMessage.Actions>
-                    </div>
+                      ))}
+                    </ChatMessage.Content>
+                    {/* Floats over the corner instead of taking a column on every message. */}
+                    <ChatMessage.Actions className="bg-surface absolute -top-3 right-1 rounded-lg opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100 pointer-coarse:opacity-60">
+                      <ReactionPicker
+                        onReact={reaction => send({type: "react", messageId: message.id, reaction})}
+                      />
+                    </ChatMessage.Actions>
                     <Reactions
                       reactions={message.reactions}
                       onReact={reaction => send({type: "react", messageId: message.id, reaction})}
@@ -180,25 +270,56 @@ export function Chat({puzzleId}: {puzzleId: string}) {
           layout="compact"
           size="sm"
           value={input}
+          status={isUploading ? "submitted" : "ready"}
           onValueChange={setInput}
-          onSubmit={handleSend}>
-          <PromptInput.Shell>
-            <PromptInput.Content>
-              <PromptInput.TextArea
-                aria-label="Chat message"
-                placeholder="Type your message... (!help for Eggö)"
-                onKeyDown={e => {
-                  // Sending is handled by the composer; keep Enter from reaching page shortcuts.
-                  if (e.key === "Enter" && !e.shiftKey) e.stopPropagation();
-                }}
-              />
-            </PromptInput.Content>
-            <PromptInput.Toolbar>
-              <PromptInput.ToolbarEnd>
-                <PromptInput.Send aria-label="Send message" />
-              </PromptInput.ToolbarEnd>
-            </PromptInput.Toolbar>
-          </PromptInput.Shell>
+          onSubmit={() => void handleSend()}>
+          <ChatAttachmentInput accept="image/*" onFilesSelected={addImages}>
+            <ChatAttachmentInput.Dropzone
+              render={dropzoneProps => (
+                <PromptInput.Shell {...dropzoneProps}>
+                  <PromptInput.Content>
+                    {images.length > 0 && (
+                      <PromptInput.Attachments>
+                        <ChatAttachmentGroup>
+                          {images.map(image => (
+                            <ChatAttachment
+                              key={image.key}
+                              mimeType={image.file.type}
+                              name={image.file.name}
+                              size={image.file.size}
+                              src={image.src}>
+                              <ChatAttachment.Preview />
+                              <ChatAttachment.Remove
+                                aria-label="Remove image"
+                                onPress={() => removeImage(image.key)}
+                              />
+                            </ChatAttachment>
+                          ))}
+                        </ChatAttachmentGroup>
+                      </PromptInput.Attachments>
+                    )}
+                    <PromptInput.TextArea
+                      aria-label="Chat message"
+                      placeholder="Type your message... (!help for Eggö)"
+                      onKeyDown={e => {
+                        // Sending is handled by the composer; keep Enter from reaching page shortcuts.
+                        if (e.key === "Enter" && !e.shiftKey) e.stopPropagation();
+                      }}
+                    />
+                  </PromptInput.Content>
+                  <PromptInput.Toolbar>
+                    <PromptInput.ToolbarEnd>
+                      <PromptInput.Send
+                        aria-label="Send message"
+                        // The composer only enables Send for text; an image on its own is a message too.
+                        isDisabled={isUploading || (!input.trim() && images.length === 0)}
+                      />
+                    </PromptInput.ToolbarEnd>
+                  </PromptInput.Toolbar>
+                </PromptInput.Shell>
+              )}
+            />
+          </ChatAttachmentInput>
         </PromptInput>
       </div>
     </div>

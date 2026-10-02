@@ -25,6 +25,7 @@ import {
   TriangleAlertIcon,
   UsersIcon,
 } from "lucide-react";
+import {lazy, Suspense} from "react";
 import type {Key, Selection} from "react-aria-components";
 import {useInView} from "react-intersection-observer";
 import {useFormatter, useNow} from "use-intl";
@@ -38,6 +39,9 @@ import {getPuzzleStatusGroups, getPuzzleStatusOptions} from "@/lib/puzzleStatuse
 import type {ActivityLogCursor, WorkspaceRoomState} from "@/server/do/workspace";
 
 import {RelativeTime} from "./activity-log";
+
+// Recharts is large; load the chart only on this page.
+const SolvesChart = lazy(() => import("./solves-chart"));
 
 type Entry = WorkspaceRoomState["activityLogEntries"][number];
 type TimelineStatus = "default" | "current" | "success" | "warning" | "danger" | "muted";
@@ -417,6 +421,9 @@ export function ActivityFeed() {
           </Dropdown.Popover>
         </Dropdown>
       </div>
+      <Suspense fallback={null}>
+        <SolvesChart />
+      </Suspense>
       {days.map(day => (
         <section key={day.label} className="flex flex-col gap-3">
           <div className="bg-background sticky top-0 z-10 flex items-center gap-3 py-1">

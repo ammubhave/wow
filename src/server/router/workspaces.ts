@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
-import {and, eq} from "drizzle-orm";
+import {and, eq, inArray, isNotNull, max} from "drizzle-orm";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
@@ -293,6 +293,34 @@ export const workspacesRouter = {
             ? {createdAt: last.createdAt.getTime(), id: last.id}
             : null,
       };
+    }),
+
+  /// When each puzzle was (most recently) marked solved, from the activity log, for the solves
+  /// chart. Clients keep only puzzles that are still solved, so un-solves drop out.
+  solves: procedure
+    .input(z.object({workspaceSlug: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}) => {
+      const lastSolvedAt = max(schema.activityLogEntry.createdAt);
+      const rows = await db
+        .select({puzzleId: schema.puzzleActivityLogEntry.puzzleId, solvedAt: lastSolvedAt})
+        .from(schema.puzzleActivityLogEntry)
+        .innerJoin(
+          schema.activityLogEntry,
+          eq(schema.activityLogEntry.id, schema.puzzleActivityLogEntry.activityLogEntryId)
+        )
+        .where(
+          and(
+            eq(schema.activityLogEntry.workspaceId, context.workspace.id),
+            eq(schema.puzzleActivityLogEntry.subType, "updateStatus"),
+            inArray(schema.puzzleActivityLogEntry.field, ["solved", "backsolved"]),
+            isNotNull(schema.puzzleActivityLogEntry.puzzleId)
+          )
+        )
+        .groupBy(schema.puzzleActivityLogEntry.puzzleId);
+      return rows.flatMap(({puzzleId, solvedAt}) =>
+        puzzleId && solvedAt ? [{puzzleId, solvedAt: solvedAt.getTime()}] : []
+      );
     }),
 
   getDiscordInfo: procedure

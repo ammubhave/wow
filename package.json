@@ -10,7 +10,7 @@
     "deploy": "wrangler deploy --env production",
     "format": "vp fmt",
     "lint": "vp lint --type-check --type-aware",
-    "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm auth:generate' 'node scripts/copy-excalidraw-assets.mjs'",
+    "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm auth:generate'",
     "prepare": "vp config",
     "decrypt": "dotenvx decrypt --env-file .env.local.encrypted --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local",
     "encrypt": "dotenvx encrypt --env-file .env.local --stdout | node -e \"process.stdout.write(require('fs').readFileSync(0,'utf8').slice(0,-1))\" > .env.local.encrypted",
@@ -18,7 +18,8 @@
     "db:generate": "drizzle-kit generate && node scripts/check-d1-migrations.mjs",
     "db:migrate": "mkdir -p .wrangler/state/v3/d1/miniflare-D1DatabaseObject/ && node scripts/check-d1-migrations.mjs && drizzle-kit migrate",
     "db:migrate:prod": "node scripts/check-d1-migrations.mjs && node scripts/migrate-d1-prod.mjs",
-    "db:seed:exchange": "node scripts/seed-exchange-dev.mjs"
+    "db:seed:exchange": "node scripts/seed-exchange-dev.mjs",
+    "db:seed:activity": "node scripts/seed-activity-dev.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.6",
@@ -90,6 +91,7 @@
     "react-redux": "^9.3.0",
     "react-resizable-panels": "^4.14.1",
     "react-use-websocket": "^4.13.0",
+    "react-zoom-pan-pinch": "^4.2.0",
     "recharts": "^3.10.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",

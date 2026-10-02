@@ -1,5 +1,5 @@
 import {ORPCError} from "@orpc/server";
-import {waitUntil} from "cloudflare:workers";
+import {env, waitUntil} from "cloudflare:workers";
 import {and, eq, isNull} from "drizzle-orm";
 import {z} from "zod";
 
@@ -370,6 +370,13 @@ export const puzzlesRouter = {
       });
 
       await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input.id));
+      // Its chat and whiteboard (with their images) go with it, off the response path.
+      waitUntil(
+        Promise.all([
+          env.CHAT_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
+          env.WHITEBOARD_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
+        ])
+      );
 
       const googleFileId = puzzle.googleSpreadsheetId || puzzle.googleDrawingId;
       if (googleFileId) {

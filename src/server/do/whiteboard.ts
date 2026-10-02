@@ -5,6 +5,7 @@ import {z} from "zod";
 
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
+import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
 
 /**
  * A puzzle's shared whiteboard (Excalidraw scene). Each element is stored under its own key, so a
@@ -51,6 +52,8 @@ export type WhiteboardReceivedMessage =
 type Attachment = {id: string; name: string};
 
 const ELEMENT_PREFIX = "el:";
+// Remembers which puzzle this room is, so expiry can delete its images too.
+const PUZZLE_ID_KEY = "meta:puzzleId";
 // Whiteboards outlive a hunt weekend (for write-ups), then clear after a month untouched.
 const RETENTION_MS = 1000 * 60 * 60 * 24 * 30;
 // Each alarm reset is a storage write, so push the deadline back at most hourly, not per edit.
@@ -94,6 +97,9 @@ export class WhiteboardRoom extends DurableObject {
       const elements = [
         ...(await this.storage.list<StoredElement>({prefix: ELEMENT_PREFIX})).values(),
       ];
+      if (!(await this.storage.get(PUZZLE_ID_KEY))) {
+        await this.storage.put(PUZZLE_ID_KEY, c.req.param("puzzleId"));
+      }
       const peers = this.ctx.getWebSockets().length;
       this.send(server, {type: "snapshot", elements, you: attachment.id, peers});
       this.broadcast({type: "peers", peers}, server);
@@ -193,7 +199,17 @@ export class WhiteboardRoom extends DurableObject {
     }
   }
 
+  /** Deletes the whiteboard and its images (when the puzzle is deleted). */
+  async clear(puzzleId: string) {
+    for (const ws of this.ctx.getWebSockets()) ws.close(1000, "Puzzle deleted");
+    await deletePuzzleFiles(this.env.R2, puzzleFilesPrefix("whiteboards", puzzleId));
+    await this.storage.deleteAlarm();
+    await this.storage.deleteAll();
+  }
+
   async alarm() {
+    const puzzleId = await this.storage.get<string>(PUZZLE_ID_KEY);
+    if (puzzleId) await deletePuzzleFiles(this.env.R2, puzzleFilesPrefix("whiteboards", puzzleId));
     await this.storage.deleteAll();
   }
 }
