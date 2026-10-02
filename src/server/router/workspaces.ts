@@ -14,7 +14,8 @@ import {
   invalidateWorkspace,
   type WorkspaceRoomWireState,
 } from "../do/workspace";
-import {preauthorize, procedure} from "./base";
+import {toWorkspaceRole} from "../workspace-access";
+import {preauthorize, procedure, requireOwner} from "./base";
 
 const ACTIVITY_LOG_PAGE_SIZE = 50;
 
@@ -50,7 +51,8 @@ export const workspacesRouter = {
         throw new ORPCError("FORBIDDEN");
       }
       await auth.api.addMember({
-        body: {userId: context.session.user.id, role: "admin", organizationId: workspace.id},
+        // Joining with the password makes you a member; owners can promote people after.
+        body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},
       });
 
       const shareFolder = async () => {
@@ -104,6 +106,13 @@ export const workspacesRouter = {
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
+      // Anyone can edit the comment, tags and links; the name and password are for owners.
+      const ownerFields = [input.teamName, input.eventName, input.password];
+      if (context.role !== "owner" && ownerFields.some(value => value !== undefined)) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "Only workspace owners can change the team name, event name or password.",
+        });
+      }
       let commentUpdatedAt = undefined;
       let commentUpdatedBy = undefined;
       if (input.comment !== undefined) {
@@ -132,6 +141,7 @@ export const workspacesRouter = {
   delete: procedure
     .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
+    .use(requireOwner)
     .handler(async () => {
       throw new Error(
         "Workspace deletion has been disabled. Contact support to delete your workspace."
@@ -198,6 +208,7 @@ export const workspacesRouter = {
   setGoogleFolderId: procedure
     .input(z.object({workspaceSlug: z.string(), folderId: z.string()}))
     .use(preauthorize)
+    .use(requireOwner)
     .handler(async ({context, input}) => {
       await db
         .update(schema.organization)
@@ -209,6 +220,7 @@ export const workspacesRouter = {
   setGoogleTemplateFileId: procedure
     .input(z.object({workspaceSlug: z.string(), fileId: z.string()}))
     .use(preauthorize)
+    .use(requireOwner)
     .handler(async ({context, input}) => {
       await db
         .update(schema.organization)
@@ -360,6 +372,7 @@ export const workspacesRouter = {
       .handler(async ({context}) => {
         const members = await db
           .select({
+            role: schema.member.role,
             user: {
               id: schema.user.id,
               name: schema.user.name,
@@ -370,7 +383,42 @@ export const workspacesRouter = {
           .from(schema.member)
           .innerJoin(schema.user, eq(schema.member.userId, schema.user.id))
           .where(eq(schema.member.organizationId, context.workspace.id));
-        return members;
+        return {
+          members: members.map(({role, user}) => ({role: toWorkspaceRole(role), user})),
+          myRole: context.role,
+        };
+      }),
+
+    /// Owners can make others owners (or members again). The last owner can't be demoted, so a
+    /// workspace always has someone who can manage it.
+    updateRole: procedure
+      .input(
+        z.object({workspaceSlug: z.string(), userId: z.string(), role: z.enum(["owner", "member"])})
+      )
+      .use(preauthorize)
+      .use(requireOwner)
+      .handler(async ({context, input}) => {
+        const members = await db
+          .select({userId: schema.member.userId, role: schema.member.role})
+          .from(schema.member)
+          .where(eq(schema.member.organizationId, context.workspace.id));
+        const target = members.find(member => member.userId === input.userId);
+        if (!target) throw new ORPCError("NOT_FOUND");
+        const owners = members.filter(member => toWorkspaceRole(member.role) === "owner");
+        if (input.role === "member" && owners.length === 1 && owners[0]!.userId === input.userId) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "A workspace needs at least one owner. Make someone else an owner first.",
+          });
+        }
+        await db
+          .update(schema.member)
+          .set({role: input.role})
+          .where(
+            and(
+              eq(schema.member.organizationId, context.workspace.id),
+              eq(schema.member.userId, input.userId)
+            )
+          );
       }),
 
     get: procedure
@@ -418,6 +466,7 @@ export const workspacesRouter = {
       await context.notification.broadcast(context.workspace.id, {
         type: "announcement",
         message: input.message,
+        from: context.session.user.name,
       });
       if (process.env.DISCORD_BOT_TOKEN && context.workspace.discordGuildId && input.channelId) {
         const channel: {guild_id?: string} = await (
@@ -425,7 +474,10 @@ export const workspacesRouter = {
         ).json();
         if (channel.guild_id !== context.workspace.discordGuildId) throw new ORPCError("NOT_FOUND");
         const formData = new FormData();
-        formData.append("content", input.message);
+        formData.append(
+          "content",
+          `**Announcement from ${context.session.user.name}**\n${input.message}`
+        );
         await fetchDiscord(`/channels/${input.channelId}/messages`, {
           method: "POST",
           body: formData,
@@ -446,6 +498,7 @@ export const workspacesRouter = {
     disconnect: procedure
       .input(z.object({workspaceSlug: z.string()}))
       .use(preauthorize)
+      .use(requireOwner)
       .handler(async ({context}) => {
         if (!context.workspace.discordGuildId) throw new ORPCError("BAD_REQUEST");
         await env.DISCORD_CLIENT.getByName(context.workspace.discordGuildId).deleteAllChannels(

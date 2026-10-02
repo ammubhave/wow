@@ -23,8 +23,8 @@ export const Route = createFileRoute("/api/oauth/discord")({
         const {redirectUrl: rawRedirectUrl, workspaceSlug} = state.data;
         // `redirectUrl` comes from the (client-controlled) state: only allow same-origin paths.
         const redirectUrl = safeRedirectPath(rawRedirectUrl, request.url);
-        // The state is client-controlled too: only a member may connect an account to a workspace.
-        const authz = await authorizeWorkspaceRequest(request, workspaceSlug);
+        // The state is client-controlled too: only an owner may connect an account to a workspace.
+        const authz = await authorizeWorkspaceRequest(request, workspaceSlug, {ownerOnly: true});
         if (authz.response) return authz.response;
         if (url.searchParams.get("error")) {
           let errorMessage = url.searchParams.get("error")!;

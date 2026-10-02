@@ -2,7 +2,7 @@ import {ORPCError, os} from "@orpc/server";
 
 import {auth} from "@/lib/auth";
 
-import {getMemberWorkspace} from "../workspace-access";
+import {getMemberWorkspace, type WorkspaceRole} from "../workspace-access";
 import {ActivityLogService} from "./services/activity-log";
 import {DiscordService} from "./services/discord";
 import {GoogleService} from "./services/google";
@@ -41,5 +41,15 @@ export const preauthorize = os
   .middleware(async ({context, next}, input: {workspaceSlug: string}) => {
     const result = await getMemberWorkspace(input.workspaceSlug, context.session.user.id);
     if (result.status !== "OK") throw new ORPCError(result.status);
-    return next({context: {workspace: result.workspace}});
+    return next({context: {workspace: result.workspace, role: result.role}});
+  });
+
+/** After `preauthorize`: only the workspace's owners may continue. */
+export const requireOwner = os
+  .$context<{role: WorkspaceRole}>()
+  .middleware(async ({context, next}) => {
+    if (context.role !== "owner") {
+      throw new ORPCError("FORBIDDEN", {message: "Only workspace owners can do this."});
+    }
+    return next();
   });

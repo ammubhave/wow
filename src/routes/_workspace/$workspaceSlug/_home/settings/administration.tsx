@@ -1,4 +1,4 @@
-import {Button, Card} from "@heroui/react";
+import {Alert, Button, Card} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {toast} from "sonner";
@@ -8,6 +8,7 @@ import {DiscordCardContents} from "@/components/discord-card-contents";
 import {useAppForm} from "@/components/form";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
@@ -16,11 +17,23 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/
 });
 
 function RouteComponent() {
+  const isOwner = useIsWorkspaceOwner();
   return (
     <div className="flex flex-col gap-8">
-      <WorkspacePasswordCard />
-      <GoogleDriveCard />
-      <DiscordCard />
+      {!isOwner && (
+        <Alert>
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Only owners can change these settings</Alert.Title>
+            <Alert.Description>
+              Ask an owner (see Members) if something here needs changing.
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
+      <WorkspacePasswordCard isOwner={isOwner} />
+      <GoogleDriveCard isOwner={isOwner} />
+      <DiscordCard isOwner={isOwner} />
       <ArchiveWorkspaceCard />
       <DeleteWorkspaceCard />
     </div>
@@ -65,7 +78,7 @@ function ArchiveWorkspaceCard() {
   );
 }
 
-function WorkspacePasswordCard() {
+function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
   const mutation = useMutation(workspaceMutations.workspaces.update());
@@ -91,23 +104,33 @@ function WorkspacePasswordCard() {
         <Card.Content>
           <form.Form>
             <form.AppField name="password" validators={{onSubmit: z.string().min(8)}}>
-              {field => <field.PasswordField variant="secondary" aria-label="Workspace password" />}
+              {field => (
+                <field.PasswordField
+                  variant="secondary"
+                  aria-label="Workspace password"
+                  // Members can still see it, to tell teammates how to join.
+                  readOnly={!isOwner}
+                />
+              )}
             </form.AppField>
           </form.Form>
         </Card.Content>
-        <Card.Footer>
-          <form.SubmitButton>Save</form.SubmitButton>
-        </Card.Footer>
+        {isOwner && (
+          <Card.Footer>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </Card.Footer>
+        )}
       </form.AppForm>
     </Card>
   );
 }
 
-function GoogleDriveCard() {
+function GoogleDriveCard({isOwner}: {isOwner: boolean}) {
   const {workspaceSlug} = Route.useParams();
   return (
     <Card>
       <GoogleDriveCardContents
+        isDisabled={!isOwner}
         workspaceSlug={workspaceSlug}
         redirectUrl={`/${workspaceSlug}/settings/administration`}
       />
@@ -115,11 +138,12 @@ function GoogleDriveCard() {
   );
 }
 
-function DiscordCard() {
+function DiscordCard({isOwner}: {isOwner: boolean}) {
   const {workspaceSlug} = Route.useParams();
   return (
     <Card>
       <DiscordCardContents
+        isDisabled={!isOwner}
         workspaceSlug={workspaceSlug}
         redirectUrl={`/${workspaceSlug}/settings/administration`}
       />

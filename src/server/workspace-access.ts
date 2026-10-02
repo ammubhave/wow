@@ -13,13 +13,22 @@ const {
 } = getColumns(schema.organization);
 
 /**
+ * Workspace roles. Owners (the creator, and whoever an owner promotes) manage the workspace: its
+ * name, password, Google and Discord connections, and members' roles. Everyone else is a member.
+ * Members used to join as "admin", which is now treated as a member.
+ */
+export type WorkspaceRole = "owner" | "member";
+export const toWorkspaceRole = (role: string | null | undefined): WorkspaceRole =>
+  role === "owner" ? "owner" : "member";
+
+/**
  * Resolves a workspace by slug and checks that `userId` is a member of it, in a single indexed
  * query (organization slug unique index + member lookup). Replaces `auth.api.getFullOrganization`
  * for authorization, which also loads every member and invitation of the workspace.
  */
 export async function getMemberWorkspace(workspaceSlug: string, userId: string) {
   const row = await db
-    .select({workspace: workspaceColumns, memberId: schema.member.id})
+    .select({workspace: workspaceColumns, memberId: schema.member.id, role: schema.member.role})
     .from(schema.organization)
     .leftJoin(
       schema.member,
@@ -32,7 +41,7 @@ export async function getMemberWorkspace(workspaceSlug: string, userId: string) 
     .get();
   if (!row) return {status: "NOT_FOUND"} as const;
   if (!row.memberId) return {status: "FORBIDDEN"} as const;
-  return {status: "OK", workspace: row.workspace} as const;
+  return {status: "OK", workspace: row.workspace, role: toWorkspaceRole(row.role)} as const;
 }
 
 export type MemberWorkspace = Extract<
@@ -71,16 +80,23 @@ export function safeRedirectPath(redirectUrl: string, requestUrl: string) {
 }
 
 /**
- * For raw API routes (websocket upgrades): requires a session and membership in `workspaceSlug`.
- * Returns the workspace, or an error `Response` to return as-is.
+ * For raw API routes (websocket upgrades, OAuth callbacks): requires a session and membership in
+ * `workspaceSlug` (and, with `ownerOnly`, the owner role). Returns the workspace, or an error
+ * `Response` to return as-is.
  */
-export async function authorizeWorkspaceRequest(request: Request, workspaceSlug: string) {
+export async function authorizeWorkspaceRequest(
+  request: Request,
+  workspaceSlug: string,
+  {ownerOnly = false} = {}
+) {
   const session = await auth.api.getSession({headers: request.headers});
   if (!session) return {response: new Response(null, {status: 401})} as const;
   const result = await getMemberWorkspace(workspaceSlug, session.user.id);
   if (result.status === "NOT_FOUND") return {response: new Response(null, {status: 404})} as const;
-  if (result.status === "FORBIDDEN") return {response: new Response(null, {status: 403})} as const;
-  return {session, workspace: result.workspace} as const;
+  if (result.status === "FORBIDDEN" || (ownerOnly && result.role !== "owner")) {
+    return {response: new Response(null, {status: 403})} as const;
+  }
+  return {session, workspace: result.workspace, role: result.role} as const;
 }
 
 /** Whether `puzzleId` belongs to a round of `workspaceId`. */

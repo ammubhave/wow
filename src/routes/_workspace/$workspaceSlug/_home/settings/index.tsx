@@ -6,6 +6,7 @@ import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -156,6 +157,7 @@ function LeaveWorkspaceCard() {
 }
 function DetailsCard() {
   const {workspaceSlug} = Route.useParams();
+  const isOwner = useIsWorkspaceOwner();
   const workspace = useWorkspace();
   const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
@@ -177,18 +179,25 @@ function DetailsCard() {
     <Card>
       <Card.Header>
         <Card.Title>Details</Card.Title>
-        <Card.Description>General information about this workspace.</Card.Description>
+        <Card.Description>
+          General information about this workspace.
+          {!isOwner && " Only owners can change the team and event names."}
+        </Card.Description>
       </Card.Header>
       <form.AppForm>
         <Card.Content>
           <form.Form>
             <form.AppField
               name="teamName"
-              children={field => <field.TextField variant="secondary" label="Team Name" />}
+              children={field => (
+                <field.TextField variant="secondary" label="Team Name" readOnly={!isOwner} />
+              )}
             />
             <form.AppField
               name="eventName"
-              children={field => <field.TextField variant="secondary" label="Event Name" />}
+              children={field => (
+                <field.TextField variant="secondary" label="Event Name" readOnly={!isOwner} />
+              )}
             />
             <div className="flex flex-col gap-1">
               <Label>Invitation Link</Label>
@@ -215,9 +224,11 @@ function DetailsCard() {
             </div>
           </form.Form>
         </Card.Content>
-        <Card.Footer>
-          <form.SubmitButton>Save</form.SubmitButton>
-        </Card.Footer>
+        {isOwner && (
+          <Card.Footer>
+            <form.SubmitButton>Save</form.SubmitButton>
+          </Card.Footer>
+        )}
       </form.AppForm>
     </Card>
   );

@@ -43,9 +43,12 @@ function DiscordForm({
 export function DiscordCardContents({
   workspaceSlug,
   redirectUrl,
+  isDisabled = false,
 }: {
   workspaceSlug: string;
   redirectUrl: string;
+  /** Shows the connection without letting you change it (for members who aren't owners). */
+  isDisabled?: boolean;
 }) {
   const discordInfo = useQuery(
     orpc.workspaces.getDiscordInfo.queryOptions({input: {workspaceSlug}})
@@ -103,16 +106,20 @@ export function DiscordCardContents({
               </Stepper.Content>
               {discordInfo.data?.ok !== undefined ? (
                 <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                  <Button type="submit" variant="secondary">
+                  <Button type="submit" variant="secondary" isDisabled={isDisabled}>
                     Reconnect
                   </Button>
                   <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
-                    <Button variant="danger">Disconnect</Button>
+                    <Button variant="danger" isDisabled={isDisabled}>
+                      Disconnect
+                    </Button>
                   </DisconnectDiscordDialog>
                 </DiscordForm>
               ) : (
                 <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                  <Button type="submit">Connect with Discord</Button>
+                  <Button type="submit" isDisabled={isDisabled}>
+                    Connect with Discord
+                  </Button>
                 </DiscordForm>
               )}
             </Stepper.Step>

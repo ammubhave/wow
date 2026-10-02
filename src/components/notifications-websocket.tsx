@@ -16,7 +16,8 @@ if (toastDismissBroadcastChannel) {
 
 const notificationSchema = z.discriminatedUnion("type", [
   z.object({type: z.literal("solved"), message: z.string()}),
-  z.object({type: z.literal("announcement"), message: z.string()}),
+  // `from` is missing on announcements sent before it was added.
+  z.object({type: z.literal("announcement"), message: z.string(), from: z.string().optional()}),
 ]);
 
 export function NotificationsWebSocket({
@@ -52,7 +53,7 @@ export function NotificationsWebSocket({
         }
       } else if (payload.type === "announcement") {
         if (notificationsEnabled) {
-          toast.info("Announcement", {
+          toast.info(payload.from ? `Announcement from ${payload.from}` : "Announcement", {
             description: payload.message,
             duration: Infinity,
             onDismiss: t => {

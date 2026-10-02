@@ -11,9 +11,12 @@ import {orpc} from "@/lib/orpc";
 export function GoogleDriveCardContents({
   workspaceSlug,
   redirectUrl,
+  isDisabled = false,
 }: {
   workspaceSlug: string;
   redirectUrl: string;
+  /** Shows the connection without letting you change it (for members who aren't owners). */
+  isDisabled?: boolean;
 }) {
   const [openPicker, setOpenPicker] = useState<"folder" | "file" | null>(null);
   // Queries are invalidated after every successful mutation by the global MutationCache (router.tsx).
@@ -94,11 +97,13 @@ export function GoogleDriveCardContents({
               </Stepper.Content>
               <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>
                 {state.data.state >= 1 ? (
-                  <Button variant="secondary" type="submit">
+                  <Button variant="secondary" type="submit" isDisabled={isDisabled}>
                     Reconnect
                   </Button>
                 ) : (
-                  <Button type="submit">Connect</Button>
+                  <Button type="submit" isDisabled={isDisabled}>
+                    Connect
+                  </Button>
                 )}
               </ConnectToGoogleForm>
               <Stepper.Separator />
@@ -122,7 +127,7 @@ export function GoogleDriveCardContents({
                 </Stepper.Description>
               </Stepper.Content>
               <Button
-                isDisabled={state.data.state < 1}
+                isDisabled={isDisabled || state.data.state < 1}
                 variant={state.data.state === 1 ? "primary" : "secondary"}
                 onPress={handleOpenFolderPicker}>
                 {state.data.state >= 2 ? "Reselect Folder" : "Select Folder"}
@@ -148,7 +153,7 @@ export function GoogleDriveCardContents({
                 </Stepper.Description>
               </Stepper.Content>
               <Button
-                isDisabled={state.data.state < 2}
+                isDisabled={isDisabled || state.data.state < 2}
                 variant={state.data.state === 2 ? "primary" : "secondary"}
                 onPress={handleOpenFilePicker}>
                 {state.data.state >= 3 ? "Reselect File" : "Select File"}
