@@ -6,8 +6,9 @@ import {useEffect, useRef} from "react";
 import {z} from "zod";
 
 import {AddNewExchangeHuntDialog} from "@/components/add-new-exchange-hunt-dialog";
+import {ExchangeCover} from "@/components/exchange-cover";
 import {HuntListSkeleton} from "@/components/exchange-skeletons";
-import {Grainient} from "@/components/grainient";
+import {huntDate, issueNumbers, sortHunts, splitHuntName} from "@/lib/exchange-hunts";
 import {monthColors} from "@/lib/month-colors";
 import {orpc} from "@/lib/orpc";
 
@@ -28,29 +29,6 @@ export const Route = createFileRoute("/_public/exchange/")({
 type Hunt = ReturnType<typeof useHunts>[number];
 const useHunts = () => useSuspenseQuery(orpc.exchange.hunts.list.queryOptions()).data;
 
-const MONTHS = [
-  "january",
-  "february",
-  "march",
-  "april",
-  "may",
-  "june",
-  "july",
-  "august",
-  "september",
-  "october",
-  "november",
-  "december",
-];
-/**
- * The month a hunt is for: from its name when it reads like "March 2026" (hunts are usually
- * created a few days before their month starts), otherwise when it was created.
- */
-function huntDate(hunt: Hunt) {
-  const match = /^([a-z]+)\s+(\d{4})$/i.exec(hunt.name.trim());
-  const month = match ? MONTHS.indexOf(match[1]!.toLowerCase()) : -1;
-  return match && month >= 0 ? new Date(Number(match[2]), month, 1) : new Date(hunt.createdAt);
-}
 const yearOf = (hunt: Hunt) => String(huntDate(hunt).getFullYear());
 /** Accent- and case-insensitive, so "eulogy" finds "Éulogy" and "march" finds "March 2026". */
 const fold = (text: string) =>
@@ -61,7 +39,7 @@ const fold = (text: string) =>
 
 function RouteComponent() {
   // Newest month first, by the month each hunt is for (not when it was created).
-  const hunts = useHunts().toSorted((a, b) => huntDate(b).getTime() - huntDate(a).getTime());
+  const hunts = sortHunts(useHunts());
   const isAdmin = useSuspenseQuery(orpc.exchange.isAdmin.queryOptions()).data;
   const {q = ""} = Route.useSearch();
   const navigate = useNavigate({from: Route.fullPath});
@@ -108,7 +86,7 @@ function RouteComponent() {
               <HuntRows hunts={drafts} />
             </section>
           )}
-          {latest && <LatestHunt hunt={latest} issue={published.length} />}
+          {latest && <LatestHunt hunt={latest} issue={issueNumbers(hunts).get(latest.id) ?? 0} />}
           {/* Right under the newest puzzles, where everyone sees it, not after the archive. */}
           <Invitations />
           {archive.length > 0 && <Archive hunts={archive} />}
@@ -194,59 +172,27 @@ function SearchResults({hunts, query}: {hunts: Hunt[]; query: string}) {
   );
 }
 
-/** "September 2026" → month and year at different weights; other names as they are. */
-function splitHuntName(name: string) {
-  const match = /^(.*\S)\s+(\d{4})$/.exec(name);
-  return match ? {title: match[1]!, year: match[2]} : {title: name, year: undefined};
-}
-
 /** The newest month, with its puzzles one click away. */
 function LatestHunt({hunt, issue}: {hunt: Hunt; issue: number}) {
-  const {title, year} = splitHuntName(hunt.name);
   return (
-    // The month's "cover": its colours as a slowly moving grainy gradient, like a magazine issue.
-    // The whole cover opens the hunt (the title link is stretched over it); the puzzle pills sit
-    // above that and open their puzzles.
-    <section className="group relative isolate overflow-hidden rounded-3xl text-white">
-      <Grainient colors={monthColors(huntDate(hunt))} className="absolute inset-0 -z-10" />
-      {/* Keeps white text readable on the lightest parts of any month's gradient. */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/35 to-black/10 transition-opacity group-hover:opacity-80" />
-      <div className="flex min-h-72 flex-col justify-between gap-8 p-6 md:p-10">
-        <div className="flex items-start justify-between gap-4">
-          <span className="text-sm font-medium text-white/80 tabular-nums">No. {issue}</span>
-          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
-            Latest
-          </span>
-        </div>
-        <div className="flex flex-col gap-5">
-          <Link
-            to="/exchange/hunts/$huntId"
-            params={{huntId: hunt.id}}
-            className="flex w-fit flex-col after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-4 focus-visible:after:outline-white">
-            <span className="text-5xl font-bold tracking-tight group-hover:underline md:text-6xl">
-              {title}
-            </span>
-            {year && <span className="text-lg text-white/80 tabular-nums">{year}</span>}
-          </Link>
-          {hunt.hunt_puzzles.length === 0 ? (
-            <p className="text-white/80">Puzzles coming soon.</p>
-          ) : (
-            <ul className="relative z-10 flex flex-wrap gap-2">
-              {hunt.hunt_puzzles.map(puzzle => (
-                <li key={puzzle.id}>
-                  <Link
-                    to="/exchange/puzzles/$huntPuzzleId"
-                    params={{huntPuzzleId: puzzle.id}}
-                    className="block rounded-full bg-white/15 px-4 py-2 text-sm font-medium backdrop-blur transition-colors hover:bg-white/25">
-                    {puzzle.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </section>
+    <ExchangeCover hunt={hunt} issue={issue} badge="Latest" linkToHunt>
+      {hunt.hunt_puzzles.length === 0 ? (
+        <p className="text-white/80">Puzzles coming soon.</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {hunt.hunt_puzzles.map(puzzle => (
+            <li key={puzzle.id}>
+              <Link
+                to="/exchange/puzzles/$huntPuzzleId"
+                params={{huntPuzzleId: puzzle.id}}
+                className="block rounded-full bg-white/15 px-4 py-2 text-sm font-medium backdrop-blur transition-colors hover:bg-white/25">
+                {puzzle.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </ExchangeCover>
   );
 }
 
