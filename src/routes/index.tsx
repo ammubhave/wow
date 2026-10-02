@@ -1,85 +1,93 @@
-import {buttonVariants} from "@heroui/react";
+import {buttonVariants, Card, Chip} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {ArrowRightIcon} from "lucide-react";
 
-import {CoffeeIcon} from "@/components/coffee-icon";
-import {BrandTitle} from "@/components/decrypted-text";
+import {DecryptedText} from "@/components/decrypted-text";
+import {BoardDemo} from "@/components/landing/board-demo";
+import {LetterGlitch} from "@/components/letter-glitch";
+import {PublicFooter, PublicNavbar} from "@/components/public-chrome";
 
-export const Route = createFileRoute("/")({component: App});
+export const Route = createFileRoute("/")({
+  component: HomePage,
+  head: () => ({
+    meta: [
+      {title: "WOW · The workspace for puzzle hunt teams"},
+      {
+        name: "description",
+        content:
+          "One live board for every round and puzzle, with a spreadsheet and Discord voice channel for each puzzle, chat, and who's working on what.",
+      },
+    ],
+  }),
+});
 
-function App() {
+function HomePage() {
   return (
-    <div
-      className="min-h-screen"
-      style={{backgroundImage: "url(/bg.jpg)", backgroundSize: "cover"}}>
-      <div className="flex min-h-screen flex-col py-10 backdrop-blur-3xl">
-        <header>
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-4 px-4 sm:justify-between sm:px-6 lg:flex-nowrap lg:px-8">
-            <div className="relative z-20 flex flex-col items-center gap-4 text-lg font-medium text-black sm:flex-row">
-              <img src="/wafflehaus.png" alt="" className="rounded-full" width={48} height={48} />
-              <BrandTitle />
-            </div>
-            <div className="flex flex-col-reverse flex-wrap items-center gap-4 sm:flex-row">
-              <Link className={buttonVariants({variant: "ghost"})} to="/docs">
-                Documentation
-              </Link>
-              <Link className={buttonVariants({variant: "primary"})} to="/workspaces">
-                My Workspaces
-              </Link>
-            </div>
-          </div>
-        </header>
-        <div className="flex flex-1 items-center justify-center overflow-auto overflow-y-auto">
-          <div className="max-w-7xl flex-1 px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl lg:max-w-4xl lg:px-12">
-              <h1 className="font-display text-foreground text-5xl font-bold tracking-tighter sm:text-7xl">
-                A workspace for puzzle hunters.
-              </h1>
-              <div className="text-background mt-6 space-y-6 text-2xl tracking-tight">
-                <p className="font-display">
-                  Wafflehaüs Organized Workspaces (WOW) is a platform for puzzle hunt teams to
-                  organize when solving puzzles. It provides several automations such as creating
-                  google spreadsheets, discord channels, and more.
-                </p>
-                <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Link className={buttonVariants({variant: "primary"})} to="/workspaces">
-                    Get Started
-                  </Link>
-                  <Link to="/docs" className={buttonVariants({variant: "ghost"})}>
-                    Learn more <span aria-hidden="true">→</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-center">
-          <div className="flex max-w-7xl flex-1 flex-col flex-wrap items-center justify-between gap-4 px-8 text-sm sm:flex-row">
-            <div>
-              <p className="text-background flex flex-col items-center gap-4 text-sm font-semibold sm:flex-row">
-                <Link className="hover:text-accent" to="/tos">
-                  Terms of Service
-                </Link>
-                <Link className="hover:text-accent" to="/privacy-policy">
-                  Privacy Policy
-                </Link>
-              </p>
-            </div>
-            <div className="max-w-md text-sm">
-              <a
-                className={buttonVariants({
-                  variant: "secondary",
-                  className: "font-['Cookie'] text-xl",
-                })}
-                href="https://www.buymeacoffee.com/amolbhave"
-                target="_blank"
-                rel="noopener noreferrer">
-                <CoffeeIcon aria-hidden="true" />
-                Buy me a puzzle
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="flex min-h-dvh flex-col">
+      <PublicNavbar />
+      <main className="flex-1">
+        <Hero />
+        <ExchangeTeaser />
+      </main>
+      <PublicFooter />
     </div>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="relative overflow-hidden">
+      <LetterGlitch />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pt-16 pb-20 md:pt-24 lg:grid-cols-[1fr_1.1fr] lg:pb-28">
+        <div className="flex flex-col items-start gap-6">
+          <Chip variant="soft" color="accent">
+            For puzzle hunt teams
+          </Chip>
+          <h1 className="text-5xl font-bold tracking-tight text-balance md:text-6xl">
+            Solve the hunt,
+            <br />
+            <span className="text-accent">
+              <DecryptedText text="not the logistics." speed={45} />
+            </span>
+          </h1>
+          <p className="text-muted max-w-lg text-lg text-pretty">
+            A live board for every round and puzzle. Each puzzle gets its own spreadsheet, voice
+            channel and chat as soon as you add it.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/workspaces/create" className={buttonVariants({size: "lg"})}>
+              Start a workspace
+            </Link>
+            <Link to="/docs" className={buttonVariants({variant: "tertiary", size: "lg"})}>
+              Read the docs
+            </Link>
+          </div>
+        </div>
+        <BoardDemo />
+      </div>
+    </section>
+  );
+}
+
+function ExchangeTeaser() {
+  return (
+    <section className="mx-auto max-w-7xl px-6 py-20">
+      <Card className="flex-col items-start gap-6 p-8 md:flex-row md:items-center md:p-10">
+        <div className="flex flex-1 flex-col gap-2">
+          <span className="text-accent text-xs font-semibold tracking-wider uppercase">
+            Between hunts
+          </span>
+          <h2 className="text-2xl font-bold tracking-tight">The Wafflehaüs Puzzle Exchange</h2>
+          <p className="text-muted max-w-2xl">
+            Every month Wafflehaüs releases a few short, approachable, hunt-style puzzles written by
+            team members, and spotlights puzzles from other hunts. Solve them alone or with friends.
+          </p>
+        </div>
+        <Link to="/exchange" className={buttonVariants({variant: "secondary"})}>
+          Browse puzzles
+          <ArrowRightIcon />
+        </Link>
+      </Card>
+    </section>
   );
 }
