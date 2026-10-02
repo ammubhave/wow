@@ -1,13 +1,4 @@
-import {
-  Accordion,
-  Button,
-  buttonVariants,
-  Card,
-  Code,
-  Kbd,
-  Link as HeroLink,
-  SearchField,
-} from "@heroui/react";
+import {Accordion, Button, buttonVariants, Card, Code, Kbd, SearchField} from "@heroui/react";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {PlusIcon} from "lucide-react";
@@ -37,7 +28,30 @@ export const Route = createFileRoute("/_public/exchange/")({
 type Hunt = ReturnType<typeof useHunts>[number];
 const useHunts = () => useSuspenseQuery(orpc.exchange.hunts.list.queryOptions()).data;
 
-const yearOf = (hunt: Hunt) => String(new Date(hunt.createdAt).getFullYear());
+const MONTHS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
+/**
+ * The month a hunt is for: from its name when it reads like "March 2026" (hunts are usually
+ * created a few days before their month starts), otherwise when it was created.
+ */
+function huntDate(hunt: Hunt) {
+  const match = /^([a-z]+)\s+(\d{4})$/i.exec(hunt.name.trim());
+  const month = match ? MONTHS.indexOf(match[1]!.toLowerCase()) : -1;
+  return match && month >= 0 ? new Date(Number(match[2]), month, 1) : new Date(hunt.createdAt);
+}
+const yearOf = (hunt: Hunt) => String(huntDate(hunt).getFullYear());
 /** Accent- and case-insensitive, so "eulogy" finds "Éulogy" and "march" finds "March 2026". */
 const fold = (text: string) =>
   text
@@ -46,7 +60,8 @@ const fold = (text: string) =>
     .toLowerCase();
 
 function RouteComponent() {
-  const hunts = useHunts();
+  // Newest month first, by the month each hunt is for (not when it was created).
+  const hunts = useHunts().toSorted((a, b) => huntDate(b).getTime() - huntDate(a).getTime());
   const isAdmin = useSuspenseQuery(orpc.exchange.isAdmin.queryOptions()).data;
   const {q = ""} = Route.useSearch();
   const navigate = useNavigate({from: Route.fullPath});
@@ -94,47 +109,11 @@ function RouteComponent() {
             </section>
           )}
           {latest && <LatestHunt hunt={latest} issue={published.length} />}
+          {/* Right under the newest puzzles, where everyone sees it, not after the archive. */}
+          <Invitations />
           {archive.length > 0 && <Archive hunts={archive} />}
         </>
       )}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card variant="secondary" className="gap-3 p-6">
-          <Card.Header>
-            <Card.Title className="text-base font-semibold">Interested in solving?</Card.Title>
-          </Card.Header>
-          <Card.Content className="text-muted gap-3 text-sm">
-            <p>
-              Feel free to solve by yourself or with friends! Once you've solved the puzzle, go
-              react to the corresponding Discord message!
-            </p>
-            <p>
-              There has been a WOW workspace set up for your convenience called{" "}
-              <HeroLink
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://www.wafflehaus.io/wpe">
-                WPE
-              </HeroLink>
-              . The password is <Code>sumhint</Code>. Please be courteous! You're sharing this
-              workspace with the whole team. See instructions on the workspace itself.
-            </p>
-          </Card.Content>
-        </Card>
-        <Card variant="secondary" className="gap-3 p-6">
-          <Card.Header>
-            <Card.Title className="text-base font-semibold">Interested in writing?</Card.Title>
-          </Card.Header>
-          <Card.Content className="text-muted gap-3 text-sm">
-            <p>Reach out to Allen on Discord!</p>
-          </Card.Content>
-          <Card.Footer>
-            <Link to="/exchange/writing" className={buttonVariants({variant: "outline"})}>
-              Learn about writing WPE puzzles
-            </Link>
-          </Card.Footer>
-        </Card>
-      </div>
     </div>
   );
 }
@@ -202,7 +181,7 @@ function SearchResults({hunts, query}: {hunts: Hunt[]; query: string}) {
                   className: "h-auto justify-between gap-4 px-3 py-2.5 font-normal",
                 })}>
                 <span className="flex min-w-0 items-center gap-3">
-                  <MonthDot date={hunt.createdAt} />
+                  <MonthDot hunt={hunt} />
                   <span className="truncate font-medium">{puzzle.title}</span>
                 </span>
                 <span className="text-muted shrink-0 text-sm">{hunt.name}</span>
@@ -229,7 +208,7 @@ function LatestHunt({hunt, issue}: {hunt: Hunt; issue: number}) {
     // The whole cover opens the hunt (the title link is stretched over it); the puzzle pills sit
     // above that and open their puzzles.
     <section className="group relative isolate overflow-hidden rounded-3xl text-white">
-      <Grainient colors={monthColors(hunt.createdAt)} className="absolute inset-0 -z-10" />
+      <Grainient colors={monthColors(huntDate(hunt))} className="absolute inset-0 -z-10" />
       {/* Keeps white text readable on the lightest parts of any month's gradient. */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/35 to-black/10 transition-opacity group-hover:opacity-80" />
       <div className="flex min-h-72 flex-col justify-between gap-8 p-6 md:p-10">
@@ -336,7 +315,7 @@ function HuntRows({hunts, year}: {hunts: Hunt[]; year?: string}) {
                 className: "h-auto justify-between gap-4 px-3 py-2.5 font-normal",
               })}>
               <span className="flex min-w-0 items-center gap-3">
-                <MonthDot date={hunt.createdAt} />
+                <MonthDot hunt={hunt} />
                 <span className="truncate font-medium">
                   {year && splitHuntName(hunt.name).year === year
                     ? splitHuntName(hunt.name).title
@@ -355,12 +334,52 @@ function HuntRows({hunts, year}: {hunts: Hunt[]; year?: string}) {
 }
 
 /** A small swatch of the month's colour, tying rows and results to their month. */
-function MonthDot({date}: {date: Date}) {
+function MonthDot({hunt}: {hunt: Hunt}) {
   return (
     <span
       aria-hidden="true"
       className="size-2.5 shrink-0 rounded-full"
-      style={{backgroundColor: monthColors(date)[1]}}
+      style={{backgroundColor: monthColors(huntDate(hunt))[1]}}
     />
+  );
+}
+
+/** Invitations to solve together and to write: the community side of the Exchange. */
+function Invitations() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <Card variant="secondary" className="gap-4 p-6">
+        <Card.Header className="gap-2">
+          <Card.Title className="text-lg font-semibold">Interested in solving?</Card.Title>
+          <Card.Description>
+            Solve by yourself or with friends, then react to the puzzle's Discord message! To solve
+            as a team, use the shared WPE workspace (password <Code>sumhint</Code>). Please be
+            courteous: you're sharing it with the whole team.
+          </Card.Description>
+        </Card.Header>
+        <Card.Footer className="mt-auto">
+          <a
+            href="https://www.wafflehaus.io/wpe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants()}>
+            Open the WPE workspace
+          </a>
+        </Card.Footer>
+      </Card>
+      <Card variant="secondary" className="gap-4 p-6">
+        <Card.Header className="gap-2">
+          <Card.Title className="text-lg font-semibold">Interested in writing?</Card.Title>
+          <Card.Description>
+            We'd love more puzzles. Reach out to Allen on Discord!
+          </Card.Description>
+        </Card.Header>
+        <Card.Footer className="mt-auto">
+          <Link to="/exchange/writing" className={buttonVariants({variant: "secondary"})}>
+            Learn about writing WPE puzzles
+          </Link>
+        </Card.Footer>
+      </Card>
+    </div>
   );
 }
