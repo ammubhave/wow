@@ -1,11 +1,12 @@
-import {Accordion, Breadcrumbs, Button, Tabs} from "@heroui/react";
+import {Accordion, AlertDialog, Breadcrumbs, Button, Tabs} from "@heroui/react";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute, useNavigate} from "@tanstack/react-router";
+import {createFileRoute, useBlocker, useNavigate} from "@tanstack/react-router";
 import {PlusIcon, TrashIcon} from "lucide-react";
-import {Suspense} from "react";
+import {Suspense, useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 
 import {ChangeExchangePuzzleDraftSwitch} from "@/components/change-exchange-puzzle-draft-switch";
+import {ControlledAlertDialog} from "@/components/controlled-dialog";
 import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
 import {ExchangeTopBar} from "@/components/exchange-top-bar";
 import {useAppForm} from "@/components/form";
@@ -36,6 +37,9 @@ function RouteComponent() {
   const puzzle = useSuspenseQuery(
     orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId: huntPuzzleId}})
   ).data;
+  // Unsaved changes: compare against what was last loaded or saved. The baseline is taken once
+  // the editors have settled, as they may normalise the stored document when they first render.
+  const savedSnapshot = useRef<string | null>(null);
   const mutation = useMutation(
     orpc.exchange.puzzles.update.mutationOptions({
       onSuccess: () => {
@@ -47,6 +51,7 @@ function RouteComponent() {
     })
   );
   const navigate = useNavigate();
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const deleteMutation = useMutation(
     orpc.exchange.puzzles.delete.mutationOptions({
       onSuccess: () => {
@@ -69,7 +74,7 @@ function RouteComponent() {
     },
     onSubmit: async ({value}) => {
       // Errors are reported by `onError`.
-      await mutation
+      const saved = await mutation
         .mutateAsync({
           huntPuzzleId: puzzle.hunt_puzzles.id,
           title: value.title,
@@ -79,8 +84,26 @@ function RouteComponent() {
           partials: value.partials,
           hints: value.hints,
         })
-        .catch(() => {});
+        .then(() => true)
+        .catch(() => false);
+      if (saved) savedSnapshot.current = JSON.stringify(value);
     },
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      savedSnapshot.current = JSON.stringify(form.state.values);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [form]);
+  const hasUnsavedChanges = () =>
+    savedSnapshot.current !== null && JSON.stringify(form.state.values) !== savedSnapshot.current;
+  // Leaving with unsaved changes asks first; closing or reloading the tab gets the browser's
+  // own prompt.
+  const blocker = useBlocker({
+    shouldBlockFn: hasUnsavedChanges,
+    enableBeforeUnload: hasUnsavedChanges,
+    withResolver: true,
   });
 
   return (
@@ -109,7 +132,7 @@ function RouteComponent() {
             <Button
               variant="outline"
               isPending={deleteMutation.isPending}
-              onPress={() => deleteMutation.mutate({huntPuzzleId: puzzle.hunt_puzzles.id})}>
+              onPress={() => setIsDeleteOpen(true)}>
               Delete
             </Button>
             <ChangeExchangePuzzleDraftSwitch huntPuzzleId={puzzle.hunt_puzzles.id} />
@@ -326,6 +349,74 @@ function RouteComponent() {
           </Tabs>
         </form.Form>
       </form.AppForm>
+
+      <ControlledAlertDialog isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialog.Container size="sm">
+          <AlertDialog.Dialog>
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete “{puzzle.hunt_puzzles.title}”?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>The puzzle, its hints and its solution will be deleted. This can't be undone.</p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary">
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                isPending={deleteMutation.isPending}
+                onPress={() => {
+                  // The puzzle is going: leaving afterwards mustn't ask about its unsaved edits.
+                  const snapshot = savedSnapshot.current;
+                  savedSnapshot.current = null;
+                  deleteMutation.mutate(
+                    {huntPuzzleId: puzzle.hunt_puzzles.id},
+                    {onError: () => (savedSnapshot.current = snapshot)}
+                  );
+                }}>
+                Delete puzzle
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </ControlledAlertDialog>
+
+      <ControlledAlertDialog
+        isOpen={blocker.status === "blocked"}
+        onOpenChange={open => {
+          if (!open && blocker.status === "blocked") blocker.reset();
+        }}>
+        <AlertDialog.Container size="sm">
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="warning" />
+              <AlertDialog.Heading>Leave without saving?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>Your changes to “{puzzle.hunt_puzzles.title}” haven't been saved.</p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button variant="tertiary" onPress={() => blocker.reset?.()}>
+                Keep editing
+              </Button>
+              <Button variant="danger-soft" onPress={() => blocker.proceed?.()}>
+                Leave without saving
+              </Button>
+              <Button
+                isPending={mutation.isPending}
+                onPress={async () => {
+                  await form.handleSubmit();
+                  if (!hasUnsavedChanges()) blocker.proceed?.();
+                }}>
+                Save and leave
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </ControlledAlertDialog>
     </div>
   );
 }

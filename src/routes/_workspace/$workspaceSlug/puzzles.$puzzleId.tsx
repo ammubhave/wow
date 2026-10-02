@@ -1,18 +1,20 @@
 import {EmptyState} from "@heroui-pro/react";
 import {Resizable} from "@heroui-pro/react/resizable";
-import {Button, buttonVariants, InputGroup, ListBox, Tooltip} from "@heroui/react";
+import {Button, buttonVariants, InputGroup, ListBox, Tabs, Tooltip} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
-import {createFileRoute} from "@tanstack/react-router";
+import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {
   BrushIcon,
   EditIcon,
   ExternalLinkIcon,
+  PresentationIcon,
   PuzzleIcon,
   SheetIcon,
   TableIcon,
 } from "lucide-react";
 import {useState} from "react";
 import {cn} from "tailwind-variants";
+import {z} from "zod";
 
 import {Chat} from "@/components/chat";
 import {CommentBox} from "@/components/comment-box";
@@ -21,6 +23,7 @@ import {useAppForm} from "@/components/form";
 import {NotFoundPage} from "@/components/not-found-page";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {SolveSpark} from "@/components/solve-spark";
+import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {client} from "@/lib/orpc";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
@@ -33,6 +36,8 @@ import {usePuzzle} from "@/lib/usePuzzle";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzleId")({
+  // Which surface the left pane shows; in the URL so a shared link opens the same view.
+  validateSearch: z.object({view: z.enum(["sheet", "whiteboard"]).optional()}),
   component: RouteComponent,
   head: async ({params}) => {
     const puzzle = await client.puzzles.get({
@@ -57,51 +62,8 @@ function RouteComponent() {
       <PresencesWebSocket workspaceSlug={workspaceSlug} puzzleId={puzzleId}>
         <div className="flex flex-1">
           <Resizable orientation="horizontal">
-            <Resizable.Panel defaultSize={80}>
-              {puzzle.data.googleSpreadsheetId || puzzle.data.googleDrawingId ? (
-                <>
-                  {/* oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets/Drawings editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it. */}
-                  <iframe
-                    title={`${puzzle.data.name} ${puzzle.data.googleSpreadsheetId ? "spreadsheet" : "drawing"}`}
-                    src={
-                      puzzle.data.googleSpreadsheetId
-                        ? `https://docs.google.com/spreadsheets/d/${puzzle.data.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
-                        : `https://docs.google.com/drawings/d/${puzzle.data.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
-                    }
-                    allow="fullscreen; geolocation; microphone; camera; payment"
-                    className="min-h-[calc(100dvh-(--spacing(16)))] w-full flex-1 bg-white"
-                  />
-                </>
-              ) : (
-                // No worksheet (e.g. Google Drive isn't connected): the page still has the chat,
-                // answer and status, so say so rather than embedding a broken frame.
-                <div className="flex min-h-[calc(100dvh-(--spacing(16)))] flex-1 items-center justify-center p-6">
-                  <EmptyState>
-                    <EmptyState.Header>
-                      <EmptyState.Media variant="icon">
-                        <SheetIcon />
-                      </EmptyState.Media>
-                      <EmptyState.Title>No spreadsheet for this puzzle</EmptyState.Title>
-                      <EmptyState.Description>
-                        Connect Google Drive in the workspace settings to get a sheet for new
-                        puzzles. You can still chat and record the answer here.
-                      </EmptyState.Description>
-                    </EmptyState.Header>
-                    {puzzle.data.link && (
-                      <EmptyState.Content>
-                        <a
-                          href={puzzle.data.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={buttonVariants({variant: "secondary"})}>
-                          Open the puzzle on the hunt site
-                          <ExternalLinkIcon />
-                        </a>
-                      </EmptyState.Content>
-                    )}
-                  </EmptyState>
-                </div>
-              )}
+            <Resizable.Panel defaultSize={80} className="flex min-h-0 flex-col">
+              <WorksheetPane puzzle={puzzle.data} />
             </Resizable.Panel>
             <Resizable.Handle type="drag" />
             <Resizable.Panel defaultSize={20}>
@@ -408,5 +370,115 @@ function PanelLink({href, label, icon}: {href: string; label: string; icon: Reac
       </Tooltip.Trigger>
       <Tooltip.Content>{label}</Tooltip.Content>
     </Tooltip>
+  );
+}
+
+/**
+ * The puzzle's working surface: its Google sheet (or drawing) and a shared whiteboard, switched
+ * from a tab bar. Both stay mounted once opened, so switching never reloads the sheet; the
+ * whiteboard only loads (and connects) when it's first opened.
+ */
+function WorksheetPane({
+  puzzle,
+}: {
+  puzzle: {
+    id: string;
+    name: string;
+    link: string | null;
+    googleSpreadsheetId: string | null;
+    googleDrawingId: string | null;
+  };
+}) {
+  const navigate = useNavigate({from: Route.fullPath});
+  const hasWorksheet = Boolean(puzzle.googleSpreadsheetId || puzzle.googleDrawingId);
+  // Without a Google worksheet, the whiteboard is the useful default.
+  const view = Route.useSearch().view ?? (hasWorksheet ? "sheet" : "whiteboard");
+  // Mount the whiteboard the first time it's shown, then keep it (and its connection) around.
+  const [whiteboardOpened, setWhiteboardOpened] = useState(view === "whiteboard");
+  if (view === "whiteboard" && !whiteboardOpened) setWhiteboardOpened(true);
+  const sheetLabel = puzzle.googleDrawingId && !puzzle.googleSpreadsheetId ? "Drawing" : "Sheet";
+
+  return (
+    <>
+      <div className="border-separator flex h-10 shrink-0 items-center border-b px-2">
+        <Tabs
+          selectedKey={view}
+          onSelectionChange={key =>
+            void navigate({
+              search: prev => ({...prev, view: key === "whiteboard" ? "whiteboard" : "sheet"}),
+              replace: true,
+            })
+          }>
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Worksheet" className="w-fit">
+              <Tabs.Tab id="sheet" className="h-7 px-3 text-xs">
+                <SheetIcon className="size-3.5" />
+                <span className="ms-1.5">{sheetLabel}</span>
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="whiteboard" className="h-7 px-3 text-xs">
+                <PresentationIcon className="size-3.5" />
+                <span className="ms-1.5">Whiteboard</span>
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
+      </div>
+      <div className={cn("flex min-h-0 flex-1 flex-col", view !== "sheet" && "hidden")}>
+        {hasWorksheet ? (
+          // oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets/Drawings editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it.
+          <iframe
+            title={`${puzzle.name} ${puzzle.googleSpreadsheetId ? "spreadsheet" : "drawing"}`}
+            src={
+              puzzle.googleSpreadsheetId
+                ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
+                : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
+            }
+            allow="fullscreen; geolocation; microphone; camera; payment"
+            className="h-full w-full flex-1 bg-white"
+          />
+        ) : (
+          // No worksheet (e.g. Google Drive isn't connected): the page still has the whiteboard,
+          // chat, answer and status, so say so rather than embedding a broken frame.
+          <div className="flex flex-1 items-center justify-center p-6">
+            <EmptyState>
+              <EmptyState.Header>
+                <EmptyState.Media variant="icon">
+                  <SheetIcon />
+                </EmptyState.Media>
+                <EmptyState.Title>No spreadsheet for this puzzle</EmptyState.Title>
+                <EmptyState.Description>
+                  Connect Google Drive in the workspace settings to get a sheet for new puzzles. The
+                  whiteboard, chat and answer work without one.
+                </EmptyState.Description>
+              </EmptyState.Header>
+              {puzzle.link && (
+                <EmptyState.Content>
+                  <a
+                    href={puzzle.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonVariants({variant: "secondary"})}>
+                    Open the puzzle on the hunt site
+                    <ExternalLinkIcon />
+                  </a>
+                </EmptyState.Content>
+              )}
+            </EmptyState>
+          </div>
+        )}
+      </div>
+      {whiteboardOpened && (
+        <div
+          className={cn(
+            // Fills exactly what the panel has: a computed height overflowed the page.
+            "flex min-h-0 flex-1 flex-col",
+            view !== "whiteboard" && "hidden"
+          )}>
+          <PuzzleWhiteboard puzzleId={puzzle.id} />
+        </div>
+      )}
+    </>
   );
 }

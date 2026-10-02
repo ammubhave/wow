@@ -17,3 +17,6 @@ worker-configuration.d.ts
 src/lib/db/auth-schema.ts
 src/lib/db/seed.ts
 src/lib/db/dump.json
+
+# Copied from node_modules on install (scripts/copy-excalidraw-assets.mjs)
+public/excalidraw-assets/

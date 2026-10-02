@@ -37,12 +37,14 @@
       {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
       {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
       {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
+      {"name": "WHITEBOARD_ROOMS", "class_name": "WhiteboardRoom"},
     ],
   },
   "r2_buckets": [{"binding": "R2", "bucket_name": "wow"}],
   "migrations": [
     {"tag": "v1", "new_classes": ["ChatRoom", "NotificationRoom", "PresenceRoom", "DiscordClient"]},
     {"tag": "v2", "new_classes": ["WorkspaceRoom"]},
+    {"tag": "v3", "new_sqlite_classes": ["WhiteboardRoom"]},
   ],
   "workflows": [
     {
@@ -79,6 +81,7 @@
           {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
           {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
           {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
+          {"name": "WHITEBOARD_ROOMS", "class_name": "WhiteboardRoom"},
         ],
       },
       "r2_buckets": [{"binding": "R2", "bucket_name": "wow-production"}],
