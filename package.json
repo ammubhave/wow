@@ -17,7 +17,8 @@
     "auth:generate": "touch src/lib/db/auth-schema.ts && auth generate --config src/lib/auth.ts --output src/lib/db/auth-schema.ts --yes",
     "db:generate": "drizzle-kit generate && node scripts/check-d1-migrations.mjs",
     "db:migrate": "mkdir -p .wrangler/state/v3/d1/miniflare-D1DatabaseObject/ && node scripts/check-d1-migrations.mjs && drizzle-kit migrate",
-    "db:migrate:prod": "node scripts/check-d1-migrations.mjs && node scripts/migrate-d1-prod.mjs"
+    "db:migrate:prod": "node scripts/check-d1-migrations.mjs && node scripts/migrate-d1-prod.mjs",
+    "db:seed:exchange": "node scripts/seed-exchange-dev.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.6",

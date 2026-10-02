@@ -157,6 +157,9 @@ export default function GrainientCanvas({colors, className}: GrainientProps) {
     canvas.style.width = "100%";
     canvas.style.height = "100%";
     canvas.style.display = "block";
+    // Fade in over the placeholder once the first frame is drawn, rather than snapping from it.
+    canvas.style.opacity = "0";
+    if (!reduceMotion) canvas.style.transition = "opacity 700ms ease-out";
     container.appendChild(canvas);
 
     const program = new Program(gl, {
@@ -187,6 +190,9 @@ export default function GrainientCanvas({colors, className}: GrainientProps) {
     const resizeObserver = new ResizeObserver(setSize);
     resizeObserver.observe(container);
     setSize();
+    // Commit opacity 0 before setting 1, so the transition runs (works even before frames start).
+    void canvas.offsetWidth;
+    canvas.style.opacity = "1";
     if (reduceMotion) {
       return () => {
         resizeObserver.disconnect();

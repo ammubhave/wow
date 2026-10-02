@@ -4,6 +4,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {Suspense} from "react";
 
 import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
+import {ExchangeTopBar} from "@/components/exchange-top-bar";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {orpc} from "@/lib/orpc";
 
@@ -37,7 +38,7 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <div>
+      <ExchangeTopBar>
         <Breadcrumbs>
           <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
           <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunt.id}`}>
@@ -48,7 +49,7 @@ function RouteComponent() {
           </Breadcrumbs.Item>
           <Breadcrumbs.Item>Solution</Breadcrumbs.Item>
         </Breadcrumbs>
-      </div>
+      </ExchangeTopBar>
       <div className="flex flex-col items-center justify-center gap-4">
         <div className="text-2xl font-bold">{puzzle.title}</div>
         <span className="text-lg font-semibold">Solution</span>

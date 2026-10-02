@@ -97,6 +97,7 @@ function FormTextField({
   label,
   description,
   variant,
+  fullWidth,
   ...props
 }: {label?: string; description?: React.ReactNode | string} & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
@@ -104,12 +105,13 @@ function FormTextField({
   return (
     <TextField
       variant={variant}
+      fullWidth={fullWidth}
       isInvalid={isInvalid}
       value={field.state.value}
       onChange={value => field.handleChange(value)}
       onBlur={() => field.handleBlur()}>
       {label && <Label>{label}</Label>}
-      <Input {...props} />
+      <Input fullWidth={fullWidth} {...props} />
       {description && <Description>{description}</Description>}
       <FieldError>{field.state.meta.errors.map(error => error?.message).join(", ")}</FieldError>
     </TextField>

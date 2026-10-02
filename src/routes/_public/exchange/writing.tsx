@@ -1,15 +1,19 @@
 import {Breadcrumbs, Card} from "@heroui/react";
 import {createFileRoute} from "@tanstack/react-router";
 
+import {ExchangeTopBar} from "@/components/exchange-top-bar";
+
 export const Route = createFileRoute("/_public/exchange/writing")({component: RouteComponent});
 
 function RouteComponent() {
   return (
     <div className="flex max-w-5xl flex-1 flex-col items-stretch justify-center gap-4">
-      <Breadcrumbs>
-        <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
-        <Breadcrumbs.Item>Writing</Breadcrumbs.Item>
-      </Breadcrumbs>
+      <ExchangeTopBar>
+        <Breadcrumbs>
+          <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
+          <Breadcrumbs.Item>Writing</Breadcrumbs.Item>
+        </Breadcrumbs>
+      </ExchangeTopBar>
       <h1 className="mb-4 text-center text-2xl font-bold">Wafflehaüs's Guide to Writing Puzzles</h1>
       <Card className="flex-1">
         <div className="prose max-w-full">

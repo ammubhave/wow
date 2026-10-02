@@ -7,6 +7,7 @@ import {AddNewExchangePuzzleDialog} from "@/components/add-new-exchange-puzzle-d
 import {ChangeExchangeHuntDraftSwitch} from "@/components/change-exchange-hunt-draft-switch";
 import {ExchangeCover} from "@/components/exchange-cover";
 import {HuntListSkeleton} from "@/components/exchange-skeletons";
+import {ExchangeTopBar} from "@/components/exchange-top-bar";
 import {huntDate, issueNumbers, sortHunts} from "@/lib/exchange-hunts";
 import {monthColors} from "@/lib/month-colors";
 import {orpc} from "@/lib/orpc";
@@ -57,7 +58,7 @@ function RouteComponent() {
       className="flex flex-col gap-8"
       // The month's colour, for the puzzle numbers and tile highlights below.
       style={{"--month-light": light, "--month-mid": mid}}>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <ExchangeTopBar className="flex flex-wrap items-center justify-between gap-4">
         <Breadcrumbs>
           <Breadcrumbs.Item href="/exchange">Puzzle Exchange</Breadcrumbs.Item>
           <Breadcrumbs.Item>{hunt.name}</Breadcrumbs.Item>
@@ -73,7 +74,7 @@ function RouteComponent() {
             </AddNewExchangePuzzleDialog>
           </div>
         )}
-      </div>
+      </ExchangeTopBar>
 
       <ExchangeCover
         hunt={hunt}

@@ -16,6 +16,7 @@ import {toast} from "sonner";
 
 import {ExchangePuzzleHintDialog} from "@/components/exchange-puzzle-hint-dialog";
 import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
+import {ExchangeTopBar} from "@/components/exchange-top-bar";
 import {useAppForm} from "@/components/form";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {celebrate} from "@/lib/confetti";
@@ -77,15 +78,17 @@ function RouteComponent() {
   const [isExchangePuzzleHintDialogOpen, setIsExchangePuzzleHintDialogOpen] = useState(false);
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <div>
-        <ExchangePuzzleHintDialog
-          open={isExchangePuzzleHintDialogOpen}
-          setOpen={setIsExchangePuzzleHintDialogOpen}
-          title={activeHintIndex !== null ? puzzle.hunt_puzzles.hints![activeHintIndex]!.title : ""}
-          message={
-            activeHintIndex !== null ? puzzle.hunt_puzzles.hints![activeHintIndex]!.message : ""
-          }
-        />
+      {/* The breadcrumb bar must be a direct child of this column: a sticky element only sticks
+          within its parent. (The dialog renders nothing in place while closed.) */}
+      <ExchangePuzzleHintDialog
+        open={isExchangePuzzleHintDialogOpen}
+        setOpen={setIsExchangePuzzleHintDialogOpen}
+        title={activeHintIndex !== null ? puzzle.hunt_puzzles.hints![activeHintIndex]!.title : ""}
+        message={
+          activeHintIndex !== null ? puzzle.hunt_puzzles.hints![activeHintIndex]!.message : ""
+        }
+      />
+      <ExchangeTopBar>
         <Breadcrumbs>
           <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
           <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunts.id}`}>
@@ -93,7 +96,7 @@ function RouteComponent() {
           </Breadcrumbs.Item>
           <Breadcrumbs.Item>{puzzle.hunt_puzzles.title}</Breadcrumbs.Item>
         </Breadcrumbs>
-      </div>
+      </ExchangeTopBar>
       <div className="flex flex-col items-center gap-4">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
           <div />

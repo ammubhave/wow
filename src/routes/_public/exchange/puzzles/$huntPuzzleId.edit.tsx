@@ -7,6 +7,7 @@ import {toast} from "sonner";
 
 import {ChangeExchangePuzzleDraftSwitch} from "@/components/change-exchange-puzzle-draft-switch";
 import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
+import {ExchangeTopBar} from "@/components/exchange-top-bar";
 import {useAppForm} from "@/components/form";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {orpc} from "@/lib/orpc";
@@ -84,7 +85,7 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <div>
+      <ExchangeTopBar>
         <Breadcrumbs>
           <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
           <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunts.id}`}>
@@ -95,7 +96,7 @@ function RouteComponent() {
           </Breadcrumbs.Item>
           <Breadcrumbs.Item>Edit</Breadcrumbs.Item>
         </Breadcrumbs>
-      </div>
+      </ExchangeTopBar>
       <form.AppForm>
         <form.Form className="flex-1">
           <div className="flex items-center gap-2">
@@ -117,14 +118,15 @@ function RouteComponent() {
             <table>
               <tbody>
                 <tr>
-                  <td>Answer</td>
-                  <td>
+                  <td className="pe-3">Answer</td>
+                  <td className="w-64">
                     <form.AppField name="answer">
                       {field => (
                         <field.TextField
                           aria-label="Answer"
                           placeholder="ANSWER"
                           className="uppercase"
+                          fullWidth
                         />
                       )}
                     </form.AppField>
@@ -142,7 +144,7 @@ function RouteComponent() {
                 </Accordion.Heading>
                 <Accordion.Panel>
                   <Accordion.Body>
-                    <table>
+                    <table className="w-full border-separate border-spacing-y-1">
                       <tbody>
                         <form.Field name="partials" mode="array">
                           {field => (
@@ -150,28 +152,32 @@ function RouteComponent() {
                               {field.state.value.map((_, i) => (
                                 // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array rows are addressed by index (`name[i].field`) and items have no id
                                 <tr key={i}>
-                                  <td>
+                                  {/* Short: a single word or phrase. */}
+                                  <td className="w-56 pe-2">
                                     <form.AppField name={`partials[${i}].answer`}>
                                       {subField => (
                                         <subField.TextField
                                           aria-label="Partial answer"
+                                          fullWidth
                                           placeholder="PARTIAL ANSWER"
                                           className="uppercase"
                                         />
                                       )}
                                     </form.AppField>
                                   </td>
-                                  <td>
+                                  {/* Wide: the nudge shown to the solver is a sentence. */}
+                                  <td className="pe-2">
                                     <form.AppField name={`partials[${i}].message`}>
                                       {subField => (
                                         <subField.TextField
                                           aria-label="Partial message"
+                                          fullWidth
                                           placeholder="Message"
                                         />
                                       )}
                                     </form.AppField>
                                   </td>
-                                  <td>
+                                  <td className="w-px">
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -213,7 +219,7 @@ function RouteComponent() {
                 </Accordion.Heading>
                 <Accordion.Panel>
                   <Accordion.Body>
-                    <table>
+                    <table className="w-full border-separate border-spacing-y-1">
                       <tbody>
                         <form.Field name="hints" mode="array">
                           {field => (
@@ -221,27 +227,29 @@ function RouteComponent() {
                               {field.state.value.map((_, i) => (
                                 // oxlint-disable-next-line react/no-array-index-key -- TanStack Form array rows are addressed by index (`name[i].field`) and items have no id
                                 <tr key={i}>
-                                  <td>
+                                  <td className="w-56 pe-2">
                                     <form.AppField name={`hints[${i}].title`}>
                                       {subField => (
                                         <subField.TextField
                                           aria-label="Hint title"
+                                          fullWidth
                                           placeholder="Title"
                                         />
                                       )}
                                     </form.AppField>
                                   </td>
-                                  <td>
+                                  <td className="pe-2">
                                     <form.AppField name={`hints[${i}].message`}>
                                       {subField => (
                                         <subField.TextField
                                           aria-label="Hint message"
+                                          fullWidth
                                           placeholder="Message"
                                         />
                                       )}
                                     </form.AppField>
                                   </td>
-                                  <td>
+                                  <td className="w-px">
                                     <Button
                                       variant="outline"
                                       size="sm"
