@@ -1,26 +1,30 @@
 import {ItemCard, ItemCardGroup} from "@heroui-pro/react";
 import {Breadcrumbs, Button, Separator} from "@heroui/react";
-import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronRightIcon, PlusIcon} from "lucide-react";
-import {Fragment, Suspense} from "react";
+import {Fragment} from "react";
 
 import {AddNewExchangePuzzleDialog} from "@/components/add-new-exchange-puzzle-dialog";
 import {ChangeExchangeHuntDraftSwitch} from "@/components/change-exchange-hunt-draft-switch";
+import {HuntListSkeleton} from "@/components/exchange-skeletons";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/hunts/$huntId")({
-  component: () => (
-    <Suspense>
-      <RouteComponent />
-    </Suspense>
-  ),
+  // Prefetch so the page renders with data instead of suspending (and flashing) on mount.
+  loader: ({context: {queryClient}, params: {huntId}}) =>
+    Promise.all([
+      queryClient.ensureQueryData(orpc.exchange.hunts.get.queryOptions({input: {huntId}})),
+      queryClient.ensureQueryData(orpc.exchange.isAdmin.queryOptions()),
+    ]),
+  pendingComponent: HuntListSkeleton,
+  component: RouteComponent,
 });
 
 function RouteComponent() {
   const {huntId} = Route.useParams();
   const hunt = useSuspenseQuery(orpc.exchange.hunts.get.queryOptions({input: {huntId}})).data;
-  const isAdmin = useQuery(orpc.exchange.isAdmin.queryOptions()).data ?? false;
+  const isAdmin = useSuspenseQuery(orpc.exchange.isAdmin.queryOptions()).data;
 
   return (
     <div className="flex flex-1 flex-col gap-4">

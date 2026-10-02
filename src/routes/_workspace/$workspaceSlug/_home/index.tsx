@@ -4,19 +4,19 @@ import {
   Chip,
   Dropdown,
   IconChevronDown,
-  InputGroup,
-  type Key,
+  Kbd,
   Label,
   ListBox,
-  ScrollShadow,
+  ProgressBar,
+  SearchField,
   Select,
-  type Selection,
   selectVariants,
   Separator,
   tableVariants,
-  TextField,
   ToggleButton,
   Tooltip,
+  type Key,
+  type Selection,
 } from "@heroui/react";
 import {useIsMutating, useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -28,14 +28,13 @@ import {
   FunnelIcon,
   InfoIcon,
   PuzzleIcon,
-  SearchIcon,
   SignalHighIcon,
   SignalIcon,
   StarIcon,
   TagIcon,
 } from "lucide-react";
 import * as React from "react";
-import {memo, useState} from "react";
+import {memo, useEffect, useRef, useState} from "react";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
 
@@ -49,7 +48,8 @@ import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
-import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
+import {SolveSpark} from "@/components/solve-spark";
+import {UserPresenceAvatars} from "@/components/user-hover-card";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
@@ -81,7 +81,9 @@ const tableSlots = tableVariants({variant: "secondary"});
 function Table({className, ...props}: React.ComponentProps<"table">) {
   return (
     <div className={tableSlots.base()}>
-      <div className={tableSlots.scrollContainer()}>
+      {/* The board's scroll box is the scroll container; an inner overflow box would stop the
+          sticky header from sticking. */}
+      <div className={tableSlots.scrollContainer({className: "overflow-visible"})}>
         <table className={tableSlots.content({className: cn("text-xs", className)})} {...props} />
       </div>
     </div>
@@ -383,45 +385,67 @@ function PuzzleStatusSelect({
 }) {
   const label = PUZZLE_STATUS_OPTIONS.find(option => option.value === value)?.label ?? "";
   return (
-    <DeferredSelect
-      aria-label="Status"
-      valueText={label}
-      value={label}
-      triggerClassName={triggerClassName}>
-      {deferred => (
-        <Select
-          {...deferred}
-          aria-label="Status"
-          value={value ?? NONE_KEY}
-          onChange={key => onChange(fromKey(key))}>
-          <Select.Trigger className={triggerClassName}>
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              {getPuzzleStatusGroups().map(group => (
-                <ListBox.Section key={group.groupLabel} className={group.bgColorNoHover}>
-                  {group.values.map(option => (
-                    <ListBox.Item
-                      key={option.value ?? NONE_KEY}
-                      id={option.value ?? NONE_KEY}
-                      textValue={option.label}>
-                      {option.label}
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  ))}
-                </ListBox.Section>
-              ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      )}
-    </DeferredSelect>
+    <SolveSpark isSolved={isSolvedStatus(value)}>
+      <DeferredSelect
+        aria-label="Status"
+        valueText={label}
+        value={label}
+        triggerClassName={triggerClassName}>
+        {deferred => (
+          <Select
+            {...deferred}
+            aria-label="Status"
+            value={value ?? NONE_KEY}
+            onChange={key => onChange(fromKey(key))}>
+            <Select.Trigger className={triggerClassName}>
+              <Select.Value />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                {getPuzzleStatusGroups().map(group => (
+                  <ListBox.Section key={group.groupLabel} className={group.bgColorNoHover}>
+                    {group.values.map(option => (
+                      <ListBox.Item
+                        key={option.value ?? NONE_KEY}
+                        id={option.value ?? NONE_KEY}
+                        textValue={option.label}>
+                        {option.label}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
+                  </ListBox.Section>
+                ))}
+              </ListBox>
+            </Select.Popover>
+          </Select>
+        )}
+      </DeferredSelect>
+    </SolveSpark>
   );
 }
 
+// Unfavorited stars only show on row hover (or keyboard focus) to cut clutter; favorites always show.
+const FAVORITE_HIDDEN_CLASS =
+  "opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100";
+
 const isSolvedStatus = (status: string | null) => status === "solved" || status === "backsolved";
+
+/**
+ * Row color by status. Solved rows stay quiet (muted text, no fill) so the puzzles that still need
+ * work stand out; only states that call for attention (needs eyes, extraction, stuck, …) get color.
+ */
+function getRowClassNamesForStatus(status: string | null) {
+  return isSolvedStatus(status) ? "text-muted" : getBgColorClassNamesForPuzzleStatus(status);
+}
+
+/** The small check that marks a solved puzzle next to its name. */
+function SolvedMark({status}: {status: string | null}) {
+  if (!isSolvedStatus(status)) return null;
+  return (
+    <CheckIcon aria-label="Solved" className="text-success me-1.5 inline size-3.5 align-[-2px]" />
+  );
+}
 
 /**
  * Importance only matters while a puzzle is unsolved, so it only styles unsolved rows (subtly):
@@ -506,6 +530,22 @@ function RouteComponent() {
   const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
   const [onlyShowFavorites, setOnlyShowFavorites] = useLocalStorage("onlyShowFavorites", false);
   const [search, setSearch] = useState("");
+  // "/" focuses the search box (unless you're already typing somewhere).
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      const isTyping =
+        target !== null &&
+        (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+      if (e.key === "/" && !isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
   const [tags, setTags] = useLocalStorage<(string | null)[]>("tags", []);
   const [importances, setImportances] = useLocalStorage<(string | null)[]>("importances", []);
 
@@ -516,6 +556,13 @@ function RouteComponent() {
       .favoritePuzzleIds
   );
   const favoriteSet = new Set(favoritePuzzleIds);
+  // From the unfiltered rounds, so "Hide solved" doesn't change a round's progress.
+  const roundProgress = new Map(
+    workspace.rounds.map(r => [
+      r.id,
+      {solved: r.puzzles.filter(p => isSolvedStatus(p.status)).length, total: r.puzzles.length},
+    ])
+  );
 
   type Filterable = {
     id: string;
@@ -588,28 +635,27 @@ function RouteComponent() {
   return (
     <div className="flex flex-1">
       <div className="relative flex-1">
-        <div className="absolute inset-0 overflow-auto">
-          <div className="flex flex-1 flex-col divide-y">
-            <div className="flex gap-2 p-2">
-              <TextField
+        {/* Only the table scrolls; the search and filter row stays put above it. */}
+        <div className="absolute inset-0 flex flex-col">
+          <div className="flex min-h-0 flex-1 flex-col divide-y">
+            <div className="flex shrink-0 gap-2 p-2">
+              <SearchField
                 aria-label="Search puzzles"
                 className="flex-1"
+                fullWidth
                 value={search}
                 onChange={setSearch}>
-                <InputGroup>
-                  <InputGroup.Prefix>
-                    <SearchIcon className="text-muted size-4" />
-                  </InputGroup.Prefix>
-                  <InputGroup.Input />
-                  {search.length > 0 && (
-                    <InputGroup.Suffix className="pe-0">
-                      <Button variant="ghost" size="sm" onPress={() => setSearch("")}>
-                        Clear
-                      </Button>
-                    </InputGroup.Suffix>
+                <SearchField.Group>
+                  <SearchField.SearchIcon />
+                  <SearchField.Input ref={searchInputRef} placeholder="Search puzzles…" />
+                  <SearchField.ClearButton />
+                  {!search && (
+                    <Kbd className="me-2 hidden sm:inline-flex" aria-hidden="true">
+                      <Kbd.Content>/</Kbd.Content>
+                    </Kbd>
                   )}
-                </InputGroup>
-              </TextField>
+                </SearchField.Group>
+              </SearchField>
               <Dropdown>
                 <Button variant="outline">
                   <FunnelIcon />
@@ -742,10 +788,10 @@ function RouteComponent() {
                 </Dropdown.Popover>
               </Dropdown>
             </div>
-            <ScrollShadow className="flex-1">
-              <div className="overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-auto">
+              <div className="min-w-0">
                 <Table className="h-fit">
-                  <TableHeader>
+                  <TableHeader className="bg-background sticky top-0 z-10">
                     <TableRow>
                       <TableHead className="w-8 p-0" colSpan={1} />
                       <TableHead className="w-8 p-0" colSpan={1} />
@@ -801,6 +847,8 @@ function RouteComponent() {
                         key={round.id}
                         workspaceSlug={workspaceSlug}
                         round={round}
+                        solvedCount={roundProgress.get(round.id)?.solved ?? 0}
+                        puzzleCount={roundProgress.get(round.id)?.total ?? 0}
                         tags={workspace.tags}
                         favoritePuzzleIds={favoriteSet}
                       />
@@ -812,7 +860,7 @@ function RouteComponent() {
                   </TableBody>
                 </Table>
               </div>
-            </ScrollShadow>
+            </div>
           </div>
         </div>
       </div>
@@ -826,11 +874,16 @@ function RouteComponent() {
 const BlackboardRound = memo(function BlackboardRound({
   workspaceSlug,
   round,
+  solvedCount,
+  puzzleCount,
   tags,
   favoritePuzzleIds,
 }: {
   workspaceSlug: string;
   round: WorkspaceRoomState["rounds"][0];
+  /** Progress across the whole round, regardless of the active filters. */
+  solvedCount: number;
+  puzzleCount: number;
   tags: string[];
   favoritePuzzleIds: ReadonlySet<string>;
 }) {
@@ -859,10 +912,7 @@ const BlackboardRound = memo(function BlackboardRound({
       <TableRow
         // Target of the sidebar's round links.
         id={round.id}
-        className={cn(
-          "text-foreground group scroll-mt-20",
-          round.status === "solved" ? "bg-green-100 dark:bg-green-950" : "bg-surface-secondary"
-        )}>
+        className="bg-surface-secondary text-foreground group scroll-mt-20">
         <TableCell className="-p-2 relative">
           <div
             className={cn(
@@ -887,8 +937,27 @@ const BlackboardRound = memo(function BlackboardRound({
             </div>
           )}
         </TableCell>
-        <TableCell colSpan={3} className="text-muted font-semibold">
-          {round.name}
+        <TableCell colSpan={3}>
+          <div className="flex items-center gap-3">
+            <span className="text-foreground truncate text-sm font-semibold">{round.name}</span>
+            {puzzleCount > 0 && (
+              <div className="flex shrink-0 items-center gap-2">
+                <ProgressBar
+                  aria-label={`${round.name}: ${solvedCount} of ${puzzleCount} puzzles solved`}
+                  value={(solvedCount / puzzleCount) * 100}
+                  size="sm"
+                  color={solvedCount === puzzleCount ? "success" : "accent"}
+                  className="w-20 gap-0">
+                  <ProgressBar.Track className="w-full">
+                    <ProgressBar.Fill />
+                  </ProgressBar.Track>
+                </ProgressBar>
+                <span className="text-muted text-xs tabular-nums" aria-hidden="true">
+                  {solvedCount}/{puzzleCount}
+                </span>
+              </div>
+            )}
+          </div>
         </TableCell>
         <TableCell>
           <DeferredSelect
@@ -1164,8 +1233,8 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
         // while the meta is expanded, and a hidden element can't be scrolled to.)
         id={metaPuzzle.id}
         className={cn(
-          "group scroll-mt-20",
-          getBgColorClassNamesForPuzzleStatus(metaPuzzle.status),
+          "group group/row scroll-mt-20",
+          getRowClassNamesForStatus(metaPuzzle.status),
           getRowClassNamesForImportance(metaPuzzle.importance, metaPuzzle.status),
           isBeingCreated && "pointer-events-none cursor-wait opacity-70",
           isParentCollapsed ? "collapse" : ""
@@ -1178,7 +1247,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
               href={metaPuzzle.link}
               target="_blank"
               rel="noopener noreferrer">
-              <PuzzleIcon className="text-blue-600" />
+              <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
             </a>
           )}
         </TableCell>
@@ -1214,16 +1283,13 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
           )}
         </TableCell>
         <TableCell className="font-semibold">
-          {metaPuzzle.googleSpreadsheetId || metaPuzzle.googleDrawingId ? (
-            <Link
-              to="/$workspaceSlug/puzzles/$puzzleId"
-              params={{workspaceSlug, puzzleId: metaPuzzle.id}}
-              className="-m-2 block p-2 hover:underline">
-              {metaPuzzle.name}
-            </Link>
-          ) : (
-            metaPuzzle.name
-          )}
+          <Link
+            to="/$workspaceSlug/puzzles/$puzzleId"
+            params={{workspaceSlug, puzzleId: metaPuzzle.id}}
+            className="-m-2 block p-2 hover:underline">
+            <SolvedMark status={metaPuzzle.status} />
+            {metaPuzzle.name}
+          </Link>
         </TableCell>
         <TableCell className="relative">
           <AnswerInput
@@ -1262,20 +1328,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
           />
         </TableCell>
         <TableCell className="py-1">
-          <div className="flex flex-row flex-wrap gap-1">
-            {presences.map(user => (
-              <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
-                  <img
-                    src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
-                    alt=""
-                    className="size-3 rounded-full"
-                  />
-                  {user.name}
-                </span>
-              </UserHoverCard>
-            ))}
-          </div>
+          <UserPresenceAvatars users={presences} />
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
@@ -1285,7 +1338,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
               aria-label="Favorite"
               isSelected={isFavorite}
               onChange={value => toggleFavorite(metaPuzzle.id, value)}
-              className="group/toggle">
+              className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
               <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
             </ToggleButton>
             <Dropdown>
@@ -1414,7 +1467,8 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
     <>
       <TableRow
         className={cn(
-          getBgColorClassNamesForPuzzleStatus(puzzle.status),
+          "group/row",
+          getRowClassNamesForStatus(puzzle.status),
           getRowClassNamesForImportance(puzzle.importance, puzzle.status),
           isBeingCreated && "pointer-events-none cursor-wait opacity-70",
           isCollapsed ? "collapse" : ""
@@ -1428,7 +1482,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
               href={puzzle.link}
               target="_blank"
               rel="noopener noreferrer">
-              <PuzzleIcon className="text-blue-600" />
+              <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
             </a>
           )}
         </TableCell>
@@ -1456,16 +1510,13 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           <span id={puzzle.id} className="relative scroll-mt-20" />
         </TableCell>
         <TableCell>
-          {puzzle.googleSpreadsheetId || puzzle.googleDrawingId ? (
-            <Link
-              to="/$workspaceSlug/puzzles/$puzzleId"
-              params={{workspaceSlug, puzzleId: puzzle.id}}
-              className="-m-2 block p-2 hover:underline">
-              {puzzle.name}
-            </Link>
-          ) : (
-            puzzle.name
-          )}
+          <Link
+            to="/$workspaceSlug/puzzles/$puzzleId"
+            params={{workspaceSlug, puzzleId: puzzle.id}}
+            className="-m-2 block p-2 hover:underline">
+            <SolvedMark status={puzzle.status} />
+            {puzzle.name}
+          </Link>
         </TableCell>
         <TableCell className="relative">
           <AnswerInput
@@ -1504,20 +1555,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           />
         </TableCell>
         <TableCell className="py-1">
-          <div className="flex flex-row flex-wrap gap-2">
-            {presences.map(user => (
-              <UserHoverCard key={user.id} user={user}>
-                <span className="inline-flex cursor-default items-center gap-x-0.5 rounded-full bg-green-200 px-1 py-0.5 text-[10px] font-medium text-green-900 dark:bg-green-800 dark:text-green-100">
-                  <img
-                    src={user.image ?? gravatarUrl(user.email ?? "", {size: 96, d: "identicon"})}
-                    alt=""
-                    className="size-3 rounded-full"
-                  />
-                  {user.name}
-                </span>
-              </UserHoverCard>
-            ))}
-          </div>
+          <UserPresenceAvatars users={presences} />
         </TableCell>
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
@@ -1527,7 +1565,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
               aria-label="Favorite"
               isSelected={isFavorite}
               onChange={value => toggleFavorite(puzzle.id, value)}
-              className="group/toggle">
+              className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
               <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
             </ToggleButton>
             <Dropdown>

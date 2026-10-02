@@ -6,7 +6,7 @@ import {
   InfoIcon,
   LinkIcon,
   PuzzleIcon,
-  RotateCcwKeyIcon,
+  UserCogIcon,
   SettingsIcon,
 } from "lucide-react";
 import {useEffect, useState} from "react";
@@ -114,15 +114,15 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   </Command.Item>
                 ))}
               </Command.Group>
-              <Command.Group heading="Profile">
+              <Command.Group heading="Account">
                 <Command.Item
-                  textValue="Change password"
+                  textValue="Account settings, change password, passkeys, sessions"
                   onAction={() => {
-                    void navigate({to: "/change-password"});
+                    void navigate({to: "/profile"});
                     setOpen(false);
                   }}>
-                  <RotateCcwKeyIcon />
-                  <span>Change password</span>
+                  <UserCogIcon />
+                  <span>Account settings</span>
                 </Command.Item>
               </Command.Group>
             </Command.List>

@@ -1,4 +1,4 @@
-import {Button, Card, InputGroup, Separator, TextField} from "@heroui/react";
+import {Alert, Button, Card, InputGroup, Link, Separator, TextField} from "@heroui/react";
 import {ExternalLinkIcon} from "lucide-react";
 import React, {useState} from "react";
 import {cn} from "tailwind-variants";
@@ -29,14 +29,17 @@ export function PuzzMain({
   answer: string;
   almostAnswers?: Array<PuzzAlmostAnswer>;
 }) {
-  const [checkResponse, setCheckResponse] = useState("");
+  const [checkResponse, setCheckResponse] = useState<{
+    status: "success" | "warning" | "danger";
+    message: string;
+  } | null>(null);
   const form = useAppForm({
     defaultValues: {answer: ""},
     onSubmit: async value => {
       const checkAnswer = toAnswerFormat(value.value.answer);
       if (checkAnswer === toAnswerFormat(answer)) {
         await celebrate();
-        setCheckResponse(`${checkAnswer} is correct!`);
+        setCheckResponse({status: "success", message: `${checkAnswer} is correct!`});
       } else if (
         almostAnswers &&
         almostAnswers.some(almostAnswer => toAnswerFormat(almostAnswer.answer) === checkAnswer)
@@ -44,9 +47,9 @@ export function PuzzMain({
         const message = almostAnswers.find(
           almostAnswer => toAnswerFormat(almostAnswer.answer) === checkAnswer
         )?.message;
-        setCheckResponse(message!);
+        setCheckResponse({status: "warning", message: message!});
       } else {
-        setCheckResponse(`${checkAnswer} is incorrect.`);
+        setCheckResponse({status: "danger", message: `${checkAnswer} is incorrect.`});
       }
     },
   });
@@ -75,7 +78,14 @@ export function PuzzMain({
               </TextField>
             </form.Form>
           </form.AppForm>
-          {checkResponse && <div>{checkResponse}</div>}
+          {checkResponse && (
+            <Alert className="w-full max-w-lg" status={checkResponse.status}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>{checkResponse.message}</Alert.Title>
+              </Alert.Content>
+            </Alert>
+          )}
         </div>
         <Separator orientation="horizontal" className="my-6" />
         {flavor && <div className="mb-10 italic">{flavor}</div>}
@@ -191,10 +201,12 @@ export function PuzzSolution({
 
 export function PuzzLink({children, link}: {children: string; link: string}) {
   return (
-    <a target="_blank" rel="noopener noreferrer" href={link} className="underline">
+    <Link target="_blank" rel="noopener noreferrer" href={link} className="underline">
       {children}
-      <ExternalLinkIcon className="inline py-1" />
-    </a>
+      <Link.Icon>
+        <ExternalLinkIcon />
+      </Link.Icon>
+    </Link>
   );
 }
 

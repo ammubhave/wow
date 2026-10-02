@@ -3,10 +3,15 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {Suspense} from "react";
 
+import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/solution")({
+  // Prefetch so the page renders with data instead of suspending (and flashing) on mount.
+  loader: ({context: {queryClient}, params: {huntPuzzleId}}) =>
+    queryClient.ensureQueryData(orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId}})),
+  pendingComponent: ExchangePuzzleSkeleton,
   component: KeyedRouteComponent,
 });
 
@@ -15,7 +20,7 @@ export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/so
 function KeyedRouteComponent() {
   const {huntPuzzleId} = Route.useParams();
   return (
-    <Suspense key={huntPuzzleId}>
+    <Suspense key={huntPuzzleId} fallback={<ExchangePuzzleSkeleton />}>
       <RouteComponent />
     </Suspense>
   );

@@ -19,7 +19,8 @@ import {
   useFilter,
 } from "@heroui/react";
 import {createFormHook, createFormHookContexts} from "@tanstack/react-form";
-import React from "react";
+import {EyeIcon, EyeOffIcon} from "lucide-react";
+import React, {useState} from "react";
 import {cn} from "tailwind-variants";
 
 const {fieldContext, formContext, useFieldContext, useFormContext} = createFormHookContexts();
@@ -51,6 +52,46 @@ function InputGroupTextareaField(props: React.ComponentProps<typeof InputGroup.T
 // `variant="secondary"` is HeroUI's lower-emphasis field style for fields placed on a surface
 // (Card, Surface, Modal, Popover, ...); the default "primary" is for the page background.
 type FieldVariant = "primary" | "secondary";
+
+/** A password input with an eye button to reveal or hide it (hidden by default). */
+function PasswordField({
+  label,
+  description,
+  variant,
+  ...props
+}: {
+  label?: string;
+  description?: React.ReactNode | string;
+  variant?: React.ComponentProps<typeof TextField>["variant"];
+} & Omit<React.ComponentProps<typeof InputGroup.Input>, "type">) {
+  const field = useFieldContext<string>();
+  const [isVisible, setIsVisible] = useState(false);
+  return (
+    <TextField
+      variant={variant}
+      isInvalid={field.state.meta.errors.length > 0}
+      value={field.state.value}
+      onChange={value => field.handleChange(value)}
+      onBlur={() => field.handleBlur()}>
+      {label && <Label>{label}</Label>}
+      <InputGroup>
+        <InputGroup.Input {...props} type={isVisible ? "text" : "password"} />
+        <InputGroup.Suffix className="pe-0">
+          <Button
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            aria-label={isVisible ? "Hide password" : "Show password"}
+            onPress={() => setIsVisible(visible => !visible)}>
+            {isVisible ? <EyeOffIcon /> : <EyeIcon />}
+          </Button>
+        </InputGroup.Suffix>
+      </InputGroup>
+      {description && <Description>{description}</Description>}
+      <FieldError>{field.state.meta.errors.map(error => error?.message).join(", ")}</FieldError>
+    </TextField>
+  );
+}
 
 function FormTextField({
   label,
@@ -279,6 +320,7 @@ const {useAppForm} = createFormHook({
     InputGroupInputField,
     InputGroupTextareaField,
     TextField: FormTextField,
+    PasswordField,
     TextareaField,
     CheckboxField,
     SelectField,

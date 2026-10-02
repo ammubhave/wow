@@ -1,3 +1,5 @@
+import {Link} from "@heroui/react";
+
 export function HelpPage() {
   return (
     <div className="prose flex justify-center">
@@ -26,10 +28,11 @@ export function HelpPage() {
         <h4 id="wifi">MIT Wi-Fi Discord Voice Channel Issues</h4>
         <p>
           For anyone have issues connecting to Discord voice channels on MIT GUEST: If you are an
-          MIT alum or associate, go to <a href="https://wifi.mit.edu/">https://wifi.mit.edu/</a> and
-          use your alum login to get the password to "MIT" network. If you are not affiliated with
-          MIT, then sign into eduroam with your home institution credentials (ask around to borrow
-          one if you don't have one).
+          MIT alum or associate, go to{" "}
+          <Link href="https://wifi.mit.edu/">https://wifi.mit.edu/</Link> and use your alum login to
+          get the password to "MIT" network. If you are not affiliated with MIT, then sign into
+          eduroam with your home institution credentials (ask around to borrow one if you don't have
+          one).
         </p>
         <p />
         <h4 id="403s">Fix 403s on Puzzle Page</h4>
@@ -49,12 +52,12 @@ export function HelpPage() {
         <h4 id="file-issues">File issues</h4>
         <p>
           File issues by talking to Amol or Allen or by filing a{" "}
-          <a
+          <Link
             href="https://github.com/ammubhave/wow/issues"
             target="_blank"
             rel="noopener noreferrer">
             Github issue
-          </a>
+          </Link>
           .
         </p>
       </div>

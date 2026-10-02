@@ -2,10 +2,16 @@ import {Avatar, Card} from "@heroui/react";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 
+import {PeopleCardSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/members")({
+  loader: ({context: {queryClient}, params: {workspaceSlug}}) =>
+    queryClient.ensureQueryData(
+      orpc.workspaces.members.list.queryOptions({input: {workspaceSlug}})
+    ),
+  pendingComponent: () => <PeopleCardSkeleton />,
   component: RouteComponent,
   head: () => ({meta: [{title: "Members | Workspace Settings | WOW"}]}),
 });

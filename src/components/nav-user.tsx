@@ -9,7 +9,6 @@ import {
   MoonIcon,
   PaletteIcon,
   PuzzleIcon,
-  RotateCcwKeyIcon,
   SunIcon,
   UserCogIcon,
 } from "lucide-react";
@@ -132,13 +131,9 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               </Dropdown.Menu>
             </Dropdown.Popover>
           </Dropdown.SubmenuTrigger>
-          <Dropdown.Item id="profile" textValue="Profile" href="/profile">
+          <Dropdown.Item id="account" textValue="Account" href="/profile">
             <UserCogIcon />
-            <Label>Profile</Label>
-          </Dropdown.Item>
-          <Dropdown.Item id="change-password" textValue="Change password" href="/change-password">
-            <RotateCcwKeyIcon />
-            <Label>Change password</Label>
+            <Label>Account</Label>
           </Dropdown.Item>
           <Separator />
           <Dropdown.Item

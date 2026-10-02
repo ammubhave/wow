@@ -1,18 +1,18 @@
-import {buttonVariants, Card} from "@heroui/react";
+import {Card} from "@heroui/react";
 import type {TurnstileInstance} from "@marsidev/react-turnstile";
-import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
-import {ArrowLeftIcon} from "lucide-react";
-import {useRef} from "react";
-import {toast} from "sonner";
+import {createFileRoute, redirect, useRouter} from "@tanstack/react-router";
+import {useRef, useState} from "react";
 
+import {AuthLayout, BackToLogin, FormError} from "@/components/auth-layout";
 import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
 import {authClient} from "@/lib/auth-client";
+import {authErrorMessage} from "@/lib/auth-helpers";
 import {getSession} from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_public/forgot-password")({
   component: RouteComponent,
-  head: () => ({meta: [{title: "Forgot Password | WOW"}]}),
+  head: () => ({meta: [{title: "Forgot password | WOW"}]}),
   loader: async () => {
     const session = await getSession();
     if (session) throw redirect({to: "/workspaces"});
@@ -21,9 +21,12 @@ export const Route = createFileRoute("/_public/forgot-password")({
 
 function RouteComponent() {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const form = useAppForm({
     defaultValues: {email: "", token: ""},
     onSubmit: async ({value}) => {
+      setError(null);
       await authClient.requestPasswordReset({
         email: value.email,
         redirectTo: "/reset-password",
@@ -32,48 +35,51 @@ function RouteComponent() {
           onSuccess: async () => {
             await router.navigate({to: "/forgot-password-check-email"});
           },
-          onError: async error => {
+          onError: context => {
             turnstileRef.current?.reset();
-            toast.error(error.error.message);
+            setError(
+              authErrorMessage(context.error, "Couldn't send the reset email. Please try again.")
+            );
           },
         },
       });
     },
   });
-  const turnstileRef = useRef<TurnstileInstance>(null);
   return (
-    <div className="flex w-full flex-1 items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-2">
-          <div>
-            <Link to="/login" className={buttonVariants({variant: "outline", size: "sm"})}>
-              <ArrowLeftIcon aria-hidden="true" /> Back
-            </Link>
-          </div>
-          <Card>
-            <Card.Header>
-              <Card.Title>Forgot password?</Card.Title>
-              <Card.Description>Enter your email below to send reset instructions</Card.Description>
-            </Card.Header>
-            <Card.Content>
-              <form.AppForm>
-                <form.Form>
-                  <form.AppField name="email">
-                    {field => (
-                      <field.TextField variant="secondary" label="Email" autoComplete="email" />
-                    )}
-                  </form.AppField>
-                  <Captcha
-                    ref={turnstileRef}
-                    onToken={token => form.setFieldValue("token", token)}
+    <AuthLayout>
+      <BackToLogin />
+      <Card>
+        <Card.Header>
+          <Card.Title className="text-lg font-semibold">Forgot your password?</Card.Title>
+          <Card.Description>
+            Enter your email and we'll send you a link to set a new one.
+          </Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <form.AppForm>
+            <form.Form onChange={() => setError(null)}>
+              <form.AppField name="email">
+                {field => (
+                  <field.TextField
+                    variant="secondary"
+                    label="Email"
+                    type="email"
+                    autoComplete="email"
+                    autoFocus
                   />
-                  <form.SubmitButton fullWidth>Reset password</form.SubmitButton>
-                </form.Form>
-              </form.AppForm>
-            </Card.Content>
-          </Card>
-        </div>
-      </div>
-    </div>
+                )}
+              </form.AppField>
+              <Captcha ref={turnstileRef} onToken={token => form.setFieldValue("token", token)} />
+              <FormError error={error} />
+            </form.Form>
+          </form.AppForm>
+        </Card.Content>
+        <Card.Footer className="mt-4">
+          <form.AppForm>
+            <form.SubmitButton fullWidth>Send reset link</form.SubmitButton>
+          </form.AppForm>
+        </Card.Footer>
+      </Card>
+    </AuthLayout>
   );
 }

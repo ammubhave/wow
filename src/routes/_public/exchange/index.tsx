@@ -1,18 +1,28 @@
 import {ItemCard, ItemCardGroup} from "@heroui-pro/react";
-import {Accordion, Button, buttonVariants, Separator} from "@heroui/react";
-import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {Accordion, Button, buttonVariants, Code, Link as HeroLink, Separator} from "@heroui/react";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronDownIcon, ChevronRightIcon, PlusIcon} from "lucide-react";
 import {Fragment} from "react";
 
 import {AddNewExchangeHuntDialog} from "@/components/add-new-exchange-hunt-dialog";
+import {HuntListSkeleton} from "@/components/exchange-skeletons";
 import {orpc} from "@/lib/orpc";
 
-export const Route = createFileRoute("/_public/exchange/")({component: RouteComponent});
+export const Route = createFileRoute("/_public/exchange/")({
+  // Prefetch so the page renders with data instead of suspending (and flashing) on mount.
+  loader: ({context: {queryClient}}) =>
+    Promise.all([
+      queryClient.ensureQueryData(orpc.exchange.hunts.list.queryOptions()),
+      queryClient.ensureQueryData(orpc.exchange.isAdmin.queryOptions()),
+    ]),
+  pendingComponent: HuntListSkeleton,
+  component: RouteComponent,
+});
 
 function RouteComponent() {
   const hunts = useSuspenseQuery(orpc.exchange.hunts.list.queryOptions()).data;
-  const isAdmin = useQuery(orpc.exchange.isAdmin.queryOptions()).data ?? false;
+  const isAdmin = useSuspenseQuery(orpc.exchange.isAdmin.queryOptions()).data;
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -39,10 +49,13 @@ function RouteComponent() {
               </p>
               <p>
                 There has been a WOW workspace set up for your convenience called{" "}
-                <a target="_blank" rel="noopener noreferrer" href="https://www.wafflehaus.io/wpe">
+                <HeroLink
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.wafflehaus.io/wpe">
                   WPE
-                </a>
-                . The password is <code>sumhint</code>. Please be courteous! You're sharing this
+                </HeroLink>
+                . The password is <Code>sumhint</Code>. Please be courteous! You're sharing this
                 workspace with the whole team. See instructions on the workspace itself.
               </p>
             </Accordion.Body>

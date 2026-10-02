@@ -1,11 +1,10 @@
 import {DrivePicker, DrivePickerDocsView} from "@googleworkspace/drive-picker-react";
-import {Button, buttonVariants, Card, Skeleton} from "@heroui/react";
+import {Stepper} from "@heroui-pro/react";
+import {Button, Card, Link, Skeleton} from "@heroui/react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
-import {CheckIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
-import {cn} from "tailwind-variants";
 
 import {orpc} from "@/lib/orpc";
 
@@ -80,220 +79,82 @@ export function GoogleDriveCardContents({
       </Card.Header>
       <Card.Content>
         {state.data ? (
-          // oxlint-disable-next-line jsx-a11y/no-redundant-roles -- Tailwind preflight sets list-style: none, which makes Safari/VoiceOver drop implicit list semantics.
-          <ol role="list" className="overflow-hidden">
-            <li className="relative pb-8">
-              {state.data.state === 1 || state.data.state === 2 || state.data.state === 3 ? (
-                <>
-                  <div
-                    aria-hidden="true"
-                    className="bg-accent absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5"
-                  />
-                  <div className="group relative flex items-start">
-                    <span className="flex h-8 items-center">
-                      <span className="bg-accent relative z-10 flex size-7 items-center justify-center rounded-full">
-                        <CheckIcon aria-hidden="true" className="text-accent-foreground size-4" />
-                      </span>
-                    </span>
-                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                      <span className="flex min-w-0 flex-col">
-                        <span className="text-xs font-medium">Connect with Google</span>
-                        <span className="text-muted text-xs">
-                          You're successfully connected to Google.
-                        </span>
-                      </span>
-                      <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>
-                        <Button variant="secondary" type="submit">
-                          Reconnect
-                        </Button>
-                      </ConnectToGoogleForm>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div
-                    aria-hidden="true"
-                    className="bg-border absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5"
-                  />
-                  <div aria-current="step" className="group relative flex items-start">
-                    <span aria-hidden="true" className="flex h-8 items-center">
-                      <span className="border-accent bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
-                        <span className="bg-accent size-2 rounded-full" />
-                      </span>
-                    </span>
-                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                      <span className="flex min-w-0 flex-col">
-                        <span className="text-accent text-xs font-medium">Connect with Google</span>
-                        <span className="text-muted text-xs">
-                          You need to connect your Google account.
-                        </span>
-                      </span>
-                      <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>
-                        <Button type="submit">Connect</Button>
-                      </ConnectToGoogleForm>
-                    </div>
-                  </div>
-                </>
-              )}
-            </li>
-
-            <li className="relative pb-8">
-              {state.data.state === 2 || state.data.state === 3 ? (
-                <>
-                  <div
-                    aria-hidden="true"
-                    className="bg-accent absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5"
-                  />
-                  <div className="group relative flex items-start">
-                    <span className="flex h-8 items-center">
-                      <span className="bg-accent relative z-10 flex size-7 items-center justify-center rounded-full">
-                        <CheckIcon aria-hidden="true" className="text-accent-foreground size-4" />
-                      </span>
-                    </span>
-                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                      <span className="flex min-w-0 flex-col">
-                        <span className="text-xs font-medium">Select Google Drive Folder</span>
-                        <span className="text-muted text-xs">
-                          Folder:{" "}
-                          <a
-                            className={buttonVariants({
-                              variant: "secondary",
-                              className: "h-auto px-2 py-0",
-                            })}
-                            href={state.data.folderLink}
-                            target="_blank"
-                            rel="noopener noreferrer">
-                            {state.data.folderName}
-                          </a>
-                        </span>
-                      </span>
-                      <div>
-                        <Button variant="secondary" onPress={handleOpenFolderPicker}>
-                          Reselect Folder
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div
-                    aria-hidden="true"
-                    className="bg-border absolute top-4 left-3.5 mt-0.5 -ml-px h-full w-0.5"
-                  />
-                  <div aria-current="step" className="group relative flex items-start">
-                    <span aria-hidden="true" className="flex h-8 items-center">
-                      {state.data.state === 1 ? (
-                        <span className="border-accent bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
-                          <span className="bg-accent size-2 rounded-full" />
-                        </span>
-                      ) : (
-                        <span className="border-border bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
-                          <span className="size-2 rounded-full bg-transparent" />
-                        </span>
-                      )}
-                    </span>
-                    <div className="flex flex-1 items-center justify-between pl-4">
-                      <span className="flex min-w-0 flex-col">
-                        <span
-                          className={cn(
-                            "text-xs font-medium",
-                            state.data.state === 1 ? "text-accent" : "text-muted"
-                          )}>
-                          Select Google Drive Folder
-                        </span>
-                        <span className="text-muted text-xs">
-                          Choose the folder to put all your puzzles in.
-                        </span>
-                      </span>
-                      <Button
-                        isDisabled={state.data.state !== 1}
-                        variant={state.data.state === 1 ? "primary" : "secondary"}
-                        onPress={handleOpenFolderPicker}>
-                        Select Folder
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </li>
-
-            <li className="relative">
-              {state.data.state === 3 ? (
-                <>
-                  <div className="group relative flex items-start">
-                    <span className="flex h-8 items-center">
-                      <span className="bg-accent relative z-10 flex size-7 items-center justify-center rounded-full">
-                        <CheckIcon aria-hidden="true" className="text-accent-foreground size-4" />
-                      </span>
-                    </span>
-                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                      <span className="flex min-w-0 flex-col">
-                        <span className="text-xs font-medium">Select Template File</span>
-                        <span className="text-muted text-xs">
-                          File:{" "}
-                          <a
-                            className={buttonVariants({
-                              variant: "secondary",
-                              className: "h-auto px-2 py-0",
-                            })}
-                            href={state.data.fileLink}
-                            target="_blank"
-                            rel="noopener noreferrer">
-                            {state.data.fileName}
-                          </a>
-                        </span>
-                      </span>
-                      <div>
-                        <Button variant="secondary" onPress={handleOpenFilePicker}>
-                          Reselect File
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div aria-current="step" className="group relative flex items-start">
-                    <span aria-hidden="true" className="flex h-8 items-center">
-                      {state.data.state === 2 ? (
-                        <span className="border-accent bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
-                          <span className="bg-accent size-2 rounded-full" />
-                        </span>
-                      ) : (
-                        <span className="border-border bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
-                          <span className="size-2 rounded-full bg-transparent" />
-                        </span>
-                      )}
-                    </span>
-                    <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                      <span className="flex min-w-0 flex-col">
-                        <span
-                          className={cn(
-                            "text-xs font-medium",
-                            state.data.state === 2 ? "text-accent" : "text-muted"
-                          )}>
-                          Select Template File
-                        </span>
-                        <span className="text-muted text-xs">
-                          Select the template file to use for new puzzles.
-                        </span>
-                      </span>
-                      <div>
-                        <Button
-                          isDisabled={state.data.state !== 2}
-                          variant={state.data.state === 2 ? "primary" : "secondary"}
-                          onPress={handleOpenFilePicker}>
-                          Select File
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </li>
-          </ol>
+          // The steps are done in order: state 0 = not connected, 1 = connected, 2 = folder chosen,
+          // 3 = template chosen (all done).
+          <Stepper currentStep={state.data.state} orientation="vertical">
+            <Stepper.Step>
+              <Stepper.Indicator />
+              <Stepper.Content className="flex-1">
+                <Stepper.Title>Connect with Google</Stepper.Title>
+                <Stepper.Description>
+                  {state.data.state >= 1
+                    ? "You're successfully connected to Google."
+                    : "You need to connect your Google account."}
+                </Stepper.Description>
+              </Stepper.Content>
+              <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>
+                {state.data.state >= 1 ? (
+                  <Button variant="secondary" type="submit">
+                    Reconnect
+                  </Button>
+                ) : (
+                  <Button type="submit">Connect</Button>
+                )}
+              </ConnectToGoogleForm>
+              <Stepper.Separator />
+            </Stepper.Step>
+            <Stepper.Step>
+              <Stepper.Indicator />
+              <Stepper.Content className="flex-1">
+                <Stepper.Title>Select Google Drive Folder</Stepper.Title>
+                <Stepper.Description>
+                  {"folderLink" in state.data ? (
+                    <>
+                      Folder:{" "}
+                      <Link href={state.data.folderLink} target="_blank" rel="noopener noreferrer">
+                        {state.data.folderName}
+                        <Link.Icon />
+                      </Link>
+                    </>
+                  ) : (
+                    "Choose the folder to put all your puzzles in."
+                  )}
+                </Stepper.Description>
+              </Stepper.Content>
+              <Button
+                isDisabled={state.data.state < 1}
+                variant={state.data.state === 1 ? "primary" : "secondary"}
+                onPress={handleOpenFolderPicker}>
+                {state.data.state >= 2 ? "Reselect Folder" : "Select Folder"}
+              </Button>
+              <Stepper.Separator />
+            </Stepper.Step>
+            <Stepper.Step>
+              <Stepper.Indicator />
+              <Stepper.Content className="flex-1">
+                <Stepper.Title>Select Template File</Stepper.Title>
+                <Stepper.Description>
+                  {"fileLink" in state.data ? (
+                    <>
+                      File:{" "}
+                      <Link href={state.data.fileLink} target="_blank" rel="noopener noreferrer">
+                        {state.data.fileName}
+                        <Link.Icon />
+                      </Link>
+                    </>
+                  ) : (
+                    "Select the template file to use for new puzzles."
+                  )}
+                </Stepper.Description>
+              </Stepper.Content>
+              <Button
+                isDisabled={state.data.state < 2}
+                variant={state.data.state === 2 ? "primary" : "secondary"}
+                onPress={handleOpenFilePicker}>
+                {state.data.state >= 3 ? "Reselect File" : "Select File"}
+              </Button>
+            </Stepper.Step>
+          </Stepper>
         ) : (
           <Skeleton className="h-[165.5px] w-full" />
         )}

@@ -1,6 +1,7 @@
 import {Navbar} from "@heroui-pro/react";
 import {Link} from "@tanstack/react-router";
 
+import {BrandTitle} from "./decrypted-text";
 import {NavUser} from "./nav-user";
 
 export function SiteHeader() {
@@ -10,9 +11,7 @@ export function SiteHeader() {
         <Navbar.Brand>
           <Link to="/workspaces" className="flex items-center gap-2">
             <img src="/favicon.ico" alt="" className="size-6 rounded-full" />
-            <span className="text-sm font-semibold text-nowrap">
-              Wafflehaüs Organized Workspaces
-            </span>
+            <BrandTitle className="text-sm font-semibold text-nowrap" />
           </Link>
         </Navbar.Brand>
         <Navbar.Spacer />

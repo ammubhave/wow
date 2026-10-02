@@ -11,9 +11,9 @@ function RouteComponent() {
   const childMatches = useChildMatches();
   const match = childMatches[0]!;
   return (
-    <div className="flex justify-center p-8">
+    <div className="flex justify-center p-4 md:p-8">
       <div className="flex max-w-4xl flex-1 flex-col gap-6">
-        <h1 className="text-3xl font-semibold">Workspace Settings</h1>
+        <h1 className="text-3xl font-semibold">Workspace settings</h1>
         <div className="grid items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
           <Tabs orientation="vertical" selectedKey={match.routeId}>
             <Tabs.ListContainer>

@@ -1,4 +1,5 @@
-import {inferOrgAdditionalFields} from "better-auth/client/plugins";
+import {passkeyClient} from "@better-auth/passkey/client";
+import {inferOrgAdditionalFields, lastLoginMethodClient} from "better-auth/client/plugins";
 import {organizationClient} from "better-auth/client/plugins";
 import {inferAdditionalFields} from "better-auth/client/plugins";
 import {createAuthClient} from "better-auth/react";
@@ -9,5 +10,7 @@ export const authClient = createAuthClient({
   plugins: [
     inferAdditionalFields<typeof auth>(),
     organizationClient({schema: inferOrgAdditionalFields<typeof auth>()}),
+    passkeyClient(),
+    lastLoginMethodClient(),
   ],
 });

@@ -1,3 +1,4 @@
+import {Link} from "@heroui/react";
 import {createFileRoute} from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_public/docs/")({component: RouteComponent});
@@ -28,7 +29,7 @@ function RouteComponent() {
         <li>Streamline Puzzle Tracking</li>
         <li>Stay Organized</li>
       </ul>
-      <a href="/workspaces">Get Started Today</a>
+      <Link href="/workspaces">Get Started Today</Link>
     </>
   );
 }

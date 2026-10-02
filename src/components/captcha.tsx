@@ -1,5 +1,5 @@
 import {Turnstile, type TurnstileInstance} from "@marsidev/react-turnstile";
-import type {Ref} from "react";
+import {type Ref, useState} from "react";
 
 import {useTheme} from "@/components/theme-provider";
 
@@ -22,12 +22,24 @@ export function Captcha({
   onToken: (token: string) => void;
 }) {
   const {theme} = useTheme();
+  // Invisible until Cloudflare asks for a click; until then, collapse it so the form's gap
+  // doesn't leave an empty row where it sits.
+  const [isInteractive, setIsInteractive] = useState(false);
   if (!siteKey) return null;
   return (
     <Turnstile
+      className={isInteractive ? undefined : "-mt-4 h-0 overflow-hidden"}
+      onBeforeInteractive={() => setIsInteractive(true)}
+      onAfterInteractive={() => setIsInteractive(false)}
       ref={ref}
       siteKey={siteKey}
-      options={{theme: theme === "system" ? "auto" : theme, size: "flexible"}}
+      // "interaction-only": the check runs invisibly and the widget only appears on the rare
+      // occasion Cloudflare needs the visitor to click it.
+      options={{
+        theme: theme === "system" ? "auto" : theme,
+        size: "flexible",
+        appearance: "interaction-only",
+      }}
       onSuccess={onToken}
       onExpire={() => onToken("")}
     />

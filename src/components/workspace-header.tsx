@@ -1,5 +1,5 @@
 import {Navbar} from "@heroui-pro/react";
-import {Tooltip} from "@heroui/react";
+import {Tabs} from "@heroui/react";
 import {Link, useChildMatches} from "@tanstack/react-router";
 import {
   ExternalLinkIcon,
@@ -64,33 +64,41 @@ export function WorkspaceHeader() {
             <img src="/favicon.ico" alt="" className="size-5 rounded-full" />
           </Link>
         </Navbar.Brand>
-        <Navbar.Content className="hidden gap-0 md:flex">
-          {SECTIONS.map(({routeId, path, label, Icon}) => (
-            <Tooltip key={routeId} delay={300}>
-              <Tooltip.Trigger>
-                <Navbar.Item
+        {/* Real links (⌘/middle-click work) with a segmented look. Sections are icon-only except the
+            current one, which also shows its label; the current puzzle always shows its name. */}
+        <Tabs selectedKey={newPuzzleId ? "puzzle" : currentSection} className="hidden md:flex">
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Workspace sections" className="w-fit">
+              {SECTIONS.map(({routeId, path, label, Icon}) => (
+                <Tabs.Tab
+                  key={routeId}
+                  className="w-auto flex-none whitespace-nowrap"
+                  id={routeId}
                   href={`/${workspaceSlug}${path}`}
-                  isCurrent={currentSection === routeId}
                   aria-label={label}>
-                  <Icon data-slot="icon" />
-                </Navbar.Item>
-              </Tooltip.Trigger>
-              <Tooltip.Content>{label}</Tooltip.Content>
-            </Tooltip>
-          ))}
-        </Navbar.Content>
-        {puzzle && puzzleHref && (
-          <>
-            <Navbar.Separator className="hidden md:block" />
-            <Navbar.Item
-              href={puzzleHref}
-              isCurrent={newPuzzleId === puzzle.id}
-              className="hidden min-w-0 md:flex">
-              <PuzzleIcon data-slot="icon" />
-              <Navbar.Label className="max-w-64">{puzzle.name}</Navbar.Label>
-            </Navbar.Item>
-          </>
-        )}
+                  {({isSelected}) => (
+                    <>
+                      <Icon className="size-4 shrink-0" />
+                      {isSelected && <span className="ms-1.5">{label}</span>}
+                      <Tabs.Indicator />
+                    </>
+                  )}
+                </Tabs.Tab>
+              ))}
+              {puzzle && puzzleHref && (
+                <Tabs.Tab
+                  id="puzzle"
+                  href={puzzleHref}
+                  className="w-auto min-w-0 flex-none whitespace-nowrap">
+                  <Tabs.Separator className="opacity-100!" />
+                  <PuzzleIcon className="size-4 shrink-0" />
+                  <span className="ms-1.5 max-w-64 truncate">{puzzle.name}</span>
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              )}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
         <Navbar.Spacer />
         <Navbar.Content className="min-w-0">
           {workspace.links.map(link => (

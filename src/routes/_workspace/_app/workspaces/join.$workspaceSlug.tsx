@@ -5,11 +5,15 @@ import {useEffect} from "react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
+import {CardFormSkeleton} from "@/components/page-skeletons";
 import PixelBlast from "@/components/pixel-blast";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspaceSlug")({
+  loader: ({context: {queryClient}, params: {workspaceSlug}}) =>
+    queryClient.ensureQueryData(orpc.workspaces.getPublic.queryOptions({input: workspaceSlug})),
+  pendingComponent: CardFormSkeleton,
   component: RouteComponent,
   head: () => ({meta: [{title: "Join Workspace | WOW"}]}),
 });
@@ -46,14 +50,14 @@ function RouteComponent() {
     }
   }, [organizations, workspaceSlug, router]);
   return (
-    <div className="relative flex w-full flex-1 items-center justify-center p-6 md:p-10">
+    <div className="relative flex w-full flex-1 items-center justify-center">
       <div className="absolute inset-0">
         <PixelBlast color="#f49f1e" pixelSize={3} />
       </div>
       <div className="z-10 w-full max-w-sm">
         <Card>
           <Card.Header>
-            <Card.Title>Join Workspace {params.workspaceSlug}</Card.Title>
+            <Card.Title>Join workspace {params.workspaceSlug}</Card.Title>
             <Card.Description>Enter the workspace password to join.</Card.Description>
           </Card.Header>
           <Card.Content>
@@ -69,15 +73,19 @@ function RouteComponent() {
                   {field => (
                     <field.TextField
                       variant="secondary"
-                      label="Workspace Password"
+                      label="Workspace password"
                       type="password"
                     />
                   )}
                 </form.AppField>
-                <form.SubmitButton fullWidth>Join</form.SubmitButton>
               </form.Form>
             </form.AppForm>
           </Card.Content>
+          <Card.Footer className="mt-4">
+            <form.AppForm>
+              <form.SubmitButton fullWidth>Join</form.SubmitButton>
+            </form.AppForm>
+          </Card.Footer>
         </Card>
       </div>
     </div>

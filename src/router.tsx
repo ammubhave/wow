@@ -2,6 +2,8 @@ import {MutationCache, QueryClient} from "@tanstack/react-query";
 import {createRouter} from "@tanstack/react-router";
 import {setupRouterSsrQueryIntegration} from "@tanstack/react-router-ssr-query";
 
+import {NotFoundPage} from "./components/not-found-page";
+import {PageSkeleton} from "./components/page-skeletons";
 // Import the generated route tree
 import {routeTree} from "./routeTree.gen";
 
@@ -22,6 +24,13 @@ export const getRouter = () => {
     routeTree,
     context: {queryClient},
     scrollRestoration: true,
+    // Start loading a route's data when its link is hovered or focused, so navigation is instant.
+    defaultPreload: "intent",
+    // Any route that takes over ~1s to load shows a page outline instead of a blank screen.
+    defaultPendingComponent: PageSkeleton,
+    // Unknown URLs, workspaces and puzzles.
+    defaultNotFoundComponent: () => <NotFoundPage />,
+    // Let TanStack Query own freshness: the router always calls loaders, which hit the query cache.
     defaultPreloadStaleTime: 0,
   });
   setupRouterSsrQueryIntegration({router, queryClient});

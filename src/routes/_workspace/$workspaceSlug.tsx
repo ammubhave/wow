@@ -3,6 +3,7 @@ import {createFileRoute, notFound, Outlet} from "@tanstack/react-router";
 import {redirect} from "@tanstack/react-router";
 
 import {NotificationsWebSocket} from "@/components/notifications-websocket";
+import {WorkspaceSkeleton} from "@/components/page-skeletons";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug")({
       throw error;
     }
   },
+  pendingComponent: WorkspaceSkeleton,
   component: RouteComponent,
 });
 

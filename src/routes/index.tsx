@@ -2,6 +2,7 @@ import {buttonVariants} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 
 import {CoffeeIcon} from "@/components/coffee-icon";
+import {BrandTitle} from "@/components/decrypted-text";
 
 export const Route = createFileRoute("/")({component: App});
 
@@ -15,7 +16,7 @@ function App() {
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-4 px-4 sm:justify-between sm:px-6 lg:flex-nowrap lg:px-8">
             <div className="relative z-20 flex flex-col items-center gap-4 text-lg font-medium text-black sm:flex-row">
               <img src="/wafflehaus.png" alt="" className="rounded-full" width={48} height={48} />
-              Wafflehaüs Organized Workspaces
+              <BrandTitle />
             </div>
             <div className="flex flex-col-reverse flex-wrap items-center gap-4 sm:flex-row">
               <Link className={buttonVariants({variant: "ghost"})} to="/docs">

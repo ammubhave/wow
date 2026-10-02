@@ -1,6 +1,3 @@
-import {ListView} from "@heroui-pro/react";
-import {Spinner} from "@heroui/react";
-import {useSuspenseInfiniteQuery} from "@tanstack/react-query";
 import {Link, useParams} from "@tanstack/react-router";
 import {
   CheckIcon,
@@ -11,13 +8,10 @@ import {
   PuzzleIcon,
 } from "lucide-react";
 import {memo} from "react";
-import {Collection, GridListLoadMoreItem} from "react-aria-components";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
-import {useWorkspace} from "@/hooks/use-workspace";
-import {orpc} from "@/lib/orpc";
-import type {ActivityLogCursor, WorkspaceRoomState} from "@/server/do/workspace";
+import type {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {UserHoverCard} from "./user-hover-card";
 
@@ -171,53 +165,3 @@ export const ActivityLogItem = memo(function ActivityLogItem({
     </div>
   );
 });
-
-/** Plain-text summary of an entry, for typeahead and screen readers. */
-function describe(entry: WorkspaceRoomState["activityLogEntries"][0]) {
-  const subject =
-    entry.puzzle_activity_log_entry?.puzzleName ?? entry.round_activity_log_entry?.roundName ?? "";
-  return [entry.user?.name, subject].filter(Boolean).join(" ") || "Activity";
-}
-
-export function ActivityLog() {
-  const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
-  // The room state carries the newest entries live; older ones load page by page as you scroll.
-  const recent = useWorkspace().activityLogEntries;
-  const {data, fetchNextPage, hasNextPage, isFetchingNextPage} = useSuspenseInfiniteQuery(
-    orpc.workspaces.activityLog.infiniteOptions({
-      input: (cursor: ActivityLogCursor | null) => ({workspaceSlug, cursor}),
-      initialPageParam: null,
-      getNextPageParam: page => page.nextCursor,
-    })
-  );
-  const seen = new Set<string>();
-  const entries = [...recent, ...data.pages.flatMap(page => page.entries)].filter(entry => {
-    if (seen.has(entry.activity_log_entry.id)) return false;
-    seen.add(entry.activity_log_entry.id);
-    return true;
-  });
-
-  return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
-      <h1 className="text-3xl font-semibold">Activity Log</h1>
-      <ListView aria-label="Activity log" variant="secondary">
-        <Collection items={entries}>
-          {entry => (
-            <ListView.Item id={entry.activity_log_entry.id} textValue={describe(entry)}>
-              <ListView.ItemContent>
-                <ActivityLogItem activityItem={entry} />
-              </ListView.ItemContent>
-            </ListView.Item>
-          )}
-        </Collection>
-        <GridListLoadMoreItem
-          isLoading={isFetchingNextPage}
-          onLoadMore={() => {
-            if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-          }}>
-          <Spinner size="sm" />
-        </GridListLoadMoreItem>
-      </ListView>
-    </div>
-  );
-}

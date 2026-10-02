@@ -1,9 +1,9 @@
-import {Spinner} from "@heroui/react";
 import {useMutationState, useQuery, useQueryClient} from "@tanstack/react-query";
 import {createContext, useContext} from "react";
 // react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
 import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 
+import {WorkspaceSkeleton} from "@/components/page-skeletons";
 import {applyOptimistic, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import {expandWorkspaceState, type WorkspaceRoomState} from "@/lib/workspace-state";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
@@ -48,12 +48,8 @@ export function WorkspaceProvider({
     ...workspaceQueryOptions(workspaceSlug),
     select: wire => expandWorkspaceState(applyOptimistic(wire, pending)),
   });
-  if (!workspace)
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <Spinner />
-      </div>
-    );
+  // Normally prefetched by the route loader; this covers the rare case it isn't ready yet.
+  if (!workspace) return <WorkspaceSkeleton />;
   return <WorkspaceContext.Provider value={workspace}>{children}</WorkspaceContext.Provider>;
 }
 

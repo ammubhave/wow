@@ -91,7 +91,7 @@ function WorkspacePasswordCard() {
         <Card.Content>
           <form.Form>
             <form.AppField name="password" validators={{onSubmit: z.string().min(8)}}>
-              {field => <field.TextField variant="secondary" aria-label="Workspace password" />}
+              {field => <field.PasswordField variant="secondary" aria-label="Workspace password" />}
             </form.AppField>
           </form.Form>
         </Card.Content>

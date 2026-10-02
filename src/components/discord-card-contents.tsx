@@ -1,7 +1,8 @@
-import {Button, buttonVariants, Card, Skeleton} from "@heroui/react";
+import {Stepper} from "@heroui-pro/react";
+import {Button, Card, Link, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
-import {CheckIcon, XIcon} from "lucide-react";
+import {XIcon} from "lucide-react";
 
 import {orpc} from "@/lib/orpc";
 
@@ -60,80 +61,62 @@ export function DiscordCardContents({
       </Card.Header>
       <Card.Content>
         {!discordInfo.isLoading ? (
-          discordInfo.data?.ok !== undefined ? (
-            <div>
-              <div className="group relative flex items-start">
-                <span className="flex h-8 items-center">
-                  {discordInfo.data.ok ? (
-                    <span className="bg-accent relative z-10 flex size-7 items-center justify-center rounded-full">
-                      <CheckIcon aria-hidden="true" className="text-accent-foreground size-4" />
+          <Stepper
+            currentStep={discordInfo.data?.ok ? 1 : 0}
+            orientation="vertical"
+            // A broken connection shows its step in the danger color.
+            className={
+              discordInfo.data?.ok === false ? "[--stepper-active-color:var(--color-danger)]" : ""
+            }>
+            <Stepper.Step>
+              {discordInfo.data?.ok === false ? (
+                <Stepper.Indicator>
+                  <Stepper.Icon>
+                    <XIcon />
+                  </Stepper.Icon>
+                </Stepper.Indicator>
+              ) : (
+                <Stepper.Indicator />
+              )}
+              <Stepper.Content className="flex-1">
+                <Stepper.Title>Connect with Discord</Stepper.Title>
+                <Stepper.Description>
+                  {discordInfo.data?.ok === true ? (
+                    <>
+                      You're successfully connected to Discord. Server Name:{" "}
+                      <Link
+                        href={`https://discord.com/channels/${discordInfo.data.data?.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        {discordInfo.data.data?.name}
+                        <Link.Icon />
+                      </Link>
+                    </>
+                  ) : discordInfo.data?.ok === false ? (
+                    <span className="text-danger">
+                      There is a problem with your Discord connection: {discordInfo.data.error}
                     </span>
                   ) : (
-                    <span className="bg-danger relative z-10 flex size-7 items-center justify-center rounded-full">
-                      <XIcon aria-hidden="true" className="text-danger-foreground size-4" />
-                    </span>
+                    "You need to connect your Discord account."
                   )}
-                </span>
-                <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-xs font-medium">
-                      {discordInfo.data.ok
-                        ? "You're successfully connected to Discord."
-                        : "There is a problem with your Discord connection."}
-                    </span>
-                    <span className="text-muted text-xs">
-                      {discordInfo.data.ok ? (
-                        <>
-                          Server Name:{" "}
-                          <a
-                            className={buttonVariants({
-                              variant: "secondary",
-                              className: "h-auto px-2 py-0",
-                            })}
-                            href={`https://discord.com/channels/${discordInfo.data?.data?.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer">
-                            {discordInfo.data?.data?.name}
-                          </a>
-                        </>
-                      ) : (
-                        <span className="text-danger text-xs">{discordInfo.data.error}</span>
-                      )}
-                    </span>
-                  </span>
-                  <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                    <Button type="submit" variant="secondary">
-                      Reconnect
-                    </Button>
-                    <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
-                      <Button variant="danger">Disconnect</Button>
-                    </DisconnectDiscordDialog>
-                  </DiscordForm>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="group relative flex items-start">
-                <span aria-hidden="true" className="flex h-8 items-center">
-                  <span className="border-accent bg-surface relative z-10 flex size-7 items-center justify-center rounded-full border-2">
-                    <span className="bg-accent size-2 rounded-full" />
-                  </span>
-                </span>
-                <div className="flex flex-1 flex-col justify-between gap-2 pl-4 sm:flex-row">
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-accent text-xs font-medium">Connect with Discord</span>
-                    <span className="text-muted text-xs">
-                      You need to connect your Discord account.
-                    </span>
-                  </span>
-                  <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                    <Button type="submit">Connect with Discord</Button>
-                  </DiscordForm>
-                </div>
-              </div>
-            </div>
-          )
+                </Stepper.Description>
+              </Stepper.Content>
+              {discordInfo.data?.ok !== undefined ? (
+                <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
+                  <Button type="submit" variant="secondary">
+                    Reconnect
+                  </Button>
+                  <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
+                    <Button variant="danger">Disconnect</Button>
+                  </DisconnectDiscordDialog>
+                </DiscordForm>
+              ) : (
+                <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
+                  <Button type="submit">Connect with Discord</Button>
+                </DiscordForm>
+              )}
+            </Stepper.Step>
+          </Stepper>
         ) : (
           <Skeleton className="h-8 w-full" />
         )}

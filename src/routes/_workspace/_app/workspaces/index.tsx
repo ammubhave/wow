@@ -41,7 +41,7 @@ function RouteComponent() {
   });
 
   return (
-    <div className="w-full lg:p-8">
+    <div className="w-full">
       <div className="mx-auto flex max-w-lg flex-col gap-6">
         <h1 className="text-center text-xl font-semibold tracking-tight">My workspaces</h1>
         {!myWorkspaces.data?.data ? (
@@ -85,9 +85,9 @@ function RouteComponent() {
           </ItemCardGroup>
         )}
         <Separator />
-        <h1 className="text-center text-lg font-semibold tracking-tight">
+        <h2 className="text-center text-lg font-semibold tracking-tight">
           Join an existing workspace
-        </h1>
+        </h2>
         <form.AppForm>
           <form.Form>
             <form.AppField
@@ -104,7 +104,7 @@ function RouteComponent() {
             />
             <form.AppField
               name="password"
-              children={field => <field.TextField label="Workspace Password" type="password" />}
+              children={field => <field.TextField label="Workspace password" type="password" />}
             />
             <form.SubmitButton fullWidth>
               <ArrowRightIcon />

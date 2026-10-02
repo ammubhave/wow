@@ -64,9 +64,9 @@ function RouteComponent() {
 
   return (
     <div className="flex w-full justify-center">
-      <div className="flex max-w-3xl flex-1 flex-col items-stretch gap-2">
+      <div className="flex max-w-3xl flex-1 flex-col items-stretch gap-4">
         <div>
-          <Link to="/workspaces" className={buttonVariants({variant: "outline", size: "sm"})}>
+          <Link to="/workspaces" className={buttonVariants({variant: "ghost", size: "sm"})}>
             <ArrowLeftIcon /> Back
           </Link>
         </div>
@@ -84,11 +84,11 @@ function RouteComponent() {
                 <form.AppField
                   name="teamName"
                   validators={{onBlur: z.string().min(1)}}
-                  children={field => <field.TextField variant="secondary" label="Team Name" />}
+                  children={field => <field.TextField variant="secondary" label="Team name" />}
                 />
                 <form.AppField
                   name="eventName"
-                  children={field => <field.TextField variant="secondary" label="Event Name" />}
+                  children={field => <field.TextField variant="secondary" label="Event name" />}
                 />
                 <form.AppField
                   name="workspaceSlug"
@@ -103,12 +103,12 @@ function RouteComponent() {
                 <form.AppField
                   name="password"
                   children={field => (
-                    <field.TextField variant="secondary" label="Workspace Password" />
+                    <field.TextField variant="secondary" label="Workspace password" />
                   )}
                 />
               </form.Form>
             </Card.Content>
-            <Card.Footer>
+            <Card.Footer className="mt-4">
               <form.SubmitButton>Create</form.SubmitButton>
             </Card.Footer>
           </Card>

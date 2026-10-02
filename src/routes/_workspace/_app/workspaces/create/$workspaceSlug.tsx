@@ -36,9 +36,9 @@ function RouteComponentInner() {
 
   return (
     <div className="flex w-full justify-center">
-      <div className="flex max-w-3xl flex-1 flex-col gap-2">
+      <div className="flex max-w-3xl flex-1 flex-col gap-4">
         <div>
-          <Link to="/workspaces" className={buttonVariants({variant: "outline", size: "sm"})}>
+          <Link to="/workspaces" className={buttonVariants({variant: "ghost", size: "sm"})}>
             <ArrowLeftIcon /> Back
           </Link>
         </div>

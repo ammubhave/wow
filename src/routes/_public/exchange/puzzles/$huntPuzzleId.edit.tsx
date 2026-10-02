@@ -6,11 +6,16 @@ import {Suspense} from "react";
 import {toast} from "sonner";
 
 import {ChangeExchangePuzzleDraftSwitch} from "@/components/change-exchange-puzzle-draft-switch";
+import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
 import {useAppForm} from "@/components/form";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/edit")({
+  // Prefetch so the page renders with data instead of suspending (and flashing) on mount.
+  loader: ({context: {queryClient}, params: {huntPuzzleId}}) =>
+    queryClient.ensureQueryData(orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId}})),
+  pendingComponent: ExchangePuzzleSkeleton,
   component: KeyedRouteComponent,
 });
 
@@ -19,7 +24,7 @@ export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/ed
 function KeyedRouteComponent() {
   const {huntPuzzleId} = Route.useParams();
   return (
-    <Suspense key={huntPuzzleId}>
+    <Suspense key={huntPuzzleId} fallback={<ExchangePuzzleSkeleton />}>
       <RouteComponent />
     </Suspense>
   );

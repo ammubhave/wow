@@ -1,7 +1,8 @@
 import {drizzleAdapter} from "@better-auth/drizzle-adapter/relations-v2";
+import {passkey} from "@better-auth/passkey";
 import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
-import {captcha} from "better-auth/plugins";
+import {captcha, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {waitUntil} from "cloudflare:workers";
 import {eq} from "drizzle-orm";
@@ -9,6 +10,9 @@ import {Resend} from "resend";
 
 import {db} from "./db";
 import * as schema from "./db/schema";
+
+// Owns the activity of accounts that have been deleted (see `user.deleteUser` below).
+const DELETED_USER_ID = "deleted-user";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
@@ -50,6 +54,25 @@ export const auth = betterAuth({
   user: {
     additionalFields: {notificationsDisabled: {type: "boolean", defaultValue: false}},
     changeEmail: {enabled: true},
+    deleteUser: {
+      enabled: true,
+      // Activity entries cascade with their user, which would erase this person from every team's
+      // history. Hand them to a shared "Deleted user" first, so the history survives.
+      beforeDelete: async user => {
+        await db
+          .insert(schema.user)
+          .values({
+            id: DELETED_USER_ID,
+            name: "Deleted user",
+            email: "deleted-user@wafflehaus.invalid",
+          })
+          .onConflictDoNothing();
+        await db
+          .update(schema.activityLogEntry)
+          .set({userId: DELETED_USER_ID})
+          .where(eq(schema.activityLogEntry.userId, user.id));
+      },
+    },
   },
   // In dev, trust any localhost port so `vp dev --port <n>` works (e.g. for Google sign-in).
   trustedOrigins: [
@@ -57,6 +80,10 @@ export const auth = betterAuth({
     ...(import.meta.env?.DEV ? ["http://localhost:*"] : ["http://localhost:3000"]),
   ],
   plugins: [
+    // Passkeys are bound to the registrable domain, so one works on www.wafflehaus.io and the apex.
+    passkey({rpID: import.meta.env?.DEV ? "localhost" : "wafflehaus.io", rpName: "WOW"}),
+    // Remembers (in a cookie) how this browser last signed in, so the login page can say so.
+    lastLoginMethod(),
     // Captcha is optional: only enforce it when both the secret and the site key the auth pages
     // render with (same `import.meta.env` value as `src/components/captcha.tsx`) are configured.
     ...(process.env.TURNSTILE_SECRET_KEY && import.meta.env?.VITE_PUBLIC_TURNSTILE_SITE_KEY

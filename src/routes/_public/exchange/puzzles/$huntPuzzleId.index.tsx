@@ -1,17 +1,34 @@
-import {Breadcrumbs, Button, buttonVariants, Dropdown, InputGroup, Label} from "@heroui/react";
-import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {
+  Alert,
+  Breadcrumbs,
+  Button,
+  buttonVariants,
+  Dropdown,
+  InputGroup,
+  Label,
+  Spinner,
+} from "@heroui/react";
+import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ChevronDownIcon, PencilIcon} from "lucide-react";
 import {Suspense, useState} from "react";
 import {toast} from "sonner";
 
 import {ExchangePuzzleHintDialog} from "@/components/exchange-puzzle-hint-dialog";
+import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
 import {useAppForm} from "@/components/form";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/")({
+  // Prefetch so the page renders with data instead of suspending (and flashing) on mount.
+  loader: ({context: {queryClient}, params: {huntPuzzleId}}) =>
+    Promise.all([
+      queryClient.ensureQueryData(orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId}})),
+      queryClient.ensureQueryData(orpc.exchange.isAdmin.queryOptions()),
+    ]),
+  pendingComponent: ExchangePuzzleSkeleton,
   component: KeyedRouteComponent,
 });
 
@@ -20,7 +37,7 @@ export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/")
 function KeyedRouteComponent() {
   const {huntPuzzleId} = Route.useParams();
   return (
-    <Suspense key={huntPuzzleId}>
+    <Suspense key={huntPuzzleId} fallback={<ExchangePuzzleSkeleton />}>
       <RouteComponent />
     </Suspense>
   );
@@ -54,7 +71,7 @@ function RouteComponent() {
     },
   });
 
-  const isAdmin = useQuery(orpc.exchange.isAdmin.queryOptions()).data ?? false;
+  const isAdmin = useSuspenseQuery(orpc.exchange.isAdmin.queryOptions()).data;
 
   const [activeHintIndex, setActiveHintIndex] = useState<number | null>(null);
   const [isExchangePuzzleHintDialogOpen, setIsExchangePuzzleHintDialogOpen] = useState(false);
@@ -145,16 +162,39 @@ function RouteComponent() {
           </form.Form>
         </form.AppForm>
 
-        {submitAnswer.data && (
-          <span className="text-xl font-bold">
-            {submitAnswer.data.isCorrect
-              ? "Correct!"
-              : submitAnswer.data.isPartial
-                ? submitAnswer.data.message
-                : "Incorrect"}
-          </span>
+        {submitAnswer.isPending ? (
+          <Alert className="w-full max-w-lg">
+            <Alert.Indicator>
+              <Spinner size="sm" />
+            </Alert.Indicator>
+            <Alert.Content>
+              <Alert.Title>Checking answer...</Alert.Title>
+            </Alert.Content>
+          </Alert>
+        ) : (
+          submitAnswer.data && (
+            <Alert
+              className="w-full max-w-lg"
+              status={
+                submitAnswer.data.isCorrect
+                  ? "success"
+                  : submitAnswer.data.isPartial
+                    ? "warning"
+                    : "danger"
+              }>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>
+                  {submitAnswer.data.isCorrect
+                    ? "Correct!"
+                    : submitAnswer.data.isPartial
+                      ? submitAnswer.data.message
+                      : "Incorrect"}
+                </Alert.Title>
+              </Alert.Content>
+            </Alert>
+          )
         )}
-        {submitAnswer.isPending && <span className="text-xl font-bold">Checking answer...</span>}
       </div>
       <div className="dark:bg-surface bg-surface-secondary flex flex-col gap-4">
         <PuzzleRichTextEditor

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.6",
+    "@better-auth/passkey": "1.7.6",
     "@cloudflare/vite-plugin": "^1.62.2",
     "@floating-ui/react": "^0.27.20",
     "@fontsource-variable/noto-sans": "^5.3.0",
@@ -81,6 +82,7 @@
     "react-aria-components": "^1.21.1",
     "react-dom": "^19.3.0",
     "react-hotkeys-hook": "^5.3.3",
+    "react-intersection-observer": "^11.0.1",
     "react-markdown": "^10.1.0",
     "react-redux": "^9.3.0",
     "react-resizable-panels": "^4.14.1",
