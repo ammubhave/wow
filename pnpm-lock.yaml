@@ -344,6 +344,9 @@ importers:
       motion:
         specifier: ^13.4.6
         version: 13.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      ogl:
+        specifier: 1.0.11
+        version: 1.0.11
       postal-mime:
         specifier: ^4.0.1
         version: 4.0.1
@@ -5404,6 +5407,9 @@ packages:
   obug@2.2.1:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
+
+  ogl@1.0.11:
+    resolution: {integrity: sha512-kUpC154AFfxi16pmZUK4jk3J+8zxwTWGPo03EoYA8QPbzikHoaC82n6pNTbd+oEaJonaE8aPWBlX7ad9zrqLsA==}
 
   oniguruma-parser@0.12.2:
     resolution: {integrity: sha512-6HVa5oIrgMC6aA6WF6XyyqbhRPJrKR02L20+2+zpDtO5QAzGHAUGw5TKQvwi5vctNnRHkJYmjAhRVQF2EKdTQw==}
@@ -11193,6 +11199,8 @@ snapshots:
   object-keys@1.1.1: {}
 
   obug@2.2.1: {}
+
+  ogl@1.0.11: {}
 
   oniguruma-parser@0.12.2: {}
 

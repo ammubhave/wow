@@ -56,7 +56,7 @@ function RouteComponent() {
                 <Link
                   {...props}
                   to={
-                    puzzle.answer === ""
+                    puzzle.needsSetup
                       ? "/exchange/puzzles/$huntPuzzleId/edit"
                       : "/exchange/puzzles/$huntPuzzleId"
                   }

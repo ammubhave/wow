@@ -10,7 +10,9 @@ import {orpc} from "@/lib/orpc";
 export const Route = createFileRoute("/_public/exchange/puzzles/$huntPuzzleId/solution")({
   // Prefetch so the page renders with data instead of suspending (and flashing) on mount.
   loader: ({context: {queryClient}, params: {huntPuzzleId}}) =>
-    queryClient.ensureQueryData(orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId}})),
+    queryClient.ensureQueryData(
+      orpc.exchange.puzzles.solution.queryOptions({input: {huntPuzzleId}})
+    ),
   pendingComponent: ExchangePuzzleSkeleton,
   component: KeyedRouteComponent,
 });
@@ -28,8 +30,9 @@ function KeyedRouteComponent() {
 
 function RouteComponent() {
   const {huntPuzzleId} = Route.useParams();
+  // The answer and solution come from their own endpoint: the puzzle itself doesn't carry them.
   const puzzle = useSuspenseQuery(
-    orpc.exchange.puzzles.get.queryOptions({input: {huntPuzzleId: huntPuzzleId}})
+    orpc.exchange.puzzles.solution.queryOptions({input: {huntPuzzleId}})
   ).data;
 
   return (
@@ -37,24 +40,24 @@ function RouteComponent() {
       <div>
         <Breadcrumbs>
           <Breadcrumbs.Item href="/exchange">Hunts</Breadcrumbs.Item>
-          <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunts.id}`}>
-            {puzzle.hunts.name}
+          <Breadcrumbs.Item href={`/exchange/hunts/${puzzle.hunt.id}`}>
+            {puzzle.hunt.name}
           </Breadcrumbs.Item>
-          <Breadcrumbs.Item href={`/exchange/puzzles/${puzzle.hunt_puzzles.id}`}>
-            {puzzle.hunt_puzzles.title}
+          <Breadcrumbs.Item href={`/exchange/puzzles/${huntPuzzleId}`}>
+            {puzzle.title}
           </Breadcrumbs.Item>
           <Breadcrumbs.Item>Solution</Breadcrumbs.Item>
         </Breadcrumbs>
       </div>
       <div className="flex flex-col items-center justify-center gap-4">
-        <div className="text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
+        <div className="text-2xl font-bold">{puzzle.title}</div>
         <span className="text-lg font-semibold">Solution</span>
-        <span className="text-accent font-mono font-black">{puzzle.hunt_puzzles.answer}</span>
+        <span className="text-accent font-mono font-black">{puzzle.answer}</span>
       </div>
       <div className="dark:bg-surface bg-surface-secondary flex flex-col gap-4">
         <PuzzleRichTextEditor
           huntPuzzleId={huntPuzzleId}
-          defaultValue={puzzle.hunt_puzzles.solution ?? undefined}
+          defaultValue={puzzle.solution ?? undefined}
         />
       </div>
     </div>

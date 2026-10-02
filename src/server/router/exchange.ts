@@ -1,6 +1,6 @@
 import {ORPCError, os} from "@orpc/server";
 import {env} from "cloudflare:workers";
-import {asc, eq} from "drizzle-orm";
+import {eq} from "drizzle-orm";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
@@ -36,28 +36,45 @@ export const exchangeRouter = {
     return await isAdmin(context.headers);
   }),
   hunts: {
+    // Newest hunt first, each with its puzzles' titles (never answers or contents).
     list: base.handler(async ({context}) => {
       const admin = await isAdmin(context.headers);
-      return admin
-        ? await db.select().from(schema.hunts).orderBy(asc(schema.hunts.createdAt))
-        : await db
-            .select()
-            .from(schema.hunts)
-            .where(eq(schema.hunts.draft, false))
-            .orderBy(asc(schema.hunts.createdAt));
+      return await db.query.hunts.findMany({
+        where: admin ? undefined : {draft: false},
+        orderBy: {createdAt: "desc"},
+        with: {
+          hunt_puzzles: {
+            columns: {id: true, title: true, draft: true},
+            where: admin ? undefined : {draft: false},
+            orderBy: {title: "asc"},
+          },
+        },
+      });
     }),
     get: base.input(z.object({huntId: z.string().min(1)})).handler(async ({context, input}) => {
       const admin = await isAdmin(context.headers);
       const hunt = await db.query.hunts.findFirst({
         where: admin ? {id: input.huntId} : {id: input.huntId, draft: false},
         with: {
-          hunt_puzzles: admin
-            ? {orderBy: {title: "asc"}}
-            : {where: {draft: false}, orderBy: {title: "asc"}},
+          hunt_puzzles: {
+            // Only what the list shows: answers and contents stay on the server.
+            columns: {id: true, title: true, draft: true, answer: true},
+            where: admin ? undefined : {draft: false},
+            orderBy: {title: "asc"},
+          },
         },
       });
       if (!hunt) throw new ORPCError("NOT_FOUND");
-      return hunt;
+      return {
+        ...hunt,
+        hunt_puzzles: hunt.hunt_puzzles.map(puzzle => ({
+          id: puzzle.id,
+          title: puzzle.title,
+          draft: puzzle.draft,
+          // Admins land on the editor for a puzzle that has no answer yet.
+          needsSetup: admin && puzzle.answer === "",
+        })),
+      };
     }),
     create: procedure
       .use(preauthorize)
@@ -97,13 +114,42 @@ export const exchangeRouter = {
           .where(eq(schema.huntPuzzles.id, input.huntPuzzleId));
         if (!puzzle) throw new ORPCError("NOT_FOUND");
         // Draft puzzles (or puzzles of draft hunts) are only visible to admins, as in `hunts.get`.
-        if (
-          (puzzle.hunt_puzzles.draft || puzzle.hunts.draft) &&
-          !(await isAdmin(context.headers))
-        ) {
+        const admin = await isAdmin(context.headers);
+        if ((puzzle.hunt_puzzles.draft || puzzle.hunts.draft) && !admin) {
           throw new ORPCError("NOT_FOUND");
         }
-        return puzzle;
+        if (admin) return puzzle;
+        // Solvers get the puzzle, not its answer: answers are checked by `submitAnswer`, and the
+        // solution is fetched separately (`solution`) only when someone asks for it.
+        return {
+          ...puzzle,
+          hunt_puzzles: {...puzzle.hunt_puzzles, answer: "", partials: [], solution: null},
+        };
+      }),
+    solution: base
+      .input(z.object({huntPuzzleId: z.string().min(1)}))
+      .handler(async ({context, input}) => {
+        const [puzzle] = await db
+          .select({
+            title: schema.huntPuzzles.title,
+            answer: schema.huntPuzzles.answer,
+            solution: schema.huntPuzzles.solution,
+            draft: schema.huntPuzzles.draft,
+            hunt: {id: schema.hunts.id, name: schema.hunts.name, draft: schema.hunts.draft},
+          })
+          .from(schema.huntPuzzles)
+          .innerJoin(schema.hunts, eq(schema.huntPuzzles.huntId, schema.hunts.id))
+          .where(eq(schema.huntPuzzles.id, input.huntPuzzleId));
+        if (!puzzle) throw new ORPCError("NOT_FOUND");
+        if ((puzzle.draft || puzzle.hunt.draft) && !(await isAdmin(context.headers))) {
+          throw new ORPCError("NOT_FOUND");
+        }
+        return {
+          title: puzzle.title,
+          answer: puzzle.answer,
+          solution: puzzle.solution,
+          hunt: {id: puzzle.hunt.id, name: puzzle.hunt.name},
+        };
       }),
     create: procedure
       .use(preauthorize)

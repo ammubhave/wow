@@ -75,6 +75,7 @@
     "lucide-react": "^1.49.0",
     "marked": "^18.0.14",
     "motion": "^13.4.6",
+    "ogl": "1.0.11",
     "postal-mime": "^4.0.1",
     "posthog-js": "^1.435.1",
     "postprocessing": "^6.39.5",
