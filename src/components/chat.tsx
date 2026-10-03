@@ -354,7 +354,9 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                   {/* Tokens wraps only the field and its suggestions (a menu in the toolbar would
                       join the suggestion list). */}
                   <PromptInput.Tokens>
-                    <PromptInput.Content>
+                    {/* TokenInput's React Aria wrapper must let the editable field occupy
+                        the compact shell's textarea grid area. */}
+                    <PromptInput.Content className="[&_.react-aria-TokenField]:contents">
                       {images.length > 0 && (
                         <PromptInput.Attachments>
                           <ChatAttachmentGroup>
