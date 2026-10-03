@@ -1,8 +1,15 @@
 import {Chip, Tooltip} from "@heroui/react";
 import {TimerIcon} from "lucide-react";
-import {useFormatter, useNow} from "use-intl";
+import {useNow} from "use-intl";
 
 import {useWorkspace} from "@/hooks/use-workspace";
+
+/** In the viewer's own time zone. */
+const timeFormat = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
 
 /** "2d 4h", "3h 12m", "8m". */
 function formatDuration(ms: number) {
@@ -22,7 +29,6 @@ function formatDuration(ms: number) {
 export function HuntClock() {
   const {huntStartsAt, huntEndsAt} = useWorkspace();
   const now = useNow({updateInterval: 30_000}).getTime();
-  const format = useFormatter();
   if (!huntStartsAt && !huntEndsAt) return null;
   const start = huntStartsAt ? new Date(huntStartsAt).getTime() : undefined;
   const end = huntEndsAt ? new Date(huntEndsAt).getTime() : undefined;
@@ -34,10 +40,8 @@ export function HuntClock() {
   else label = `${formatDuration(now - start!)} in`;
 
   const details = [
-    start !== undefined &&
-      `Starts ${format.dateTime(start, {weekday: "short", hour: "numeric", minute: "2-digit"})}`,
-    end !== undefined &&
-      `Ends ${format.dateTime(end, {weekday: "short", hour: "numeric", minute: "2-digit"})}`,
+    start !== undefined && `Starts ${timeFormat.format(start)}`,
+    end !== undefined && `Ends ${timeFormat.format(end)}`,
   ]
     .filter(Boolean)
     .join(" · ");
