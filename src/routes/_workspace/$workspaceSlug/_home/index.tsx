@@ -51,6 +51,7 @@ import {useAppForm} from "@/components/form";
 import {SolveSpark} from "@/components/solve-spark";
 import {UserPresenceAvatars} from "@/components/user-hover-card";
 import {NO_PRESENCES} from "@/features/presences/presences";
+import {VoiceRoomBadge} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {
@@ -1510,13 +1511,16 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           <span id={puzzle.id} className="relative scroll-mt-20" />
         </TableCell>
         <TableCell>
-          <Link
-            to="/$workspaceSlug/puzzles/$puzzleId"
-            params={{workspaceSlug, puzzleId: puzzle.id}}
-            className="-m-2 block p-2 hover:underline">
-            <SolvedMark status={puzzle.status} />
-            {puzzle.name}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/$workspaceSlug/puzzles/$puzzleId"
+              params={{workspaceSlug, puzzleId: puzzle.id}}
+              className="-m-2 block min-w-0 flex-1 p-2 hover:underline">
+              <SolvedMark status={puzzle.status} />
+              {puzzle.name}
+            </Link>
+            <VoiceRoomBadge room={puzzle.id} />
+          </div>
         </TableCell>
         <TableCell className="relative">
           <AnswerInput

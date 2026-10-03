@@ -7,6 +7,8 @@ import {WorkspaceSkeleton} from "@/components/page-skeletons";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
+import {VoiceProvider} from "@/features/voice/voice-provider";
+import {CallBar} from "@/features/voice/voice-ui";
 import {WorkspaceProvider} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 import {workspaceQueryOptions} from "@/lib/workspace-mutations";
@@ -44,15 +46,18 @@ function RouteComponent() {
     <WorkspaceProvider key={workspaceSlug} workspaceSlug={workspaceSlug}>
       <NotificationsWebSocket workspaceSlug={workspaceSlug}>
         <PresencesWebSocket workspaceSlug={workspaceSlug}>
-          <div className="flex flex-1 flex-col">
-            <WorkspaceHeader />
-            <div className="relative flex flex-1">
-              <div className="absolute inset-0 flex overflow-auto">
-                <Outlet />
+          <VoiceProvider workspaceSlug={workspaceSlug}>
+            <div className="flex flex-1 flex-col">
+              <WorkspaceHeader />
+              <div className="relative flex flex-1">
+                <div className="absolute inset-0 flex overflow-auto">
+                  <Outlet />
+                </div>
               </div>
+              <WorkspaceFooter />
             </div>
-            <WorkspaceFooter />
-          </div>
+            <CallBar />
+          </VoiceProvider>
         </PresencesWebSocket>
       </NotificationsWebSocket>
     </WorkspaceProvider>

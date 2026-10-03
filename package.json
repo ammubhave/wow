@@ -79,6 +79,7 @@
     "marked": "^18.0.14",
     "motion": "^13.4.6",
     "ogl": "1.0.11",
+    "partytracks": "^0.0.56",
     "postal-mime": "^4.0.1",
     "posthog-js": "^1.435.1",
     "postprocessing": "^6.39.5",
@@ -96,6 +97,7 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.31.0",
+    "rxjs": "^7.8.2",
     "shiki": "^4.4.3",
     "sonner": "^2.0.8",
     "streamdown": "^2.6.0",
@@ -106,6 +108,7 @@
     "use-intl": "^4.14.8",
     "usehooks-ts": "^3.1.1",
     "uuid": "^14.0.2",
+    "webrtc-adapter": "^9.0.6",
     "zod": "^4.6.5"
   },
   "devDependencies": {

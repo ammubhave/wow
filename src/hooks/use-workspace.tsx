@@ -9,6 +9,21 @@ import {WorkspaceSkeleton} from "@/components/page-skeletons";
 import {applyOptimistic, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import {expandWorkspaceState, type WorkspaceRoomState} from "@/lib/workspace-state";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
+import type {VoiceServerMessage} from "@/server/voice";
+
+// Voice presence pushed over the workspace socket, kept in the query cache (never fetched).
+/** Who's in which voice room. */
+export const voiceRoomsQueryKey = (workspaceSlug: string) => ["voiceRooms", workspaceSlug] as const;
+/** Connection ids of whoever is talking right now. */
+export const voiceSpeakingQueryKey = (workspaceSlug: string) =>
+  ["voiceSpeaking", workspaceSlug] as const;
+/** This tab's connection id. */
+export const voiceMeQueryKey = (workspaceSlug: string) => ["voiceMe", workspaceSlug] as const;
+
+// The workspace state itself has no `type`; every other message on the socket is about voice.
+const isVoiceMessage = (
+  message: WorkspaceRoomWireState | VoiceServerMessage
+): message is VoiceServerMessage => "type" in message && typeof message.type === "string";
 
 const WorkspaceContext = createContext<WorkspaceRoomState | null>(null);
 
@@ -28,8 +43,39 @@ export function WorkspaceProvider({
     // Each message is the full workspace state. `setQueryData` structurally shares it with the
     // previous one, so unchanged rounds/puzzles keep their identity.
     onMessage: event => {
-      const wire: WorkspaceRoomWireState = JSON.parse(event.data);
-      queryClient.setQueryData(workspaceQueryOptions(workspaceSlug).queryKey, wire);
+      const message: WorkspaceRoomWireState | VoiceServerMessage = JSON.parse(event.data);
+      if (isVoiceMessage(message)) {
+        switch (message.type) {
+          case "voiceHello":
+            queryClient.setQueryData(voiceMeQueryKey(workspaceSlug), message.connectionId);
+            return;
+          case "voice": {
+            queryClient.setQueryData(voiceRoomsQueryKey(workspaceSlug), message.rooms);
+            // Whoever left a call, or muted, has stopped talking.
+            const unmuted = new Set(
+              Object.values(message.rooms).flatMap(room =>
+                room.filter(p => !p.muted).map(p => p.connectionId)
+              )
+            );
+            queryClient.setQueryData<string[]>(voiceSpeakingQueryKey(workspaceSlug), speaking =>
+              speaking?.filter(id => unmuted.has(id))
+            );
+            return;
+          }
+          case "speaking": {
+            const {connectionId, speaking} = message;
+            queryClient.setQueryData<string[]>(voiceSpeakingQueryKey(workspaceSlug), current => {
+              const others = (current ?? []).filter(id => id !== connectionId);
+              return speaking ? [...others, connectionId] : others;
+            });
+            return;
+          }
+          default:
+            // Handled elsewhere (voiceMute: VoiceProvider).
+            return;
+        }
+      }
+      queryClient.setQueryData(workspaceQueryOptions(workspaceSlug).queryKey, message);
     },
   });
   // Pending optimistic mutations for this workspace, oldest first (see workspace-mutations.ts).

@@ -18,6 +18,7 @@ import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
 import {NO_PRESENCES} from "@/features/presences/presences";
+import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
 import {ARRIVE_FROM_BOTTOM, useMountedAt} from "@/lib/arrivals";
 import type {
   ChatMessage as ChatMessageData,
@@ -29,7 +30,7 @@ import {useAppSelector} from "@/store";
 import {EggoText} from "./eggo";
 import {ImageLightbox} from "./image-lightbox";
 import {LazyMarkdown} from "./lazy-markdown";
-import {UserPresenceChip, userAvatarSrc, userInitials} from "./user-hover-card";
+import {userAvatarSrc, userInitials} from "./user-hover-card";
 
 const EGGO = "Eggö";
 
@@ -181,13 +182,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col pb-4">
-      {presences.length > 0 && (
-        <div className="flex max-h-25 flex-row flex-wrap gap-0.5 overflow-y-auto px-2 py-2">
-          {presences.map(user => (
-            <UserPresenceChip key={user.id} user={user} />
-          ))}
-        </div>
-      )}
+      <PuzzleVoiceStrip puzzleId={puzzleId} viewers={presences} />
       <ChatConversation className="flex-1" initial="instant">
         <ChatConversation.Content className="gap-0 px-3 py-3">
           {messages === null ? (

@@ -12,6 +12,7 @@ import {
 import {useEffect} from "react";
 
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
+import {LobbyButton} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
 import {useAppDispatch, useAppSelector} from "@/store";
@@ -110,6 +111,7 @@ export function WorkspaceHeader() {
               <ExternalLinkIcon data-slot="icon" />
             </Navbar.Item>
           ))}
+          <LobbyButton />
           <WorkspaceCommandDialog workspaceSlug={workspaceSlug} />
           <Navbar.Separator />
           <NavUser />

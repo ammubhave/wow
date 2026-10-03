@@ -11,6 +11,34 @@ import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {
+  type VoiceParticipant,
+  type VoiceState,
+  type VoiceHello,
+  type VoiceMute,
+  type VoiceSpeaking,
+  type VoiceUpdate,
+  type VoiceUser,
+  voiceClientMessageSchema,
+} from "@/server/voice";
+
+/// Who's on each websocket, and their call state (kept as the socket's attachment, so it survives
+/// the room hibernating).
+type SocketAttachment = {connectionId: string; user: VoiceUser; voice?: VoiceUpdate};
+
+/// Header the API route uses to tell the room who is connecting (set server-side only).
+export const WORKSPACE_USER_HEADER = "x-wow-user";
+
+// Voice access control. The SFU itself has no permissions (anyone holding the app secret can pull
+// any track), so the voice proxy asks this room before letting anyone create sessions or pull.
+/// Storage key recording which user created an SFU session.
+const VOICE_SESSION_PREFIX = "voiceSession:";
+/// Session records are only needed while a call can last; older ones are pruned.
+const VOICE_SESSION_TTL_MS = 1000 * 60 * 60 * 48;
+/// New SFU sessions allowed per user per minute (joining, reconnects), well under Cloudflare's
+/// per-app limit, so one misbehaving client can't exhaust it for the team.
+const VOICE_SESSIONS_PER_MINUTE = 10;
+type VoiceSessionRecord = {userId: string; createdAt: number};
 
 // Overlap window when re-reading the activity log incrementally, so entries committed slightly out
 // of `createdAt` order are not missed (results are de-duplicated by id).
@@ -140,6 +168,9 @@ export async function invalidateWorkspace(workspaceId: string) {
 }
 
 export class WorkspaceRoom extends DurableObject<Env> {
+  /// Recent SFU session creations per user, for rate limiting (in memory; resetting on hibernation
+  /// only makes the limit briefly more lenient).
+  #voiceSessionsCreated = new Map<string, number[]>();
   /// Cache of the current workspace data (undefined until loaded, or after being dropped while no
   /// client was connected).
   workspace: WorkspaceRoomWireState | undefined;
@@ -212,16 +243,178 @@ export class WorkspaceRoom extends DurableObject<Env> {
   }
 
   /// Handles incoming WebSocket connections.
-  /// Sends the current workspace data upon connection.
-  async fetch() {
+  /// Sends the current workspace data (and who's in which voice room) upon connection.
+  async fetch(request: Request) {
     // The cache may have been dropped by an `invalidate` between `initialize` and this call.
     if (!this.#message && this.#workspaceId) await this.#reload(this.#workspaceId);
     if (!this.#message) {
       return new Response("Workspace room not initialized", {status: 500});
     }
+    const user: VoiceUser | null = JSON.parse(request.headers.get(WORKSPACE_USER_HEADER) ?? "null");
+    // Only the authorizing API route reaches the room, and it always says who's connecting.
+    if (!user) return new Response("Missing user", {status: 400});
     const {"0": client, "1": server} = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
+    const connectionId = crypto.randomUUID();
+    server.serializeAttachment({connectionId, user} satisfies SocketAttachment);
     server.send(this.#message);
+    server.send(JSON.stringify({type: "voiceHello", connectionId} satisfies VoiceHello));
+    server.send(JSON.stringify(this.#voiceState()));
     return new Response(null, {status: 101, webSocket: client});
+  }
+
+  /// Clients only ever send their own call state.
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
+    if (typeof message !== "string") return;
+    let update;
+    try {
+      update = voiceClientMessageSchema.parse(JSON.parse(message));
+    } catch {
+      return; // Ignore malformed messages instead of throwing in the DO.
+    }
+    const attachment = this.#attachment(ws);
+    if (!attachment) return;
+    if (update.type === "speaking") {
+      // Ephemeral: relayed to everyone (the speaker included, so all their tabs agree), never
+      // stored. Only someone unmuted in a call can start speaking; stopping always goes through
+      // (it can arrive just after they muted).
+      if (update.speaking && (!attachment.voice || attachment.voice.muted)) return;
+      const relay: VoiceSpeaking = {
+        type: "speaking",
+        connectionId: attachment.connectionId,
+        speaking: update.speaking,
+      };
+      const payload = JSON.stringify(relay);
+      for (const socket of this.ctx.getWebSockets()) socket.send(payload);
+      return;
+    }
+    // Tracks can only be claimed from SFU sessions this person created (no posing as a teammate).
+    const sessionIds = [...new Set(Object.values(update.tracks).map(track => track.sessionId))];
+    if (sessionIds.length > 0) {
+      const owners = await this.ctx.storage.get<VoiceSessionRecord>(
+        sessionIds.map(id => VOICE_SESSION_PREFIX + id)
+      );
+      const ownsAll = sessionIds.every(
+        id => owners.get(VOICE_SESSION_PREFIX + id)?.userId === attachment.user.id
+      );
+      if (!ownsAll) return;
+    }
+    const unmuting = update.room !== null && !update.muted && (attachment.voice?.muted ?? true);
+    ws.serializeAttachment({...attachment, voice: update.room ? update : undefined});
+    if (unmuting) {
+      // You're unmuted in one place at a time: mute your other tabs and devices.
+      const mute = JSON.stringify({type: "voiceMute"} satisfies VoiceMute);
+      for (const socket of this.ctx.getWebSockets()) {
+        if (socket === ws) continue;
+        const other = this.#attachment(socket);
+        if (other?.user.id === attachment.user.id && other.voice && !other.voice.muted) {
+          socket.send(mute);
+        }
+      }
+    }
+    this.#broadcastVoice();
+  }
+
+  webSocketClose(ws: WebSocket, code: number, reason: string) {
+    this.#leftCall(ws);
+    try {
+      ws.close(code, reason);
+    } catch {
+      // Already closed.
+    }
+  }
+
+  webSocketError(ws: WebSocket) {
+    this.#leftCall(ws);
+  }
+
+  /// A closed socket's person drops out of their call (if they were in one).
+  #leftCall(ws: WebSocket) {
+    if (this.#attachment(ws)?.voice) this.#broadcastVoice(ws);
+  }
+
+  /// Voice: whether `userId` may create another SFU session now (and counts it if so).
+  async allowVoiceSession(userId: string) {
+    const now = Date.now();
+    const recent = (this.#voiceSessionsCreated.get(userId) ?? []).filter(at => now - at < 60_000);
+    const allowed = recent.length < VOICE_SESSIONS_PER_MINUTE;
+    if (allowed) recent.push(now);
+    this.#voiceSessionsCreated.set(userId, recent);
+    return allowed;
+  }
+
+  /// Voice: records that `userId` created SFU session `sessionId` (before they learn its id).
+  async registerVoiceSession(sessionId: string, userId: string) {
+    const now = Date.now();
+    await this.ctx.storage.put<VoiceSessionRecord>(VOICE_SESSION_PREFIX + sessionId, {
+      userId,
+      createdAt: now,
+    });
+    // Now and then, drop records of sessions too old to still be in a call.
+    if (Math.random() < 0.05) {
+      const records = await this.ctx.storage.list<VoiceSessionRecord>({
+        prefix: VOICE_SESSION_PREFIX,
+        limit: 1000,
+      });
+      const stale = [...records]
+        .filter(([, record]) => now - record.createdAt > VOICE_SESSION_TTL_MS)
+        .map(([key]) => key);
+      // Storage deletes take at most 128 keys at a time.
+      await Promise.all(
+        Array.from({length: Math.ceil(stale.length / 128)}, (_, i) =>
+          this.ctx.storage.delete(stale.slice(i * 128, (i + 1) * 128))
+        )
+      );
+    }
+  }
+
+  /// Voice: whether `userId` may receive these tracks. Only tracks published by someone in a room
+  /// where this person visibly is too: no listening in without showing up, and nothing from
+  /// another workspace.
+  async canPullVoiceTracks(userId: string, tracks: {sessionId: string; trackName: string}[]) {
+    const myRooms = new Set<string>();
+    const trackRooms = new Map<string, string>();
+    for (const ws of this.ctx.getWebSockets()) {
+      const attachment = this.#attachment(ws);
+      const voice = attachment?.voice;
+      if (!attachment || !voice?.room) continue;
+      const {room} = voice;
+      if (attachment.user.id === userId) myRooms.add(room);
+      for (const track of Object.values(voice.tracks)) {
+        trackRooms.set(`${track.sessionId}/${track.trackName}`, room);
+      }
+    }
+    return tracks.every(track => {
+      const room = trackRooms.get(`${track.sessionId}/${track.trackName}`);
+      return room !== undefined && myRooms.has(room);
+    });
+  }
+
+  #attachment(ws: WebSocket): SocketAttachment | null {
+    // deserializeAttachment() is typed `any`; it's only ever written in fetch()/webSocketMessage()
+    // (null for a socket that has none).
+    return ws.deserializeAttachment();
+  }
+
+  /// Everyone in a call, grouped by room. `closing` is a socket that's going away.
+  #voiceState(closing?: WebSocket): VoiceState {
+    const rooms: Record<string, VoiceParticipant[]> = {};
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws === closing) continue;
+      const attachment = this.#attachment(ws);
+      if (!attachment?.voice) continue;
+      const {connectionId, user, voice} = attachment;
+      const {type: _, room, ...call} = voice;
+      if (room === null) continue;
+      (rooms[room] ??= []).push({...call, connectionId, user});
+    }
+    return {type: "voice", rooms};
+  }
+
+  #broadcastVoice(closing?: WebSocket) {
+    const message = JSON.stringify(this.#voiceState(closing));
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws !== closing) ws.send(message);
+    }
   }
 }

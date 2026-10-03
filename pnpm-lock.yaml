@@ -350,6 +350,9 @@ importers:
       ogl:
         specifier: 1.0.11
         version: 1.0.11
+      partytracks:
+        specifier: ^0.0.56
+        version: 0.0.56
       postal-mime:
         specifier: ^4.0.1
         version: 4.0.1
@@ -401,6 +404,9 @@ importers:
       resend:
         specifier: ^6.31.0
         version: 6.31.0
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       shiki:
         specifier: ^4.4.3
         version: 4.4.3
@@ -431,6 +437,9 @@ importers:
       uuid:
         specifier: ^14.0.2
         version: 14.0.2
+      webrtc-adapter:
+        specifier: ^9.0.6
+        version: 9.0.6
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -6221,6 +6230,9 @@ packages:
   parse5@8.0.1:
     resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
+  partytracks@0.0.56:
+    resolution: {integrity: sha512-24NPo3jdd2R5bHUFY9uO3NhTWcbb88BxSpVj6ZrPJ2VlcClL4BtAMsAYIk0eD6Ms+Kxlrk7mxZ2kZyvEi81cPA==}
+
   path-data-parser@0.1.0:
     resolution: {integrity: sha512-NOnmBpt5Y2RWbuv0LMzsayp3lVylAHLPUTut412ZA3l+C4uw4ZVkQbjShYCQ8TCpUMdPapr4YjUqLYD6v68j+w==}
 
@@ -6788,6 +6800,9 @@ packages:
 
   scheduler@0.28.0:
     resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
+
+  sdp@3.2.2:
+    resolution: {integrity: sha512-xZocWwfyp4hkbN4hLWxMjmv2Q8aNa9MhmOZ7L9aCZPT+dZsgRr6wZRrSYE3HTdyk/2pZKPSgqI7ns7Een1xMSA==}
 
   semver-compare@1.0.0:
     resolution: {integrity: sha512-YM3/ITh2MJ5MtzaM429anh+x2jiLVjqILF4m4oyQB18W7Ggea7BfqdH/wGMK7dDiMghv/6WG7znWMwUDzJiXow==}
@@ -7386,6 +7401,10 @@ packages:
 
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
+
+  webrtc-adapter@9.0.6:
+    resolution: {integrity: sha512-CHbl2ZQbxx164IgWRgzJno4hWtM4tFbRam1QfI3Yxhs3w/DvqluVxVWeXs3oL5/fbGkSNLKo0Ty5MgUWceNhog==}
+    engines: {node: '>=6.0.0', npm: '>=3.10.0'}
 
   webworkify@1.5.0:
     resolution: {integrity: sha512-AMcUeyXAhbACL8S2hqqdqOLqvJ8ylmIbNwUIqQujRSouf4+eUFaXbG6F1Rbu+srlJMmxQWsiU7mOJi0nMBfM1g==}
@@ -13115,6 +13134,13 @@ snapshots:
     dependencies:
       entities: 8.1.0
 
+  partytracks@0.0.56:
+    dependencies:
+      cookie: 1.1.1
+      jose: 6.2.12
+      rxjs: 7.8.2
+      tiny-invariant: 1.3.3
+
   path-data-parser@0.1.0: {}
 
   path-exists@5.0.0: {}
@@ -13727,6 +13753,8 @@ snapshots:
 
   scheduler@0.28.0: {}
 
+  sdp@3.2.2: {}
+
   semver-compare@1.0.0: {}
 
   semver@6.3.1: {}
@@ -14308,6 +14336,10 @@ snapshots:
   webidl-conversions@8.0.1: {}
 
   webpack-virtual-modules@0.6.2: {}
+
+  webrtc-adapter@9.0.6:
+    dependencies:
+      sdp: 3.2.2
 
   webworkify@1.5.0: {}
 
