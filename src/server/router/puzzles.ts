@@ -8,6 +8,7 @@ import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
 
 import {invalidateWorkspace} from "../do/workspace";
+import {trackServerEvent} from "../posthog";
 import {preauthorize, procedure} from "./base";
 
 /** Creates the puzzle's Google Drive worksheet (if Drive is connected) and records its id. */
@@ -299,6 +300,15 @@ export const puzzlesRouter = {
               by: {id: context.session.user.id, name: context.session.user.name},
             })
           );
+          trackServerEvent("puzzle_solved", {
+            distinctId: context.session.user.id,
+            workspaceId,
+            properties: {
+              puzzleId: puzzle.id,
+              status: input.status,
+              isMeta: input.isMetaPuzzle ?? puzzle.isMetaPuzzle,
+            },
+          });
         }
       }
       if (input.importance !== undefined && input.importance !== puzzle.importance) {

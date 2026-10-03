@@ -18,6 +18,7 @@ import {useLocalStorage} from "usehooks-ts";
 
 import {RelativeTime} from "@/components/activity-log";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
 import type {
@@ -98,6 +99,7 @@ export function NotificationsWebSocket({
 
   const open = (notification: WorkspaceNotification) => {
     if (notification.type === "announcement") return;
+    track("notification_clicked", {type: notification.type, from: "popup"});
     void navigate({
       to: "/$workspaceSlug/puzzles/$puzzleId",
       params: {workspaceSlug, puzzleId: notification.puzzleId},
@@ -229,6 +231,7 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
     sendRead({type: "read", ids: [id]});
   };
   const markAllRead = () => {
+    track("notifications_marked_all_read");
     if (notifications[0]) {
       setReadState({seenAt: Math.max(seenAt, notifications[0].timestamp), readIds: []});
     }
@@ -356,6 +359,7 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                     type="button"
                     onClick={() => {
                       if (unreadNow) markRead(notification.id);
+                      track("notification_clicked", {type: notification.type, from: "bell"});
                       if (!target) return;
                       onOpenChange(false);
                       void navigate({

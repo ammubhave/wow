@@ -22,6 +22,7 @@ import {cn} from "tailwind-variants";
 
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
+import {describeChatMessage, track} from "@/lib/analytics";
 import {ARRIVE_FROM_BOTTOM, useMountedAt} from "@/lib/arrivals";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
@@ -182,7 +183,10 @@ export function Chat({puzzleId}: {puzzleId: string}) {
     },
   });
 
-  const send = (message: ChatRoomSentMessage) => sendJsonMessage(message);
+  const send = (message: ChatRoomSentMessage) => {
+    sendJsonMessage(message);
+    trackChat(message);
+  };
 
   const handleSend = async () => {
     if (isUploading || (!input.trim() && images.length === 0)) return;
@@ -424,4 +428,25 @@ export function Chat({puzzleId}: {puzzleId: string}) {
       </div>
     </div>
   );
+}
+
+/** Product analytics for what you do in a chat (see `track`). */
+function trackChat(message: ChatRoomSentMessage) {
+  switch (message.type) {
+    case "send":
+      track("chat_message_sent", describeChatMessage(message.text, message.images?.length));
+      break;
+    case "edit":
+      track("chat_message_edited");
+      break;
+    case "delete":
+      track("chat_message_deleted");
+      break;
+    case "pin":
+      track(message.pinned ? "chat_message_pinned" : "chat_message_unpinned");
+      break;
+    case "react":
+      track("chat_reaction_toggled", {isCustomEmoji: message.reaction.startsWith(":")});
+      break;
+  }
 }

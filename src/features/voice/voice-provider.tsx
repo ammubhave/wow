@@ -6,7 +6,13 @@ import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {toast} from "sonner";
 
 import {voiceMeQueryKey, voiceRoomsQueryKey, voiceSpeakingQueryKey} from "@/hooks/use-workspace";
-import type {VoiceParticipant, VoiceTrack, VoiceUpdate} from "@/server/voice";
+import {track as trackEvent} from "@/lib/analytics";
+import {
+  VOICE_LOBBY,
+  type VoiceParticipant,
+  type VoiceTrack,
+  type VoiceUpdate,
+} from "@/server/voice";
 
 import type {TrackKind, VoiceEngine} from "./engine";
 import {watchSpeaking} from "./media";
@@ -166,6 +172,7 @@ export function VoiceProvider({
   }, [isTalking, readyState, room, sendJsonMessage]);
 
   const leave = useCallback(() => {
+    if (roomRef.current !== null) trackEvent("voice_left");
     engine?.close();
     engineRef.current = null;
     setEngine(null);
@@ -180,6 +187,10 @@ export function VoiceProvider({
       // The ref, not state: a second click right after the engine was created must reuse it.
       const existing = engineRef.current;
       if (existing && next === roomRef.current) return existing;
+      trackEvent("voice_joined", {
+        room: next === VOICE_LOBBY ? "lobby" : "puzzle",
+        moved: Boolean(existing),
+      });
       if (existing) {
         // Moving rooms: you arrive muted, with camera and screen off.
         existing.mic.stopBroadcasting();
@@ -211,7 +222,11 @@ export function VoiceProvider({
 
   // Joining another room first mutes you in the old one, so you're only ever unmuted in one.
   const unmute = useCallback(
-    async (target: string) => (await join(target)).mic.startBroadcasting(),
+    async (target: string) => {
+      const joined = await join(target);
+      joined.mic.startBroadcasting();
+      trackEvent("voice_unmuted", {room: target === VOICE_LOBBY ? "lobby" : "puzzle"});
+    },
     [join]
   );
 
@@ -233,8 +248,14 @@ export function VoiceProvider({
       leave,
       unmute,
       mute: () => engine?.mic.stopBroadcasting(),
-      toggleCamera: () => engine?.camera.toggleBroadcasting(),
-      toggleScreen: () => engine?.screenshare.toggleBroadcasting(),
+      toggleCamera: () => {
+        if (!camera) trackEvent("voice_camera_started");
+        engine?.camera.toggleBroadcasting();
+      },
+      toggleScreen: () => {
+        if (!screen) trackEvent("voice_screen_share_started");
+        engine?.screenshare.toggleBroadcasting();
+      },
     }),
     [rooms, speaking, me, room, engine, muted, camera, screen, selfSpeaking, join, leave, unmute]
   );

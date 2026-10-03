@@ -1,6 +1,7 @@
 import {ORPCError} from "@orpc/client";
 import {createFileRoute, notFound, Outlet} from "@tanstack/react-router";
 import {redirect} from "@tanstack/react-router";
+import {posthog} from "posthog-js";
 import {useEffect} from "react";
 
 import {WorkspaceSkeleton} from "@/components/page-skeletons";
@@ -40,6 +41,19 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug")({
   component: RouteComponent,
 });
 
+/**
+ * Puts everything you do here (in PostHog) in this workspace's group, so analytics can count teams,
+ * not just people.
+ */
+function WorkspaceAnalyticsGroup() {
+  const {id, name, slug, teamName, eventName} = useWorkspace();
+  useEffect(() => {
+    posthog.group("workspace", id, {name, slug, teamName, eventName});
+    return () => posthog.resetGroups();
+  }, [id, name, slug, teamName, eventName]);
+  return null;
+}
+
 /** Tints the page with the workspace's accent color while you're in it. */
 function WorkspaceAccent() {
   const {accent} = useWorkspace().theme;
@@ -68,6 +82,7 @@ function RouteComponent() {
             <CallBar />
             <AwaySummary workspaceSlug={workspaceSlug} />
             <WorkspaceAccent />
+            <WorkspaceAnalyticsGroup />
           </VoiceProvider>
         </PresencesWebSocket>
       </NotificationsWebSocket>

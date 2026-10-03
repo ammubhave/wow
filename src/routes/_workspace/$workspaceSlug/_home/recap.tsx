@@ -7,6 +7,7 @@ import {toast} from "sonner";
 
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 import type {RouterOutputs} from "@/server/router";
@@ -179,6 +180,7 @@ function RouteComponent() {
       link.download = `${teamName} hunt recap.png`;
       link.href = url;
       link.click();
+      track("recap_image_saved");
     } catch {
       toast.error("Couldn't make the image. Try a screenshot instead!");
     }

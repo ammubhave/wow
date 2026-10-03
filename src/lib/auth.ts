@@ -8,6 +8,7 @@ import {waitUntil} from "cloudflare:workers";
 import {eq} from "drizzle-orm";
 import {Resend} from "resend";
 
+import {trackServerEvent} from "../server/posthog";
 import {db} from "./db";
 import * as schema from "./db/schema";
 
@@ -49,6 +50,15 @@ export const auth = betterAuth({
           html: `<h1>Verify your email</h1><p>Click <a href='${url}'>here</a> to verify your email address.</p>`,
         })
       );
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async user => {
+          trackServerEvent("user_signed_up", {distinctId: user.id});
+        },
+      },
     },
   },
   user: {
@@ -109,7 +119,8 @@ export const auth = betterAuth({
             throw new Error(`Workspace ID cannot be ${org.slug?.toLowerCase()}.`);
           }
         },
-        afterCreateOrganization: async ({organization: org}) => {
+        afterCreateOrganization: async ({organization: org, user}) => {
+          trackServerEvent("workspace_created", {distinctId: user.id, workspaceId: org.id});
           await db
             .update(schema.organization)
             .set({

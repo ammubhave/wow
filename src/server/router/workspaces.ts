@@ -15,6 +15,7 @@ import {
   invalidateWorkspace,
   type WorkspaceRoomWireState,
 } from "../do/workspace";
+import {trackServerEvent} from "../posthog";
 import {toWorkspaceRole} from "../workspace-access";
 import {preauthorize, procedure, requireOwner} from "./base";
 
@@ -89,6 +90,10 @@ export const workspacesRouter = {
       // Awaited before invalidating so the broadcast state includes the "join" entry.
       await context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"});
       await invalidateWorkspace(workspace.id);
+      trackServerEvent("workspace_joined", {
+        distinctId: context.session.user.id,
+        workspaceId: workspace.id,
+      });
       // Never return the full row: it holds the Google OAuth tokens and the join password.
       return {id: workspace.id, name: workspace.name, slug: workspace.slug};
     }),

@@ -3,33 +3,63 @@ import {PostHog} from "posthog-node";
 
 let client: PostHog | undefined;
 
-/**
- * Report an unexpected server error to PostHog error tracking (next to the browser's errors). Sent
- * after the response, so it never slows a request down. Off in development.
- */
-export function captureServerException(
-  error: unknown,
-  {distinctId, properties}: {distinctId?: string; properties?: Record<string, unknown>} = {}
-) {
-  if (import.meta.env.DEV || !env.VITE_PUBLIC_POSTHOG_KEY) return;
+/** PostHog, or nothing in development (and without a key). */
+function posthog() {
+  if (import.meta.env.DEV || !env.VITE_PUBLIC_POSTHOG_KEY) return undefined;
   // Workers can't keep a batch queue alive between requests: send each one right away.
   client ??= new PostHog(env.VITE_PUBLIC_POSTHOG_KEY, {
     host: env.VITE_PUBLIC_POSTHOG_HOST,
     flushAt: 1,
     flushInterval: 0,
   });
-  waitUntil(send(client, error, distinctId, {source: "worker", ...properties}));
+  return client;
 }
 
-async function send(
-  posthog: PostHog,
+/** Sent after the response, so reporting never slows a request down (or fails it). */
+function send(promise: () => Promise<void>) {
+  waitUntil(
+    (async () => {
+      try {
+        await promise();
+      } catch (error) {
+        console.error("PostHog send failed", error);
+      }
+    })()
+  );
+}
+
+/**
+ * Report an unexpected server error to PostHog error tracking (next to the browser's errors).
+ */
+export function captureServerException(
   error: unknown,
-  distinctId: string | undefined,
-  properties: Record<string, unknown>
+  {distinctId, properties}: {distinctId?: string; properties?: Record<string, unknown>} = {}
 ) {
-  try {
-    await posthog.captureExceptionImmediate(error, distinctId, properties);
-  } catch (reportError) {
-    console.error("PostHog capture failed", reportError);
-  }
+  const ph = posthog();
+  if (!ph) return;
+  send(() => ph.captureExceptionImmediate(error, distinctId, {source: "worker", ...properties}));
+}
+
+/**
+ * A product event, by the person who did it (the same id the browser identifies them by), and in
+ * their workspace's group, so it counts toward that team.
+ */
+export function trackServerEvent(
+  event: string,
+  {
+    distinctId,
+    workspaceId,
+    properties,
+  }: {distinctId: string; workspaceId?: string; properties?: Record<string, unknown>}
+) {
+  const ph = posthog();
+  if (!ph) return;
+  send(() =>
+    ph.captureImmediate({
+      distinctId,
+      event,
+      properties: {source: "server", ...properties},
+      groups: workspaceId ? {workspace: workspaceId} : undefined,
+    })
+  );
 }

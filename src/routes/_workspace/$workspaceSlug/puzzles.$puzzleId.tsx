@@ -30,6 +30,7 @@ import {PresencesWebSocket} from "@/components/presences-websocket";
 import {SolveSpark} from "@/components/solve-spark";
 import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {track} from "@/lib/analytics";
 import {client} from "@/lib/orpc";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {
@@ -542,12 +543,11 @@ function WorksheetPane({
         <Tabs
           selectedKey={view}
           className={cn(phone && "w-full")}
-          onSelectionChange={key =>
-            void navigate({
-              search: prev => ({...prev, view: VIEWS.find(v => v === key) ?? "sheet"}),
-              replace: true,
-            })
-          }>
+          onSelectionChange={key => {
+            const next = VIEWS.find(v => v === key) ?? "sheet";
+            track("puzzle_view_switched", {view: next, phone});
+            void navigate({search: prev => ({...prev, view: next}), replace: true});
+          }}>
           <Tabs.ListContainer>
             <Tabs.List aria-label="Puzzle views" className={cn(phone ? "w-full" : "w-fit")}>
               <Tabs.Tab id="sheet" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
