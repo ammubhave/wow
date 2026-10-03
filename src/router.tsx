@@ -1,6 +1,7 @@
 import {MutationCache, QueryClient} from "@tanstack/react-query";
 import {createRouter} from "@tanstack/react-router";
 import {setupRouterSsrQueryIntegration} from "@tanstack/react-router-ssr-query";
+import {posthog} from "posthog-js";
 
 import {NotFoundPage} from "./components/not-found-page";
 import {PageSkeleton} from "./components/page-skeletons";
@@ -30,6 +31,11 @@ export const getRouter = () => {
     defaultPendingComponent: PageSkeleton,
     // Unknown URLs, workspaces and puzzles.
     defaultNotFoundComponent: () => <NotFoundPage />,
+    // Errors that a route's error screen catches never reach the window, so PostHog's exception
+    // autocapture misses them: report them here.
+    defaultOnCatch: error => {
+      if (import.meta.env.PROD) posthog.captureException(error);
+    },
     // Let TanStack Query own freshness: the router always calls loaders, which hit the query cache.
     defaultPreloadStaleTime: 0,
   });

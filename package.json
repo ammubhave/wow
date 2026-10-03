@@ -85,6 +85,7 @@
     "partytracks": "^0.0.56",
     "postal-mime": "^4.0.1",
     "posthog-js": "^1.435.1",
+    "posthog-node": "^5.55.0",
     "postprocessing": "^6.39.5",
     "react": "^19.3.0",
     "react-aria-components": "^1.21.1",
@@ -117,6 +118,7 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^2.32.2",
     "@libsql/client": "^0.18.0",
+    "@posthog/rollup-plugin": "^1.6.1",
     "@tanstack/devtools-vite": "^0.8.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",

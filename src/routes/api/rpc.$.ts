@@ -1,13 +1,17 @@
-import {onError} from "@orpc/server";
+import {onError, ORPCError} from "@orpc/server";
 import {RPCHandler} from "@orpc/server/fetch";
 import {createFileRoute} from "@tanstack/react-router";
 
+import {captureServerException} from "@/server/posthog";
 import {router} from "@/server/router";
 
 const handler = new RPCHandler(router, {
   interceptors: [
-    onError(error => {
+    onError((error, {request}) => {
       console.error(error);
+      // Expected failures (not signed in, not found, bad input) aren't bugs.
+      if (error instanceof ORPCError && error.code !== "INTERNAL_SERVER_ERROR") return;
+      captureServerException(error, {properties: {path: new URL(request.url).pathname}});
     }),
   ],
 });

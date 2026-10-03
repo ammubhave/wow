@@ -5,10 +5,16 @@ import PostalMime from "postal-mime";
 import {db} from "./lib/db";
 import * as schema from "./lib/db/schema";
 import {fetchDiscord} from "./server/do/discord-client";
+import {captureServerException} from "./server/posthog";
 
 export default {
-  fetch(request) {
-    return handler.fetch(request);
+  async fetch(request) {
+    try {
+      return await handler.fetch(request);
+    } catch (error) {
+      captureServerException(error, {properties: {path: new URL(request.url).pathname}});
+      throw error;
+    }
   },
 
   async email(message) {

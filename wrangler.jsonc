@@ -5,7 +5,12 @@
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/index.ts",
-  "observability": {"enabled": true, "traces": {"enabled": true}, "logs": {"enabled": true}},
+  "observability": {
+    "enabled": true,
+    "traces": {"enabled": true},
+    // Also exported to PostHog Logs (a destination set up in the Cloudflare dashboard).
+    "logs": {"enabled": true, "destinations": ["posthog-logs"]},
+  },
   "placement": {"mode": "smart"},
   "upload_source_maps": true,
   "workers_dev": false,

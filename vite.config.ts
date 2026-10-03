@@ -1,9 +1,31 @@
 import {cloudflare} from "@cloudflare/vite-plugin";
+import posthogSourcemaps from "@posthog/rollup-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import {devtools} from "@tanstack/devtools-vite";
 import {tanstackStart} from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import {defineConfig} from "vite-plus";
+
+// Production builds (Workers Builds) upload the browser bundle's source maps to PostHog, so error
+// tracking shows real file names and lines, then delete them so they aren't served publicly. Needs
+// POSTHOG_PERSONAL_API_KEY (error tracking: write) and POSTHOG_PROJECT_ID; skipped without them.
+const posthogSourcemapsPlugin = process.env.POSTHOG_PERSONAL_API_KEY
+  ? {
+      ...posthogSourcemaps({
+        personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY,
+        projectId: process.env.POSTHOG_PROJECT_ID,
+        host: process.env.VITE_PUBLIC_POSTHOG_HOST,
+        sourcemaps: {
+          enabled: true,
+          releaseName: "wow",
+          releaseVersion: process.env.WORKERS_CI_COMMIT_SHA,
+          deleteAfterUpload: true,
+        },
+      }),
+      // The Worker's own source maps go to Cloudflare instead (upload_source_maps).
+      applyToEnvironment: (environment: {name: string}) => environment.name === "client",
+    }
+  : undefined;
 
 const config = defineConfig({
   staged: {"*": "vp fmt --no-error-on-unmatched-pattern"},
@@ -166,6 +188,7 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart(),
     viteReact({compiler: true}),
+    posthogSourcemapsPlugin,
   ],
   build: {sourcemap: true},
   optimizeDeps: {

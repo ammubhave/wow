@@ -19,6 +19,8 @@ peerDependencyRules:
 
 allowBuilds:
   "@heroui-pro/react": true
+  # Downloads the posthog-cli binary used to upload source maps.
+  "@posthog/cli": true
   esbuild: true
   heroui-pro: true
   sharp: true
