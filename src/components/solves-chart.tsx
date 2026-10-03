@@ -1,8 +1,10 @@
 import {ChartTooltip} from "@heroui-pro/react";
 import {AreaChart} from "@heroui-pro/react/area-chart";
 import {Card} from "@heroui/react";
+import NumberFlow from "@number-flow/react";
 import {useQuery} from "@tanstack/react-query";
 import {useParams} from "@tanstack/react-router";
+import {ReferenceDot} from "recharts";
 import {useNow} from "use-intl";
 
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -43,20 +45,31 @@ export default function SolvesChart() {
   const timed = solved
     .flatMap(puzzle => {
       const time = solvedAt.get(puzzle.id);
-      return time === undefined ? [] : [{time, puzzle: puzzle.name}];
+      return time === undefined ? [] : [{time, puzzle: puzzle.name, isMeta: puzzle.isMetaPuzzle}];
     })
     .toSorted((a, b) => a.time - b.time);
   const untimed = solved.length - timed.length;
 
   if (solves === undefined || solved.length === 0) return null;
 
-  const start = timed[0]?.time ?? now;
+  // With hunt times set (they're optional), the chart covers the hunt: from its start, to now
+  // (or its end, once it's over).
+  const huntStart = workspace.huntStartsAt ? new Date(workspace.huntStartsAt).getTime() : undefined;
+  const huntEnd = workspace.huntEndsAt ? new Date(workspace.huntEndsAt).getTime() : undefined;
+  const firstSolve = timed[0]?.time ?? now;
+  const start = huntStart !== undefined ? Math.min(huntStart, firstSolve) : firstSolve;
+  const lastSolve = timed.at(-1)?.time ?? now;
+  const end = Math.max(lastSolve, huntEnd !== undefined ? Math.min(now, huntEnd) : now);
   const points: Point[] = [
     {time: start, solved: untimed, puzzle: ""},
-    ...timed.map((solve, i) => ({...solve, solved: untimed + i + 1})),
+    ...timed.map(({time, puzzle}, i) => ({time, puzzle, solved: untimed + i + 1})),
     // Carry the line on to now, so a quiet stretch shows as flat.
-    {time: Math.max(now, timed.at(-1)?.time ?? now), solved: solved.length, puzzle: ""},
+    {time: end, solved: solved.length, puzzle: ""},
   ];
+  // Metas solved: marked on the line.
+  const metaSolves = timed.flatMap((solve, i) =>
+    solve.isMeta ? [{time: solve.time, solved: untimed + i + 1, puzzle: solve.puzzle}] : []
+  );
   const spansDays = points.at(-1)!.time - start > 1000 * 60 * 60 * 20;
   // A handful of evenly spaced ticks (Recharts would otherwise label every solve).
   const span = points.at(-1)!.time - start;
@@ -69,8 +82,10 @@ export default function SolvesChart() {
       <Card.Header className="flex-row items-baseline justify-between gap-4">
         <Card.Title className="text-base">Solves</Card.Title>
         <p className="text-muted m-0 text-sm tabular-nums">
-          <span className="text-foreground text-lg font-semibold">{solved.length}</span> of{" "}
-          {puzzles.length}
+          <span className="text-foreground text-lg font-semibold">
+            <NumberFlow value={solved.length} />
+          </span>{" "}
+          of {puzzles.length}
           {metas > 0 && ` · ${metas} ${metas === 1 ? "meta" : "metas"}`}
         </p>
       </Card.Header>
@@ -105,6 +120,18 @@ export default function SolvesChart() {
               strokeWidth={2}
               isAnimationActive={false}
             />
+            {metaSolves.map(meta => (
+              <ReferenceDot
+                key={meta.time}
+                x={meta.time}
+                y={meta.solved}
+                r={5}
+                fill="var(--color-warning)"
+                stroke="var(--surface)"
+                strokeWidth={2}
+                label={{value: "★", position: "top", fill: "var(--color-warning)", fontSize: 12}}
+              />
+            ))}
             <AreaChart.Tooltip content={<SolveTooltip points={points} />} />
           </AreaChart>
         </Card.Content>

@@ -267,11 +267,25 @@ function assignUnassignedPuzzles(
   );
 }
 
+/** A date input in ms: undefined leaves it alone, null clears it. */
+const toDate = (ms: number | null | undefined) =>
+  ms === undefined ? undefined : ms === null ? null : new Date(ms);
+
 function updateWorkspace(wire: Wire, input: RouterInputs["workspaces"]["update"]): Wire {
-  const {workspaceSlug: _, comment, ...fields} = input;
+  const {workspaceSlug: _, comment, huntStartsAt, huntEndsAt, accent, emoji, ...fields} = input;
   return {
     ...wire,
-    ...defined({...fields, comment: comment === undefined ? undefined : comment || null}),
+    ...defined({
+      ...fields,
+      comment: comment === undefined ? undefined : comment || null,
+      huntStartsAt: toDate(huntStartsAt),
+      huntEndsAt: toDate(huntEndsAt),
+    }),
+    theme: {
+      ...wire.theme,
+      ...(accent !== undefined && {accent}),
+      ...(emoji !== undefined && {emoji: emoji ?? undefined}),
+    },
   };
 }
 

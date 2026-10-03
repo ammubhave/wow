@@ -142,6 +142,11 @@ export const auth = betterAuth({
             discordGuildId: {type: "string", required: false},
             tags: {type: "string[]", required: false},
             links: {type: "json", required: false},
+            // Optional hunt clock (the header shows elapsed/remaining time when set).
+            huntStartsAt: {type: "date", required: false},
+            huntEndsAt: {type: "date", required: false},
+            // Look and feel: accent color, emoji, team custom emoji (see workspace-theme.ts).
+            theme: {type: "json", required: false},
           },
         },
         member: {additionalFields: {favoritePuzzleIds: {type: "string[]", required: false}}},

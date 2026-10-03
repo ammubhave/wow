@@ -5,6 +5,7 @@ import {CopyIcon, PlusIcon, TrashIcon} from "lucide-react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
+import {HuntClockCard, LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {orpc} from "@/lib/orpc";
@@ -15,9 +16,13 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/
 });
 
 function RouteComponent() {
+  const {workspaceSlug} = Route.useParams();
   return (
     <>
       <DetailsCard />
+      <LookCard workspaceSlug={workspaceSlug} />
+      <HuntClockCard workspaceSlug={workspaceSlug} />
+      <TeamEmojiCard workspaceSlug={workspaceSlug} />
       <UpdateLinksCard />
       <UpdateTagsCard />
       <LeaveWorkspaceCard />
@@ -68,6 +73,8 @@ function UpdateLinksCard() {
                             onBlur={nameField.handleBlur}
                             aria-label={`Link ${i + 1} name`}
                             placeholder="Name"
+                            // Both inputs shrink to fit a phone: the name narrower, the URL the rest.
+                            className="w-24 min-w-0 shrink-0 sm:w-40"
                           />
                         )}
                       />
@@ -81,6 +88,7 @@ function UpdateLinksCard() {
                             onBlur={urlField.handleBlur}
                             aria-label={`Link ${i + 1} URL`}
                             placeholder="URL"
+                            className="min-w-0 flex-1"
                           />
                         )}
                       />

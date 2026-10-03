@@ -1,11 +1,10 @@
 import {env} from "cloudflare:workers";
 
+import type {NewNotification} from "@/server/notifications";
+
 export class NotificationService {
-  async broadcast(
-    workspaceId: string,
-    data: {type: "solved"; message: string} | {type: "announcement"; message: string; from: string}
-  ) {
-    const room = env.NOTIFICATION_ROOMS.getByName(workspaceId);
-    await room.broadcast({...data, timestamp: Date.now()});
+  /** Pushes a notification to the workspace's members (and keeps it for the bell). */
+  async broadcast(workspaceId: string, data: NewNotification) {
+    await env.NOTIFICATION_ROOMS.getByName(workspaceId, {locationHint: "enam"}).broadcast(data);
   }
 }

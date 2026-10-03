@@ -21,42 +21,60 @@ async function sha256Hex(body: ArrayBuffer) {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
+/** Serves a stored image (content-addressed, so browsers may cache it forever). */
+export async function serveImage(key: string) {
+  const object = await env.R2.get(key);
+  if (object === null) return new Response(null, {status: 404});
+  return new Response(object.body, {
+    headers: {
+      "Content-Type": object.httpMetadata?.contentType || "application/octet-stream",
+      // Content-addressed: the browser can keep it forever (one R2 read per viewer).
+      "Cache-Control": "private, max-age=31536000, immutable",
+    },
+  });
+}
+
 /**
- * GET/PUT handlers for one area's puzzle images. With `verifySha256`, an upload's id must be the
- * SHA-256 of its bytes, so nobody can put different content under an id someone else will send.
+ * Stores an uploaded image under `key`. With `verifySha256`, `fileId` must be the SHA-256 of the
+ * bytes, so nobody can put different content under an id someone else will send.
  */
+export async function storeImage(
+  request: Request,
+  key: string,
+  {
+    fileId,
+    verifySha256 = false,
+    maxBytes = MAX_IMAGE_BYTES,
+  }: {fileId: string; verifySha256?: boolean; maxBytes?: number}
+) {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.startsWith("image/")) return new Response(null, {status: 415});
+  const body = await request.arrayBuffer();
+  if (body.byteLength > maxBytes) return new Response(null, {status: 413});
+  if (verifySha256 && (await sha256Hex(body)) !== fileId) return new Response(null, {status: 400});
+  // Already there (same content): skip the write.
+  if ((await env.R2.head(key)) === null) {
+    await env.R2.put(key, body, {httpMetadata: {contentType}});
+  }
+  return new Response(null, {status: 204});
+}
+
+/** GET/PUT handlers for one area's puzzle images (see `storeImage` for `verifySha256`). */
 export function puzzleFileHandlers(area: string, {verifySha256 = false} = {}) {
   type Params = {params: {puzzleId: string; fileId: string}; request: Request};
   return {
     GET: async ({request, params: {puzzleId, fileId}}: Params) => {
       const denied = await authorize(request, puzzleId);
       if (denied) return denied;
-      const object = await env.R2.get(puzzleFilesPrefix(area, puzzleId) + fileId);
-      if (object === null) return new Response(null, {status: 404});
-      return new Response(object.body, {
-        headers: {
-          "Content-Type": object.httpMetadata?.contentType || "application/octet-stream",
-          // Content-addressed: the browser can keep it forever (one R2 read per viewer).
-          "Cache-Control": "private, max-age=31536000, immutable",
-        },
-      });
+      return await serveImage(puzzleFilesPrefix(area, puzzleId) + fileId);
     },
     PUT: async ({request, params: {puzzleId, fileId}}: Params) => {
       const denied = await authorize(request, puzzleId);
       if (denied) return denied;
-      const contentType = request.headers.get("content-type") ?? "";
-      if (!contentType.startsWith("image/")) return new Response(null, {status: 415});
-      const body = await request.arrayBuffer();
-      if (body.byteLength > MAX_IMAGE_BYTES) return new Response(null, {status: 413});
-      if (verifySha256 && (await sha256Hex(body)) !== fileId) {
-        return new Response(null, {status: 400});
-      }
-      const key = puzzleFilesPrefix(area, puzzleId) + fileId;
-      // Already there (same content): skip the write.
-      if ((await env.R2.head(key)) === null) {
-        await env.R2.put(key, body, {httpMetadata: {contentType}});
-      }
-      return new Response(null, {status: 204});
+      return await storeImage(request, puzzleFilesPrefix(area, puzzleId) + fileId, {
+        fileId,
+        verifySha256,
+      });
     },
   };
 }

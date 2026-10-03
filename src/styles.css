@@ -168,3 +168,58 @@
     cursor: col-resize;
   }
 }
+
+/* A reaction's little burst: copies of the emoji pop up and fade (--dx/--dy set per copy). */
+@theme {
+  --animate-reaction-burst: reaction-burst 600ms ease-out forwards;
+}
+@keyframes reaction-burst {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-reaction-burst {
+    display: none;
+  }
+}
+
+/* A teammate just changed a board row: a brief glow, and their name popping up then fading. */
+@theme {
+  --animate-teammate-glow: teammate-glow 1.6s ease-out forwards;
+  --animate-teammate-badge: teammate-badge 4s ease-out forwards;
+}
+@keyframes teammate-glow {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes teammate-badge {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  8%,
+  80% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-teammate-glow,
+  .animate-teammate-badge {
+    animation-duration: 0.01ms;
+  }
+}

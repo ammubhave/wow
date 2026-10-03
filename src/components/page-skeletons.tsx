@@ -1,4 +1,21 @@
 import {Card, Skeleton} from "@heroui/react";
+import {useState} from "react";
+
+/** A little something to read while a workspace loads. */
+const LOADING_LINES = [
+  "Shuffling the puzzle pieces…",
+  "Untangling the red herrings…",
+  "Counting the enumerations…",
+  "Consulting Nutrimatic…",
+  "Sharpening the pencils…",
+  "Checking under the metas…",
+  "Waking up the waffle…",
+];
+
+function LoadingLine() {
+  const [line] = useState(() => LOADING_LINES[Math.floor(Math.random() * LOADING_LINES.length)]);
+  return <p className="text-muted text-center text-sm">{line}</p>;
+}
 
 /**
  * Loading placeholders shaped like the pages they stand in for, so a slow load shows the page's
@@ -40,6 +57,7 @@ export function WorkspaceSkeleton() {
             <Skeleton className="h-9 flex-1 rounded-lg" />
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
+          <LoadingLine />
           <Skeleton className="h-8 w-full rounded-lg" />
           {Array.from({length: 14}, (_, i) => (
             <Skeleton key={i} className="h-9 w-full rounded-lg" />

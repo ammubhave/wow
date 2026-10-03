@@ -40,7 +40,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
             <Command.List
               renderEmptyState={() => (
                 <div className="text-muted flex h-12 items-center justify-center text-sm">
-                  No results found.
+                  No results. Maybe it was a red herring?
                 </div>
               )}>
               <Command.Group heading="Workspace">

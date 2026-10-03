@@ -1,19 +1,24 @@
 import {EmptyState} from "@heroui-pro/react";
 import {Resizable} from "@heroui-pro/react/resizable";
-import {Button, buttonVariants, InputGroup, ListBox, Tabs, Tooltip} from "@heroui/react";
+import {Button, buttonVariants, InputGroup, ListBox, Spinner, Tabs, Tooltip} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
-import {createFileRoute, useNavigate} from "@tanstack/react-router";
+import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
   BrushIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   EditIcon,
   ExternalLinkIcon,
+  InfoIcon,
+  MessagesSquareIcon,
   PresentationIcon,
   PuzzleIcon,
   SheetIcon,
   TableIcon,
 } from "lucide-react";
-import {useState} from "react";
+import {type ReactNode, useEffect, useState} from "react";
 import {cn} from "tailwind-variants";
+import {useMediaQuery} from "usehooks-ts";
 import {z} from "zod";
 
 import {Chat} from "@/components/chat";
@@ -37,7 +42,8 @@ import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzleId")({
   // Which surface the left pane shows; in the URL so a shared link opens the same view.
-  validateSearch: z.object({view: z.enum(["sheet", "whiteboard"]).optional()}),
+  // On phones, chat and the puzzle's details are views too (on desktop they're always shown).
+  validateSearch: z.object({view: z.enum(["sheet", "whiteboard", "chat", "info"]).optional()}),
   component: RouteComponent,
   head: async ({params}) => {
     const puzzle = await client.puzzles.get({
@@ -51,10 +57,31 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzle
 function RouteComponent() {
   const {workspaceSlug, puzzleId} = Route.useParams();
   const puzzle = usePuzzle({puzzleId});
+  // Phones get one view at a time (tabs) instead of side-by-side panels.
+  const isWide = useMediaQuery("(min-width: 768px)");
 
   if (!puzzle.data || !puzzleId) {
     // Unknown or since-deleted puzzle: say so inside the workspace rather than a blank page.
     return <NotFoundPage className="min-h-0" />;
+  }
+
+  // Keyed so the form (and chat history) never carry over between puzzles: a touched form stops
+  // following its default values, so it would otherwise keep showing, and on the next change
+  // submit, the previous puzzle's fields.
+  const info = (
+    <PuzzleInfoPanel key={puzzleId} workspaceSlug={workspaceSlug} puzzle={puzzle.data} />
+  );
+  const chat = <Chat key={puzzleId} puzzleId={puzzleId} />;
+
+  if (!isWide) {
+    return (
+      // min-w-0: as a flex item it would otherwise grow to its widest content, not the screen.
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <PresencesWebSocket workspaceSlug={workspaceSlug} puzzleId={puzzleId}>
+          <WorksheetPane puzzle={puzzle.data} phone={{chat, info}} />
+        </PresencesWebSocket>
+      </main>
+    );
   }
 
   return (
@@ -69,18 +96,11 @@ function RouteComponent() {
             <Resizable.Panel defaultSize={20}>
               <Resizable orientation="vertical">
                 <Resizable.Panel defaultSize={30} className="flex">
-                  {/* Keyed so the form (and chat history) never carry over between puzzles: a
-                      touched form stops following its default values, so it would otherwise keep
-                      showing, and on the next change submit, the previous puzzle's fields. */}
-                  <PuzzleInfoPanel
-                    key={puzzleId}
-                    workspaceSlug={workspaceSlug}
-                    puzzle={puzzle.data}
-                  />
+                  {info}
                 </Resizable.Panel>
                 <Resizable.Handle type="drag" />
                 <Resizable.Panel defaultSize={60} className="flex flex-col">
-                  <Chat key={puzzleId} puzzleId={puzzleId} />
+                  {chat}
                 </Resizable.Panel>
               </Resizable>
             </Resizable.Panel>
@@ -142,6 +162,11 @@ function PuzzleInfoPanel({
   });
 
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
+  // A feeder's siblings: the meta's other feeders, with their answers so far.
+  const meta = puzzle.parentPuzzleId
+    ? workspace.rounds.flatMap(r => r.puzzles).find(p => p.id === puzzle.parentPuzzleId)
+    : undefined;
+  const siblings = meta?.childPuzzles.filter(child => child.id !== puzzle.id) ?? [];
 
   return (
     <div className="bg-surface flex min-w-0 flex-1 flex-col overflow-auto">
@@ -176,6 +201,7 @@ function PuzzleInfoPanel({
           </Button>
         </EditPuzzleDialog>
       </div>
+      <PuzzleContext workspaceSlug={workspaceSlug} puzzle={puzzle} />
       <form.AppForm>
         {/* A property list: muted labels on the left, full-width controls on the right. */}
         <form.Form className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-3">
@@ -321,25 +347,14 @@ function PuzzleInfoPanel({
         </form.Form>
       </form.AppForm>
       {puzzle.childPuzzles.length > 0 && (
-        <section
-          className="border-separator flex flex-col gap-1.5 border-t p-3"
-          aria-label="Feeder answers">
-          <h3 className="text-muted text-xs font-medium">Feeder answers</h3>
-          <ul className="flex flex-col gap-1 text-sm">
-            {puzzle.childPuzzles.map(child => (
-              <li key={child.id} className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate">{child.name}</span>
-                <span
-                  className={cn(
-                    "shrink-0 font-mono text-xs",
-                    child.answer ? "text-success" : "text-muted"
-                  )}>
-                  {child.answer ? child.answer.toUpperCase() : "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <PuzzleList
+          workspaceSlug={workspaceSlug}
+          title="Feeder answers"
+          puzzles={puzzle.childPuzzles}
+        />
+      )}
+      {siblings.length > 0 && (
+        <PuzzleList workspaceSlug={workspaceSlug} title="Other feeders" puzzles={siblings} />
       )}
       <div className="border-separator border-t p-3">
         <CommentBox
@@ -350,6 +365,123 @@ function PuzzleInfoPanel({
           puzzleId={puzzle.id}
         />
       </div>
+    </div>
+  );
+}
+
+/** Where the puzzle sits: its round and (for a feeder) its meta, as links. */
+function PuzzleContext({
+  workspaceSlug,
+  puzzle,
+}: {
+  workspaceSlug: string;
+  puzzle: {roundId: string; parentPuzzleId: string | null};
+}) {
+  const workspace = useWorkspace();
+  const round = workspace.rounds.find(r => r.id === puzzle.roundId);
+  const meta = puzzle.parentPuzzleId
+    ? round?.puzzles.find(p => p.id === puzzle.parentPuzzleId)
+    : undefined;
+  if (!round) return null;
+  return (
+    <nav
+      aria-label="Puzzle location"
+      className="text-muted flex min-w-0 items-center gap-1 px-3 pt-2 text-xs">
+      <Link
+        to="/$workspaceSlug"
+        params={{workspaceSlug}}
+        hash={round.id}
+        className="hover:text-foreground min-w-0 truncate">
+        {round.name}
+      </Link>
+      {meta && (
+        <>
+          <ChevronRightIcon className="size-3 shrink-0" aria-hidden />
+          <Link
+            to="/$workspaceSlug/puzzles/$puzzleId"
+            params={{workspaceSlug, puzzleId: meta.id}}
+            className="hover:text-foreground min-w-0 truncate">
+            {meta.name}
+          </Link>
+        </>
+      )}
+    </nav>
+  );
+}
+
+/** A list of puzzles with their answers (a meta's feeders, a feeder's siblings), as links. */
+function PuzzleList({
+  workspaceSlug,
+  title,
+  puzzles,
+}: {
+  workspaceSlug: string;
+  title: string;
+  puzzles: {id: string; name: string; answer: string | null}[];
+}) {
+  return (
+    <section className="border-separator flex flex-col gap-1.5 border-t p-3" aria-label={title}>
+      <h3 className="text-muted text-xs font-medium">{title}</h3>
+      <ul className="flex flex-col gap-1 text-sm">
+        {puzzles.map(child => (
+          <li key={child.id} className="flex items-baseline justify-between gap-3">
+            <Link
+              to="/$workspaceSlug/puzzles/$puzzleId"
+              params={{workspaceSlug, puzzleId: child.id}}
+              className="min-w-0 truncate hover:underline">
+              {child.name}
+            </Link>
+            <span
+              className={cn(
+                "shrink-0 font-mono text-xs",
+                child.answer ? "text-success" : "text-muted"
+              )}>
+              {child.answer ? child.answer.toUpperCase() : "—"}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Previous/next puzzle (in board order), keeping the current view. */
+function PuzzleStepper({puzzleId}: {puzzleId: string}) {
+  const workspace = useWorkspace();
+  const navigate = useNavigate({from: Route.fullPath});
+  const all = workspace.rounds.flatMap(round => round.puzzles);
+  const index = all.findIndex(p => p.id === puzzleId);
+  const previous = index > 0 ? all[index - 1] : undefined;
+  const next = index >= 0 && index < all.length - 1 ? all[index + 1] : undefined;
+  const go = (id: string) =>
+    void navigate({
+      to: "/$workspaceSlug/puzzles/$puzzleId",
+      params: prev => ({...prev, puzzleId: id}),
+      search: prev => prev,
+    });
+  return (
+    <div className="ms-auto flex shrink-0 items-center">
+      {[
+        {target: previous, label: "Previous puzzle", Icon: ChevronLeftIcon},
+        {target: next, label: "Next puzzle", Icon: ChevronRightIcon},
+      ].map(({target, label, Icon}) => (
+        <Tooltip key={label} delay={300}>
+          <Tooltip.Trigger>
+            <Button
+              size="sm"
+              isIconOnly
+              variant="ghost"
+              isDisabled={!target}
+              aria-label={target ? `${label}: ${target.name}` : label}
+              onPress={() => target && go(target.id)}>
+              <Icon />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            {target ? `${label}: ${target.name}` : `No ${label.toLowerCase()}`}
+          </Tooltip.Content>
+        </Tooltip>
+      ))}
     </div>
   );
 }
@@ -380,6 +512,7 @@ function PanelLink({href, label, icon}: {href: string; label: string; icon: Reac
  */
 function WorksheetPane({
   puzzle,
+  phone,
 }: {
   puzzle: {
     id: string;
@@ -388,11 +521,16 @@ function WorksheetPane({
     googleSpreadsheetId: string | null;
     googleDrawingId: string | null;
   };
+  /** On phones, chat and the details panel become tabs here too. */
+  phone?: {chat: ReactNode; info: ReactNode};
 }) {
   const navigate = useNavigate({from: Route.fullPath});
   const hasWorksheet = Boolean(puzzle.googleSpreadsheetId || puzzle.googleDrawingId);
   // Without a Google worksheet, the whiteboard is the useful default.
-  const view = Route.useSearch().view ?? (hasWorksheet ? "sheet" : "whiteboard");
+  const defaultView = hasWorksheet ? "sheet" : "whiteboard";
+  const requested = Route.useSearch().view ?? defaultView;
+  // Chat and details are only views on phones; a phone link opened on desktop shows the sheet.
+  const view = !phone && (requested === "chat" || requested === "info") ? defaultView : requested;
   // Mount the whiteboard the first time it's shown, then keep it (and its connection) around.
   const [whiteboardOpened, setWhiteboardOpened] = useState(view === "whiteboard");
   if (view === "whiteboard" && !whiteboardOpened) setWhiteboardOpened(true);
@@ -403,40 +541,60 @@ function WorksheetPane({
       <div className="border-separator flex h-10 shrink-0 items-center border-b px-2">
         <Tabs
           selectedKey={view}
+          className={cn(phone && "w-full")}
           onSelectionChange={key =>
             void navigate({
-              search: prev => ({...prev, view: key === "whiteboard" ? "whiteboard" : "sheet"}),
+              search: prev => ({...prev, view: VIEWS.find(v => v === key) ?? "sheet"}),
               replace: true,
             })
           }>
           <Tabs.ListContainer>
-            <Tabs.List aria-label="Worksheet" className="w-fit">
-              <Tabs.Tab id="sheet" className="h-7 px-3 text-xs">
+            <Tabs.List aria-label="Puzzle views" className={cn(phone ? "w-full" : "w-fit")}>
+              <Tabs.Tab id="sheet" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
                 <SheetIcon className="size-3.5" />
                 <span className="ms-1.5">{sheetLabel}</span>
                 <Tabs.Indicator />
               </Tabs.Tab>
-              <Tabs.Tab id="whiteboard" className="h-7 px-3 text-xs">
+              <Tabs.Tab id="whiteboard" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
                 <PresentationIcon className="size-3.5" />
-                <span className="ms-1.5">Whiteboard</span>
+                <span className="ms-1.5">{phone ? "Draw" : "Whiteboard"}</span>
                 <Tabs.Indicator />
               </Tabs.Tab>
+              {phone && (
+                <>
+                  <Tabs.Tab id="chat" className="h-7 flex-1 px-3 text-xs">
+                    <MessagesSquareIcon className="size-3.5" />
+                    <span className="ms-1.5">Chat</span>
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                  <Tabs.Tab id="info" className="h-7 flex-1 px-3 text-xs">
+                    <InfoIcon className="size-3.5" />
+                    <span className="ms-1.5">Info</span>
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                </>
+              )}
             </Tabs.List>
           </Tabs.ListContainer>
         </Tabs>
+        {!phone && <PuzzleStepper puzzleId={puzzle.id} />}
       </div>
       <div className={cn("flex min-h-0 flex-1 flex-col", view !== "sheet" && "hidden")}>
         {hasWorksheet ? (
-          // oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets/Drawings editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it.
-          <iframe
+          <WorksheetFrame
+            // A new puzzle gets a fresh frame (and loading state).
+            key={puzzle.id}
             title={`${puzzle.name} ${puzzle.googleSpreadsheetId ? "spreadsheet" : "drawing"}`}
             src={
               puzzle.googleSpreadsheetId
                 ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
                 : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
             }
-            allow="fullscreen; geolocation; microphone; camera; payment"
-            className="h-full w-full flex-1 bg-white"
+            openHref={
+              puzzle.googleSpreadsheetId
+                ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit`
+                : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit`
+            }
           />
         ) : (
           // No worksheet (e.g. Google Drive isn't connected): the page still has the whiteboard,
@@ -479,6 +637,84 @@ function WorksheetPane({
           <PuzzleWhiteboard puzzleId={puzzle.id} />
         </div>
       )}
+      {phone && (
+        <>
+          {/* Kept mounted (hidden) so chat keeps its connection and unread history. */}
+          <div className={cn("flex min-h-0 flex-1 flex-col", view !== "chat" && "hidden")}>
+            {phone.chat}
+          </div>
+          <div
+            className={cn(
+              "flex min-h-0 min-w-0 flex-1 overflow-auto",
+              view !== "info" && "hidden"
+            )}>
+            {phone.info}
+          </div>
+        </>
+      )}
     </>
+  );
+}
+
+const VIEWS = ["sheet", "whiteboard", "chat", "info"] as const;
+
+/** Google can be slow to answer; after this long, offer a retry or a new tab. */
+const SLOW_SHEET_MS = 15_000;
+
+/**
+ * The Google Sheet/Drawing, with a placeholder until it has loaded (instead of a blank white
+ * frame), and a way out if it's slow.
+ */
+function WorksheetFrame({title, src, openHref}: {title: string; src: string; openHref: string}) {
+  // When the current load started (a retry starts a new one, with a fresh frame).
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [loaded, setLoaded] = useState(false);
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (loaded) return undefined;
+    const timer = setTimeout(() => setSlow(true), startedAt + SLOW_SHEET_MS - Date.now());
+    return () => clearTimeout(timer);
+  }, [loaded, startedAt]);
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {/* oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets/Drawings editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it. */}
+      <iframe
+        key={startedAt}
+        title={title}
+        src={src}
+        allow="fullscreen; geolocation; microphone; camera; payment"
+        onLoad={() => setLoaded(true)}
+        className="h-full w-full flex-1 bg-white"
+      />
+      {!loaded && (
+        <div className="bg-surface absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+          <Spinner aria-label="Loading the sheet" />
+          <p className="text-muted text-sm">
+            {slow ? "Google is taking its time…" : "Unfolding the sheet…"}
+          </p>
+          {slow && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => {
+                  setSlow(false);
+                  setStartedAt(Date.now());
+                }}>
+                Retry
+              </Button>
+              <a
+                href={openHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonVariants({size: "sm", variant: "ghost"})}>
+                Open in a new tab
+                <ExternalLinkIcon />
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

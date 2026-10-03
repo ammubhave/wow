@@ -17,8 +17,9 @@ export function WorkspaceFooter() {
       <div className="flex min-w-0 shrink-0 items-center px-1">
         <WorkspaceSwitcher workspaceSlug={workspaceSlug} />
       </div>
-      <div className="flex h-(--header-height) w-full items-center gap-2 px-2">
-        <div className="flex flex-1 items-center justify-end overflow-hidden">
+      <div className="flex h-(--header-height) w-full items-center justify-end gap-2 px-2">
+        {/* No room on phones for the latest activity (the Activity log is in the menu). */}
+        <div className="hidden flex-1 items-center justify-end overflow-hidden md:flex">
           {workspace.activityLogEntries[0] && (
             <div className="flex items-center overflow-hidden px-3">
               <Link

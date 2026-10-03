@@ -232,7 +232,7 @@ export default function WhiteboardCanvas({puzzleId}: {puzzleId: string}) {
   if (initialElements === null) {
     return (
       <div className="text-muted flex flex-1 items-center justify-center text-sm">
-        Loading whiteboard…
+        Sharpening the markers…
       </div>
     );
   }

@@ -168,7 +168,22 @@ const config = defineConfig({
     viteReact({compiler: true}),
   ],
   build: {sourcemap: true},
-  optimizeDeps: {exclude: ["@tanstack/start-server-core"]},
+  optimizeDeps: {
+    exclude: ["@tanstack/start-server-core"],
+    // Dependencies only reached through lazily loaded code: pre-bundle them at startup, so Vite
+    // doesn't discover them mid-session and re-optimize (which reloads the page, and 504s
+    // "Outdated Optimize Dep" when two dev servers share node_modules/.vite).
+    include: [
+      "recharts",
+      "@number-flow/react",
+      "@formkit/auto-animate/react",
+      "frimousse",
+      "html-to-image",
+      "partytracks/client",
+      "webrtc-adapter",
+      "rxjs",
+    ],
+  },
   ssr: {optimizeDeps: {exclude: ["@tanstack/start-server-core"]}},
 });
 

@@ -12,11 +12,13 @@ import {
 import {useEffect} from "react";
 
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
+import {NotificationBell} from "@/features/notifications/notifications";
 import {LobbyButton} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
 import {useAppDispatch, useAppSelector} from "@/store";
 
+import {HuntClock} from "./hunt-clock";
 import {NavUser} from "./nav-user";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
@@ -62,7 +64,12 @@ export function WorkspaceHeader() {
         <Navbar.MenuToggle className="md:hidden" />
         <Navbar.Brand>
           <Link to="/workspaces" aria-label="All workspaces">
-            <img src="/favicon.ico" alt="" className="size-5 rounded-full" />
+            {/* The team's emoji, if it picked one (Settings › Look). */}
+            {workspace.theme.emoji ? (
+              <span className="text-lg leading-none">{workspace.theme.emoji}</span>
+            ) : (
+              <img src="/favicon.ico" alt="" className="size-5 rounded-full" />
+            )}
           </Link>
         </Navbar.Brand>
         {/* Real links (⌘/middle-click work) with a segmented look. Sections are icon-only except the
@@ -106,11 +113,14 @@ export function WorkspaceHeader() {
             <Navbar.Item
               key={`${link.name}\n${link.url}`}
               href={link.url}
-              className="text-foreground">
+              // Phones: in the menu instead (they'd crowd out everything else).
+              className="text-foreground hidden md:flex">
               <Navbar.Label>{link.name}</Navbar.Label>
               <ExternalLinkIcon data-slot="icon" />
             </Navbar.Item>
           ))}
+          <HuntClock />
+          <NotificationBell workspaceSlug={workspaceSlug} />
           <LobbyButton />
           <WorkspaceCommandDialog workspaceSlug={workspaceSlug} />
           <Navbar.Separator />
@@ -129,6 +139,12 @@ export function WorkspaceHeader() {
             href={`/${workspaceSlug}${path}`}
             isCurrent={currentSection === routeId}>
             {label}
+          </Navbar.MenuItem>
+        ))}
+        {workspace.links.map(link => (
+          <Navbar.MenuItem key={`${link.name}\n${link.url}`} href={link.url} target="_blank">
+            {link.name}
+            <ExternalLinkIcon className="size-4" />
           </Navbar.MenuItem>
         ))}
       </Navbar.Menu>

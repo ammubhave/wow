@@ -1,10 +1,14 @@
 import {DurableObject} from "cloudflare:workers";
+import {eq} from "drizzle-orm";
 import {Hono} from "hono";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
+import {db} from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
+import {MENTION_PATTERN, plainMentions} from "@/server/notifications";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
 
 // Image ids are the SHA-256 (hex) of the uploaded bytes, stored in R2 by the images route.
@@ -21,29 +25,38 @@ const chatRoomSentMessageSchema = z.union([
   z.object({
     type: z.literal("react"),
     messageId: z.string(),
-    reaction: z.literal(["like", "love", "laugh", "question", "angry"]),
+    // An emoji, a team emoji (":name:"), or one of the original names ("like", "love", …).
+    reaction: z.string().min(1).max(40),
   }),
-  z.object({
-    type: z.literal("connect"),
-    sdp: z.string(),
-    tracks: z.object({trackName: z.string(), mid: z.string()}).array(),
-  }),
-  z.object({type: z.literal("disconnect")}),
-  z.object({type: z.literal("renegotiate"), sdp: z.string().optional()}),
+  // Only the sender may edit or delete a message.
+  z.object({type: z.literal("edit"), messageId: z.string(), text: z.string().min(1).max(4000)}),
+  z.object({type: z.literal("delete"), messageId: z.string()}),
+  // Anyone in the puzzle may pin or unpin.
+  z.object({type: z.literal("pin"), messageId: z.string(), pinned: z.boolean()}),
 ]);
 export type ChatRoomSentMessage = z.infer<typeof chatRoomSentMessageSchema>;
 
 export type ChatMessage = {
   id: string;
   name: string;
+  /** The sender (missing on messages from before it was recorded; those can't be edited). */
+  userId?: string;
   text: string;
   images?: string[];
   timestamp: number;
   reactions: Record<string, number>;
+  editedAt?: number;
+  /** Deleted by its sender: kept as a placeholder so the conversation still reads in order. */
+  deleted?: boolean;
+  pinned?: {by: string; at: number};
 };
 export type ChatRoomReceivedMessage =
-  | {type: "snapshot"; messages: ChatMessage[]}
+  // `pinned`: every pinned message, including ones older than the snapshot's window.
+  | {type: "snapshot"; messages: ChatMessage[]; pinned: ChatMessage[]}
   | {type: "message"; message: ChatMessage};
+
+// Not a message: the ids of the room's pinned messages (a JSON string, so `isMessage` skips it).
+const PINS_KEY = "pins";
 
 function isMessage(value: ChatMessage | string): value is ChatMessage {
   return typeof value !== "string";
@@ -52,10 +65,7 @@ function isMessage(value: ChatMessage | string): value is ChatMessage {
 function send(ws: WebSocket, message: ChatRoomReceivedMessage) {
   ws.send(JSON.stringify(message));
 }
-type Attachment = {
-  name: string;
-  rtc?: {tracks: {mid: string; trackName: string}[]; sessionId: string};
-};
+type Attachment = {name: string; userId: string; puzzleId: string};
 function putAttachment(ws: WebSocket, data: Attachment) {
   ws.serializeAttachment({...ws.deserializeAttachment(), ...data});
 }
@@ -86,14 +96,23 @@ export class ChatRoom extends DurableObject {
     app.get("/api/chat/:puzzleId", async c => {
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
-      putAttachment(server, {name: c.var.session?.user.name || "User"});
+      putAttachment(server, {
+        name: c.var.session?.user.name || "User",
+        userId: c.var.session?.user.id ?? "",
+        puzzleId: c.req.param("puzzleId"),
+      });
       const newest = await this.storage.list<ChatMessage | string>({
         reverse: true,
         limit: SNAPSHOT_MESSAGES,
       });
-      // Skip anything that isn't a message (a briefly-stored room id, in some dev rooms).
+      // Skip anything that isn't a message (the pin list; a briefly-stored room id in dev rooms).
       const messages = [...newest.values()].filter(isMessage).toReversed();
-      send(server, {type: "snapshot", messages});
+      const pinIds = await this.pinIds();
+      const pinned =
+        pinIds.length === 0
+          ? []
+          : [...(await this.storage.get<ChatMessage | string>(pinIds)).values()].filter(isMessage);
+      send(server, {type: "snapshot", messages, pinned});
       return new Response(null, {status: 101, webSocket: client});
     });
     return await app.fetch(request, this.env);
@@ -115,12 +134,14 @@ export class ChatRoom extends DurableObject {
         text: m.text,
         ...(m.images?.length ? {images: m.images} : {}),
         name: attachment.name,
+        userId: attachment.userId,
         timestamp: Date.now(),
         reactions: {},
       };
       // Saved before it's shared, so nobody sees a message that could still be lost.
       await this.storage.put<ChatMessage>(key, data);
       this.broadcast({type: "message", message: data});
+      await this.notifyMentions(attachment, m.text);
 
       // Check for Eggö commands.
       const commands = [
@@ -153,12 +174,71 @@ export class ChatRoom extends DurableObject {
       }
     } else if (m.type === "react") {
       const data = await this.storage.get<ChatMessage | string>(m.messageId);
-      if (data && isMessage(data)) {
+      if (data && isMessage(data) && !data.deleted) {
         data.reactions[m.reaction] = (data.reactions[m.reaction] || 0) + 1;
         this.broadcast({type: "message", message: data});
         await this.storage.put(m.messageId, data);
       }
+    } else if (m.type === "edit" || m.type === "delete") {
+      const data = await this.storage.get<ChatMessage | string>(m.messageId);
+      // Only your own messages (by account, not by display name).
+      if (!data || !isMessage(data) || data.deleted || !data.userId) return;
+      if (data.userId !== attachment.userId) return;
+      const updated: ChatMessage =
+        m.type === "edit"
+          ? {...data, text: m.text, editedAt: Date.now()}
+          : {...data, text: "", images: undefined, reactions: {}, deleted: true, pinned: undefined};
+      await this.storage.put(m.messageId, updated);
+      if (m.type === "delete" && data.pinned) await this.setPinned(m.messageId, false);
+      this.broadcast({type: "message", message: updated});
+    } else if (m.type === "pin") {
+      const data = await this.storage.get<ChatMessage | string>(m.messageId);
+      if (!data || !isMessage(data) || data.deleted) return;
+      const updated: ChatMessage = {
+        ...data,
+        pinned: m.pinned ? {by: attachment.name, at: Date.now()} : undefined,
+      };
+      await this.storage.put(m.messageId, updated);
+      await this.setPinned(m.messageId, m.pinned);
+      this.broadcast({type: "message", message: updated});
     }
+  }
+
+  async pinIds(): Promise<string[]> {
+    const stored = await this.storage.get<string>(PINS_KEY);
+    return stored ? z.string().array().catch([]).parse(JSON.parse(stored)) : [];
+  }
+
+  async setPinned(messageId: string, pinned: boolean) {
+    const ids = (await this.pinIds()).filter(id => id !== messageId);
+    if (pinned) ids.push(messageId);
+    await this.storage.put(PINS_KEY, JSON.stringify(ids));
+  }
+
+  /** Tells anyone @mentioned in `text` (via the workspace's notifications: bell, toast). */
+  async notifyMentions(sender: Attachment, text: string) {
+    const toUserIds = [
+      ...new Set([...text.matchAll(MENTION_PATTERN)].map(match => match[2]!)),
+    ].filter(id => id !== sender.userId);
+    if (toUserIds.length === 0) return;
+    // The puzzle's name and workspace now (it may have been renamed or moved since).
+    const puzzle = await db
+      .select({name: schema.puzzle.name, workspaceId: schema.round.workspaceId})
+      .from(schema.puzzle)
+      .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+      .where(eq(schema.puzzle.id, sender.puzzleId))
+      .get();
+    if (!puzzle) return;
+    await this.env.NOTIFICATION_ROOMS.getByName(puzzle.workspaceId, {
+      locationHint: "enam",
+    }).broadcast({
+      type: "mention",
+      toUserIds,
+      from: {id: sender.userId, name: sender.name},
+      puzzleId: sender.puzzleId,
+      puzzleName: puzzle.name,
+      text: plainMentions(text).slice(0, 280),
+    });
   }
 
   broadcast(data: ChatRoomReceivedMessage) {

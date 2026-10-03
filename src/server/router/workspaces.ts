@@ -6,6 +6,7 @@ import {z} from "zod";
 import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {parseTheme, workspaceThemeSchema} from "@/lib/workspace-theme";
 
 import {fetchDiscord} from "../do/discord-client";
 import {
@@ -18,6 +19,10 @@ import {toWorkspaceRole} from "../workspace-access";
 import {preauthorize, procedure, requireOwner} from "./base";
 
 const ACTIVITY_LOG_PAGE_SIZE = 50;
+
+/** A date input in ms: undefined leaves it alone, null clears it. */
+const toDate = (ms: number | null | undefined) =>
+  ms === undefined ? undefined : ms === null ? null : new Date(ms);
 
 export const workspacesRouter = {
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
@@ -102,16 +107,40 @@ export const workspacesRouter = {
           .optional(),
         tags: z.array(z.string()).optional(),
         links: z.array(z.object({name: z.string(), url: z.url()})).optional(),
+        // Optional hunt clock (ms since epoch; null clears it).
+        huntStartsAt: z.number().nullable().optional(),
+        huntEndsAt: z.number().nullable().optional(),
+        // The workspace's look (custom emoji have their own procedures).
+        accent: workspaceThemeSchema.shape.accent,
+        emoji: z.string().max(16).nullable().optional(),
       })
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
-      // Anyone can edit the comment, tags and links; the name and password are for owners.
-      const ownerFields = [input.teamName, input.eventName, input.password];
+      // Anyone can edit the comment, tags and links; the rest is for owners.
+      const ownerFields = [
+        input.teamName,
+        input.eventName,
+        input.password,
+        input.huntStartsAt,
+        input.huntEndsAt,
+        input.accent,
+        input.emoji,
+      ];
       if (context.role !== "owner" && ownerFields.some(value => value !== undefined)) {
         throw new ORPCError("FORBIDDEN", {
-          message: "Only workspace owners can change the team name, event name or password.",
+          message:
+            "Only workspace owners can change the team or event name, password, hunt clock or look.",
         });
+      }
+      let theme = undefined;
+      if (input.accent !== undefined || input.emoji !== undefined) {
+        const current = parseTheme(context.workspace.theme);
+        theme = {
+          ...current,
+          ...(input.accent !== undefined && {accent: input.accent}),
+          ...(input.emoji !== undefined && {emoji: input.emoji ?? undefined}),
+        };
       }
       let commentUpdatedAt = undefined;
       let commentUpdatedBy = undefined;
@@ -131,6 +160,9 @@ export const workspacesRouter = {
           commentUpdatedBy,
           tags: input.tags,
           links: input.links,
+          huntStartsAt: toDate(input.huntStartsAt),
+          huntEndsAt: toDate(input.huntEndsAt),
+          theme,
         })
         .where(eq(schema.organization.id, context.workspace.id))
         .returning();
@@ -335,6 +367,63 @@ export const workspacesRouter = {
       );
     }),
 
+  /// Everything the hunt recap needs: who created, solved and answered which puzzle, and when
+  /// (compact; the stats are computed in the browser, in the viewer's time zone).
+  recap: procedure
+    .input(z.object({workspaceSlug: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}) => {
+      const rows = await db
+        .select({
+          at: schema.activityLogEntry.createdAt,
+          userId: schema.activityLogEntry.userId,
+          subType: schema.puzzleActivityLogEntry.subType,
+          puzzleId: schema.puzzleActivityLogEntry.puzzleId,
+          puzzleName: schema.puzzleActivityLogEntry.puzzleName,
+          field: schema.puzzleActivityLogEntry.field,
+        })
+        .from(schema.puzzleActivityLogEntry)
+        .innerJoin(
+          schema.activityLogEntry,
+          eq(schema.activityLogEntry.id, schema.puzzleActivityLogEntry.activityLogEntryId)
+        )
+        .where(
+          and(
+            eq(schema.activityLogEntry.workspaceId, context.workspace.id),
+            inArray(schema.puzzleActivityLogEntry.subType, [
+              "create",
+              "updateStatus",
+              "updateAnswer",
+            ])
+          )
+        )
+        .orderBy(schema.activityLogEntry.createdAt);
+      const userIds = [...new Set(rows.map(row => row.userId))];
+      const users =
+        userIds.length === 0
+          ? []
+          : await db
+              .select({
+                id: schema.user.id,
+                name: schema.user.name,
+                email: schema.user.email,
+                image: schema.user.image,
+              })
+              .from(schema.user)
+              .where(inArray(schema.user.id, userIds));
+      return {
+        users,
+        events: rows.map(row => ({
+          at: row.at.getTime(),
+          userId: row.userId,
+          type: row.subType,
+          puzzleId: row.puzzleId,
+          puzzleName: row.puzzleName,
+          field: row.field,
+        })),
+      };
+    }),
+
   getDiscordInfo: procedure
     .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
@@ -364,6 +453,49 @@ export const workspacesRouter = {
         data: z.object({id: z.string(), name: z.string()}).parse(await guild.json()),
       } as const;
     }),
+
+  /// The team's custom reaction emoji (images in R2, added by anyone in the workspace).
+  customEmoji: {
+    add: procedure
+      .input(
+        z.object({
+          workspaceSlug: z.string(),
+          name: z.string().regex(/^[a-z0-9_-]{1,32}$/),
+          fileId: z.string().regex(/^[0-9a-f]{64}$/),
+        })
+      )
+      .use(preauthorize)
+      .handler(async ({context, input}) => {
+        const theme = parseTheme(context.workspace.theme);
+        const others = (theme.customEmoji ?? []).filter(e => e.name !== input.name);
+        if (others.length >= 100) {
+          throw new ORPCError("BAD_REQUEST", {message: "A team can have up to 100 emoji."});
+        }
+        await db
+          .update(schema.organization)
+          .set({
+            theme: {...theme, customEmoji: [...others, {name: input.name, fileId: input.fileId}]},
+          })
+          .where(eq(schema.organization.id, context.workspace.id));
+        await invalidateWorkspace(context.workspace.id);
+      }),
+    remove: procedure
+      .input(z.object({workspaceSlug: z.string(), name: z.string()}))
+      .use(preauthorize)
+      .handler(async ({context, input}) => {
+        const theme = parseTheme(context.workspace.theme);
+        await db
+          .update(schema.organization)
+          .set({
+            theme: {
+              ...theme,
+              customEmoji: (theme.customEmoji ?? []).filter(e => e.name !== input.name),
+            },
+          })
+          .where(eq(schema.organization.id, context.workspace.id));
+        await invalidateWorkspace(context.workspace.id);
+      }),
+  },
 
   members: {
     list: procedure

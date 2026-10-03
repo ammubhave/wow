@@ -1,3 +1,4 @@
+import {useAutoAnimate} from "@formkit/auto-animate/react";
 import {
   Button,
   buttonVariants,
@@ -18,6 +19,7 @@ import {
   type Key,
   type Selection,
 } from "@heroui/react";
+import NumberFlow from "@number-flow/react";
 import {useIsMutating, useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {sha256} from "js-sha256";
@@ -41,7 +43,7 @@ import {useLocalStorage} from "usehooks-ts";
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
 import {AddNewRoundDialog} from "@/components/add-new-round-dialog";
-import {AppSidebar} from "@/components/app-sidebar";
+import {AppSidebar, SidebarDrawerButton} from "@/components/app-sidebar";
 import {AssignUnassignedPuzzlesDialog} from "@/components/assign-unassigned-puzzles-dialog";
 import {DeletePuzzleDialog} from "@/components/delete-puzzle-dialog";
 import {DeleteRoundDialog} from "@/components/delete-round-dialog";
@@ -49,6 +51,7 @@ import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
 import {SolveSpark} from "@/components/solve-spark";
+import {TeammateChangeFlash} from "@/components/teammate-change-flash";
 import {UserPresenceAvatars} from "@/components/user-hover-card";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {VoiceRoomBadge} from "@/features/voice/voice-ui";
@@ -79,6 +82,12 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
 // transparent so the row status colors show through; cells are denser than HeroUI's default.
 const tableSlots = tableVariants({variant: "secondary"});
 
+// Columns that only fit on wider screens: on phones the board is name, answer and status.
+const DESKTOP_ONLY = "hidden md:table-cell";
+// On phones a name cell is capped (its link truncates with an ellipsis) so long puzzle names don't
+// make the table wider than the screen.
+const NAME_CELL_ON_PHONES = "max-w-44 md:max-w-none";
+
 function Table({className, ...props}: React.ComponentProps<"table">) {
   return (
     <div className={tableSlots.base()}>
@@ -95,7 +104,7 @@ function TableHeader({className, ...props}: React.ComponentProps<"thead">) {
   return <thead className={tableSlots.header({className})} {...props} />;
 }
 
-function TableBody({className, ...props}: React.ComponentProps<"tbody">) {
+function TableBody({className, ...props}: React.ComponentPropsWithRef<"tbody">) {
   return <tbody className={tableSlots.body({className})} {...props} />;
 }
 
@@ -526,6 +535,7 @@ function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
+  const [animatedBodyRef] = useAutoAnimate<HTMLTableSectionElement>({duration: 200});
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
   const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
@@ -657,10 +667,11 @@ function RouteComponent() {
                   )}
                 </SearchField.Group>
               </SearchField>
+              <SidebarDrawerButton workspaceSlug={workspaceSlug} rounds={rounds} />
               <Dropdown>
-                <Button variant="outline">
+                <Button variant="outline" aria-label="Filter">
                   <FunnelIcon />
-                  Filter
+                  <span className="hidden sm:inline">Filter</span>
                   {filterCount > 0 && (
                     <Chip className="ml-1 rounded-full" size="sm" variant="secondary">
                       {filterCount}
@@ -797,9 +808,9 @@ function RouteComponent() {
                       <TableHead className="w-8 p-0" colSpan={1} />
                       <TableHead className="w-8 p-0" colSpan={1} />
                       <TableHead>Name</TableHead>
-                      <TableHead className="min-w-[150px]">Solution</TableHead>
+                      <TableHead className="min-w-28 md:min-w-[150px]">Solution</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-0 px-2">
+                      <TableHead className={cn("w-0 px-2", DESKTOP_ONLY)}>
                         <Tooltip delay={300}>
                           <Tooltip.Trigger>
                             {/* Icon-only header keeps the column as narrow as its icons. */}
@@ -810,8 +821,8 @@ function RouteComponent() {
                           <Tooltip.Content>Importance</Tooltip.Content>
                         </Tooltip>
                       </TableHead>
-                      <TableHead>Tags</TableHead>
-                      <TableHead>Working on this</TableHead>
+                      <TableHead className={DESKTOP_ONLY}>Tags</TableHead>
+                      <TableHead className={DESKTOP_ONLY}>Working on this</TableHead>
                       <TableHead className="w-0">
                         <div className="-my-1 flex items-center justify-end">
                           <Dropdown>
@@ -842,7 +853,8 @@ function RouteComponent() {
                       </TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  {/* Rows slide into place as puzzles are added, removed or re-sorted. */}
+                  <TableBody ref={animatedBodyRef}>
                     {rounds.map(round => (
                       <BlackboardRound
                         key={round.id}
@@ -950,11 +962,12 @@ const BlackboardRound = memo(function BlackboardRound({
                   color={solvedCount === puzzleCount ? "success" : "accent"}
                   className="w-20 gap-0">
                   <ProgressBar.Track className="w-full">
-                    <ProgressBar.Fill />
+                    {/* Fills smoothly as puzzles are solved. */}
+                    <ProgressBar.Fill className="transition-[width] duration-700 ease-out motion-reduce:transition-none" />
                   </ProgressBar.Track>
                 </ProgressBar>
                 <span className="text-muted text-xs tabular-nums" aria-hidden="true">
-                  {solvedCount}/{puzzleCount}
+                  <NumberFlow value={solvedCount} />/{puzzleCount}
                 </span>
               </div>
             )}
@@ -995,7 +1008,7 @@ const BlackboardRound = memo(function BlackboardRound({
             )}
           </DeferredSelect>
         </TableCell>
-        <TableCell colSpan={3} />
+        <TableCell colSpan={3} className={DESKTOP_ONLY} />
         <TableCell>
           <div className="-my-3 flex items-center justify-end">
             <Dropdown>
@@ -1283,11 +1296,13 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             </div>
           )}
         </TableCell>
-        <TableCell className="font-semibold">
+        <TableCell className={cn("relative font-semibold", NAME_CELL_ON_PHONES)}>
+          <TeammateChangeFlash puzzleId={metaPuzzle.id} />
           <Link
             to="/$workspaceSlug/puzzles/$puzzleId"
             params={{workspaceSlug, puzzleId: metaPuzzle.id}}
-            className="-m-2 block p-2 hover:underline">
+            title={metaPuzzle.name}
+            className="-m-2 block truncate p-2 hover:underline">
             <SolvedMark status={metaPuzzle.status} />
             {metaPuzzle.name}
           </Link>
@@ -1308,7 +1323,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             triggerClassName={SELECT_TRIGGER_CLASS}
           />
         </TableCell>
-        <TableCell>
+        <TableCell className={DESKTOP_ONLY}>
           <PuzzleImportanceSelect
             value={metaPuzzle.importance}
             onChange={importance => {
@@ -1320,7 +1335,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             )}
           />
         </TableCell>
-        <TableCell className="p-0">
+        <TableCell className={cn("p-0", DESKTOP_ONLY)}>
           <TagsCell
             puzzleName={metaPuzzle.name}
             value={metaPuzzle.tags}
@@ -1328,7 +1343,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             onCommit={next => update({tags: next})}
           />
         </TableCell>
-        <TableCell className="py-1">
+        <TableCell className={cn("py-1", DESKTOP_ONLY)}>
           <UserPresenceAvatars users={presences} />
         </TableCell>
         <TableCell>
@@ -1510,12 +1525,14 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           </div>
           <span id={puzzle.id} className="relative scroll-mt-20" />
         </TableCell>
-        <TableCell>
+        <TableCell className={cn("relative", NAME_CELL_ON_PHONES)}>
+          <TeammateChangeFlash puzzleId={puzzle.id} />
           <div className="flex items-center gap-2">
             <Link
               to="/$workspaceSlug/puzzles/$puzzleId"
               params={{workspaceSlug, puzzleId: puzzle.id}}
-              className="-m-2 block min-w-0 flex-1 p-2 hover:underline">
+              title={puzzle.name}
+              className="-m-2 block min-w-0 flex-1 truncate p-2 hover:underline">
               <SolvedMark status={puzzle.status} />
               {puzzle.name}
             </Link>
@@ -1538,7 +1555,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             triggerClassName={PUZZLE_STATUS_TRIGGER_CLASS}
           />
         </TableCell>
-        <TableCell>
+        <TableCell className={DESKTOP_ONLY}>
           <PuzzleImportanceSelect
             value={puzzle.importance}
             onChange={importance => {
@@ -1550,7 +1567,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             )}
           />
         </TableCell>
-        <TableCell className="p-0">
+        <TableCell className={cn("p-0", DESKTOP_ONLY)}>
           <TagsCell
             puzzleName={puzzle.name}
             value={puzzle.tags}
@@ -1558,7 +1575,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             onCommit={next => update({tags: next})}
           />
         </TableCell>
-        <TableCell className="py-1">
+        <TableCell className={cn("py-1", DESKTOP_ONLY)}>
           <UserPresenceAvatars users={presences} />
         </TableCell>
         <TableCell>

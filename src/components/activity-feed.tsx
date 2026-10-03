@@ -2,6 +2,7 @@ import {Timeline} from "@heroui-pro/react";
 import {
   Avatar,
   Button,
+  buttonVariants,
   Chip,
   Dropdown,
   Label,
@@ -19,6 +20,7 @@ import {
   KeyRoundIcon,
   LogInIcon,
   OctagonAlertIcon,
+  PartyPopperIcon,
   PlusIcon,
   SignalIcon,
   TrashIcon,
@@ -233,7 +235,7 @@ function FeedItem({
             <Tooltip.Trigger>
               <time
                 dateTime={createdAt.toISOString()}
-                className="text-muted shrink-0 text-xs tabular-nums">
+                className="text-muted shrink-0 text-xs whitespace-nowrap tabular-nums">
                 {format.dateTime(createdAt, {hour: "numeric", minute: "2-digit"})}
               </time>
             </Tooltip.Trigger>
@@ -347,79 +349,88 @@ export function ActivityFeed() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Activity</h1>
-        <Dropdown>
-          <Button variant="outline">
-            <FunnelIcon />
-            Filter
-            {filterCount > 0 && (
-              <Chip className="ml-1 rounded-full" size="sm" variant="secondary">
-                {filterCount}
-              </Chip>
-            )}
-          </Button>
-          <Dropdown.Popover className="w-fit" placement="bottom end">
-            <Dropdown.Menu
-              onAction={(key: Key) => {
-                if (key === "reset") {
-                  setTypes([]);
-                  setPeople([]);
-                }
-              }}>
-              <Dropdown.Section
-                aria-label="Event types"
-                selectionMode="multiple"
-                selectedKeys={new Set<Key>(types)}
-                onSelectionChange={keys =>
-                  setTypes(
-                    selected(
-                      keys,
-                      EVENT_TYPES.map(type => type.id)
-                    ).flatMap(key => EVENT_TYPES.filter(type => type.id === key).map(t => t.id))
-                  )
-                }>
-                {EVENT_TYPES.map(type => (
-                  <Dropdown.Item key={type.id} id={type.id} textValue={type.label}>
-                    <Dropdown.ItemIndicator />
-                    <Label>{type.label}</Label>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/$workspaceSlug/recap"
+            params={{workspaceSlug}}
+            className={buttonVariants({variant: "secondary"})}>
+            <PartyPopperIcon />
+            Hunt recap
+          </Link>
+          <Dropdown>
+            <Button variant="outline">
+              <FunnelIcon />
+              Filter
+              {filterCount > 0 && (
+                <Chip className="ml-1 rounded-full" size="sm" variant="secondary">
+                  {filterCount}
+                </Chip>
+              )}
+            </Button>
+            <Dropdown.Popover className="w-fit" placement="bottom end">
+              <Dropdown.Menu
+                onAction={(key: Key) => {
+                  if (key === "reset") {
+                    setTypes([]);
+                    setPeople([]);
+                  }
+                }}>
+                <Dropdown.Section
+                  aria-label="Event types"
+                  selectionMode="multiple"
+                  selectedKeys={new Set<Key>(types)}
+                  onSelectionChange={keys =>
+                    setTypes(
+                      selected(
+                        keys,
+                        EVENT_TYPES.map(type => type.id)
+                      ).flatMap(key => EVENT_TYPES.filter(type => type.id === key).map(t => t.id))
+                    )
+                  }>
+                  {EVENT_TYPES.map(type => (
+                    <Dropdown.Item key={type.id} id={type.id} textValue={type.label}>
+                      <Dropdown.ItemIndicator />
+                      <Label>{type.label}</Label>
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Section>
+                <Separator />
+                <Dropdown.SubmenuTrigger>
+                  <Dropdown.Item id="people-submenu" textValue="People">
+                    <UsersIcon />
+                    <Label>People</Label>
+                    <Dropdown.SubmenuIndicator />
                   </Dropdown.Item>
-                ))}
-              </Dropdown.Section>
-              <Separator />
-              <Dropdown.SubmenuTrigger>
-                <Dropdown.Item id="people-submenu" textValue="People">
-                  <UsersIcon />
-                  <Label>People</Label>
-                  <Dropdown.SubmenuIndicator />
-                </Dropdown.Item>
-                <Dropdown.Popover>
-                  <Dropdown.Menu
-                    aria-label="People"
-                    selectionMode="multiple"
-                    selectedKeys={new Set<Key>(people)}
-                    onSelectionChange={keys =>
-                      setPeople(
-                        selected(
-                          keys,
-                          actors.map(actor => actor.id)
+                  <Dropdown.Popover>
+                    <Dropdown.Menu
+                      aria-label="People"
+                      selectionMode="multiple"
+                      selectedKeys={new Set<Key>(people)}
+                      onSelectionChange={keys =>
+                        setPeople(
+                          selected(
+                            keys,
+                            actors.map(actor => actor.id)
+                          )
                         )
-                      )
-                    }>
-                    {actors.map(actor => (
-                      <Dropdown.Item key={actor.id} id={actor.id} textValue={actor.name}>
-                        <Dropdown.ItemIndicator />
-                        <Label>{actor.name}</Label>
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown.SubmenuTrigger>
-              <Separator />
-              <Dropdown.Item id="reset" textValue="Reset filters">
-                <Label>Reset filters</Label>
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
+                      }>
+                      {actors.map(actor => (
+                        <Dropdown.Item key={actor.id} id={actor.id} textValue={actor.name}>
+                          <Dropdown.ItemIndicator />
+                          <Label>{actor.name}</Label>
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown.Popover>
+                </Dropdown.SubmenuTrigger>
+                <Separator />
+                <Dropdown.Item id="reset" textValue="Reset filters">
+                  <Label>Reset filters</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
       </div>
       <Suspense fallback={null}>
         <SolvesChart />
@@ -448,7 +459,9 @@ export function ActivityFeed() {
         {isFetchingNextPage && <Spinner size="sm" />}
         {!isFetchingNextPage && !hasNextPage && days.length === 0 && (
           <span className="text-muted text-sm">
-            {filterCount === 0 ? "No activity yet." : "No matching activity."}
+            {filterCount === 0
+              ? "No activity yet. The calm before the hunt."
+              : "Nothing matches those filters. Sneaky."}
           </span>
         )}
       </div>

@@ -292,6 +292,11 @@ export const puzzlesRouter = {
             context.notification.broadcast(workspaceId, {
               type: "solved",
               message: `Puzzle ${puzzle.name} was solved!`,
+              puzzleId: puzzle.id,
+              puzzleName: input.name ?? puzzle.name,
+              answer: (input.answer ?? puzzle.answer) || null,
+              isMeta: input.isMetaPuzzle ?? puzzle.isMetaPuzzle,
+              by: {id: context.session.user.id, name: context.session.user.name},
             })
           );
         }

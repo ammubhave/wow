@@ -11,6 +11,7 @@ import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {parseTheme} from "@/lib/workspace-theme";
 import {
   type VoiceParticipant,
   type VoiceState,
@@ -149,6 +150,7 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
       .array(z.object({name: z.string(), url: z.string()}))
       .catch([])
       .parse(workspace.links ?? []),
+    theme: parseTheme(workspace.theme),
   };
 }
 
