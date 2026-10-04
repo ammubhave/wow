@@ -4,10 +4,9 @@ import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
 import {captcha, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
-import {waitUntil} from "cloudflare:workers";
 import {eq} from "drizzle-orm";
-import {Resend} from "resend";
 
+import {sendActionEmail} from "../server/email";
 import {trackServerEvent} from "../server/posthog";
 import {db} from "./db";
 import * as schema from "./db/schema";
@@ -21,15 +20,13 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({user, url}) => {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      waitUntil(
-        resend.emails.send({
-          from: "noreply@wafflehaus.io",
-          to: user.email,
-          subject: "Change password for Wafflehaüs Organized Workspaces (WOW)",
-          html: `<h1>Reset password</h1><p>Email: ${user.email}</p><p>A password reset was requested for your account. If it wasn't you, you can ignore this email. Click <a href='${url}'>here</a> to reset your password.</p>`,
-        })
-      );
+      sendActionEmail({
+        to: user.email,
+        subject: "Reset your WOW password",
+        intro: [`Someone asked to reset the password for ${user.email}.`],
+        action: {label: "Reset password", url},
+        outro: ["If it wasn't you, you can ignore this email: your password stays the same."],
+      });
     },
   },
   socialProviders: {
@@ -40,16 +37,17 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
+    // Also used when you change your email: it goes to the new address.
     sendVerificationEmail: async ({user, url}) => {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      waitUntil(
-        resend.emails.send({
-          from: "noreply@wafflehaus.io",
-          to: user.email,
-          subject: "Verify your email for Wafflehaüs Organized Workspaces (WOW)",
-          html: `<h1>Verify your email</h1><p>Click <a href='${url}'>here</a> to verify your email address.</p>`,
-        })
-      );
+      sendActionEmail({
+        to: user.email,
+        subject: "Verify your email for WOW",
+        intro: [`Confirm that ${user.email} is your email address for WOW.`],
+        action: {label: "Verify email", url},
+        outro: [
+          "If you didn't sign up for WOW (or change your email to this one), ignore this email.",
+        ],
+      });
     },
   },
   databaseHooks: {

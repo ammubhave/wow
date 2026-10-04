@@ -48,6 +48,9 @@
     ],
   },
   "r2_buckets": [{"binding": "R2", "bucket_name": "wow"}],
+  // Cloudflare Email Service (wafflehaus.io is onboarded). Simulated in local dev: emails are logged,
+  // not sent.
+  "send_email": [{"name": "EMAIL", "allowed_sender_addresses": ["noreply@wafflehaus.io"]}],
   "migrations": [
     {"tag": "v1", "new_classes": ["ChatRoom", "NotificationRoom", "PresenceRoom", "DiscordClient"]},
     {"tag": "v2", "new_classes": ["WorkspaceRoom"]},
@@ -94,6 +97,7 @@
         ],
       },
       "r2_buckets": [{"binding": "R2", "bucket_name": "wow-production"}],
+      "send_email": [{"name": "EMAIL", "allowed_sender_addresses": ["noreply@wafflehaus.io"]}],
       "workflows": [
         {
           "name": "DeleteChannelAfterDelayWorkflow",

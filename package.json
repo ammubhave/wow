@@ -100,7 +100,6 @@
     "recharts": "^3.10.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
-    "resend": "^6.31.0",
     "rxjs": "^7.8.2",
     "shiki": "^4.4.3",
     "sonner": "^2.0.8",
