@@ -64,6 +64,10 @@ function RootDocument({children}: {children: React.ReactNode}) {
                 api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
                 defaults: "2025-05-24",
                 capture_exceptions: import.meta.env.MODE !== "development",
+                // Session replay (on in the PostHog project). Nothing is masked except passwords, which
+                // are always masked. Dev sessions aren't recorded.
+                session_recording: {maskAllInputs: false},
+                disable_session_recording: import.meta.env.MODE === "development",
                 debug: import.meta.env.MODE === "development",
               }}>
               <ReactReduxProvider store={store}>
