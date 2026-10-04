@@ -17,6 +17,7 @@ const appRelations = defineRelations(schema, r => ({
       to: r.puzzle.parentPuzzleId,
       alias: "puzzle_parentPuzzle",
     }),
+    contributors: r.many.puzzleContributor({from: r.puzzle.id, to: r.puzzleContributor.puzzleId}),
   },
   hunts: {hunt_puzzles: r.many.huntPuzzles()},
   huntPuzzles: {hunt: r.one.hunts({from: r.huntPuzzles.huntId, to: r.hunts.id, optional: false})},

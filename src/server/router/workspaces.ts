@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
-import {and, eq, inArray, isNotNull, max} from "drizzle-orm";
+import {and, count, eq, inArray, isNotNull, max, sql} from "drizzle-orm";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
@@ -399,11 +399,57 @@ export const workspacesRouter = {
               "create",
               "updateStatus",
               "updateAnswer",
+              "updateImportance",
             ])
           )
         )
         .orderBy(schema.activityLogEntry.createdAt);
-      const userIds = [...new Set(rows.map(row => row.userId))];
+      const workspaceId = context.workspace.id;
+      const [roundsCreated, activeTime, contributions] = await Promise.all([
+        // Rounds added, per person (keeping the board up to date).
+        db
+          .select({userId: schema.activityLogEntry.userId, count: count()})
+          .from(schema.roundActivityLogEntry)
+          .innerJoin(
+            schema.activityLogEntry,
+            eq(schema.activityLogEntry.id, schema.roundActivityLogEntry.activityLogEntryId)
+          )
+          .where(
+            and(
+              eq(schema.activityLogEntry.workspaceId, workspaceId),
+              eq(schema.roundActivityLogEntry.subType, "create")
+            )
+          )
+          .groupBy(schema.activityLogEntry.userId),
+        // Active time on puzzles, per person and hour of day where they were.
+        db
+          .select({
+            userId: schema.puzzleTime.userId,
+            localHour: schema.puzzleTime.localHour,
+            seconds: sql<number>`cast(sum(${schema.puzzleTime.seconds}) as integer)`,
+          })
+          .from(schema.puzzleTime)
+          .where(eq(schema.puzzleTime.workspaceId, workspaceId))
+          .groupBy(schema.puzzleTime.userId, schema.puzzleTime.localHour),
+        // Who says they helped solve what.
+        db
+          .select({
+            puzzleId: schema.puzzleContributor.puzzleId,
+            userId: schema.puzzleContributor.userId,
+          })
+          .from(schema.puzzleContributor)
+          .innerJoin(schema.puzzle, eq(schema.puzzle.id, schema.puzzleContributor.puzzleId))
+          .innerJoin(schema.round, eq(schema.round.id, schema.puzzle.roundId))
+          .where(eq(schema.round.workspaceId, workspaceId)),
+      ]);
+      const userIds = [
+        ...new Set([
+          ...rows.map(row => row.userId),
+          ...roundsCreated.map(row => row.userId),
+          ...activeTime.map(row => row.userId),
+          ...contributions.map(row => row.userId),
+        ]),
+      ];
       const users =
         userIds.length === 0
           ? []
@@ -426,6 +472,9 @@ export const workspacesRouter = {
           puzzleName: row.puzzleName,
           field: row.field,
         })),
+        roundsCreated,
+        activeTime,
+        contributions,
       };
     }),
 

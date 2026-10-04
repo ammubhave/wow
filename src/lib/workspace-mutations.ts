@@ -172,6 +172,14 @@ function updatePuzzle(wire: Wire, input: RouterInputs["puzzles"]["update"]): Wir
   });
 }
 
+function setContributor(wire: Wire, input: RouterInputs["puzzles"]["setContributor"]): Wire {
+  return mapPuzzles(wire, puzzle => {
+    if (puzzle.id !== input.puzzleId) return puzzle;
+    const others = puzzle.contributorIds.filter(id => id !== input.userId);
+    return {...puzzle, contributorIds: input.contributed ? [...others, input.userId] : others};
+  });
+}
+
 function createPuzzle(wire: Wire, input: RouterInputs["puzzles"]["create"]): Wire {
   const {id} = input;
   if (!id) return wire;
@@ -201,6 +209,7 @@ function createPuzzle(wire: Wire, input: RouterInputs["puzzles"]["create"]): Wir
     isMetaPuzzle,
     parentPuzzleId,
     tags: input.tags,
+    contributorIds: [],
   };
   const assignUnassigned = input.type === "meta-puzzle" && input.assignUnassignedPuzzles;
   const exists = findPuzzle(wire, id) !== undefined;
@@ -300,6 +309,7 @@ export const workspaceMutations = {
     create: () => orpc.puzzles.create.mutationOptions(optimistic(createPuzzle)),
     update: () => orpc.puzzles.update.mutationOptions(optimistic(updatePuzzle)),
     delete: () => orpc.puzzles.delete.mutationOptions(optimistic(deletePuzzle)),
+    setContributor: () => orpc.puzzles.setContributor.mutationOptions(optimistic(setContributor)),
   },
   rounds: {
     create: () => orpc.rounds.create.mutationOptions(optimistic(createRound)),

@@ -1,11 +1,12 @@
 import {Avatar, Button, Card, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
-import {createFileRoute} from "@tanstack/react-router";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {DownloadIcon} from "lucide-react";
 import {useRef} from "react";
 import {toast} from "sonner";
 
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
+import {formatPuzzleTime, useMyPuzzleTimes} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
@@ -39,50 +40,60 @@ function leader(counts: Map<string, number>) {
 
 const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
 
-/** The recap's numbers and awards, in the viewer's time zone. */
+/** Time awards need at least this much (seconds), so a few stray minutes don't win one. */
+const MIN_AWARD_SECONDS = 10 * 60;
+
+const sumBy = (map: Map<string, number>, key: string, amount: number) =>
+  map.set(key, (map.get(key) ?? 0) + amount);
+
+/**
+ * The recap's numbers and awards. Solving is a team effort, so nothing here credits whoever marked
+ * a puzzle solved: people are credited for what they say they helped solve (the honor code), for
+ * their active time (in their own time zone), and for keeping the board up to date.
+ */
 function computeRecap(recap: Recap, solvedNow: Set<string>, metaIds: Set<string>) {
   const users = new Map(recap.users.map(user => [user.id, user]));
-  const created = new Map<string, number>();
-  // The latest solve of each puzzle that's still solved: who gets credit, and when.
+
+  // The team's numbers: the latest solve of each puzzle that's still solved.
   const solves = new Map<string, Recap["events"][number]>();
-  const answers = new Map<string, number>();
-  const added = new Map<string, number>();
+  // Keeping the board up to date: adding puzzles and rounds, statuses, answers, importance.
+  const boardUpdates = new Map<string, number>();
   for (const event of recap.events) {
-    if (event.type === "create" && event.puzzleId) {
-      if (!created.has(event.puzzleId)) created.set(event.puzzleId, event.at);
-      bump(added, event.userId);
-    } else if (event.type === "updateAnswer") {
-      bump(answers, event.userId);
-    } else if (event.type === "updateStatus" && event.puzzleId && isSolve(event.field)) {
+    bump(boardUpdates, event.userId);
+    if (event.type === "updateStatus" && event.puzzleId && isSolve(event.field)) {
       solves.set(event.puzzleId, event);
     }
   }
+  for (const {userId, count} of recap.roundsCreated) sumBy(boardUpdates, userId, count);
   const finalSolves = [...solves.values()].filter(s => s.puzzleId && solvedNow.has(s.puzzleId));
+  const byHour = new Map<number, number>();
+  for (const solve of finalSolves) {
+    const hour = Math.floor(solve.at / HOUR);
+    byHour.set(hour, (byHour.get(hour) ?? 0) + 1);
+  }
 
-  const perUser = new Map<string, number>();
+  // Who helped solve what (self-reported), counting puzzles that are solved.
+  const helped = new Map<string, number>();
+  const metasHelped = new Map<string, number>();
+  for (const {puzzleId, userId} of recap.contributions) {
+    if (!solvedNow.has(puzzleId)) continue;
+    bump(helped, userId);
+    if (metaIds.has(puzzleId)) bump(metasHelped, userId);
+  }
+
+  // Active time on puzzles, by the hour of day where each person was.
+  const activeTotal = new Map<string, number>();
   const night = new Map<string, number>();
   const early = new Map<string, number>();
-  const backsolves = new Map<string, number>();
-  const metas = new Map<string, number>();
-  const byHour = new Map<number, number>();
-  let fastest: {ms: number; event: Recap["events"][number]} | undefined;
-  let slowest: {ms: number; event: Recap["events"][number]} | undefined;
-  for (const solve of finalSolves) {
-    bump(perUser, solve.userId);
-    const hour = new Date(solve.at).getHours();
-    if (hour < 6) bump(night, solve.userId);
-    else if (hour < 10) bump(early, solve.userId);
-    if (solve.field === "backsolved") bump(backsolves, solve.userId);
-    if (solve.puzzleId && metaIds.has(solve.puzzleId)) bump(metas, solve.userId);
-    const bucket = Math.floor(solve.at / HOUR);
-    byHour.set(bucket, (byHour.get(bucket) ?? 0) + 1);
-    const start = solve.puzzleId ? created.get(solve.puzzleId) : undefined;
-    if (start !== undefined) {
-      const ms = solve.at - start;
-      if (ms > 0 && (!fastest || ms < fastest.ms)) fastest = {ms, event: solve};
-      if (!slowest || ms > slowest.ms) slowest = {ms, event: solve};
-    }
+  for (const {userId, localHour, seconds} of recap.activeTime) {
+    sumBy(activeTotal, userId, seconds);
+    if (localHour < 6) sumBy(night, userId, seconds);
+    else if (localHour < 10) sumBy(early, userId, seconds);
   }
+  const timeLeader = (map: Map<string, number>) => {
+    const best = leader(map);
+    return best && best[1] >= MIN_AWARD_SECONDS ? best : undefined;
+  };
 
   const awards: Award[] = [];
   const add = (
@@ -94,36 +105,27 @@ function computeRecap(recap: Recap, solvedNow: Set<string>, metaIds: Set<string>
     const user = entry && users.get(entry[0]);
     if (user && entry) awards.push({emoji, title, user, stat: stat(entry[1])});
   };
-  add("🏆", "MVP", leader(perUser), n => `${n} ${n === 1 ? "solve" : "solves"}`);
-  add("👑", "Meta Maestro", leader(metas), n => `${n} ${n === 1 ? "meta" : "metas"} solved`);
-  add("🦉", "Night Owl", leader(night), n => `${n} solves between midnight and 6am`);
-  add("🌅", "Early Bird", leader(early), n => `${n} solves before 10am`);
+  add("🏆", "MVP", leader(helped), n => `helped solve ${n} ${n === 1 ? "puzzle" : "puzzles"}`);
   add(
-    "🔙",
-    "Backsolve Bandit",
-    leader(backsolves),
-    n => `${n} ${n === 1 ? "backsolve" : "backsolves"}`
+    "👑",
+    "Meta Maestro",
+    leader(metasHelped),
+    n => `helped solve ${n} ${n === 1 ? "meta" : "metas"}`
   );
-  const fastUser = fastest && users.get(fastest.event.userId);
-  if (fastest && fastUser) {
-    awards.push({
-      emoji: "⚡",
-      title: "Speedrunner",
-      user: fastUser,
-      stat: `${fastest.event.puzzleName} in ${formatSpan(fastest.ms)}`,
-    });
-  }
-  const slowUser = slowest && users.get(slowest.event.userId);
-  if (slowest && slowUser && slowest !== fastest) {
-    awards.push({
-      emoji: "🧗",
-      title: "The Grind",
-      user: slowUser,
-      stat: `cracked ${slowest.event.puzzleName} after ${formatSpan(slowest.ms)}`,
-    });
-  }
-  add("✍️", "Answer Machine", leader(answers), n => `${n} answers entered`);
-  add("📚", "Librarian", leader(added), n => `${n} puzzles added`);
+  add(
+    "🦉",
+    "Night Owl",
+    timeLeader(night),
+    n => `${formatPuzzleTime(n)} puzzling between midnight and 6am`
+  );
+  add(
+    "🌅",
+    "Early Bird",
+    timeLeader(early),
+    n => `${formatPuzzleTime(n)} puzzling between 6 and 10am`
+  );
+  add("🏃", "Marathoner", timeLeader(activeTotal), n => `${formatPuzzleTime(n)} actively puzzling`);
+  add("📋", "Board Keeper", leader(boardUpdates), n => `kept the board current: ${n} updates`);
 
   const firstAt = recap.events[0]?.at;
   const lastSolveAt = finalSolves.reduce((max, s) => Math.max(max, s.at), 0);
@@ -132,15 +134,16 @@ function computeRecap(recap: Recap, solvedNow: Set<string>, metaIds: Set<string>
     awards,
     solves: finalSolves.length,
     metas: finalSolves.filter(s => s.puzzleId && metaIds.has(s.puzzleId)).length,
-    solvers: perUser.size,
+    // Everyone who helped solve something (or, without any marks yet, who was active).
+    solvers: (helped.size > 0 ? helped : activeTotal).size,
     span: firstAt !== undefined && lastSolveAt > firstAt ? lastSolveAt - firstAt : 0,
     busiest: busiest && {at: busiest[0] * HOUR, count: busiest[1]},
     you: (id: string | undefined) =>
       id
         ? {
-            solves: perUser.get(id) ?? 0,
-            answers: answers.get(id) ?? 0,
-            added: added.get(id) ?? 0,
+            helped: helped.get(id) ?? 0,
+            activeSeconds: activeTotal.get(id) ?? 0,
+            boardUpdates: boardUpdates.get(id) ?? 0,
             awards: awards.filter(a => a.user.id === id),
           }
         : undefined,
@@ -155,6 +158,7 @@ function RouteComponent() {
   const me = authClient.useSession().data?.user.id;
   const cardRef = useRef<HTMLDivElement>(null);
   const {data} = useQuery(orpc.workspaces.recap.queryOptions({input: {workspaceSlug}}));
+  const myTimes = useMyPuzzleTimes(workspaceSlug);
   const puzzles = workspace.rounds.flatMap(round => round.puzzles);
   const solvedNow = new Set(puzzles.filter(p => isSolve(p.status)).map(p => p.id));
   const metaIds = new Set(puzzles.filter(p => p.isMetaPuzzle).map(p => p.id));
@@ -169,6 +173,9 @@ function RouteComponent() {
   }
   const recap = computeRecap(data, solvedNow, metaIds);
   const you = recap.you(me);
+  const puzzleNames = new Map(puzzles.map(p => [p.id, p.name]));
+  // Most time first (as the server sorts them), skipping deleted puzzles.
+  const myTopPuzzles = (myTimes ?? []).filter(t => puzzleNames.has(t.puzzleId)).slice(0, 5);
   const teamName = workspace.teamName || workspace.name;
 
   const download = async () => {
@@ -243,17 +250,39 @@ function RouteComponent() {
         </p>
       </div>
 
-      {you && (you.solves > 0 || you.answers > 0 || you.added > 0) && (
+      {you && (you.helped > 0 || you.boardUpdates > 0 || you.activeSeconds > 0) && (
         <Card>
           <Card.Header>
             <Card.Title>Your hunt</Card.Title>
             <Card.Description>
-              {you.solves} {you.solves === 1 ? "solve" : "solves"} · {you.answers} answers entered ·{" "}
-              {you.added} puzzles added
-              {you.awards.length > 0 &&
-                ` · ${you.awards.map(a => `${a.emoji} ${a.title}`).join(", ")}`}
+              {[
+                `helped solve ${you.helped} ${you.helped === 1 ? "puzzle" : "puzzles"}`,
+                you.activeSeconds > 0 && `${formatPuzzleTime(you.activeSeconds)} active`,
+                `${you.boardUpdates} board ${you.boardUpdates === 1 ? "update" : "updates"}`,
+                ...you.awards.map(a => `${a.emoji} ${a.title}`),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </Card.Description>
           </Card.Header>
+          {myTopPuzzles.length > 0 && (
+            <Card.Content>
+              <p className="text-muted mb-2 text-xs">Where your time went</p>
+              <ol className="flex flex-col gap-1.5 text-sm">
+                {myTopPuzzles.map(t => (
+                  <li key={t.puzzleId} className="flex items-center gap-3">
+                    <Link
+                      to="/$workspaceSlug/puzzles/$puzzleId"
+                      params={{workspaceSlug, puzzleId: t.puzzleId}}
+                      className="min-w-0 flex-1 truncate hover:underline">
+                      {puzzleNames.get(t.puzzleId)}
+                    </Link>
+                    <span className="text-muted tabular-nums">{formatPuzzleTime(t.seconds)}</span>
+                  </li>
+                ))}
+              </ol>
+            </Card.Content>
+          )}
         </Card>
       )}
 

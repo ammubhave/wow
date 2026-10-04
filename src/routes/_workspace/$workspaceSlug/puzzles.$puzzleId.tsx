@@ -1,11 +1,19 @@
 import {EmptyState} from "@heroui-pro/react";
 import {Resizable} from "@heroui-pro/react/resizable";
-import {Button, buttonVariants, InputGroup, ListBox, Spinner, Tabs, Tooltip} from "@heroui/react";
+import {
+  Button,
+  buttonVariants,
+  Chip,
+  InputGroup,
+  ListBox,
+  Spinner,
+  Tabs,
+  Tooltip,
+} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
   BrushIcon,
-  ChevronLeftIcon,
   ChevronRightIcon,
   EditIcon,
   ExternalLinkIcon,
@@ -15,6 +23,7 @@ import {
   PuzzleIcon,
   SheetIcon,
   TableIcon,
+  TimerIcon,
 } from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
 import {cn} from "tailwind-variants";
@@ -27,8 +36,10 @@ import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {NotFoundPage} from "@/components/not-found-page";
 import {PresencesWebSocket} from "@/components/presences-websocket";
+import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contributors";
 import {SolveSpark} from "@/components/solve-spark";
 import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
+import {formatPuzzleTime, usePuzzleTimeTracker} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {client} from "@/lib/orpc";
@@ -134,6 +145,7 @@ function PuzzleInfoPanel({
     childPuzzles: {id: string; answer: string | null; name: string}[];
     isMetaPuzzle: boolean;
     tags: string[];
+    contributorIds: string[];
   };
 }) {
   const workspace = useWorkspace();
@@ -345,6 +357,19 @@ function PuzzleInfoPanel({
               </div>
             )}
           />
+          <span className="text-muted text-xs">Solvers</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <PuzzleContributorAvatars
+              workspaceSlug={workspaceSlug}
+              contributorIds={puzzle.contributorIds}
+              max={5}
+            />
+            <HelpedToggle
+              workspaceSlug={workspaceSlug}
+              puzzleId={puzzle.id}
+              contributorIds={puzzle.contributorIds}
+            />
+          </div>
         </form.Form>
       </form.AppForm>
       {puzzle.childPuzzles.length > 0 && (
@@ -446,43 +471,31 @@ function PuzzleList({
   );
 }
 
-/** Previous/next puzzle (in board order), keeping the current view. */
-function PuzzleStepper({puzzleId}: {puzzleId: string}) {
-  const workspace = useWorkspace();
-  const navigate = useNavigate({from: Route.fullPath});
-  const all = workspace.rounds.flatMap(round => round.puzzles);
-  const index = all.findIndex(p => p.id === puzzleId);
-  const previous = index > 0 ? all[index - 1] : undefined;
-  const next = index >= 0 && index < all.length - 1 ? all[index + 1] : undefined;
-  const go = (id: string) =>
-    void navigate({
-      to: "/$workspaceSlug/puzzles/$puzzleId",
-      params: prev => ({...prev, puzzleId: id}),
-      search: prev => prev,
-    });
+/**
+ * Your time on this puzzle, ticking each second while it counts (this tab is in front of you) and
+ * dimmed while it's paused. Also what records it (see `usePuzzleTimeTracker`).
+ */
+function PuzzleTimer({puzzleId}: {puzzleId: string}) {
+  const {workspaceSlug} = Route.useParams();
+  const {seconds, isCounting} = usePuzzleTimeTracker(workspaceSlug, puzzleId);
   return (
-    <div className="ms-auto flex shrink-0 items-center">
-      {[
-        {target: previous, label: "Previous puzzle", Icon: ChevronLeftIcon},
-        {target: next, label: "Next puzzle", Icon: ChevronRightIcon},
-      ].map(({target, label, Icon}) => (
-        <Tooltip key={label} delay={300}>
-          <Tooltip.Trigger>
-            <Button
-              size="sm"
-              isIconOnly
-              variant="ghost"
-              isDisabled={!target}
-              aria-label={target ? `${label}: ${target.name}` : label}
-              onPress={() => target && go(target.id)}>
-              <Icon />
-            </Button>
-          </Tooltip.Trigger>
-          <Tooltip.Content>
-            {target ? `${label}: ${target.name}` : `No ${label.toLowerCase()}`}
-          </Tooltip.Content>
-        </Tooltip>
-      ))}
+    // At the end of the bar (the tooltip trigger doesn't pass layout classes through).
+    <div className="ms-auto flex shrink-0">
+      <Tooltip delay={300}>
+        <Tooltip.Trigger>
+          <Chip
+            size="sm"
+            variant="secondary"
+            aria-label={`Your time on this puzzle: ${seconds === undefined ? "loading" : formatPuzzleTime(seconds)}`}
+            className={cn("gap-1 tabular-nums transition-opacity", !isCounting && "opacity-60")}>
+            <TimerIcon className="size-3.5" />
+            <Chip.Label>{seconds === undefined ? "–:––" : formatPuzzleTime(seconds)}</Chip.Label>
+          </Chip>
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          Your time on this puzzle. It counts while this tab is the one in front of you.
+        </Tooltip.Content>
+      </Tooltip>
     </div>
   );
 }
@@ -542,7 +555,7 @@ function WorksheetPane({
       <div className="border-separator flex h-10 shrink-0 items-center border-b px-2">
         <Tabs
           selectedKey={view}
-          className={cn(phone && "w-full")}
+          className={cn(phone && "min-w-0 flex-1")}
           onSelectionChange={key => {
             const next = VIEWS.find(v => v === key) ?? "sheet";
             track("puzzle_view_switched", {view: next, phone});
@@ -577,7 +590,7 @@ function WorksheetPane({
             </Tabs.List>
           </Tabs.ListContainer>
         </Tabs>
-        {!phone && <PuzzleStepper puzzleId={puzzle.id} />}
+        <PuzzleTimer puzzleId={puzzle.id} />
       </div>
       <div className={cn("flex min-h-0 flex-1 flex-col", view !== "sheet" && "hidden")}>
         {hasWorksheet ? (

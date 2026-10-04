@@ -1,5 +1,5 @@
 import {Badge, Button, Popover, Switch, Tabs} from "@heroui/react";
-import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useNavigate} from "@tanstack/react-router";
 import {
   AtSignIcon,
@@ -21,6 +21,8 @@ import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
+import {orpc} from "@/lib/orpc";
+import {workspaceMutations, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import type {
   NotificationClientMessage,
   NotificationMessage,
@@ -64,10 +66,9 @@ function describe(notification: WorkspaceNotification) {
   switch (notification.type) {
     case "solved":
       return {
+        // A team effort: who marked it solved isn't who solved it, so no "by".
         title: `${notification.isMeta ? "Meta solved" : "Solved"}: ${notification.puzzleName}`,
-        body: [notification.answer, notification.by && `by ${notification.by.name}`]
-          .filter(Boolean)
-          .join(" · "),
+        body: notification.answer ?? "",
       };
     case "announcement":
       return {title: `Announcement from ${notification.from}`, body: notification.message};
@@ -96,6 +97,21 @@ export function NotificationsWebSocket({
   const popupsAllowed = session?.user.notificationsDisabled === false;
   const [prefs] = usePrefs();
   const navigate = useNavigate();
+  const {mutate: setContributor} = useMutation(workspaceMutations.puzzles.setContributor());
+
+  /**
+   * Whether to ask you, as a puzzle gets solved, if you helped: you're on its page, or you've
+   * spent a minute or more on it, and you haven't marked yourself already.
+   */
+  const mightHaveHelped = (puzzleId: string) => {
+    if (!me) return false;
+    const wire = queryClient.getQueryData(workspaceQueryOptions(workspaceSlug).queryKey);
+    const puzzle = wire?.rounds.flatMap(r => r.puzzles).find(p => p.id === puzzleId);
+    if (!puzzle || puzzle.contributorIds.includes(me)) return false;
+    if (window.location.pathname.endsWith(`/puzzles/${puzzleId}`)) return true;
+    const times = queryClient.getQueryData(orpc.puzzles.myTimes.queryKey({input: {workspaceSlug}}));
+    return (times?.find(t => t.puzzleId === puzzleId)?.seconds ?? 0) >= 60;
+  };
 
   const open = (notification: WorkspaceNotification) => {
     if (notification.type === "announcement") return;
@@ -156,7 +172,18 @@ export function NotificationsWebSocket({
       if (message.type === "solved") {
         // The toast must still show if the (lazily loaded) confetti fails.
         await celebrate().catch(() => {});
-        toast.success(title, {description: body});
+        const {puzzleId} = message;
+        toast.success(title, {
+          description: body || undefined,
+          action:
+            me && mightHaveHelped(puzzleId)
+              ? {
+                  label: "I helped",
+                  onClick: () =>
+                    setContributor({workspaceSlug, puzzleId, userId: me, contributed: true}),
+                }
+              : undefined,
+        });
       } else if (message.type === "announcement") {
         toast.info(title, {
           description: body,

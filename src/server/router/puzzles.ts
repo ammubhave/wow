@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
-import {and, eq, isNull} from "drizzle-orm";
+import {and, desc, eq, isNull, sql} from "drizzle-orm";
 import {z} from "zod";
 
 import {db} from "@/lib/db";
@@ -68,6 +68,10 @@ async function createPuzzleWorksheet(
     .where(eq(schema.puzzle.id, puzzle.id));
   await invalidateWorkspace(workspace.id);
 }
+
+/** The most time one `recordTime` call can add (the page saves about every minute). */
+export const MAX_TIME_BATCH_SECONDS = 120;
+const HOUR_MS = 3_600_000;
 
 export const puzzlesRouter = {
   create: procedure
@@ -429,5 +433,118 @@ export const puzzlesRouter = {
         );
       if (!puzzle) throw new ORPCError("NOT_FOUND");
       return puzzle;
+    }),
+
+  /**
+   * Adds time you were active on a puzzle (its page in the focused tab, not idle), sent by the page
+   * in small batches, with the hour of day where you are. A batch can't claim more time than has
+   * passed since the previous one (plus slack), so these stay honest-ish stats.
+   */
+  recordTime: procedure
+    .input(
+      z.object({
+        workspaceSlug: z.string(),
+        puzzleId: z.string(),
+        seconds: z.number().int().min(1).max(MAX_TIME_BATCH_SECONDS),
+        /** The hour of day (0–23) in the solver's own time zone. */
+        localHour: z.number().int().min(0).max(23),
+      })
+    )
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const puzzle = await db
+        .select({id: schema.puzzle.id})
+        .from(schema.puzzle)
+        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+        .where(
+          and(
+            eq(schema.puzzle.id, input.puzzleId),
+            eq(schema.round.workspaceId, context.workspace.id)
+          )
+        )
+        .get();
+      if (!puzzle) throw new ORPCError("NOT_FOUND");
+      const {seconds, updatedAt} = schema.puzzleTime;
+      await db
+        .insert(schema.puzzleTime)
+        .values({
+          userId: context.session.user.id,
+          puzzleId: puzzle.id,
+          workspaceId: context.workspace.id,
+          hour: Math.floor(Date.now() / HOUR_MS),
+          localHour: input.localHour,
+          seconds: input.seconds,
+        })
+        .onConflictDoUpdate({
+          target: [schema.puzzleTime.userId, schema.puzzleTime.puzzleId, schema.puzzleTime.hour],
+          set: {
+            seconds: sql`${seconds} + min(excluded.seconds, (cast(unixepoch('subsecond') * 1000 as integer) - ${updatedAt}) / 1000 + 10)`,
+            updatedAt: new Date(),
+          },
+        });
+    }),
+
+  /** Your time on each puzzle in the workspace (most first). */
+  myTimes: procedure
+    .input(z.object({workspaceSlug: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context}) => {
+      const seconds = sql<number>`cast(sum(${schema.puzzleTime.seconds}) as integer)`;
+      return db
+        .select({puzzleId: schema.puzzleTime.puzzleId, seconds})
+        .from(schema.puzzleTime)
+        .where(
+          and(
+            eq(schema.puzzleTime.workspaceId, context.workspace.id),
+            eq(schema.puzzleTime.userId, context.session.user.id)
+          )
+        )
+        .groupBy(schema.puzzleTime.puzzleId)
+        .orderBy(desc(seconds));
+    }),
+
+  /** Marks (or unmarks) yourself as having helped solve a puzzle: the team's honor code. */
+  setContributor: procedure
+    .input(
+      z.object({
+        workspaceSlug: z.string(),
+        puzzleId: z.string(),
+        /** Always you: nobody marks someone else (it's in the input for the optimistic update). */
+        userId: z.string(),
+        contributed: z.boolean(),
+      })
+    )
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      if (input.userId !== context.session.user.id) throw new ORPCError("FORBIDDEN");
+      const puzzle = await db
+        .select({id: schema.puzzle.id})
+        .from(schema.puzzle)
+        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+        .where(
+          and(
+            eq(schema.puzzle.id, input.puzzleId),
+            eq(schema.round.workspaceId, context.workspace.id)
+          )
+        )
+        .get();
+      if (!puzzle) throw new ORPCError("NOT_FOUND");
+      const userId = context.session.user.id;
+      if (input.contributed) {
+        await db
+          .insert(schema.puzzleContributor)
+          .values({puzzleId: puzzle.id, userId})
+          .onConflictDoNothing();
+      } else {
+        await db
+          .delete(schema.puzzleContributor)
+          .where(
+            and(
+              eq(schema.puzzleContributor.puzzleId, puzzle.id),
+              eq(schema.puzzleContributor.userId, userId)
+            )
+          );
+      }
+      await invalidateWorkspace(context.workspace.id);
     }),
 };

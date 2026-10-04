@@ -1,5 +1,12 @@
 import {sql} from "drizzle-orm";
-import {AnySQLiteColumn, index, integer, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {
+  AnySQLiteColumn,
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
 import {v7 as uuid7} from "uuid";
 
 export * from "./auth-schema";
@@ -116,6 +123,55 @@ export const workspaceActivityLogEntry = sqliteTable("workspace_activity_log_ent
     .references(() => activityLogEntry.id, {onDelete: "cascade", onUpdate: "cascade"}),
   subType: text({enum: ["join"]}).notNull(),
 });
+
+/**
+ * How long each person was actively on each puzzle (its page in the focused tab, not idle), by hour,
+ * so stats can say both how long and when.
+ */
+export const puzzleTime = sqliteTable(
+  "puzzle_time",
+  {
+    userId: text()
+      .notNull()
+      .references(() => auth.user.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    puzzleId: text()
+      .notNull()
+      .references(() => puzzle.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    // Denormalized (a puzzle never changes workspace) so a workspace's stats are one lookup.
+    workspaceId: text()
+      .notNull()
+      .references(() => auth.organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    /** The hour (UTC, in hours since the epoch) the time was spent in. */
+    hour: integer().notNull(),
+    /** That hour as the time of day (0–23) where the solver was, for "night owl" style stats. */
+    localHour: integer().notNull(),
+    seconds: integer().default(0).notNull(),
+    updatedAt: base.updatedAt,
+  },
+  t => [
+    primaryKey({columns: [t.userId, t.puzzleId, t.hour]}),
+    index("puzzle_time_workspaceId_userId_idx").on(t.workspaceId, t.userId),
+    index("puzzle_time_puzzleId_idx").on(t.puzzleId),
+  ]
+);
+
+/** Who says they helped solve a puzzle (self-reported: the team's honor code). */
+export const puzzleContributor = sqliteTable(
+  "puzzle_contributor",
+  {
+    puzzleId: text()
+      .notNull()
+      .references(() => puzzle.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    userId: text()
+      .notNull()
+      .references(() => auth.user.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    createdAt: base.createdAt,
+  },
+  t => [
+    primaryKey({columns: [t.puzzleId, t.userId]}),
+    index("puzzle_contributor_userId_idx").on(t.userId),
+  ]
+);
 
 // Hunts
 

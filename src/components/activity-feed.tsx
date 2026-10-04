@@ -33,6 +33,7 @@ import {useInView} from "react-intersection-observer";
 import {useFormatter, useNow} from "use-intl";
 import {useLocalStorage} from "usehooks-ts";
 
+import {PuzzleContributorAvatars} from "@/components/puzzle-contributors";
 import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {ARRIVE_FROM_TOP, useMountedAt} from "@/lib/arrivals";
@@ -189,6 +190,35 @@ function EventText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}
   }
 }
 
+/**
+ * A solve, as a team effort: "X solved", with who says they helped, and who marked it solved only
+ * as a footnote (marking it is bookkeeping, not solving it alone).
+ */
+function SolveText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}) {
+  const puzzle = entry.puzzle_activity_log_entry!;
+  const workspace = useWorkspace();
+  const contributorIds =
+    workspace.rounds.flatMap(r => r.puzzles).find(p => p.id === puzzle.puzzleId)?.contributorIds ??
+    [];
+  return (
+    <>
+      <PuzzleName workspaceSlug={workspaceSlug} entry={entry} />
+      {puzzle.field === "backsolved" ? " backsolved" : " solved"}
+      {contributorIds.length > 0 && (
+        <span className="inline-flex items-center gap-1.5">
+          with
+          <PuzzleContributorAvatars
+            workspaceSlug={workspaceSlug}
+            contributorIds={contributorIds}
+            max={6}
+          />
+        </span>
+      )}
+      {entry.user && <span className="text-xs">· marked by {entry.user.name}</span>}
+    </>
+  );
+}
+
 function FeedItem({
   workspaceSlug,
   entry,
@@ -201,7 +231,11 @@ function FeedItem({
   const format = useFormatter();
   const {Icon, status} = eventStyle(entry);
   const createdAt = new Date(entry.activity_log_entry.createdAt);
-  const user = entry.user;
+  const isSolve =
+    entry.puzzle_activity_log_entry?.subType === "updateStatus" &&
+    isSolved(entry.puzzle_activity_log_entry.field);
+  // A solve leads with the puzzle, not with whoever marked it.
+  const user = isSolve ? null : entry.user;
   return (
     <Timeline.Item
       align="center"
@@ -229,7 +263,11 @@ function FeedItem({
                 </span>
               </UserHoverCard>
             )}
-            <EventText workspaceSlug={workspaceSlug} entry={entry} />
+            {isSolve ? (
+              <SolveText workspaceSlug={workspaceSlug} entry={entry} />
+            ) : (
+              <EventText workspaceSlug={workspaceSlug} entry={entry} />
+            )}
           </p>
           <Tooltip delay={300}>
             <Tooltip.Trigger>

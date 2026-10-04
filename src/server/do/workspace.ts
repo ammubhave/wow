@@ -112,7 +112,10 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
   const since = newest ? new Date(newest.getTime() - ACTIVITY_LOG_OVERLAP_MS) : undefined;
   const [workspace, rounds, newActivityLogEntries] = await Promise.all([
     db.select().from(schema.organization).where(eq(schema.organization.id, workspaceId)).get(),
-    db.query.round.findMany({where: {workspaceId}, with: {puzzles: true}}),
+    db.query.round.findMany({
+      where: {workspaceId},
+      with: {puzzles: {with: {contributors: {columns: {userId: true}}}}},
+    }),
     // Cold: just the newest entries. Warm: only what's new since the newest cached one.
     getActivityLogEntries(workspaceId, since ? {since} : {limit: RECENT_ACTIVITY_LOG_ENTRIES}),
   ]);
@@ -140,7 +143,16 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
     googleConnected: googleAccessToken !== null,
     activityLogEntries,
     // Flat: each puzzle is sent once; clients derive children/metas (see expandWorkspaceState).
-    rounds,
+    // oxlint-disable-next-line oxc/no-map-spread -- a new shape (contributors → contributorIds).
+    rounds: rounds.map(round => ({
+      ...round,
+      // oxlint-disable-next-line oxc/no-map-spread -- as above.
+      puzzles: round.puzzles.map(({contributors, ...puzzle}) => ({
+        ...puzzle,
+        /** Who says they helped solve it. */
+        contributorIds: contributors.map(c => c.userId),
+      })),
+    })),
     // JSON columns (typed `unknown`): validate rather than cast.
     tags: z
       .array(z.string())

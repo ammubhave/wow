@@ -30,6 +30,10 @@ export const TRACKED_PROCEDURES: Record<string, [event: string, describe: Descri
     input => ({fields: changedFields(input), status: input.status ?? undefined}),
   ],
   "puzzles.delete": ["puzzle_deleted", none],
+  "puzzles.setContributor": [
+    "puzzle_contribution_marked",
+    input => ({contributed: input.contributed}),
+  ],
   "rounds.create": ["round_created", none],
   "rounds.update": ["round_updated", input => ({fields: changedFields(input)})],
   "rounds.delete": ["round_deleted", none],
