@@ -33,6 +33,8 @@ const chatRoomSentMessageSchema = z.union([
   z.object({type: z.literal("delete"), messageId: z.string()}),
   // Anyone in the puzzle may pin or unpin.
   z.object({type: z.literal("pin"), messageId: z.string(), pinned: z.boolean()}),
+  // "I'm typing" (sent every few seconds while composing): relayed to the others, never stored.
+  z.object({type: z.literal("typing")}),
 ]);
 export type ChatRoomSentMessage = z.infer<typeof chatRoomSentMessageSchema>;
 
@@ -53,7 +55,9 @@ export type ChatMessage = {
 export type ChatRoomReceivedMessage =
   // `pinned`: every pinned message, including ones older than the snapshot's window.
   | {type: "snapshot"; messages: ChatMessage[]; pinned: ChatMessage[]}
-  | {type: "message"; message: ChatMessage};
+  | {type: "message"; message: ChatMessage}
+  // Someone else is typing (repeated while they are; it lapses when they stop).
+  | {type: "typing"; userId: string; name: string};
 
 // Not a message: the ids of the room's pinned messages (a JSON string, so `isMessage` skips it).
 const PINS_KEY = "pins";
@@ -65,7 +69,13 @@ function isMessage(value: ChatMessage | string): value is ChatMessage {
 function send(ws: WebSocket, message: ChatRoomReceivedMessage) {
   ws.send(JSON.stringify(message));
 }
-type Attachment = {name: string; userId: string; puzzleId: string};
+/** Whose room a socket is in: a puzzle's chat, or (puzzleId null) a team's chat. */
+type Attachment = {
+  name: string;
+  userId: string;
+  puzzleId: string | null;
+  workspaceId: string | null;
+};
 function putAttachment(ws: WebSocket, data: Attachment) {
   ws.serializeAttachment({...ws.deserializeAttachment(), ...data});
 }
@@ -74,11 +84,16 @@ function getAttachment(ws: WebSocket): Attachment {
   return ws.deserializeAttachment();
 }
 
+/** The team chat's room name (puzzle chats are named by their puzzle id). */
+export const teamChatRoomName = (workspaceId: string) => `team:${workspaceId}`;
+/** Header the team chat's API route uses to tell the room which workspace it is (server-set). */
+export const TEAM_CHAT_WORKSPACE_HEADER = "x-wow-team-chat-workspace";
+
 // Joining sends the newest messages only, so a long-running chat stays cheap to open.
 const SNAPSHOT_MESSAGES = 500;
 
 /**
- * A puzzle's chat. Messages live in the room's durable storage (keyed by uuidv7, so in time order),
+ * A puzzle's chat, or a team's (on the blackboard). Messages live in the room's durable storage (keyed by uuidv7, so in time order),
  * which survives the object being evicted or redeployed. They're kept for as long as the puzzle
  * exists; deleting the puzzle calls `clear()`.
  */
@@ -93,13 +108,16 @@ export class ChatRoom extends DurableObject {
   async fetch(request: Request) {
     const app = new Hono<HonoEnv>();
     app.use(authMiddleware);
-    app.get("/api/chat/:puzzleId", async c => {
+    const join = async (
+      session: HonoEnv["Variables"]["session"],
+      room: {puzzleId: string | null; workspaceId: string | null}
+    ) => {
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
       putAttachment(server, {
-        name: c.var.session?.user.name || "User",
-        userId: c.var.session?.user.id ?? "",
-        puzzleId: c.req.param("puzzleId"),
+        name: session?.user.name || "User",
+        userId: session?.user.id ?? "",
+        ...room,
       });
       const newest = await this.storage.list<ChatMessage | string>({
         reverse: true,
@@ -114,6 +132,15 @@ export class ChatRoom extends DurableObject {
           : [...(await this.storage.get<ChatMessage | string>(pinIds)).values()].filter(isMessage);
       send(server, {type: "snapshot", messages, pinned});
       return new Response(null, {status: 101, webSocket: client});
+    };
+    app.get("/api/chat/:puzzleId", c =>
+      join(c.var.session, {puzzleId: c.req.param("puzzleId"), workspaceId: null})
+    );
+    app.get("/api/workspaces/:workspaceSlug/chat", async c => {
+      // Set by the route after checking membership (never taken from the browser).
+      const workspaceId = c.req.header(TEAM_CHAT_WORKSPACE_HEADER);
+      if (!workspaceId) return new Response(null, {status: 400});
+      return await join(c.var.session, {puzzleId: null, workspaceId});
     });
     return await app.fetch(request, this.env);
   }
@@ -125,6 +152,19 @@ export class ChatRoom extends DurableObject {
       m = chatRoomSentMessageSchema.parse(JSON.parse(message));
     } catch {
       return; // Ignore malformed messages instead of throwing in the DO.
+    }
+
+    if (m.type === "typing") {
+      const typing: ChatRoomReceivedMessage = {
+        type: "typing",
+        userId: attachment.userId,
+        name: attachment.name,
+      };
+      // Everyone else (not the typist's own tabs).
+      for (const other of this.ctx.getWebSockets()) {
+        if (getAttachment(other).userId !== attachment.userId) send(other, typing);
+      }
+      return;
     }
 
     if (m.type === "send") {
@@ -221,22 +261,24 @@ export class ChatRoom extends DurableObject {
       ...new Set([...text.matchAll(MENTION_PATTERN)].map(match => match[2]!)),
     ].filter(id => id !== sender.userId);
     if (toUserIds.length === 0) return;
-    // The puzzle's name and workspace now (it may have been renamed or moved since).
-    const puzzle = await db
-      .select({name: schema.puzzle.name, workspaceId: schema.round.workspaceId})
-      .from(schema.puzzle)
-      .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-      .where(eq(schema.puzzle.id, sender.puzzleId))
-      .get();
-    if (!puzzle) return;
-    await this.env.NOTIFICATION_ROOMS.getByName(puzzle.workspaceId, {
-      locationHint: "enam",
-    }).broadcast({
+    // The puzzle's name and workspace now (it may have been renamed or moved since); the team
+    // chat knows its workspace.
+    const puzzle = sender.puzzleId
+      ? await db
+          .select({name: schema.puzzle.name, workspaceId: schema.round.workspaceId})
+          .from(schema.puzzle)
+          .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+          .where(eq(schema.puzzle.id, sender.puzzleId))
+          .get()
+      : null;
+    const workspaceId = puzzle?.workspaceId ?? sender.workspaceId;
+    if (!workspaceId) return;
+    await this.env.NOTIFICATION_ROOMS.getByName(workspaceId, {locationHint: "enam"}).broadcast({
       type: "mention",
       toUserIds,
       from: {id: sender.userId, name: sender.name},
-      puzzleId: sender.puzzleId,
-      puzzleName: puzzle.name,
+      puzzleId: puzzle ? sender.puzzleId : null,
+      puzzleName: puzzle?.name ?? "Team chat",
       text: plainMentions(text).slice(0, 280),
     });
   }

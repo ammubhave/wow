@@ -1,30 +1,82 @@
+import {Resizable} from "@heroui-pro/react/resizable";
 import {Button, Drawer, Tooltip} from "@heroui/react";
-import {MegaphoneIcon, NotebookPenIcon} from "lucide-react";
+import {MegaphoneIcon, MessagesSquareIcon, NotebookPenIcon} from "lucide-react";
 import * as React from "react";
 import {memo} from "react";
 import {cn} from "tailwind-variants";
+import {useMediaQuery} from "usehooks-ts";
 
 import {useWorkspace} from "@/hooks/use-workspace";
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
 import {WorkspaceRoomState} from "@/server/do/workspace";
 
+import {Chat} from "./chat";
 import {CommentBox} from "./comment-box";
 import {MakeAccouncementDialog} from "./make-announcement-dialog";
 
-/** The board's sidebar (team notes, round progress, announcements); hidden on phones. */
+/**
+ * The board's sidebar: team notes, round progress and announcements, above the team chat (with
+ * the lobby call). Hidden on phones, where both open in drawers from the board's toolbar.
+ */
 export function AppSidebar({
   workspaceSlug,
   rounds,
   ...props
 }: {workspaceSlug: string; rounds: WorkspaceRoomState["rounds"]} & React.ComponentProps<"div">) {
+  // Not rendered at all on phones (not just hidden), so its team chat doesn't connect twice.
+  const isWide = useMediaQuery("(min-width: 768px)");
+  if (!isWide) return null;
   return (
-    <div
-      className="bg-background relative hidden w-full max-w-[16rem] border-l md:block"
-      {...props}>
-      <div className="absolute inset-0 flex flex-col overflow-y-auto">
-        <SidebarContents workspaceSlug={workspaceSlug} rounds={rounds} />
+    <div className="bg-background relative w-80 shrink-0 border-l" {...props}>
+      <div className="absolute inset-0 flex">
+        <Resizable orientation="vertical">
+          <Resizable.Panel defaultSize={40} className="flex flex-col overflow-y-auto">
+            <SidebarContents workspaceSlug={workspaceSlug} rounds={rounds} />
+          </Resizable.Panel>
+          <Resizable.Handle type="drag" />
+          <Resizable.Panel defaultSize={60} className="flex flex-col">
+            <TeamChat />
+          </Resizable.Panel>
+        </Resizable>
       </div>
     </div>
+  );
+}
+
+/** The team chat, under its heading. */
+function TeamChat() {
+  return (
+    <section aria-label="Team chat" className="flex min-h-0 flex-1 flex-col">
+      <h2 className="text-muted flex items-center gap-1.5 px-3 pt-2 text-xs font-medium">
+        <MessagesSquareIcon className="size-3.5" />
+        Team chat
+      </h2>
+      <Chat />
+    </section>
+  );
+}
+
+/** On phones, the team chat opens in a drawer from the board's toolbar. */
+export function TeamChatDrawerButton() {
+  return (
+    <Drawer>
+      <Button variant="outline" isIconOnly aria-label="Team chat" className="md:hidden">
+        <MessagesSquareIcon />
+      </Button>
+      <Drawer.Backdrop>
+        <Drawer.Content placement="right">
+          <Drawer.Dialog className="w-[min(24rem,90vw)]">
+            <Drawer.CloseTrigger />
+            <Drawer.Header>
+              <Drawer.Heading>Team chat</Drawer.Heading>
+            </Drawer.Header>
+            <Drawer.Body className="flex min-h-0 flex-col p-0">
+              <Chat />
+            </Drawer.Body>
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
+    </Drawer>
   );
 }
 

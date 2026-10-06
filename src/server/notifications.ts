@@ -28,7 +28,8 @@ export type MentionNotification = NotificationBase & {
   /** Who was mentioned (the bell shows a mention only to them). */
   toUserIds: string[];
   from: {id: string; name: string};
-  puzzleId: string;
+  /** Where: a puzzle's chat, or null for the team chat (then `puzzleName` is "Team chat"). */
+  puzzleId: string | null;
   puzzleName: string;
   /** The message, as plain text (mentions as "@Name"). */
   text: string;

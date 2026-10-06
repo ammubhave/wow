@@ -82,6 +82,27 @@ function describe(notification: WorkspaceNotification) {
   }
 }
 
+/**
+ * Goes where a notification is about: its puzzle (for a mention, the puzzle's chat), or the
+ * blackboard for the team chat. Announcements go nowhere.
+ */
+function goTo(
+  navigate: ReturnType<typeof useNavigate>,
+  workspaceSlug: string,
+  notification: WorkspaceNotification
+) {
+  if (notification.type === "announcement") return;
+  if (notification.puzzleId === null) {
+    void navigate({to: "/$workspaceSlug", params: {workspaceSlug}});
+    return;
+  }
+  void navigate({
+    to: "/$workspaceSlug/puzzles/$puzzleId",
+    params: {workspaceSlug, puzzleId: notification.puzzleId},
+    search: notification.type === "mention" ? {view: "chat"} : {},
+  });
+}
+
 /** Receives the workspace's notifications: keeps them for the bell, and pops up new ones. */
 export function NotificationsWebSocket({
   workspaceSlug,
@@ -116,11 +137,7 @@ export function NotificationsWebSocket({
   const open = (notification: WorkspaceNotification) => {
     if (notification.type === "announcement") return;
     track("notification_clicked", {type: notification.type, from: "popup"});
-    void navigate({
-      to: "/$workspaceSlug/puzzles/$puzzleId",
-      params: {workspaceSlug, puzzleId: notification.puzzleId},
-      search: notification.type === "mention" ? {view: "chat"} : {},
-    });
+    goTo(navigate, workspaceSlug, notification);
   };
 
   useWebSocket(`/api/notification/${workspaceSlug}`, {
@@ -379,7 +396,6 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
             {shown.map(notification => {
               const {title, body} = describe(notification);
               const unreadNow = isUnread(notification);
-              const target = notification.type === "announcement" ? null : notification.puzzleId;
               return (
                 <li key={notification.id}>
                   <button
@@ -387,13 +403,9 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                     onClick={() => {
                       if (unreadNow) markRead(notification.id);
                       track("notification_clicked", {type: notification.type, from: "bell"});
-                      if (!target) return;
+                      if (notification.type === "announcement") return;
                       onOpenChange(false);
-                      void navigate({
-                        to: "/$workspaceSlug/puzzles/$puzzleId",
-                        params: {workspaceSlug, puzzleId: target},
-                        search: notification.type === "mention" ? {view: "chat"} : {},
-                      });
+                      goTo(navigate, workspaceSlug, notification);
                     }}
                     className={cn(
                       "hover:bg-surface-secondary flex w-full cursor-pointer items-start gap-3 px-3 py-2 text-start",

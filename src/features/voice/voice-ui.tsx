@@ -165,12 +165,13 @@ function PersonChip({
 }
 
 /**
- * Above a puzzle's chat: who's looking at the puzzle and who's in its call (with mic, camera,
- * screen and speaking state, visible without joining), and your controls for it.
+ * Above a chat: who's here (looking at the puzzle, or on the board for the team chat) and who's in
+ * the call (the puzzle's, or the lobby), with mic, camera, screen and speaking state visible
+ * without joining, and your controls for it.
  */
-export function PuzzleVoiceStrip({puzzleId, viewers}: {puzzleId: string; viewers: VoiceUser[]}) {
+export function PuzzleVoiceStrip({room, viewers}: {room: string; viewers: VoiceUser[]}) {
   const voice = useVoice();
-  const participants = voice.rooms[puzzleId] ?? [];
+  const participants = voice.rooms[room] ?? [];
   const callByUser = new Map(participants.map(p => [p.user.id, p]));
   const viewerIds = new Set(viewers.map(v => v.id));
   // People in the call who've wandered off to another page still belong here.
@@ -202,7 +203,7 @@ export function PuzzleVoiceStrip({puzzleId, viewers}: {puzzleId: string; viewers
           />
         ))}
       </div>
-      <CallControls room={puzzleId} />
+      <CallControls room={room} />
     </div>
   );
 }

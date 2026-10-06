@@ -33,6 +33,7 @@ import type {
   ChatRoomSentMessage,
 } from "@/server/do/chat";
 import {mentionMarkdown} from "@/server/notifications";
+import {VOICE_LOBBY} from "@/server/voice";
 import {useAppSelector} from "@/store";
 
 import {MessageActions, MessageEditor, PinnedBar} from "./chat-message-tools";
@@ -57,7 +58,33 @@ const MAX_IMAGES = 10;
 // Matches the server's limit; bigger images are scaled down and re-encoded before upload.
 const IMAGE_LIMITS = {maxBytes: 5 * 1024 * 1024, maxSide: 2560};
 
-const imageUrl = (puzzleId: string, id: string) => `/api/chat/${puzzleId}/images/${id}`;
+/** While you type, say so at most this often; someone's "typing" lapses this long after their last. */
+const TYPING_PING_MS = 3000;
+const TYPING_TTL_MS = 6000;
+
+/** "Priya is typing", "Priya and Diego are typing", "Priya, Diego and 2 others are typing". */
+function typingText(names: string[]) {
+  if (names.length === 1) return `${names[0]} is typing`;
+  if (names.length <= 3) return `${names.slice(0, -1).join(", ")} and ${names.at(-1)} are typing`;
+  return `${names.slice(0, 2).join(", ")} and ${names.length - 2} others are typing`;
+}
+
+/** Who else is typing, just above the composer (its space is kept, so nothing jumps). */
+function TypingIndicator({names}: {names: string[]}) {
+  const text = names.length > 0 ? typingText(names) : "";
+  return (
+    <div className="text-muted flex h-5 items-center gap-1.5 px-3 text-xs" aria-live="polite">
+      {text && (
+        <>
+          <ChatLoader.Dots size="sm" label={text} />
+          <span className="min-w-0 truncate" aria-hidden>
+            {text}…
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
 
 /** Scrolls to a (pinned) message and briefly highlights it. */
 function jumpTo(id: string) {
@@ -83,8 +110,14 @@ function startsGroup(messages: ChatMessageData[], idx: number) {
 /** Someone who can be @mentioned (a workspace member). */
 type Member = {id: string; name: string; email: string; image: string | null};
 
-export function Chat({puzzleId}: {puzzleId: string}) {
+/**
+ * A chat: a puzzle's (with that puzzle's call), or, without `puzzleId`, the team's chat on the
+ * blackboard (with the lobby call).
+ */
+export function Chat({puzzleId}: {puzzleId?: string}) {
   const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
+  const chatPath = puzzleId ? `/api/chat/${puzzleId}` : `/api/workspaces/${workspaceSlug}/chat`;
+  const imageUrl = (id: string) => `${chatPath}/images/${id}`;
   // null until the room's snapshot arrives.
   const [messages, setMessages] = useState<ChatMessageData[] | null>(null);
   // The composer's text with @mention tokens (each carries the member it refers to).
@@ -130,6 +163,8 @@ export function Chat({puzzleId}: {puzzleId: string}) {
   const me = authClient.useSession().data?.user.id;
   const [isUploading, setIsUploading] = useState(false);
   const mountedAt = useMountedAt();
+  // Who else is typing, and until when (they keep saying so while they type).
+  const [typists, setTypists] = useState<Record<string, {name: string; until: number}>>({});
 
   // Previews are blob: URLs; release whatever is still pending when the chat closes.
   const imagesRef = useRef(images);
@@ -155,13 +190,25 @@ export function Chat({puzzleId}: {puzzleId: string}) {
       return current.filter(image => image.key !== key);
     });
 
-  const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(`/api/chat/${puzzleId}`, {
+  const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(chatPath, {
     share: false,
     shouldReconnect: () => true,
     // Nothing reads `lastMessage`; skip storing it (messages are kept in `messages` above).
     filter: () => false,
     onMessage: event => {
       const message: ChatRoomReceivedMessage = JSON.parse(event.data);
+      if (message.type === "typing") {
+        const {userId, name} = message;
+        setTypists(current => ({...current, [userId]: {name, until: Date.now() + TYPING_TTL_MS}}));
+        return;
+      }
+      if (message.type === "message" && message.message.userId) {
+        // Their message is here: they're done typing it.
+        const {userId} = message.message;
+        setTypists(current =>
+          Object.fromEntries(Object.entries(current).filter(([id]) => id !== userId))
+        );
+      }
       if (message.type === "snapshot") {
         setMessages(message.messages);
         setPinned(message.pinned ?? []);
@@ -185,8 +232,33 @@ export function Chat({puzzleId}: {puzzleId: string}) {
 
   const send = (message: ChatRoomSentMessage) => {
     sendJsonMessage(message);
-    trackChat(message);
+    trackChat(message, puzzleId ? "puzzle" : "team");
+    // The next thing you type gets announced right away.
+    if (message.type === "send") lastTypingPingRef.current = 0;
   };
+
+  // While you're composing, let the others know (every few seconds, not every keystroke).
+  const lastTypingPingRef = useRef(0);
+  useEffect(() => {
+    if (!input.trim()) return;
+    const now = Date.now();
+    if (now - lastTypingPingRef.current < TYPING_PING_MS) return;
+    lastTypingPingRef.current = now;
+    sendJsonMessage({type: "typing"} satisfies ChatRoomSentMessage);
+  }, [input, sendJsonMessage]);
+
+  // Drop people who've stopped typing.
+  const anyoneTyping = Object.keys(typists).length > 0;
+  useEffect(() => {
+    if (!anyoneTyping) return undefined;
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setTypists(current =>
+        Object.fromEntries(Object.entries(current).filter(([, typist]) => typist.until > now))
+      );
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [anyoneTyping]);
 
   const handleSend = async () => {
     if (isUploading || (!input.trim() && images.length === 0)) return;
@@ -199,7 +271,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
     setIsUploading(true);
     try {
       const ids = await Promise.all(
-        images.map(image => uploadImage(image.file, id => imageUrl(puzzleId, id), IMAGE_LIMITS))
+        images.map(image => uploadImage(image.file, imageUrl, IMAGE_LIMITS))
       );
       send({type: "send", text, images: ids});
       clearInput();
@@ -212,13 +284,15 @@ export function Chat({puzzleId}: {puzzleId: string}) {
     }
   };
 
-  const presences = useAppSelector(state => state.presences.value[puzzleId]) ?? NO_PRESENCES;
+  // Who's here: on this puzzle, or (team chat) on the workspace's other pages, like the board.
+  const presences =
+    useAppSelector(state => state.presences.value[puzzleId ?? workspaceSlug]) ?? NO_PRESENCES;
   // Messages only carry the sender's name; show the picture of whoever here goes by that name.
   const presenceByName = new Map(presences.map(user => [user.name, user]));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col pb-4">
-      <PuzzleVoiceStrip puzzleId={puzzleId} viewers={presences} />
+      <PuzzleVoiceStrip room={puzzleId ?? VOICE_LOBBY} viewers={presences} />
       <PinnedBar
         pinned={pinned}
         onJump={jumpTo}
@@ -309,7 +383,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
                       {message.images?.map(id => (
                         <ImageLightbox
                           key={id}
-                          src={imageUrl(puzzleId, id)}
+                          src={imageUrl(id)}
                           alt={`Shared by ${message.name}`}
                         />
                       ))}
@@ -345,6 +419,7 @@ export function Chat({puzzleId}: {puzzleId: string}) {
         </ChatConversation.Content>
         <ChatConversation.ScrollButton aria-label="Scroll to newest" tooltip="Scroll to newest" />
       </ChatConversation>
+      <TypingIndicator names={Object.values(typists).map(typist => typist.name)} />
       <div className="px-3">
         <PromptInput
           layout="compact"
@@ -431,10 +506,13 @@ export function Chat({puzzleId}: {puzzleId: string}) {
 }
 
 /** Product analytics for what you do in a chat (see `track`). */
-function trackChat(message: ChatRoomSentMessage) {
+function trackChat(message: ChatRoomSentMessage, room: "puzzle" | "team") {
   switch (message.type) {
     case "send":
-      track("chat_message_sent", describeChatMessage(message.text, message.images?.length));
+      track("chat_message_sent", {
+        ...describeChatMessage(message.text, message.images?.length),
+        room,
+      });
       break;
     case "edit":
       track("chat_message_edited");

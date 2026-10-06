@@ -43,7 +43,7 @@ import {useLocalStorage} from "usehooks-ts";
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
 import {AddNewRoundDialog} from "@/components/add-new-round-dialog";
-import {AppSidebar, SidebarDrawerButton} from "@/components/app-sidebar";
+import {AppSidebar, SidebarDrawerButton, TeamChatDrawerButton} from "@/components/app-sidebar";
 import {AssignUnassignedPuzzlesDialog} from "@/components/assign-unassigned-puzzles-dialog";
 import {DeletePuzzleDialog} from "@/components/delete-puzzle-dialog";
 import {DeleteRoundDialog} from "@/components/delete-round-dialog";
@@ -668,6 +668,7 @@ function RouteComponent() {
                 </SearchField.Group>
               </SearchField>
               <SidebarDrawerButton workspaceSlug={workspaceSlug} rounds={rounds} />
+              <TeamChatDrawerButton />
               <Dropdown>
                 <Button variant="outline" aria-label="Filter">
                   <FunnelIcon />
