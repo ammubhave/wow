@@ -157,12 +157,15 @@ export function ReactionPicker({onReact}: {onReact: (reaction: string) => void})
   );
 }
 
-/** A message's reaction counts; pressing one adds it again (with a little burst). */
+/** A message's reaction counts; pressing one adds yours (with a little burst) or takes it back. */
 export function Reactions({
   reactions,
+  isMine,
   onReact,
 }: {
   reactions: Record<string, number>;
+  /** Whether you've given this reaction (it shows selected, and pressing it takes it back). */
+  isMine: (reaction: string) => boolean;
   onReact: (reaction: string) => void;
 }) {
   // The most recent burst, keyed so pressing again replays it.
@@ -176,11 +179,10 @@ export function Reactions({
           <EmojiReactionButton
             size="sm"
             aria-label={`${LEGACY[reaction] ?? reaction}: ${count}`}
-            // The room keeps only counts (not who reacted), so there is no "mine" state to show.
-            isSelected={false}
+            isSelected={isMine(reaction)}
             onChange={() => {
+              if (!isMine(reaction)) setBurst({reaction, key: Date.now()});
               onReact(reaction);
-              setBurst({reaction, key: Date.now()});
             }}>
             <EmojiReactionButton.Emoji>
               <Glyph reaction={reaction} />

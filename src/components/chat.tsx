@@ -202,8 +202,9 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
         setTypists(current => ({...current, [userId]: {name, until: Date.now() + TYPING_TTL_MS}}));
         return;
       }
-      if (message.type === "message" && message.message.userId) {
-        // Their message is here: they're done typing it.
+      if (message.type === "message" && message.isNew && message.message.userId) {
+        // Their new message is here: they're done typing it. (Reactions, edits and pins to their
+        // older messages also arrive as "message", but say nothing about typing.)
         const {userId} = message.message;
         setTypists(current =>
           Object.fromEntries(Object.entries(current).filter(([id]) => id !== userId))
@@ -244,7 +245,8 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
     const now = Date.now();
     if (now - lastTypingPingRef.current < TYPING_PING_MS) return;
     lastTypingPingRef.current = now;
-    sendJsonMessage({type: "typing"} satisfies ChatRoomSentMessage);
+    // Not queued while disconnected: a stale "typing" sent on reconnect would be wrong.
+    sendJsonMessage({type: "typing"} satisfies ChatRoomSentMessage, false);
   }, [input, sendJsonMessage]);
 
   // Drop people who've stopped typing.
@@ -409,6 +411,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                     )}
                     <Reactions
                       reactions={message.reactions}
+                      isMine={reaction => !!me && !!message.reactedBy?.[reaction]?.includes(me)}
                       onReact={reaction => send({type: "react", messageId: message.id, reaction})}
                     />
                   </ChatMessage.Body>

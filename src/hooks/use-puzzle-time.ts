@@ -10,8 +10,9 @@ const MAX_BATCH_SECONDS = 120;
 /** No mouse, keyboard, touch or scrolling on the page for this long: you've stepped away. */
 const IDLE_MS = 5 * 60_000;
 /**
- * The same, while you're in the embedded sheet: its own clicks and typing never reach this page,
- * so it gets longer before the clock assumes you've stopped.
+ * The same, while you're in the embedded sheet (focused in it, or with the pointer over it): its
+ * own clicks, scrolling and typing never reach this page, so it gets longer before the clock
+ * assumes you've stopped.
  */
 const SHEET_IDLE_MS = 30 * 60_000;
 const ACTIVITY_EVENTS = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"];
@@ -86,9 +87,19 @@ export function usePuzzleTimeTracker(workspaceSlug: string, puzzleId: string) {
     const onBlur = () => {
       if (document.hasFocus()) onActivity();
     };
+    // Whether the pointer is over the sheet: reading or scrolling it never reaches this page
+    // either, even without clicking into it.
+    let overSheet = false;
+    const onPointerOver = (event: PointerEvent) => {
+      overSheet = event.target instanceof HTMLIFrameElement;
+    };
+    const onPointerOut = (event: PointerEvent) => {
+      // Leaving the window altogether (no new target): not over the sheet anymore.
+      if (event.relatedTarget === null) overSheet = false;
+    };
     const isActive = () => {
       const idleFor = Date.now() - lastActivity;
-      const inSheet = document.activeElement?.tagName === "IFRAME";
+      const inSheet = overSheet || document.activeElement?.tagName === "IFRAME";
       return idleFor < (inSheet ? SHEET_IDLE_MS : IDLE_MS);
     };
     const tick = window.setInterval(() => {
@@ -111,12 +122,16 @@ export function usePuzzleTimeTracker(workspaceSlug: string, puzzleId: string) {
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("pagehide", onPageHide);
     window.addEventListener("blur", onBlur);
+    window.addEventListener("pointerover", onPointerOver, {capture: true, passive: true});
+    window.addEventListener("pointerout", onPointerOut, {capture: true, passive: true});
     for (const event of ACTIVITY_EVENTS) {
       window.addEventListener(event, onActivity, {capture: true, passive: true});
     }
     return () => {
       window.clearInterval(tick);
       window.removeEventListener("blur", onBlur);
+      window.removeEventListener("pointerover", onPointerOver, {capture: true});
+      window.removeEventListener("pointerout", onPointerOut, {capture: true});
       for (const event of ACTIVITY_EVENTS) {
         window.removeEventListener(event, onActivity, {capture: true});
       }

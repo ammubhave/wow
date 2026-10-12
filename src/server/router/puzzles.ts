@@ -9,6 +9,7 @@ import {invariant} from "@/lib/invariant";
 
 import {invalidateWorkspace} from "../do/workspace";
 import {trackServerEvent} from "../posthog";
+import {isPuzzleInWorkspace} from "../workspace-access";
 import {preauthorize, procedure} from "./base";
 
 /** Creates the puzzle's Google Drive worksheet (if Drive is connected) and records its id. */
@@ -452,24 +453,15 @@ export const puzzlesRouter = {
     )
     .use(preauthorize)
     .handler(async ({context, input}) => {
-      const puzzle = await db
-        .select({id: schema.puzzle.id})
-        .from(schema.puzzle)
-        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-        .where(
-          and(
-            eq(schema.puzzle.id, input.puzzleId),
-            eq(schema.round.workspaceId, context.workspace.id)
-          )
-        )
-        .get();
-      if (!puzzle) throw new ORPCError("NOT_FOUND");
+      if (!(await isPuzzleInWorkspace(input.puzzleId, context.workspace.id))) {
+        throw new ORPCError("NOT_FOUND");
+      }
       const {seconds, updatedAt} = schema.puzzleTime;
       await db
         .insert(schema.puzzleTime)
         .values({
           userId: context.session.user.id,
-          puzzleId: puzzle.id,
+          puzzleId: input.puzzleId,
           workspaceId: context.workspace.id,
           hour: Math.floor(Date.now() / HOUR_MS),
           localHour: input.localHour,
@@ -517,30 +509,21 @@ export const puzzlesRouter = {
     .use(preauthorize)
     .handler(async ({context, input}) => {
       if (input.userId !== context.session.user.id) throw new ORPCError("FORBIDDEN");
-      const puzzle = await db
-        .select({id: schema.puzzle.id})
-        .from(schema.puzzle)
-        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-        .where(
-          and(
-            eq(schema.puzzle.id, input.puzzleId),
-            eq(schema.round.workspaceId, context.workspace.id)
-          )
-        )
-        .get();
-      if (!puzzle) throw new ORPCError("NOT_FOUND");
+      if (!(await isPuzzleInWorkspace(input.puzzleId, context.workspace.id))) {
+        throw new ORPCError("NOT_FOUND");
+      }
       const userId = context.session.user.id;
       if (input.contributed) {
         await db
           .insert(schema.puzzleContributor)
-          .values({puzzleId: puzzle.id, userId})
+          .values({puzzleId: input.puzzleId, userId})
           .onConflictDoNothing();
       } else {
         await db
           .delete(schema.puzzleContributor)
           .where(
             and(
-              eq(schema.puzzleContributor.puzzleId, puzzle.id),
+              eq(schema.puzzleContributor.puzzleId, input.puzzleId),
               eq(schema.puzzleContributor.userId, userId)
             )
           );

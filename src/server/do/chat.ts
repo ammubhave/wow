@@ -47,6 +47,11 @@ export type ChatMessage = {
   images?: string[];
   timestamp: number;
   reactions: Record<string, number>;
+  /**
+   * Who reacted with each reaction (a reaction toggles per person). Counts from before this was
+   * recorded stay in `reactions`, as reactions nobody can take back.
+   */
+  reactedBy?: Record<string, string[]>;
   editedAt?: number;
   /** Deleted by its sender: kept as a placeholder so the conversation still reads in order. */
   deleted?: boolean;
@@ -55,7 +60,8 @@ export type ChatMessage = {
 export type ChatRoomReceivedMessage =
   // `pinned`: every pinned message, including ones older than the snapshot's window.
   | {type: "snapshot"; messages: ChatMessage[]; pinned: ChatMessage[]}
-  | {type: "message"; message: ChatMessage}
+  // `isNew`: just sent (otherwise an existing message changed: reacted to, edited, pinned, …).
+  | {type: "message"; message: ChatMessage; isNew?: boolean}
   // Someone else is typing (repeated while they are; it lapses when they stop).
   | {type: "typing"; userId: string; name: string};
 
@@ -89,6 +95,13 @@ export const teamChatRoomName = (workspaceId: string) => `team:${workspaceId}`;
 /** Header the team chat's API route uses to tell the room which workspace it is (server-set). */
 export const TEAM_CHAT_WORKSPACE_HEADER = "x-wow-team-chat-workspace";
 
+/** The user ids @mentioned in a message. */
+const mentionedIn = (text: string) =>
+  new Set([...text.matchAll(MENTION_PATTERN)].map(match => match[2]!));
+
+/** The fastest one socket's "typing" pings are relayed (the page sends one every 3s). */
+const TYPING_MIN_INTERVAL_MS = 1500;
+
 // Joining sends the newest messages only, so a long-running chat stays cheap to open.
 const SNAPSHOT_MESSAGES = 500;
 
@@ -99,6 +112,8 @@ const SNAPSHOT_MESSAGES = 500;
  */
 export class ChatRoom extends DurableObject {
   storage: DurableObjectStorage;
+  /** When each socket's last "typing" was relayed (in memory: losing it on eviction is fine). */
+  lastTyping = new WeakMap<WebSocket, number>();
 
   constructor(ctx: DurableObjectState<{}>, env: Env) {
     super(ctx, env);
@@ -155,6 +170,10 @@ export class ChatRoom extends DurableObject {
     }
 
     if (m.type === "typing") {
+      // A client can't make the room spam everyone: one ping per socket per interval.
+      const now = Date.now();
+      if (now - (this.lastTyping.get(ws) ?? 0) < TYPING_MIN_INTERVAL_MS) return;
+      this.lastTyping.set(ws, now);
       const typing: ChatRoomReceivedMessage = {
         type: "typing",
         userId: attachment.userId,
@@ -180,7 +199,7 @@ export class ChatRoom extends DurableObject {
       };
       // Saved before it's shared, so nobody sees a message that could still be lost.
       await this.storage.put<ChatMessage>(key, data);
-      this.broadcast({type: "message", message: data});
+      this.broadcast({type: "message", message: data, isNew: true});
       await this.notifyMentions(attachment, m.text);
 
       // Check for Eggö commands.
@@ -209,15 +228,26 @@ export class ChatRoom extends DurableObject {
           timestamp: Date.now(),
           reactions: {},
         };
-        this.broadcast({type: "message", message: botData});
+        this.broadcast({type: "message", message: botData, isNew: true});
         await this.storage.put<ChatMessage>(botKey, botData);
       }
     } else if (m.type === "react") {
       const data = await this.storage.get<ChatMessage | string>(m.messageId);
-      if (data && isMessage(data) && !data.deleted) {
-        data.reactions[m.reaction] = (data.reactions[m.reaction] || 0) + 1;
-        this.broadcast({type: "message", message: data});
-        await this.storage.put(m.messageId, data);
+      if (data && isMessage(data) && !data.deleted && attachment.userId) {
+        // Toggles your reaction: pressing one you already gave takes it back.
+        const reactedBy = {...data.reactedBy};
+        const by = reactedBy[m.reaction] ?? [];
+        const had = by.includes(attachment.userId);
+        const count = Math.max(0, (data.reactions[m.reaction] ?? 0) + (had ? -1 : 1));
+        const reactions = {...data.reactions, [m.reaction]: count};
+        if (count === 0) delete reactions[m.reaction];
+        reactedBy[m.reaction] = had
+          ? by.filter(id => id !== attachment.userId)
+          : [...by, attachment.userId];
+        if (reactedBy[m.reaction]!.length === 0) delete reactedBy[m.reaction];
+        const updated: ChatMessage = {...data, reactions, reactedBy};
+        await this.storage.put(m.messageId, updated);
+        this.broadcast({type: "message", message: updated});
       }
     } else if (m.type === "edit" || m.type === "delete") {
       const data = await this.storage.get<ChatMessage | string>(m.messageId);
@@ -227,10 +257,20 @@ export class ChatRoom extends DurableObject {
       const updated: ChatMessage =
         m.type === "edit"
           ? {...data, text: m.text, editedAt: Date.now()}
-          : {...data, text: "", images: undefined, reactions: {}, deleted: true, pinned: undefined};
+          : {
+              ...data,
+              text: "",
+              images: undefined,
+              reactions: {},
+              reactedBy: undefined,
+              deleted: true,
+              pinned: undefined,
+            };
       await this.storage.put(m.messageId, updated);
       if (m.type === "delete" && data.pinned) await this.setPinned(m.messageId, false);
       this.broadcast({type: "message", message: updated});
+      // Mentions the edit added (not ones already notified when it was sent).
+      if (m.type === "edit") await this.notifyMentions(attachment, m.text, data.text);
     } else if (m.type === "pin") {
       const data = await this.storage.get<ChatMessage | string>(m.messageId);
       if (!data || !isMessage(data) || data.deleted) return;
@@ -255,11 +295,13 @@ export class ChatRoom extends DurableObject {
     await this.storage.put(PINS_KEY, JSON.stringify(ids));
   }
 
-  /** Tells anyone @mentioned in `text` (via the workspace's notifications: bell, toast). */
-  async notifyMentions(sender: Attachment, text: string) {
-    const toUserIds = [
-      ...new Set([...text.matchAll(MENTION_PATTERN)].map(match => match[2]!)),
-    ].filter(id => id !== sender.userId);
+  /**
+   * Tells anyone @mentioned in `text` (via the workspace's notifications: bell, toast). For an
+   * edit, `previousText`'s mentions were already told.
+   */
+  async notifyMentions(sender: Attachment, text: string, previousText = "") {
+    const already = mentionedIn(previousText);
+    const toUserIds = [...mentionedIn(text)].filter(id => id !== sender.userId && !already.has(id));
     if (toUserIds.length === 0) return;
     // The puzzle's name and workspace now (it may have been renamed or moved since); the team
     // chat knows its workspace.

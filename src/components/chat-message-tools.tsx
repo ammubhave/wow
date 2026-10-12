@@ -91,7 +91,8 @@ export function MessageEditor({
     if (!restored) return;
     // Put back each original mention whose "@Name" survived the edit.
     for (const [, name, userId] of message.text.matchAll(MENTION_PATTERN)) {
-      restored = restored.replace(`@${name}`, mentionMarkdown(name!, userId!));
+      // A function, so "      restored = restored.replace(`@${name}`, mentionMarkdown(name!, userId!));"-like text in a name is kept as is (not read as a replacement pattern).
+      restored = restored.replace(`@${name}`, () => mentionMarkdown(name!, userId!));
     }
     if (restored === message.text) onCancel();
     else onSave(restored);

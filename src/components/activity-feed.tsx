@@ -194,12 +194,16 @@ function EventText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}
  * A solve, as a team effort: "X solved", with who says they helped, and who marked it solved only
  * as a footnote (marking it is bookkeeping, not solving it alone).
  */
-function SolveText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}) {
+function SolveText({
+  workspaceSlug,
+  entry,
+  contributorIds,
+}: {
+  workspaceSlug: string;
+  entry: Entry;
+  contributorIds: readonly string[];
+}) {
   const puzzle = entry.puzzle_activity_log_entry!;
-  const workspace = useWorkspace();
-  const contributorIds =
-    workspace.rounds.flatMap(r => r.puzzles).find(p => p.id === puzzle.puzzleId)?.contributorIds ??
-    [];
   return (
     <>
       <PuzzleName workspaceSlug={workspaceSlug} entry={entry} />
@@ -219,14 +223,20 @@ function SolveText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}
   );
 }
 
+/** Who says they helped solve each puzzle (built once per feed render, not per row). */
+type ContributorsByPuzzle = ReadonlyMap<string, readonly string[]>;
+const NO_CONTRIBUTORS: readonly string[] = [];
+
 function FeedItem({
   workspaceSlug,
   entry,
   mountedAt,
+  contributors,
 }: {
   workspaceSlug: string;
   entry: Entry;
   mountedAt: number;
+  contributors: ContributorsByPuzzle;
 }) {
   const format = useFormatter();
   const {Icon, status} = eventStyle(entry);
@@ -264,7 +274,14 @@ function FeedItem({
               </UserHoverCard>
             )}
             {isSolve ? (
-              <SolveText workspaceSlug={workspaceSlug} entry={entry} />
+              <SolveText
+                workspaceSlug={workspaceSlug}
+                entry={entry}
+                contributorIds={
+                  contributors.get(entry.puzzle_activity_log_entry?.puzzleId ?? "") ??
+                  NO_CONTRIBUTORS
+                }
+              />
             ) : (
               <EventText workspaceSlug={workspaceSlug} entry={entry} />
             )}
@@ -345,7 +362,11 @@ export function ActivityFeed() {
   const [types, setTypes] = useLocalStorage<Filter[]>("activityTypes", []);
   const [people, setPeople] = useLocalStorage<string[]>("activityPeople", []);
   // The room state carries the newest entries live; older ones load page by page as you scroll.
-  const recent = useWorkspace().activityLogEntries;
+  const workspace = useWorkspace();
+  const recent = workspace.activityLogEntries;
+  const contributors: ContributorsByPuzzle = new Map(
+    workspace.rounds.flatMap(r => r.puzzles).map(p => [p.id, p.contributorIds])
+  );
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage} = useSuspenseInfiniteQuery(
     activityLogQueryOptions(workspaceSlug)
   );
@@ -488,6 +509,7 @@ export function ActivityFeed() {
                 workspaceSlug={workspaceSlug}
                 entry={entry}
                 mountedAt={mountedAt}
+                contributors={contributors}
               />
             ))}
           </Timeline>

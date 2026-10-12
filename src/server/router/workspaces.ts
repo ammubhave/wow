@@ -1,6 +1,6 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
-import {and, count, eq, inArray, isNotNull, max, sql} from "drizzle-orm";
+import {and, count, eq, inArray, isNotNull, max, type SQL, sql} from "drizzle-orm";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
@@ -24,6 +24,12 @@ const ACTIVITY_LOG_PAGE_SIZE = 50;
 /** A date input in ms: undefined leaves it alone, null clears it. */
 const toDate = (ms: number | null | undefined) =>
   ms === undefined ? undefined : ms === null ? null : new Date(ms);
+
+// The theme is edited in SQL (one UPDATE each), not read, changed and written back: two teammates
+// adding emoji at once, or an emoji added while the owner changes the accent, must not undo each
+// other. `themeJson` is the stored theme, or {} when unset (or not valid JSON).
+const themeColumn = schema.organization.theme;
+const themeJson = sql`(case when json_valid(${themeColumn}) then ${themeColumn} else '{}' end)`;
 
 export const workspacesRouter = {
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
@@ -138,14 +144,15 @@ export const workspacesRouter = {
             "Only workspace owners can change the team or event name, password, hunt clock or look.",
         });
       }
-      let theme = undefined;
+      let theme: SQL | undefined;
       if (input.accent !== undefined || input.emoji !== undefined) {
-        const current = parseTheme(context.workspace.theme);
-        theme = {
-          ...current,
-          ...(input.accent !== undefined && {accent: input.accent}),
-          ...(input.emoji !== undefined && {emoji: input.emoji ?? undefined}),
-        };
+        theme = themeJson;
+        if (input.accent !== undefined)
+          theme = sql`json_set(${theme}, '$.accent', ${input.accent})`;
+        if (input.emoji === null) theme = sql`json_remove(${theme}, '$.emoji')`;
+        else if (input.emoji !== undefined) {
+          theme = sql`json_set(${theme}, '$.emoji', ${input.emoji})`;
+        }
       }
       let commentUpdatedAt = undefined;
       let commentUpdatedBy = undefined;
@@ -525,10 +532,18 @@ export const workspacesRouter = {
         if (others.length >= 100) {
           throw new ORPCError("BAD_REQUEST", {message: "A team can have up to 100 emoji."});
         }
+        // Replaces any emoji of that name, and adds this one at the end.
         await db
           .update(schema.organization)
           .set({
-            theme: {...theme, customEmoji: [...others, {name: input.name, fileId: input.fileId}]},
+            theme: sql`json_set(${themeJson}, '$.customEmoji', (
+              select json_group_array(json(value)) from (
+                select value from json_each(${themeJson}, '$.customEmoji')
+                where json_extract(value, '$.name') != ${input.name}
+                union all
+                select json_object('name', ${input.name}, 'fileId', ${input.fileId})
+              )
+            ))`,
           })
           .where(eq(schema.organization.id, context.workspace.id));
         await invalidateWorkspace(context.workspace.id);
@@ -537,14 +552,13 @@ export const workspacesRouter = {
       .input(z.object({workspaceSlug: z.string(), name: z.string()}))
       .use(preauthorize)
       .handler(async ({context, input}) => {
-        const theme = parseTheme(context.workspace.theme);
         await db
           .update(schema.organization)
           .set({
-            theme: {
-              ...theme,
-              customEmoji: (theme.customEmoji ?? []).filter(e => e.name !== input.name),
-            },
+            theme: sql`json_set(${themeJson}, '$.customEmoji', (
+              select json_group_array(json(value)) from json_each(${themeJson}, '$.customEmoji')
+              where json_extract(value, '$.name') != ${input.name}
+            ))`,
           })
           .where(eq(schema.organization.id, context.workspace.id));
         await invalidateWorkspace(context.workspace.id);
