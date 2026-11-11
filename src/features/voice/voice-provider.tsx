@@ -2,11 +2,11 @@ import {useQuery} from "@tanstack/react-query";
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 // react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
 import {ReadyState} from "react-use-websocket/dist/lib/constants";
-import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {toast} from "sonner";
 
 import {voiceMeQueryKey, voiceRoomsQueryKey, voiceSpeakingQueryKey} from "@/hooks/use-workspace";
 import {track as trackEvent} from "@/lib/analytics";
+import {useWebSocket} from "@/lib/use-websocket";
 import {
   VOICE_LOBBY,
   type VoiceParticipant,

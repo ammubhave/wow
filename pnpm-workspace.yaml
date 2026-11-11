@@ -1,14 +1,14 @@
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@^1.0.0
+  vite: npm:@voidzero-dev/vite-plus-core@^1.5.1
   # Must match the exact vitest version vite-plus depends on.
-  vitest: 5.0.1
-  vite-plus: ^1.0.0
+  vitest: 5.1.0
+  vite-plus: ^1.5.1
 overrides:
   vite: "catalog:"
   vitest: "catalog:"
-  react: "^19.3.0"
-  react-dom: "^19.3.0"
-  react-aria-components: "^1.21.1"
+  react: "^19.3.1"
+  react-dom: "^19.3.1"
+  react-aria-components: "^1.22.1"
 peerDependencyRules:
   allowAny:
     - vite

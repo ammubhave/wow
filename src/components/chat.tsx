@@ -14,9 +14,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useParams} from "@tanstack/react-router";
 import {MessagesSquareIcon, PinIcon} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
-// react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
 import {TokenFieldValue} from "react-aria-components/TokenField";
-import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
@@ -27,6 +25,7 @@ import {ARRIVE_FROM_BOTTOM, useMountedAt} from "@/lib/arrivals";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 import {uploadImage} from "@/lib/upload-image";
+import {useWebSocket} from "@/lib/use-websocket";
 import type {
   ChatMessage as ChatMessageData,
   ChatRoomReceivedMessage,

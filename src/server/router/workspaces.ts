@@ -62,6 +62,19 @@ export const workspacesRouter = {
       if (!workspace) {
         throw new ORPCError("FORBIDDEN");
       }
+      // Already in (a double submit, or the join link opened again): just go to the workspace.
+      // addMember would throw "User is already a member", which surfaced as a failed join.
+      const existing = await db
+        .select({id: schema.member.id})
+        .from(schema.member)
+        .where(
+          and(
+            eq(schema.member.organizationId, workspace.id),
+            eq(schema.member.userId, context.session.user.id)
+          )
+        )
+        .get();
+      if (existing) return {id: workspace.id, name: workspace.name, slug: workspace.slug};
       await auth.api.addMember({
         // Joining with the password makes you a member; owners can promote people after.
         body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},

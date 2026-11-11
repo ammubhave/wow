@@ -2,10 +2,10 @@ import {useMutationState, useQuery, useQueryClient} from "@tanstack/react-query"
 import {createContext, useContext} from "react";
 // react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
 import {ReadyState} from "react-use-websocket/dist/lib/constants";
-import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 
 import {ConnectionBanner} from "@/components/connection-banner";
 import {WorkspaceSkeleton} from "@/components/page-skeletons";
+import {useWebSocket} from "@/lib/use-websocket";
 import {applyOptimistic, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import {expandWorkspaceState, type WorkspaceRoomState} from "@/lib/workspace-state";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";

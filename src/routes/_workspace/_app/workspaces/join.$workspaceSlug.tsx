@@ -1,4 +1,5 @@
 import {Card} from "@heroui/react";
+import {ORPCError} from "@orpc/client";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {useEffect} from "react";
@@ -26,12 +27,19 @@ function RouteComponent() {
   ).data;
   const form = useAppForm({
     defaultValues: {workspaceSlug: params.workspaceSlug, password: ""},
-    onSubmit: ({value}) => {
-      toast.promise(joinWorkspaceMutation.mutateAsync(value), {
+    // Awaited, so the Join button stays disabled until the request settles (repeat clicks used to
+    // send several joins at once).
+    onSubmit: async ({value}) => {
+      const join = joinWorkspaceMutation.mutateAsync(value);
+      toast.promise(join, {
         loading: "Joining workspace...",
         success: "Success! You have joined the workspace.",
-        error: "Oops! Something went wrong.",
+        error: (error: unknown) =>
+          error instanceof ORPCError && error.code === "FORBIDDEN"
+            ? "That password isn't right."
+            : "Oops! Something went wrong.",
       });
+      await join.catch(() => {});
     },
   });
   const joinWorkspaceMutation = useMutation(

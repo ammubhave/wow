@@ -16,10 +16,9 @@ import type {
   SocketId,
 } from "@excalidraw/excalidraw/types";
 import {useEffect, useRef, useState} from "react";
-// react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
-import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 
 import {useTheme} from "@/components/theme-provider";
+import {useWebSocket} from "@/lib/use-websocket";
 import type {WhiteboardReceivedMessage, WhiteboardSentMessage} from "@/server/do/whiteboard";
 
 // Cost: every message to the room is billed, so strokes are batched and cursors throttled.

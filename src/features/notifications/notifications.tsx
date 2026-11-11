@@ -10,8 +10,6 @@ import {
   SettingsIcon,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
-// react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
-import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
@@ -22,6 +20,7 @@ import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
+import {useWebSocket} from "@/lib/use-websocket";
 import {workspaceMutations, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import type {
   NotificationClientMessage,

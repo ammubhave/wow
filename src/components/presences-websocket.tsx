@@ -1,8 +1,7 @@
-// react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
-import {useWebSocket} from "react-use-websocket/dist/lib/use-websocket";
 import {z} from "zod";
 
 import {setPresences} from "@/features/presences/presences";
+import {useWebSocket} from "@/lib/use-websocket";
 import {useAppDispatch} from "@/store";
 
 const presencesMessageSchema = z.record(

@@ -34,7 +34,17 @@ export function LastUsedChip({method}: {method: string}) {
 
 export function GoogleButton({callbackURL, label}: {callbackURL: string; label: string}) {
   const signIn = async () => {
-    const {error} = await authClient.signIn.social({provider: "google", callbackURL});
+    const {error} = await authClient.signIn.social({
+      provider: "google",
+      callbackURL,
+      // Failures after Google's consent screen (e.g. an existing password account with this
+      // email) come back to the login page, which explains them, instead of better-auth's bare
+      // error page.
+      errorCallbackURL:
+        callbackURL === "/workspaces"
+          ? "/login"
+          : `/login?${new URLSearchParams({redirectTo: callbackURL})}`,
+    });
     if (error) toast.error(error.message ?? "Couldn't sign in with Google. Please try again.");
   };
   return (

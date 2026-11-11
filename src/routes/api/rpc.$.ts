@@ -11,7 +11,9 @@ const handler = new RPCHandler(router, {
       console.error(error);
       // Expected failures (not signed in, not found, bad input) aren't bugs.
       if (error instanceof ORPCError && error.code !== "INTERNAL_SERVER_ERROR") return;
-      captureServerException(error, {properties: {path: new URL(request.url).pathname}});
+      // oRPC's standard request url is already a path ("/api/rpc/..."), not an absolute URL:
+      // `new URL(request.url)` threw here, so no server error ever reached PostHog.
+      captureServerException(error, {properties: {path: request.url.split("?")[0]}});
     }),
   ],
 });

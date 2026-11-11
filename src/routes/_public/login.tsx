@@ -14,13 +14,18 @@ import {
 import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
 import {authClient} from "@/lib/auth-client";
-import {authErrorMessage, keepRedirect, redirectToSearch} from "@/lib/auth-helpers";
+import {
+  authErrorMessage,
+  keepRedirect,
+  loginSearch,
+  socialSignInErrorMessage,
+} from "@/lib/auth-helpers";
 import {getSession} from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_public/login")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Log in | WOW"}]}),
-  validateSearch: redirectToSearch,
+  validateSearch: loginSearch,
   // Already signed in (e.g. another tab): go where the link was headed.
   beforeLoad: async ({search}) => {
     if (await getSession()) throw redirect({href: search.redirectTo});
@@ -30,7 +35,10 @@ export const Route = createFileRoute("/_public/login")({
 function RouteComponent() {
   const router = useRouter();
   const searchParams = Route.useSearch();
-  const [error, setError] = useState<string | null>(null);
+  // A Google sign-in that failed after the consent screen comes back here with `?error=`.
+  const [error, setError] = useState<string | null>(() =>
+    searchParams.error ? socialSignInErrorMessage(searchParams.error) : null
+  );
   const turnstileRef = useRef<TurnstileInstance>(null);
   const onSignedIn = () => router.navigate({to: searchParams.redirectTo});
 
@@ -64,7 +72,9 @@ function RouteComponent() {
   // Offer saved passkeys in the email field's autofill, where the browser supports it.
   useEffect(() => {
     const offerPasskeys = async () => {
-      if (await PublicKeyCredential.isConditionalMediationAvailable?.()) {
+      // In-app browsers (e.g. Facebook's on Android) have no WebAuthn at all: bare
+      // `PublicKeyCredential` would throw a ReferenceError there.
+      if (await window.PublicKeyCredential?.isConditionalMediationAvailable?.()) {
         await signInWithPasskey(true);
       }
     };

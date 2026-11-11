@@ -10,7 +10,19 @@ import {captureServerException} from "./server/posthog";
 export default {
   async fetch(request) {
     try {
-      return await handler.fetch(request);
+      const response = await handler.fetch(request);
+      // Websocket routes catch their own errors (webSocketRoute), so a 500 here was thrown by the
+      // framework after the route returned: say so, since its own log line drops the cause.
+      if (
+        response.status === 500 &&
+        request.headers.get("Upgrade")?.toLowerCase() === "websocket"
+      ) {
+        console.warn(
+          `WebSocket ${new URL(request.url).pathname}: 500 after the route returned` +
+            ` (client disconnected: ${request.signal.aborted})`
+        );
+      }
+      return response;
     } catch (error) {
       captureServerException(error, {properties: {path: new URL(request.url).pathname}});
       throw error;
