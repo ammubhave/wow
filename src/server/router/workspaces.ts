@@ -15,11 +15,14 @@ import {
   invalidateWorkspace,
   type WorkspaceRoomWireState,
 } from "../do/workspace";
-import {trackServerEvent} from "../posthog";
+import {captureServerException, trackServerEvent} from "../posthog";
 import {toWorkspaceRole} from "../workspace-access";
 import {preauthorize, procedure, requireOwner} from "./base";
 
 const ACTIVITY_LOG_PAGE_SIZE = 50;
+
+/** A Google API error body: `{"error": {"message": ...}}`. */
+const googleErrorSchema = z.object({error: z.object({message: z.string().optional()}).optional()});
 
 /** A date input in ms: undefined leaves it alone, null clears it. */
 const toDate = (ms: number | null | undefined) =>
@@ -99,13 +102,49 @@ export const workspacesRouter = {
             }),
           }
         );
-        if (!resp.ok) {
-          throw new Error(
-            `Failed to share folder ${workspace.googleFolderId} for user ${context.session.user.email}: ${resp.status}: ${resp.statusText}: ${await resp.text()}`
-          );
+        if (resp.ok) return;
+        const text = await resp.text();
+        console.warn(
+          `Couldn't share folder ${workspace.googleFolderId} with a new member: ${resp.status}: ${text}`
+        );
+        // Tell the owners, who can share the folder by hand. The usual cause: someone put a file
+        // in the folder outside WOW, and the app's Drive access only covers files it created.
+        let googleMessage = "";
+        try {
+          const parsed = googleErrorSchema.safeParse(JSON.parse(text));
+          googleMessage = parsed.data?.error?.message ?? "";
+        } catch {
+          // Not JSON: fall back to the generic explanation.
         }
+        const detail = googleMessage.includes("has not granted the app")
+          ? "A file in the folder was added outside WOW, so WOW isn't allowed to share it."
+          : `Google Drive refused (${resp.status}).`;
+        const owners = await db
+          .select({id: schema.member.userId})
+          .from(schema.member)
+          .where(
+            and(eq(schema.member.organizationId, workspace.id), eq(schema.member.role, "owner"))
+          )
+          .all();
+        if (owners.length === 0) return;
+        const {id, name, email} = context.session.user;
+        await context.notification.broadcast(workspace.id, {
+          type: "driveShareFailed",
+          toUserIds: owners.map(o => o.id),
+          member: {id, name, email},
+          folderId: workspace.googleFolderId,
+          detail,
+        });
       };
-      waitUntil(shareFolder());
+      waitUntil(
+        shareFolder().catch(error => {
+          console.error("Sharing the Drive folder with a new member failed", error);
+          captureServerException(error, {
+            distinctId: context.session.user.id,
+            properties: {workspaceId: workspace.id},
+          });
+        })
+      );
       // Awaited before invalidating so the broadcast state includes the "join" entry.
       await context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"});
       await invalidateWorkspace(workspace.id);

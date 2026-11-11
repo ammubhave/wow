@@ -5,6 +5,7 @@ import {
   AtSignIcon,
   BellIcon,
   CheckCheckIcon,
+  FolderLockIcon,
   MegaphoneIcon,
   PartyPopperIcon,
   SettingsIcon,
@@ -57,9 +58,14 @@ function useNotifications(workspaceSlug: string) {
   );
 }
 
-/** Mentions are only for whoever was mentioned; everything else is for everyone. */
+/**
+ * Mentions are only for whoever was mentioned, and Drive sharing problems only for the owners;
+ * everything else is for everyone.
+ */
 const isForMe = (notification: WorkspaceNotification, me: string | undefined) =>
-  notification.type !== "mention" || (me !== undefined && notification.toUserIds.includes(me));
+  !("toUserIds" in notification) || (me !== undefined && notification.toUserIds.includes(me));
+
+const driveFolderUrl = (folderId: string) => `https://drive.google.com/drive/folders/${folderId}`;
 
 function describe(notification: WorkspaceNotification) {
   switch (notification.type) {
@@ -76,14 +82,20 @@ function describe(notification: WorkspaceNotification) {
         title: `${notification.from.name} mentioned you in ${notification.puzzleName}`,
         body: notification.text,
       };
+    case "driveShareFailed":
+      return {
+        title: `Couldn't share the Google Drive folder with ${notification.member.name}`,
+        // What to do first: the bell shows only two lines.
+        body: `Share it with ${notification.member.email} in Google Drive. ${notification.detail}`,
+      };
     default:
       return notification satisfies never;
   }
 }
 
 /**
- * Goes where a notification is about: its puzzle (for a mention, the puzzle's chat), or the
- * blackboard for the team chat. Announcements go nowhere.
+ * Goes where a notification is about: its puzzle (for a mention, the puzzle's chat), the
+ * blackboard for the team chat, or the Drive folder to share. Announcements go nowhere.
  */
 function goTo(
   navigate: ReturnType<typeof useNavigate>,
@@ -91,6 +103,10 @@ function goTo(
   notification: WorkspaceNotification
 ) {
   if (notification.type === "announcement") return;
+  if (notification.type === "driveShareFailed") {
+    window.open(driveFolderUrl(notification.folderId), "_blank", "noopener");
+    return;
+  }
   if (notification.puzzleId === null) {
     void navigate({to: "/$workspaceSlug", params: {workspaceSlug}});
     return;
@@ -166,12 +182,15 @@ export function NotificationsWebSocket({
         ...(current ?? []).filter(n => n.id !== message.id),
       ]);
       if (!popupsAllowed || !isForMe(message, me)) return;
+      // A Drive sharing problem needs an owner to act, so it always pops up.
       const wanted =
         message.type === "solved"
           ? prefs.solves
           : message.type === "announcement"
             ? prefs.announcements
-            : prefs.mentions;
+            : message.type === "mention"
+              ? prefs.mentions
+              : true;
       if (!wanted) return;
       const {title, body} = describe(message);
 
@@ -209,6 +228,12 @@ export function NotificationsWebSocket({
             toastDismissBroadcastChannel?.postMessage(t.id);
           },
         });
+      } else if (message.type === "driveShareFailed") {
+        toast.warning(title, {
+          description: body,
+          duration: Infinity,
+          action: {label: "Open folder", onClick: () => open(message)},
+        });
       } else {
         toast(title, {
           description: body,
@@ -225,6 +250,7 @@ const ICONS = {
   solved: <PartyPopperIcon className="text-success size-4" />,
   announcement: <MegaphoneIcon className="text-accent size-4" />,
   mention: <AtSignIcon className="text-warning size-4" />,
+  driveShareFailed: <FolderLockIcon className="text-danger size-4" />,
 };
 
 /** Opens the bell from elsewhere (e.g. the "while you were away" summary). */

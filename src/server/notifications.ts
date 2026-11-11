@@ -35,10 +35,25 @@ export type MentionNotification = NotificationBase & {
   text: string;
 };
 
+/**
+ * Someone joined, but WOW couldn't share the workspace's Google Drive folder with them (usually a
+ * file in it wasn't created through WOW, which the app's Drive access can't touch). Only the owners
+ * see it: they're the ones who can share the folder by hand.
+ */
+export type DriveShareFailedNotification = NotificationBase & {
+  type: "driveShareFailed";
+  toUserIds: string[];
+  member: {id: string; name: string; email: string};
+  folderId: string;
+  /** Why, in plain words. */
+  detail: string;
+};
+
 export type WorkspaceNotification =
   | SolvedNotification
   | AnnouncementNotification
-  | MentionNotification;
+  | MentionNotification
+  | DriveShareFailedNotification;
 
 /**
  * What you've read (per person, kept by the room, so it follows you across browsers): everything

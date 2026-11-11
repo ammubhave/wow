@@ -7,8 +7,21 @@ import * as schema from "./lib/db/schema";
 import {fetchDiscord} from "./server/do/discord-client";
 import {captureServerException} from "./server/posthog";
 
+/**
+ * Dotfile paths (`/.env`, `/.git/config`, `/.aws/credentials`, ...): only vulnerability scanners ask
+ * for these, hundreds at a time. The app has none, so answer 404 before it runs: otherwise each one
+ * checks the session, redirects to /login and renders the app shell for a client that hangs up
+ * mid-stream (Cloudflare then logs "Network connection lost." and cross-request promise warnings).
+ * `/.well-known/` stays open for standard discovery files.
+ */
+const isScannerProbe = (pathname: string) =>
+  pathname.startsWith("/.") && !pathname.startsWith("/.well-known/");
+
 export default {
   async fetch(request) {
+    if (isScannerProbe(new URL(request.url).pathname)) {
+      return new Response("Not found", {status: 404});
+    }
     try {
       const response = await handler.fetch(request);
       // Websocket routes catch their own errors (webSocketRoute), so a 500 here was thrown by the
