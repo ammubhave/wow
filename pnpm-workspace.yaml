@@ -9,6 +9,14 @@ overrides:
   react: "^19.3.1"
   react-dom: "^19.3.1"
   react-aria-components: "^1.22.1"
+  # Security fixes for transitive dependencies (Dependabot alerts, 2026-11-11). Excalidraw and its
+  # mermaid import pin vulnerable versions; drop each line once they ship patched ones.
+  nanoid@<3.3.18: ^3.3.18
+  "nanoid@>=4.0.0 <5.1.16": ^5.1.16
+  lodash-es@<4.18.0: ^4.18.1
+  katex@<0.18.2: ^0.18.2
+  # Via @heroui-pro/react.
+  figlet@<1.11.3: ^1.11.3
 peerDependencyRules:
   allowAny:
     - vite

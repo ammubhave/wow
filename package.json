@@ -134,7 +134,7 @@
     "dotenv": "^18.0.10",
     "drizzle-kit": "1.0.0-rc.4",
     "jsdom": "^31.0.0",
-    "oxc-transform-react": "^0.158.0",
+    "oxc-transform-react": "~0.156.0",
     "sass-embedded": "^1.108.1",
     "typescript": "^7.0.2",
     "vite": "catalog:",
