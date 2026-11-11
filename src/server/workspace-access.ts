@@ -89,7 +89,7 @@ export async function authorizeWorkspaceRequest(
   workspaceSlug: string,
   {ownerOnly = false} = {}
 ) {
-  const session = await auth.api.getSession({headers: request.headers});
+  const session = await getRequestSession(request);
   if (!session) return {response: new Response(null, {status: 401})} as const;
   const result = await getMemberWorkspace(workspaceSlug, session.user.id);
   if (result.status === "NOT_FOUND") return {response: new Response(null, {status: 404})} as const;
@@ -97,6 +97,23 @@ export async function authorizeWorkspaceRequest(
     return {response: new Response(null, {status: 403})} as const;
   }
   return {session, workspace: result.workspace, role: result.role} as const;
+}
+
+const isWebSocketUpgrade = (request: Request) =>
+  request.headers.get("Upgrade")?.toLowerCase() === "websocket";
+
+/**
+ * The request's session. On a websocket upgrade it's read straight from the database and never
+ * refreshed, so better-auth writes no cookies: a 101 response can't carry Set-Cookie, and TanStack
+ * Start throws ("Unable to reconcile response") rebuilding one that has cookie writes pending. That
+ * failed every socket of a tab whose 5-minute session cache cookie had lapsed, over and over, until
+ * some ordinary request refreshed the cookie.
+ */
+export function getRequestSession(request: Request) {
+  return auth.api.getSession({
+    headers: request.headers,
+    query: isWebSocketUpgrade(request) ? {disableCookieCache: true, disableRefresh: true} : {},
+  });
 }
 
 /** Whether `puzzleId` belongs to a round of `workspaceId`. */
