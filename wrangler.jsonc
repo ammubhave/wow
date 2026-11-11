@@ -12,6 +12,12 @@
     "logs": {"enabled": true, "destinations": ["posthog-logs"]},
   },
   "placement": {"mode": "smart"},
+  // A pure SPA: no page is rendered on the server. The app shell is a static file (TanStack Start
+  // SPA mode writes it to index.html at build), so page loads are served from static assets
+  // without running the Worker: a navigation to a URL with no matching file gets index.html. The
+  // Worker only serves /api/* (always, including navigations to it: OAuth callbacks, email
+  // verification links), plus non-navigation requests that match no file.
+  "assets": {"not_found_handling": "single-page-application", "run_worker_first": ["/api/*"]},
   "upload_source_maps": true,
   "workers_dev": false,
   "preview_urls": true,

@@ -1,25 +1,12 @@
 import {createORPCClient} from "@orpc/client";
 import {RPCLink} from "@orpc/client/fetch";
-import {createRouterClient, type RouterClient} from "@orpc/server";
+import type {RouterClient} from "@orpc/server";
 import {createTanstackQueryUtils} from "@orpc/tanstack-query";
-import {createIsomorphicFn} from "@tanstack/react-start";
-import {getRequestHeaders} from "@tanstack/react-start/server";
 
-import {router} from "@/server/router";
+import type {router} from "@/server/router";
 
-/**
- * This is part of the Optimize SSR setup.
- *
- * @see {@link https://orpc.dev/docs/adapters/tanstack-start#optimize-ssr}
- */
-const getORPCClient = createIsomorphicFn()
-  .server(() => createRouterClient(router, {context: async () => ({headers: getRequestHeaders()})}))
-  .client((): RouterClient<typeof router> => {
-    const link = new RPCLink({url: "/api/rpc"});
-
-    return createORPCClient(link);
-  });
-
-export const client: RouterClient<typeof router> = getORPCClient();
+// The app is a pure SPA: every RPC goes from the browser to /api/rpc. (There's no server rendering,
+// so no server-side client that calls the router directly.)
+export const client: RouterClient<typeof router> = createORPCClient(new RPCLink({url: "/api/rpc"}));
 
 export const orpc = createTanstackQueryUtils(client);

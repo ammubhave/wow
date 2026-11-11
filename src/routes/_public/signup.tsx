@@ -9,7 +9,7 @@ import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
 import {authClient} from "@/lib/auth-client";
 import {authErrorMessage, keepRedirect, redirectToSearch} from "@/lib/auth-helpers";
-import {getSession} from "@/lib/auth-server";
+import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_public/signup")({
   component: RouteComponent,

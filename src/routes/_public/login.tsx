@@ -20,7 +20,7 @@ import {
   loginSearch,
   socialSignInErrorMessage,
 } from "@/lib/auth-helpers";
-import {getSession} from "@/lib/auth-server";
+import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_public/login")({
   component: RouteComponent,

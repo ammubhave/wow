@@ -3,12 +3,10 @@ import {posthog} from "posthog-js";
 import {useEffect} from "react";
 
 import {authClient} from "@/lib/auth-client";
-import {getSession} from "@/lib/auth-server";
-import {authMiddleware} from "@/middlewares/auth";
+import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_workspace")({
   component: RouteComponent,
-  server: {middleware: [authMiddleware]},
   loader: async ({location}) => {
     const session = await getSession();
     if (!session) throw redirect({to: "/login", search: {redirectTo: location.pathname}});
