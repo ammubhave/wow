@@ -4,6 +4,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
 import {XIcon} from "lucide-react";
 
+import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
 import {DisconnectDiscordDialog} from "./disconnect-discord-dialog";
@@ -19,7 +20,21 @@ function DiscordForm({
 }) {
   const hydrated = useHydrated();
   return (
-    <form method="GET" action="https://discord.com/oauth2/authorize" className="flex gap-2">
+    <form
+      method="GET"
+      action="https://discord.com/oauth2/authorize"
+      className="flex gap-2"
+      // Bind the flow to this browser (see oauth-state.ts): the nonce goes in both the state and a
+      // cookie, and the callback only accepts the code when they match.
+      onSubmit={event => {
+        const state = event.currentTarget.elements.namedItem("state");
+        if (!(state instanceof HTMLInputElement)) return;
+        state.value = new URLSearchParams({
+          redirectUrl,
+          workspaceSlug,
+          nonce: startOAuthFlow(),
+        }).toString();
+      }}>
       <input type="hidden" name="client_id" value={import.meta.env.VITE_DISCORD_CLIENT_ID} />
       <input type="hidden" name="permissions" value="1040" />
       <input type="hidden" name="response_type" value="code" />

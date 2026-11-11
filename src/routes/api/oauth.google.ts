@@ -4,6 +4,7 @@ import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {isOAuthStateFromThisBrowser} from "@/lib/oauth-state";
 import {invalidateWorkspace} from "@/server/do/workspace";
 import {authorizeWorkspaceRequest, safeRedirectPath} from "@/server/workspace-access";
 
@@ -13,12 +14,23 @@ export const Route = createFileRoute("/api/oauth/google")({
       GET: async ({request}) => {
         const url = new URL(request.url);
         const state = z
-          .object({redirectUrl: z.string(), workspaceSlug: z.string()})
+          .object({
+            redirectUrl: z.string(),
+            workspaceSlug: z.string(),
+            nonce: z.string().optional(),
+          })
           .safeParse(
             Object.fromEntries(new URLSearchParams(url.searchParams.get("state") ?? "").entries())
           );
         if (!state.success) return new Response("Invalid OAuth state", {status: 400});
-        const {redirectUrl: rawRedirectUrl, workspaceSlug} = state.data;
+        const {redirectUrl: rawRedirectUrl, workspaceSlug, nonce} = state.data;
+        // Only finish a flow this browser started: otherwise a link carrying someone else's
+        // authorization code would connect *their* Google account to this workspace.
+        if (!isOAuthStateFromThisBrowser(request, nonce)) {
+          return new Response("This Google connection link expired. Start again from settings.", {
+            status: 400,
+          });
+        }
         // `redirectUrl` comes from the (client-controlled) state: only allow same-origin paths.
         const redirectUrl = safeRedirectPath(rawRedirectUrl, request.url);
         // The state is client-controlled too: only an owner may connect an account to a workspace.

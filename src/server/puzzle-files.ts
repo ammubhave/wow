@@ -21,13 +21,38 @@ async function sha256Hex(body: ArrayBuffer) {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/** Serves a stored image (content-addressed, so browsers may cache it forever). */
+/** Image types members may upload (chat images, whiteboard files, custom emoji). */
+const IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+  "image/bmp",
+  // Also accepted by Excalidraw's image tool.
+  "image/x-icon",
+  "image/jfif",
+  // Excalidraw accepts SVG images on whiteboards. SVG can carry script, so files are always
+  // served with the headers below, which keep any upload from running as a page.
+  "image/svg+xml",
+]);
+
+/**
+ * Serves a stored image (content-addressed, so browsers may cache it forever). Uploads come from
+ * members and are served from the app's own origin, so opening one directly must never run script
+ * there (an SVG with a <script> would otherwise act as whoever opened the link): no sniffing, no
+ * scripts or other loads, and a sandboxed (opaque) origin. <img> tags in the app are unaffected.
+ */
 export async function serveImage(key: string) {
   const object = await env.R2.get(key);
   if (object === null) return new Response(null, {status: 404});
+  const contentType = object.httpMetadata?.contentType ?? "";
   return new Response(object.body, {
     headers: {
-      "Content-Type": object.httpMetadata?.contentType || "application/octet-stream",
+      "Content-Type": IMAGE_TYPES.has(contentType) ? contentType : "application/octet-stream",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy":
+        "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox",
       // Content-addressed: the browser can keep it forever (one R2 read per viewer).
       "Cache-Control": "private, max-age=31536000, immutable",
     },
@@ -47,8 +72,11 @@ export async function storeImage(
     maxBytes = MAX_IMAGE_BYTES,
   }: {fileId: string; verifySha256?: boolean; maxBytes?: number}
 ) {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.startsWith("image/")) return new Response(null, {status: 415});
+  const contentType = (request.headers.get("content-type") ?? "")
+    .split(";")[0]!
+    .trim()
+    .toLowerCase();
+  if (!IMAGE_TYPES.has(contentType)) return new Response(null, {status: 415});
   const body = await request.arrayBuffer();
   if (body.byteLength > maxBytes) return new Response(null, {status: 413});
   if (verifySha256 && (await sha256Hex(body)) !== fileId) return new Response(null, {status: 400});

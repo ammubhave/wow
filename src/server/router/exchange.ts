@@ -10,9 +10,15 @@ import * as schema from "@/lib/db/schema";
 
 import {base, procedure, type Session} from "./base";
 
+/**
+ * Exchange admins: a verified account with an address in ADMIN_EMAILS. Verified, because sign-up
+ * doesn't require it: otherwise anyone could register an unclaimed admin address and get in.
+ */
+const isAdminUser = (user: Session["user"]) =>
+  user.emailVerified && (process.env.ADMIN_EMAILS?.split(",") || []).includes(user.email);
+
 const preauthorize = os.$context<{session: Session}>().middleware(async ({context, next}) => {
-  const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",") || [];
-  if (!ADMIN_EMAILS.includes(context.session.user.email)) {
+  if (!isAdminUser(context.session.user)) {
     throw new ORPCError("FORBIDDEN");
   }
   return next();
@@ -21,7 +27,7 @@ const preauthorize = os.$context<{session: Session}>().middleware(async ({contex
 const isAdmin = async (headers: Headers) => {
   const session = await auth.api.getSession({headers});
   if (!session) return false;
-  return (process.env.ADMIN_EMAILS?.split(",") || []).includes(session.user.email);
+  return isAdminUser(session.user);
 };
 
 type SubmitAnswerResult =

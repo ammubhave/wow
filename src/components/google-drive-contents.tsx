@@ -6,6 +6,7 @@ import {useHydrated} from "@tanstack/react-router";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
 export function GoogleDriveCardContents({
@@ -179,7 +180,20 @@ function ConnectToGoogleForm({
 }) {
   const hydrated = useHydrated();
   return (
-    <form method="GET" action="https://accounts.google.com/o/oauth2/v2/auth">
+    <form
+      method="GET"
+      action="https://accounts.google.com/o/oauth2/v2/auth"
+      // Bind the flow to this browser (see oauth-state.ts): the nonce goes in both the state and a
+      // cookie, and the callback only accepts the code when they match.
+      onSubmit={event => {
+        const state = event.currentTarget.elements.namedItem("state");
+        if (!(state instanceof HTMLInputElement)) return;
+        state.value = new URLSearchParams({
+          redirectUrl,
+          workspaceSlug,
+          nonce: startOAuthFlow(),
+        }).toString();
+      }}>
       <input type="hidden" name="client_id" value={import.meta.env.VITE_GOOGLE_API_CLIENT_ID} />
       <input
         type="hidden"

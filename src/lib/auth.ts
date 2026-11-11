@@ -146,9 +146,12 @@ export const auth = betterAuth({
             googleAccessToken: {type: "string", required: false, returned: false, input: false},
             googleRefreshToken: {type: "string", required: false, returned: false, input: false},
             googleTokenExpiresAt: {type: "date", required: false, returned: false, input: false},
-            googleFolderId: {type: "string", required: false},
-            googleTemplateFileId: {type: "string", required: false},
-            discordGuildId: {type: "string", required: false},
+            // Point at external resources (a Drive folder, a Discord server): set only by the app
+            // after the owner connects them, never by a client through the auth API. A workspace
+            // created with someone else's discordGuildId could rewrite that server's channels.
+            googleFolderId: {type: "string", required: false, input: false},
+            googleTemplateFileId: {type: "string", required: false, input: false},
+            discordGuildId: {type: "string", required: false, input: false},
             tags: {type: "string[]", required: false},
             links: {type: "json", required: false},
             // Optional hunt clock (the header shows elapsed/remaining time when set).
