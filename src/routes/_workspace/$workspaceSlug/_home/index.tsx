@@ -26,17 +26,21 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {sha256} from "js-sha256";
 import {
   CheckIcon,
+  ChevronDownIcon,
   ChevronRightIcon,
+  CircleCheckBigIcon,
+  CircleCheckIcon,
   EllipsisIcon,
-  FunnelIcon,
   InfoIcon,
   ListPlusIcon,
   PlusIcon,
   PuzzleIcon,
   SignalHighIcon,
   SignalIcon,
+  SignalMediumIcon,
   StarIcon,
   TagIcon,
+  XIcon,
 } from "lucide-react";
 import * as React from "react";
 import {memo, useEffect, useRef, useState} from "react";
@@ -534,6 +538,16 @@ function PuzzleImportanceSelect({
   );
 }
 
+/**
+ * Filters that are on: a soft accent tint with a thin accent outline, so you can see at a glance
+ * which are on (in light and dark mode) without them pulling focus from the board.
+ */
+const FILTER_ON =
+  "bg-accent-soft text-accent-soft-foreground shadow-[inset_0_0_0_1px_var(--accent)] hover:bg-accent-soft-hover";
+// Written out in full (not built from FILTER_ON) so Tailwind sees the class names.
+const FILTER_TOGGLE =
+  "shrink-0 data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent-soft-foreground data-[selected=true]:shadow-[inset_0_0_0_1px_var(--accent)] data-[selected=true]:hover:bg-accent-soft-hover";
+
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
@@ -584,10 +598,19 @@ function RouteComponent() {
     tags: string[];
     importance: string | null;
     status: string | null;
+    answer?: string | null;
+    comment?: string | null;
   };
-  const query = search.toLowerCase();
+  const query = search.trim().toLowerCase();
+  // Search looks at the name, answer, note and tags.
+  const matchesSearch = (p: Filterable) =>
+    query === "" ||
+    p.name.toLowerCase().includes(query) ||
+    (p.answer?.toLowerCase().includes(query) ?? false) ||
+    (p.comment?.toLowerCase().includes(query) ?? false) ||
+    p.tags.some(tag => tag.toLowerCase().includes(query));
   const matches = (p: Filterable) =>
-    p.name.toLowerCase().includes(query) &&
+    matchesSearch(p) &&
     (tags.length === 0 ||
       tags.some(tag => (tag === null ? p.tags.length === 0 : p.tags.includes(tag)))) &&
     (importances.length === 0 || importances.includes(p.importance)) &&
@@ -652,11 +675,13 @@ function RouteComponent() {
         {/* Only the table scrolls; the search and filter row stays put above it. */}
         <div className="absolute inset-0 flex flex-col">
           <div className="flex min-h-0 flex-1 flex-col divide-y">
-            <div className="flex shrink-0 gap-2 p-2">
+            {/* Search on the left; the filters people use most are one click, each showing at a
+                glance whether it's on. They take the room left beside the search and scroll
+                sideways rather than wrap; on phones they get their own scrolling row. */}
+            <div className="flex shrink-0 flex-wrap items-center gap-2 p-2">
               <SearchField
                 aria-label="Search puzzles"
-                className="flex-1"
-                fullWidth
+                className="min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-64"
                 value={search}
                 onChange={setSearch}>
                 <SearchField.Group>
@@ -670,139 +695,148 @@ function RouteComponent() {
                   )}
                 </SearchField.Group>
               </SearchField>
+              <div
+                role="toolbar"
+                aria-label="Filters"
+                className="order-last -mx-2 flex min-w-0 basis-full [scrollbar-width:none] items-center gap-1.5 overflow-x-auto px-2 sm:order-none sm:mx-0 sm:flex-1 sm:basis-0 sm:px-0">
+                <ToggleButton
+                  size="sm"
+                  className={FILTER_TOGGLE}
+                  isSelected={hideSolved}
+                  onChange={setHideSolved}>
+                  <CircleCheckIcon />
+                  Hide solved
+                </ToggleButton>
+                <ToggleButton
+                  size="sm"
+                  className={FILTER_TOGGLE}
+                  isSelected={hideSolvedMetas}
+                  onChange={setHideSolvedMetas}>
+                  <CircleCheckBigIcon />
+                  Hide solved metas
+                </ToggleButton>
+                <ToggleButton
+                  size="sm"
+                  className={FILTER_TOGGLE}
+                  isSelected={onlyShowFavorites}
+                  onChange={setOnlyShowFavorites}>
+                  <StarIcon />
+                  Favorites
+                </ToggleButton>
+                <ToggleButton
+                  size="sm"
+                  className={FILTER_TOGGLE}
+                  isSelected={hideObsolete}
+                  onChange={setHideObsolete}>
+                  <SignalMediumIcon />
+                  Hide obsolete
+                </ToggleButton>
+                <Dropdown>
+                  <Button
+                    size="sm"
+                    variant="tertiary"
+                    className={cn("shrink-0", tags.length > 0 && FILTER_ON)}>
+                    <TagIcon />
+                    {tags.length > 0 ? `Tags · ${tags.length}` : "Tags"}
+                    <ChevronDownIcon />
+                  </Button>
+                  <Dropdown.Popover className="w-fit">
+                    <Dropdown.Menu
+                      onAction={key => {
+                        if (key === "tags-select-all") setTags([...workspace.tags, null]);
+                        else if (key === "tags-reset") setTags([]);
+                      }}>
+                      <Dropdown.Section
+                        selectionMode="multiple"
+                        selectedKeys={tagSelectionKeys}
+                        onSelectionChange={onTagSelectionChange}>
+                        {workspace.tags.map(tag => (
+                          <Dropdown.Item key={tag} id={tag} textValue={tag}>
+                            <Dropdown.ItemIndicator />
+                            <Label>{tag}</Label>
+                          </Dropdown.Item>
+                        ))}
+                        <Dropdown.Item id={NONE_KEY} textValue="(Untagged)">
+                          <Dropdown.ItemIndicator />
+                          <Label>(Untagged)</Label>
+                        </Dropdown.Item>
+                      </Dropdown.Section>
+                      <Separator />
+                      <Dropdown.Item id="tags-select-all" textValue="Select all">
+                        <Label>Select all</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item id="tags-reset" textValue="Reset filter">
+                        <Label>Reset filter</Label>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown.Popover>
+                </Dropdown>
+                <Dropdown>
+                  <Button
+                    size="sm"
+                    variant="tertiary"
+                    className={cn("shrink-0", importances.length > 0 && FILTER_ON)}>
+                    <SignalIcon />
+                    {importances.length > 0 ? `Importance · ${importances.length}` : "Importance"}
+                    <ChevronDownIcon />
+                  </Button>
+                  <Dropdown.Popover className="w-fit">
+                    <Dropdown.Menu
+                      onAction={key => {
+                        if (key === "importance-select-all")
+                          setImportances([
+                            ...getPuzzleImportances().map(importance => importance.value),
+                            null,
+                          ]);
+                        else if (key === "importance-reset") setImportances([]);
+                      }}>
+                      <Dropdown.Section
+                        selectionMode="multiple"
+                        selectedKeys={importanceSelectionKeys}
+                        onSelectionChange={onImportanceSelectionChange}>
+                        {importanceFilterOptions.map(importance => (
+                          <Dropdown.Item
+                            key={importance.value ?? NONE_KEY}
+                            id={importance.value ?? NONE_KEY}
+                            textValue={importance.label}
+                            className={importance.color}>
+                            <Dropdown.ItemIndicator />
+                            {importance.icon}
+                            <Label>{importance.label}</Label>
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Section>
+                      <Separator />
+                      <Dropdown.Item id="importance-select-all" textValue="Select all">
+                        <Label>Select all</Label>
+                      </Dropdown.Item>
+                      <Dropdown.Item id="importance-reset" textValue="Reset filter">
+                        <Label>Reset filter</Label>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown.Popover>
+                </Dropdown>
+                {filterCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0"
+                    aria-label="Clear filters"
+                    onPress={() => {
+                      setHideSolved(false);
+                      setHideSolvedMetas(false);
+                      setOnlyShowFavorites(false);
+                      setHideObsolete(false);
+                      setTags([]);
+                      setImportances([]);
+                    }}>
+                    <XIcon />
+                    <span className="hidden xl:inline">Clear</span>
+                  </Button>
+                )}
+              </div>
               <SidebarDrawerButton workspaceSlug={workspaceSlug} rounds={rounds} />
               <TeamChatDrawerButton />
-              <Dropdown>
-                <Button variant="outline" aria-label="Filter">
-                  <FunnelIcon />
-                  <span className="hidden sm:inline">Filter</span>
-                  {filterCount > 0 && (
-                    <Chip className="ml-1 rounded-full" size="sm" variant="secondary">
-                      {filterCount}
-                    </Chip>
-                  )}
-                </Button>
-                <Dropdown.Popover className="w-fit">
-                  <Dropdown.Menu>
-                    <Dropdown.SubmenuTrigger>
-                      <Dropdown.Item id="tags-submenu" textValue="Tags">
-                        <TagIcon />
-                        <Label>Tags</Label>
-                        <Dropdown.SubmenuIndicator />
-                      </Dropdown.Item>
-                      <Dropdown.Popover>
-                        <Dropdown.Menu
-                          onAction={key => {
-                            if (key === "tags-select-all") setTags([...workspace.tags, null]);
-                            else if (key === "tags-reset") setTags([]);
-                          }}>
-                          <Dropdown.Section
-                            selectionMode="multiple"
-                            selectedKeys={tagSelectionKeys}
-                            onSelectionChange={onTagSelectionChange}>
-                            {workspace.tags.map(tag => (
-                              <Dropdown.Item key={tag} id={tag} textValue={tag}>
-                                <Dropdown.ItemIndicator />
-                                <Label>{tag}</Label>
-                              </Dropdown.Item>
-                            ))}
-                            <Dropdown.Item id={NONE_KEY} textValue="(Untagged)">
-                              <Dropdown.ItemIndicator />
-                              <Label>(Untagged)</Label>
-                            </Dropdown.Item>
-                          </Dropdown.Section>
-                          <Separator />
-                          <Dropdown.Item id="tags-select-all" textValue="Select all">
-                            <Label>Select all</Label>
-                          </Dropdown.Item>
-                          <Dropdown.Item id="tags-reset" textValue="Reset filter">
-                            <Label>Reset filter</Label>
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown.Popover>
-                    </Dropdown.SubmenuTrigger>
-                    <Dropdown.SubmenuTrigger>
-                      <Dropdown.Item id="importance-submenu" textValue="Importance">
-                        <SignalIcon />
-                        <Label>Importance</Label>
-                        <Dropdown.SubmenuIndicator />
-                      </Dropdown.Item>
-                      <Dropdown.Popover>
-                        <Dropdown.Menu
-                          onAction={key => {
-                            if (key === "importance-select-all")
-                              setImportances([
-                                ...getPuzzleImportances().map(importance => importance.value),
-                                null,
-                              ]);
-                            else if (key === "importance-reset") setImportances([]);
-                          }}>
-                          <Dropdown.Section
-                            selectionMode="multiple"
-                            selectedKeys={importanceSelectionKeys}
-                            onSelectionChange={onImportanceSelectionChange}>
-                            {importanceFilterOptions.map(importance => (
-                              <Dropdown.Item
-                                key={importance.value ?? NONE_KEY}
-                                id={importance.value ?? NONE_KEY}
-                                textValue={importance.label}
-                                className={importance.color}>
-                                <Dropdown.ItemIndicator />
-                                {importance.icon}
-                                <Label>{importance.label}</Label>
-                              </Dropdown.Item>
-                            ))}
-                          </Dropdown.Section>
-                          <Separator />
-                          <Dropdown.Item id="importance-select-all" textValue="Select all">
-                            <Label>Select all</Label>
-                          </Dropdown.Item>
-                          <Dropdown.Item id="importance-reset" textValue="Reset filter">
-                            <Label>Reset filter</Label>
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown.Popover>
-                    </Dropdown.SubmenuTrigger>
-                    <Dropdown.Section
-                      selectionMode="multiple"
-                      selectedKeys={
-                        new Set<Key>(
-                          [
-                            hideSolved && "hideSolved",
-                            hideObsolete && "hideObsolete",
-                            hideSolvedMetas && "hideSolvedMetas",
-                            onlyShowFavorites && "onlyShowFavorites",
-                          ].filter(key => key !== false)
-                        )
-                      }
-                      onSelectionChange={keys => {
-                        const set = keys === "all" ? null : keys;
-                        const has = (k: string) => (set === null ? true : set.has(k));
-                        setHideSolved(has("hideSolved"));
-                        setHideObsolete(has("hideObsolete"));
-                        setHideSolvedMetas(has("hideSolvedMetas"));
-                        setOnlyShowFavorites(has("onlyShowFavorites"));
-                      }}>
-                      <Dropdown.Item id="hideSolved" textValue="Hide solved puzzles">
-                        <Dropdown.ItemIndicator />
-                        <Label>Hide solved puzzles</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="hideObsolete" textValue="Hide obsolete puzzles">
-                        <Dropdown.ItemIndicator />
-                        <Label>Hide obsolete puzzles</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="hideSolvedMetas" textValue="Hide solved meta puzzles">
-                        <Dropdown.ItemIndicator />
-                        <Label>Hide solved meta puzzles</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="onlyShowFavorites" textValue="Only show favorites">
-                        <Dropdown.ItemIndicator />
-                        <Label>Only show favorites</Label>
-                      </Dropdown.Item>
-                    </Dropdown.Section>
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown>
             </div>
             <div className="min-h-0 flex-1 overflow-auto">
               <div className="min-w-0">
