@@ -52,12 +52,7 @@ export type WhiteboardReceivedMessage =
 type Attachment = {id: string; name: string};
 
 const ELEMENT_PREFIX = "el:";
-// Remembers which puzzle this room is, so expiry can delete its images too.
-const PUZZLE_ID_KEY = "meta:puzzleId";
-// Whiteboards outlive a hunt weekend (for write-ups), then clear after a month untouched.
-const RETENTION_MS = 1000 * 60 * 60 * 24 * 30;
-// Each alarm reset is a storage write, so push the deadline back at most hourly, not per edit.
-const ALARM_RESET_INTERVAL_MS = 1000 * 60 * 60;
+// Whiteboards are kept for good (for write-ups and old hunts), until their puzzle is deleted.
 
 const STORAGE_BATCH = 128;
 
@@ -78,8 +73,6 @@ function isNewer(incoming: StoredElement, current: StoredElement | undefined) {
 // clients batch element updates and only send cursors when someone else is present.
 export class WhiteboardRoom extends DurableObject {
   storage: DurableObjectStorage;
-  // In memory only: after hibernation it's reset, which just means one extra alarm write.
-  alarmResetAt = 0;
 
   constructor(ctx: DurableObjectState<{}>, env: Env) {
     super(ctx, env);
@@ -97,9 +90,6 @@ export class WhiteboardRoom extends DurableObject {
       const elements = [
         ...(await this.storage.list<StoredElement>({prefix: ELEMENT_PREFIX})).values(),
       ];
-      if (!(await this.storage.get(PUZZLE_ID_KEY))) {
-        await this.storage.put(PUZZLE_ID_KEY, c.req.param("puzzleId"));
-      }
       const peers = this.ctx.getWebSockets().length;
       this.send(server, {type: "snapshot", elements, you: attachment.id, peers});
       this.broadcast({type: "peers", peers}, server);
@@ -153,10 +143,6 @@ export class WhiteboardRoom extends DurableObject {
       )
     ).flat();
     if (accepted.length === 0) return;
-    if (Date.now() - this.alarmResetAt > ALARM_RESET_INTERVAL_MS) {
-      this.alarmResetAt = Date.now();
-      await this.storage.setAlarm(Date.now() + RETENTION_MS);
-    }
     this.broadcast({type: "elements", elements: accepted}, ws);
   }
 
@@ -207,9 +193,9 @@ export class WhiteboardRoom extends DurableObject {
     await this.storage.deleteAll();
   }
 
-  async alarm() {
-    const puzzleId = await this.storage.get<string>(PUZZLE_ID_KEY);
-    if (puzzleId) await deletePuzzleFiles(this.env.R2, puzzleFilesPrefix("whiteboards", puzzleId));
-    await this.storage.deleteAll();
-  }
+  /**
+   * Whiteboards used to be deleted after 30 days untouched, by an alarm; ones created then may
+   * still have it set. It no longer deletes anything.
+   */
+  async alarm() {}
 }
