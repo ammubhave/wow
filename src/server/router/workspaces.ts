@@ -15,14 +15,12 @@ import {
   invalidateWorkspace,
   type WorkspaceRoomWireState,
 } from "../do/workspace";
+import {DRIVE_DISCONNECTED_DETAIL, type FolderShareResult, shareDriveFolder} from "../drive-share";
 import {captureServerException, trackServerEvent} from "../posthog";
 import {toWorkspaceRole} from "../workspace-access";
 import {preauthorize, procedure, requireOwner} from "./base";
 
 const ACTIVITY_LOG_PAGE_SIZE = 50;
-
-/** A Google API error body: `{"error": {"message": ...}}`. */
-const googleErrorSchema = z.object({error: z.object({message: z.string().optional()}).optional()});
 
 /** A date input in ms: undefined leaves it alone, null clears it. */
 const toDate = (ms: number | null | undefined) =>
@@ -86,39 +84,15 @@ export const workspacesRouter = {
       const shareFolder = async () => {
         if (!workspace.googleFolderId) return;
         const googleAccessToken = await context.google.getAccessToken(workspace.id);
-        if (!googleAccessToken) return;
-        const resp = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${workspace.googleFolderId}/permissions?sendNotificationEmail=false`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${googleAccessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              type: "user",
-              emailAddress: context.session.user.email,
-              role: "writer",
-            }),
-          }
-        );
-        if (resp.ok) return;
-        const text = await resp.text();
-        console.warn(
-          `Couldn't share folder ${workspace.googleFolderId} with a new member: ${resp.status}: ${text}`
-        );
-        // Tell the owners, who can share the folder by hand. The usual cause: someone put a file
-        // in the folder outside WOW, and the app's Drive access only covers files it created.
-        let googleMessage = "";
-        try {
-          const parsed = googleErrorSchema.safeParse(JSON.parse(text));
-          googleMessage = parsed.data?.error?.message ?? "";
-        } catch {
-          // Not JSON: fall back to the generic explanation.
-        }
-        const detail = googleMessage.includes("has not granted the app")
-          ? "A file in the folder was added outside WOW, so WOW isn't allowed to share it."
-          : `Google Drive refused (${resp.status}).`;
+        const result: FolderShareResult = googleAccessToken
+          ? await shareDriveFolder(
+              googleAccessToken,
+              workspace.googleFolderId,
+              context.session.user.email
+            )
+          : {ok: false, detail: DRIVE_DISCONNECTED_DETAIL};
+        if (result.ok) return;
+        // Tell the owners, who can fix it (or share the folder by hand).
         const owners = await db
           .select({id: schema.member.userId})
           .from(schema.member)
@@ -133,7 +107,8 @@ export const workspacesRouter = {
           toUserIds: owners.map(o => o.id),
           member: {id, name, email},
           folderId: workspace.googleFolderId,
-          detail,
+          detail: result.detail,
+          blockingFileId: result.blockingFileId,
         });
       };
       waitUntil(
@@ -325,45 +300,48 @@ export const workspacesRouter = {
       await invalidateWorkspace(context.workspace.id);
     }),
 
-  shareGoogleDriveFolder: procedure
-    .input(z.object({workspaceSlug: z.string(), email: z.email()}))
+  /// Shares the Drive folder with every member again: for people who joined while sharing
+  /// failed (a file added to the folder outside WOW, or an expired Google connection), or before
+  /// the folder was chosen. Sharing with someone who already has access changes nothing.
+  shareGoogleDriveFolderWithMembers: procedure
+    .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
-    .handler(async ({context, input}) => {
+    .use(requireOwner)
+    .handler(async ({context}) => {
       const workspace = context.workspace;
+      if (!workspace.googleFolderId) {
+        throw new ORPCError("BAD_REQUEST", {message: "Choose a Google Drive folder first."});
+      }
       const googleAccessToken = await context.google.getAccessToken(workspace.id);
-      if (!workspace.googleFolderId || !googleAccessToken) {
-        throw new ORPCError("FORBIDDEN", {
-          message: "Google drive connection is not correctly configured.",
-        });
+      if (!googleAccessToken) {
+        throw new ORPCError("BAD_REQUEST", {message: DRIVE_DISCONNECTED_DETAIL});
       }
-      const permissionIdResp = await fetch(
-        `https://www.googleapis.com/drive/v2/permissionIds/${encodeURIComponent(input.email)}`,
-        {method: "GET", headers: {Authorization: `Bearer ${googleAccessToken}`}}
-      );
-      if (!permissionIdResp.ok) {
-        throw new ORPCError("BAD_GATEWAY", {message: "Failed to look up Google account."});
-      }
-      const {id: permissionId} = z
-        .object({kind: z.literal("drive#permissionId"), id: z.string()})
-        .parse(await permissionIdResp.json());
-      const resp = await fetch(
-        `https://www.googleapis.com/drive/v2/files/${workspace.googleFolderId}/permissions?${new URLSearchParams(
-          {sendNotificationEmails: "false"}
-        ).toString()}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${googleAccessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({id: permissionId, role: "writer", type: "user"}),
+      const members = await db
+        .select({name: schema.user.name, email: schema.user.email})
+        .from(schema.member)
+        .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
+        .where(eq(schema.member.organizationId, workspace.id));
+      let shared = 0;
+      const failed: {name: string; email: string; detail: string}[] = [];
+      // One at a time: a blocked folder fails for everyone, so the first failure can end it.
+      for (const member of members) {
+        // oxlint-disable-next-line no-await-in-loop -- see above.
+        const result = await shareDriveFolder(
+          googleAccessToken,
+          workspace.googleFolderId,
+          member.email
+        );
+        if (result.ok) {
+          shared++;
+          continue;
         }
-      );
-      if (!resp.ok) {
-        throw new ORPCError("BAD_GATEWAY", {
-          message: `Failed to share the Google Drive folder: ${resp.status} ${resp.statusText}`,
-        });
+        // A file added outside WOW blocks the folder for everyone: no use trying the rest.
+        if (result.blocked) {
+          return {shared, failed, blocked: result};
+        }
+        failed.push({...member, detail: result.detail});
       }
+      return {shared, failed, blocked: null};
     }),
 
   /// The live workspace room state (also pushed over the websocket), for the initial render.

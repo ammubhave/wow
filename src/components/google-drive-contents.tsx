@@ -3,6 +3,7 @@ import {Stepper} from "@heroui-pro/react";
 import {Button, Card, Link, Skeleton} from "@heroui/react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
+import {UsersIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
@@ -165,6 +166,9 @@ export function GoogleDriveCardContents({
         ) : (
           <Skeleton className="h-[165.5px] w-full" />
         )}
+        {state.data && state.data.state >= 2 && !isDisabled && (
+          <ShareWithMembers workspaceSlug={workspaceSlug} />
+        )}
       </Card.Content>
     </>
   );
@@ -213,5 +217,69 @@ function ConnectToGoogleForm({
       <input type="hidden" name="include_granted_scopes" value="false" />
       {children}
     </form>
+  );
+}
+
+/**
+ * Shares the folder with every member again. Members get the folder when they join, but that can
+ * fail (a file added to the folder outside WOW, or an expired Google connection), and people who
+ * joined before the folder was chosen never got it.
+ */
+function ShareWithMembers({workspaceSlug}: {workspaceSlug: string}) {
+  const share = useMutation(orpc.workspaces.shareGoogleDriveFolderWithMembers.mutationOptions());
+  const result = share.data;
+  return (
+    <div className="border-separator mt-4 flex flex-col gap-2 border-t pt-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-muted text-sm">
+          Everyone gets edit access to the folder when they join. If a teammate can&apos;t open the
+          sheets, share the folder with everyone again.
+        </p>
+        <Button
+          variant="secondary"
+          className="shrink-0"
+          isPending={share.isPending}
+          onPress={() =>
+            share.mutate(
+              {workspaceSlug},
+              {onError: error => toast.error(error.message || "Couldn't share the folder.")}
+            )
+          }>
+          <UsersIcon />
+          Share with everyone
+        </Button>
+      </div>
+      {result && (
+        <output className="block text-sm">
+          {result.blocked ? (
+            <p className="text-danger">
+              {result.blocked.detail}{" "}
+              {result.blocked.blockingFileId && (
+                <Link
+                  href={`https://drive.google.com/open?id=${encodeURIComponent(result.blocked.blockingFileId)}`}
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  Open the file
+                  <Link.Icon />
+                </Link>
+              )}
+            </p>
+          ) : (
+            <p>
+              Shared with {result.shared} {result.shared === 1 ? "member" : "members"}.
+            </p>
+          )}
+          {result.failed.length > 0 && (
+            <ul className="text-danger mt-1 flex flex-col gap-1">
+              {result.failed.map(member => (
+                <li key={member.email}>
+                  {member.name} ({member.email}): {member.detail}
+                </li>
+              ))}
+            </ul>
+          )}
+        </output>
+      )}
+    </div>
   );
 }

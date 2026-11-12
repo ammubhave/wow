@@ -104,7 +104,14 @@ function goTo(
 ) {
   if (notification.type === "announcement") return;
   if (notification.type === "driveShareFailed") {
-    window.open(driveFolderUrl(notification.folderId), "_blank", "noopener");
+    // The file blocking the share, when known: it's what the owner needs to move.
+    window.open(
+      notification.blockingFileId
+        ? `https://drive.google.com/open?id=${encodeURIComponent(notification.blockingFileId)}`
+        : driveFolderUrl(notification.folderId),
+      "_blank",
+      "noopener"
+    );
     return;
   }
   if (notification.puzzleId === null) {
@@ -232,7 +239,10 @@ export function NotificationsWebSocket({
         toast.warning(title, {
           description: body,
           duration: Infinity,
-          action: {label: "Open folder", onClick: () => open(message)},
+          action: {
+            label: message.blockingFileId ? "Open the file" : "Open folder",
+            onClick: () => open(message),
+          },
         });
       } else {
         toast(title, {

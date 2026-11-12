@@ -47,6 +47,8 @@ export type DriveShareFailedNotification = NotificationBase & {
   folderId: string;
   /** Why, in plain words. */
   detail: string;
+  /** The file (added outside WOW) that stops the folder being shared, when Google names it. */
+  blockingFileId?: string;
 };
 
 export type WorkspaceNotification =

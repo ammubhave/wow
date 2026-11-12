@@ -42,7 +42,7 @@ export const TRACKED_PROCEDURES: Record<string, [event: string, describe: Descri
   "workspaces.leave": ["workspace_left", none],
   "workspaces.setGoogleFolderId": ["google_drive_configured", () => ({setting: "folder"})],
   "workspaces.setGoogleTemplateFileId": ["google_drive_configured", () => ({setting: "template"})],
-  "workspaces.shareGoogleDriveFolder": ["google_drive_folder_shared", none],
+  "workspaces.shareGoogleDriveFolderWithMembers": ["google_drive_folder_shared", none],
   "workspaces.customEmoji.add": ["custom_emoji_added", none],
   "workspaces.customEmoji.remove": ["custom_emoji_removed", none],
   "workspaces.members.updateRole": ["member_role_changed", input => ({role: input.role})],
