@@ -3,6 +3,7 @@ import {env, waitUntil} from "cloudflare:workers";
 import {and, desc, eq, isNull, sql} from "drizzle-orm";
 import {z} from "zod";
 
+import {placeAmong, placeSchema} from "@/lib/board-order";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
@@ -361,6 +362,91 @@ export const puzzlesRouter = {
         (input.status !== undefined && input.status !== puzzle.status) ||
         (input.isMetaPuzzle !== undefined && input.isMetaPuzzle !== puzzle.isMetaPuzzle);
       if (affectsDiscord) waitUntil(context.discord.sync(workspaceId));
+    }),
+
+  /// Moves a puzzle on the blackboard: into a round (a meta to the round's metas, any other puzzle
+  /// to its unassigned puzzles) or onto a meta as a feeder (into the meta's round), at `place`
+  /// among its new siblings.
+  move: procedure
+    .input(
+      z.object({
+        workspaceSlug: z.string(),
+        id: z.string(),
+        to: z.union([z.object({roundId: z.string()}), z.object({metaId: z.string()})]),
+        place: placeSchema,
+      })
+    )
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const workspaceId = context.workspace.id;
+      // Every puzzle in the workspace (id, parent, kind): enough to check the move and find siblings.
+      const puzzles = await db
+        .select({
+          id: schema.puzzle.id,
+          roundId: schema.puzzle.roundId,
+          parentPuzzleId: schema.puzzle.parentPuzzleId,
+          isMetaPuzzle: schema.puzzle.isMetaPuzzle,
+          position: schema.puzzle.position,
+          createdAt: schema.puzzle.createdAt,
+        })
+        .from(schema.puzzle)
+        .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+        .where(eq(schema.round.workspaceId, workspaceId));
+      const byId = new Map(puzzles.map(p => [p.id, p]));
+      const puzzle = byId.get(input.id);
+      if (!puzzle) throw new ORPCError("NOT_FOUND");
+
+      let roundId: string;
+      let parentPuzzleId: string | null;
+      if ("metaId" in input.to) {
+        const meta = byId.get(input.to.metaId);
+        if (!meta?.isMetaPuzzle)
+          throw new ORPCError("NOT_FOUND", {message: "Meta puzzle not found"});
+        // Not onto itself or anything feeding it (that would make a loop).
+        for (let at: typeof meta | undefined = meta; at; at = byId.get(at.parentPuzzleId ?? "")) {
+          if (at.id === puzzle.id) {
+            throw new ORPCError("BAD_REQUEST", {
+              message: "A meta can't feed a puzzle that feeds it.",
+            });
+          }
+        }
+        roundId = meta.roundId;
+        parentPuzzleId = meta.id;
+      } else {
+        const round = await db
+          .select({id: schema.round.id})
+          .from(schema.round)
+          .where(
+            and(eq(schema.round.id, input.to.roundId), eq(schema.round.workspaceId, workspaceId))
+          )
+          .get();
+        if (!round) throw new ORPCError("NOT_FOUND", {message: "Round not found"});
+        roundId = round.id;
+        parentPuzzleId = null;
+      }
+      const siblings = puzzles.filter(p =>
+        parentPuzzleId !== null
+          ? p.parentPuzzleId === parentPuzzleId
+          : p.parentPuzzleId === null &&
+            p.roundId === roundId &&
+            p.isMetaPuzzle === puzzle.isMetaPuzzle
+      );
+      const positions = placeAmong(siblings, puzzle.id, input.place);
+
+      await db.batch([
+        db
+          .update(schema.puzzle)
+          .set({roundId, parentPuzzleId, position: positions.get(puzzle.id)})
+          .where(eq(schema.puzzle.id, puzzle.id)),
+        ...[...positions]
+          .filter(([id]) => id !== puzzle.id)
+          .map(([id, position]) =>
+            db.update(schema.puzzle).set({position}).where(eq(schema.puzzle.id, id))
+          ),
+      ]);
+      await invalidateWorkspace(workspaceId);
+      // Discord channels are grouped by round.
+      if (roundId !== puzzle.roundId) waitUntil(context.discord.sync(workspaceId));
     }),
 
   delete: procedure

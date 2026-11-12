@@ -36,6 +36,8 @@ export const round = sqliteTable(
       .references(() => auth.organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
     name: text().notNull(),
     status: text(),
+    /** Where it sits on the blackboard (a fractional index; null = after the placed ones, by age). */
+    position: text(),
   },
   t => [index("round_workspaceId_idx").on(t.workspaceId)]
 );
@@ -63,6 +65,11 @@ export const puzzle = sqliteTable(
       onUpdate: "cascade",
     }),
     tags: text({mode: "json"}).$type<string[]>().default([]).notNull(),
+    /**
+     * Where it sits among its siblings on the blackboard (the round's metas, the round's unassigned
+     * puzzles, or a meta's feeders): a fractional index; null = after the placed ones, by age.
+     */
+    position: text(),
   },
   t => [
     index("puzzle_roundId_idx").on(t.roundId),

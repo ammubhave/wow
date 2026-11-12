@@ -370,6 +370,9 @@ importers:
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.3.1)
+      fractional-indexing:
+        specifier: 3.2.0
+        version: 3.2.0
       frimousse:
         specifier: ^0.4.0
         version: 0.4.0(react@19.3.1)(typescript@7.0.2)

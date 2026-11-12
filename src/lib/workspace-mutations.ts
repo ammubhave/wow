@@ -26,6 +26,7 @@ import {
 import {toast} from "sonner";
 import {v7 as uuid7} from "uuid";
 
+import {placeAmong} from "@/lib/board-order";
 import {client as rpcClient, orpc} from "@/lib/orpc";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
 import type {RouterInputs} from "@/server/router";
@@ -209,6 +210,7 @@ function createPuzzle(wire: Wire, input: RouterInputs["puzzles"]["create"]): Wir
     isMetaPuzzle,
     parentPuzzleId,
     tags: input.tags,
+    position: null,
     contributorIds: [],
   };
   const assignUnassigned = input.type === "meta-puzzle" && input.assignUnassignedPuzzles;
@@ -249,6 +251,7 @@ function createRound(wire: Wire, input: RouterInputs["rounds"]["create"]): Wire 
     workspaceId: wire.id,
     name: input.name,
     status: null,
+    position: null,
     puzzles: [],
   };
   return {...wire, rounds: [...wire.rounds, round]};
@@ -274,6 +277,64 @@ function assignUnassignedPuzzles(
       ? {...p, parentPuzzleId: parent.id}
       : p
   );
+}
+
+/** Mirrors `puzzles.move` on the server (same checks, same positions from board-order.ts). */
+function movePuzzle(wire: Wire, input: RouterInputs["puzzles"]["move"]): Wire {
+  const all = wire.rounds.flatMap(round => round.puzzles);
+  const byId = new Map(all.map(p => [p.id, p]));
+  const puzzle = byId.get(input.id);
+  if (!puzzle) return wire;
+  let roundId: string;
+  let parentPuzzleId: string | null;
+  if ("metaId" in input.to) {
+    const meta = byId.get(input.to.metaId);
+    if (!meta?.isMetaPuzzle) return wire;
+    for (let at: WirePuzzle | undefined = meta; at; at = byId.get(at.parentPuzzleId ?? "")) {
+      if (at.id === puzzle.id) return wire;
+    }
+    roundId = meta.roundId;
+    parentPuzzleId = meta.id;
+  } else {
+    const {roundId: target} = input.to;
+    if (!wire.rounds.some(round => round.id === target)) return wire;
+    roundId = target;
+    parentPuzzleId = null;
+  }
+  const siblings = all.filter(p =>
+    parentPuzzleId !== null
+      ? p.parentPuzzleId === parentPuzzleId
+      : p.parentPuzzleId === null && p.roundId === roundId && p.isMetaPuzzle === puzzle.isMetaPuzzle
+  );
+  const positions = placeAmong(siblings, puzzle.id, input.place);
+  const moved: WirePuzzle = {
+    ...puzzle,
+    roundId,
+    parentPuzzleId,
+    position: positions.get(puzzle.id) ?? null,
+  };
+  const withPosition = (p: WirePuzzle): WirePuzzle => {
+    if (p.id === puzzle.id) return moved;
+    const position = positions.get(p.id);
+    return position === undefined || position === p.position ? p : {...p, position};
+  };
+  return mapRounds(wire, round => {
+    // Stays in its round: changed in place (so the recipe is a no-op once the server agrees).
+    if (round.id === puzzle.roundId && round.id === roundId) {
+      return {...round, puzzles: round.puzzles.map(withPosition)};
+    }
+    const puzzles = round.puzzles.filter(p => p.id !== puzzle.id).map(withPosition);
+    return {...round, puzzles: round.id === roundId ? [...puzzles, moved] : puzzles};
+  });
+}
+
+function moveRound(wire: Wire, input: RouterInputs["rounds"]["move"]): Wire {
+  if (!wire.rounds.some(round => round.id === input.id)) return wire;
+  const positions = placeAmong(wire.rounds, input.id, input.place);
+  return mapRounds(wire, round => {
+    const position = positions.get(round.id);
+    return position === undefined || position === round.position ? round : {...round, position};
+  });
 }
 
 /** A date input in ms: undefined leaves it alone, null clears it. */
@@ -310,11 +371,13 @@ export const workspaceMutations = {
     update: () => orpc.puzzles.update.mutationOptions(optimistic(updatePuzzle)),
     delete: () => orpc.puzzles.delete.mutationOptions(optimistic(deletePuzzle)),
     setContributor: () => orpc.puzzles.setContributor.mutationOptions(optimistic(setContributor)),
+    move: () => orpc.puzzles.move.mutationOptions(optimistic(movePuzzle)),
   },
   rounds: {
     create: () => orpc.rounds.create.mutationOptions(optimistic(createRound)),
     update: () => orpc.rounds.update.mutationOptions(optimistic(updateRound)),
     delete: () => orpc.rounds.delete.mutationOptions(optimistic(deleteRound)),
+    move: () => orpc.rounds.move.mutationOptions(optimistic(moveRound)),
     assignUnassignedPuzzles: () =>
       orpc.rounds.assignUnassignedPuzzles.mutationOptions(optimistic(assignUnassignedPuzzles)),
   },

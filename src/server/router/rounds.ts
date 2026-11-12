@@ -3,6 +3,7 @@ import {waitUntil} from "cloudflare:workers";
 import {and, eq, isNull} from "drizzle-orm";
 import {z} from "zod";
 
+import {placeAmong, placeSchema} from "@/lib/board-order";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
@@ -49,6 +50,28 @@ export const roundsRouter = {
       await invalidateWorkspace(context.workspace.id);
       waitUntil(context.discord.sync(context.workspace.id));
       return round;
+    }),
+
+  /// Moves a round on the blackboard, to `place` among the workspace's rounds.
+  move: procedure
+    .input(z.object({workspaceSlug: z.string(), id: z.string(), place: placeSchema}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      const rounds = await db
+        .select({
+          id: schema.round.id,
+          position: schema.round.position,
+          createdAt: schema.round.createdAt,
+        })
+        .from(schema.round)
+        .where(eq(schema.round.workspaceId, context.workspace.id));
+      if (!rounds.some(r => r.id === input.id)) throw new ORPCError("NOT_FOUND");
+      const positions = placeAmong(rounds, input.id, input.place);
+      const [first, ...rest] = [...positions].map(([id, position]) =>
+        db.update(schema.round).set({position}).where(eq(schema.round.id, id))
+      );
+      await db.batch([first!, ...rest]);
+      await invalidateWorkspace(context.workspace.id);
     }),
 
   update: procedure

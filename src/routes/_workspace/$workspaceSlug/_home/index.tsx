@@ -1,4 +1,3 @@
-import {useAutoAnimate} from "@formkit/auto-animate/react";
 import {EmptyState} from "@heroui-pro/react";
 import {
   Button,
@@ -14,7 +13,7 @@ import {
   Select,
   selectVariants,
   Separator,
-  tableVariants,
+  Table,
   ToggleButton,
   Tooltip,
   type Key,
@@ -31,6 +30,8 @@ import {
   CircleCheckBigIcon,
   CircleCheckIcon,
   EllipsisIcon,
+  GripVerticalIcon,
+  MoveIcon,
   InfoIcon,
   ListPlusIcon,
   PlusIcon,
@@ -43,7 +44,8 @@ import {
   XIcon,
 } from "lucide-react";
 import * as React from "react";
-import {memo, useEffect, useRef, useState} from "react";
+import {createContext, memo, useContext, useEffect, useMemo, useRef, useState} from "react";
+import {DropIndicator, type DropTarget, useDragAndDrop} from "react-aria-components";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
 
@@ -75,65 +77,102 @@ import {
 } from "@/lib/puzzleStatuses";
 import {setFavoritesMutationOptions, workspaceMutations} from "@/lib/workspace-mutations";
 import {WorkspaceRoomState} from "@/server/do/workspace";
-import type {RouterInputs, RouterOutputs} from "@/server/router";
+import type {RouterInputs} from "@/server/router";
 import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
   component: RouteComponent,
 });
 
-// Native table elements styled with HeroUI's table classes (`tableVariants`). The blackboard
-// relies on row components returning fragments of <tr>s, colSpan, and interactive cells, which
-// fight React Aria's collection API (and a grid's keyboard handling would get in the way of the
-// inline editors), so HeroUI's `Table` component isn't used. The "secondary" variant keeps cells
-// transparent so the row status colors show through; cells are denser than HeroUI's default.
-const tableSlots = tableVariants({variant: "secondary"});
+// The board is HeroUI's Table (React Aria's): rounds, their metas and feeders form a tree, so rows
+// indent, expand and collapse natively, and the same collection supports drag and drop. Cells are
+// denser than HeroUI's default; the "secondary" variant keeps them transparent so the row status
+// colors show through.
 
 // Columns that only fit on wider screens: on phones the board is name, answer and status.
 const DESKTOP_ONLY = "hidden md:table-cell";
 // On phones a name cell is capped (its link truncates with an ellipsis) so long puzzle names don't
 // make the table wider than the screen.
 const NAME_CELL_ON_PHONES = "max-w-44 md:max-w-none";
+const CELL = "p-2 text-xs whitespace-nowrap";
+const COLUMN = "px-2 whitespace-nowrap";
 
-function Table({className, ...props}: React.ComponentProps<"table">) {
+/** The rows under a round: its metas, then (if any) its unassigned puzzles as a group. */
+type UnassignedGroup = {
+  id: string;
+  kind: "unassigned";
+  roundId: string;
+  puzzles: WorkspaceRoomState["rounds"][0]["unassignedPuzzles"];
+};
+type RoundChild = WorkspaceRoomState["rounds"][0]["topLevelMetaPuzzles"][0] | UnassignedGroup;
+const unassignedGroupId = (roundId: string) => `unassigned-${roundId}`;
+
+/** Expand/collapse chevron for a tree row (React Aria toggles the row via `slot="chevron"`). */
+function RowChevron({
+  label,
+  isExpanded,
+  color,
+}: {
+  label: string;
+  isExpanded: boolean;
+  color?: string;
+}) {
   return (
-    <div className={tableSlots.base()}>
-      {/* The board's scroll box is the scroll container; an inner overflow box would stop the
-          sticky header from sticking. */}
-      <div className={tableSlots.scrollContainer({className: "overflow-visible"})}>
-        <table className={tableSlots.content({className: cn("text-xs", className)})} {...props} />
-      </div>
-    </div>
+    <Button
+      slot="chevron"
+      variant="ghost"
+      isIconOnly
+      size="sm"
+      aria-label={label}
+      className="-my-2 -ms-1 size-6 min-w-6 shrink-0 select-none"
+      style={color ? {color} : undefined}>
+      <ChevronRightIcon className={cn("size-3.5 transition", isExpanded && "rotate-90")} />
+    </Button>
   );
 }
 
-function TableHeader({className, ...props}: React.ComponentProps<"thead">) {
-  return <thead className={tableSlots.header({className})} {...props} />;
-}
+/**
+ * The tree column: a narrow column of its own for the chevrons and the lines linking feeders to
+ * their meta, so every name starts in the same place whatever its depth. (HeroUI indents a tree
+ * column by depth; this one stays put.)
+ */
+const TREE_CELL = "relative w-8 p-0 ps-0!";
 
-function TableBody({className, ...props}: React.ComponentPropsWithRef<"tbody">) {
-  return <tbody className={tableSlots.body({className})} {...props} />;
-}
-
-function TableRow({className, ...props}: React.ComponentProps<"tr">) {
-  return <tr className={tableSlots.row({className})} {...props} />;
-}
-
-function TableHead({className, ...props}: React.ComponentProps<"th">) {
+/** A feeder's line: down from its meta (in the meta's colour), then across to the name. */
+function FeederLine({color}: {color: string}) {
   return (
-    <th
-      className={tableSlots.column({className: cn("px-2 whitespace-nowrap", className)})}
-      {...props}
-    />
+    <span aria-hidden className="absolute inset-0">
+      <span className="absolute inset-y-0 left-1/2 w-px" style={{backgroundColor: color}} />
+      <span className="absolute top-1/2 right-0 left-1/2 h-px" style={{backgroundColor: color}} />
+    </span>
   );
 }
 
-function TableCell({className, ...props}: React.ComponentProps<"td">) {
+/** A meta's colour, shared by the meta's dot and its feeders' bars. */
+function metaColor(id: string) {
+  const hash = sha256(id);
+  let hue = parseInt(hash.substring(0, 4), 16) % (360 - 150);
+  if (hue > 30) hue += 150;
+  const saturation = (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 80 + 50;
+  const lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.5 * 70;
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+/** True while the board is in Arrange mode (rows can be dragged). */
+const ArrangingContext = createContext(false);
+
+/** The drag handle shown in Arrange mode (React Aria starts a drag from `slot="drag"`). */
+function DragHandle({label}: {label: string}) {
   return (
-    <td
-      className={tableSlots.cell({className: cn("p-2 text-xs whitespace-nowrap", className)})}
-      {...props}
-    />
+    <Button
+      slot="drag"
+      variant="ghost"
+      isIconOnly
+      size="sm"
+      aria-label={`Drag ${label}`}
+      className="text-muted cursor-grab active:cursor-grabbing">
+      <GripVerticalIcon className="size-4" />
+    </Button>
   );
 }
 
@@ -552,7 +591,13 @@ function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
-  const [animatedBodyRef] = useAutoAnimate<HTMLTableSectionElement>({duration: 200});
+  const [isArranging, setIsArranging] = useState(false);
+  // Rows you've collapsed (rounds, metas, unassigned groups), remembered per workspace; everything
+  // else is expanded.
+  const [collapsed, setCollapsed] = useLocalStorage<string[]>(
+    `blackboard-collapsed-${workspaceSlug}`,
+    []
+  );
   const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
   const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
   const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
@@ -617,23 +662,142 @@ function RouteComponent() {
     (!hideObsolete || p.importance !== "obsolete") &&
     (!hideSolved || (p.status !== "solved" && p.status !== "backsolved")) &&
     (!onlyShowFavorites || favoriteSet.has(p.id));
+  // A meta stays when it or any of its feeders (at any depth) match; its feeders are filtered too.
+  type Meta = WorkspaceRoomState["rounds"][0]["topLevelMetaPuzzles"][0];
+  const filterMeta = (m: Meta): Meta | null => {
+    const childPuzzles = filtered(
+      m.childPuzzles.flatMap(c => (c.isMetaPuzzle ? (filterMeta(c) ?? []) : matches(c) ? [c] : [])),
+      () => true
+    );
+    const same =
+      childPuzzles.length === m.childPuzzles.length &&
+      childPuzzles.every((c, i) => c === m.childPuzzles[i]);
+    if (hideSolvedMetas && m.status === "solved") return null;
+    if (childPuzzles.length === 0 && !matches(m)) return null;
+    return same ? m : {...m, childPuzzles};
+  };
   const rounds = workspace.rounds.map(r => {
     const puzzles = filtered(r.puzzles, matches);
-    const metaPuzzles = filtered(
-      r.metaPuzzles.map(m => {
-        const childPuzzles = filtered(m.childPuzzles, matches);
-        return childPuzzles === m.childPuzzles ? m : {...m, childPuzzles};
-      }),
-      m => (m.childPuzzles.length > 0 || matches(m)) && (!hideSolvedMetas || m.status !== "solved")
-    );
+    const topLevelMetaPuzzles = r.topLevelMetaPuzzles.flatMap(m => filterMeta(m) ?? []);
+    const metaPuzzles = filtered(r.metaPuzzles, m => matches(m) || m.childPuzzles.some(matches));
     const unassignedPuzzles = filtered(r.unassignedPuzzles, matches);
     return puzzles === r.puzzles &&
       unassignedPuzzles === r.unassignedPuzzles &&
-      metaPuzzles.length === r.metaPuzzles.length &&
-      metaPuzzles.every((m, i) => m === r.metaPuzzles[i])
+      metaPuzzles === r.metaPuzzles &&
+      topLevelMetaPuzzles.length === r.topLevelMetaPuzzles.length &&
+      topLevelMetaPuzzles.every((m, i) => m === r.topLevelMetaPuzzles[i])
       ? r
-      : {...r, puzzles, metaPuzzles, unassignedPuzzles};
+      : {...r, puzzles, metaPuzzles, topLevelMetaPuzzles, unassignedPuzzles};
   });
+
+  // The tree's expanded rows: every round, meta and unassigned group you haven't collapsed.
+  const expandableIds = workspace.rounds.flatMap(r => [
+    r.id,
+    unassignedGroupId(r.id),
+    ...r.metaPuzzles.map(m => m.id),
+  ]);
+  const expandableKey = expandableIds.join(",");
+  const expandedKeys = useMemo(() => {
+    const closed = new Set(collapsed);
+    return new Set<Key>(expandableKey.split(",").filter(id => id && !closed.has(id)));
+  }, [collapsed, expandableKey]);
+  const onExpandedChange = (keys: Selection) =>
+    setCollapsed(keys === "all" ? [] : expandableIds.filter(id => !keys.has(id)));
+
+  // --- Arrange mode: drag rounds and puzzles. Every row is shown (filters are paused).
+  const {mutate: movePuzzle} = useMutation(workspaceMutations.puzzles.move());
+  const {mutate: moveRound} = useMutation(workspaceMutations.rounds.move());
+  const allPuzzles = new Map(workspace.rounds.flatMap(r => r.puzzles).map(p => [p.id, p] as const));
+  const roundIds = new Set(workspace.rounds.map(r => r.id));
+  const groupRound = new Map(workspace.rounds.map(r => [unassignedGroupId(r.id), r.id]));
+  const draggingKey = useRef<string | null>(null);
+  /** Whether `id` is `ancestorId` or feeds it (directly or through other metas). */
+  const isWithin = (id: string, ancestorId: string) => {
+    for (let at = allPuzzles.get(id); at; at = allPuzzles.get(at.parentPuzzleId ?? "")) {
+      if (at.id === ancestorId) return true;
+    }
+    return false;
+  };
+  /** What dropping `key` on `target` does, or null if it can't go there. */
+  const moveFor = (key: string, target: DropTarget) => {
+    if (target.type !== "item") return null;
+    const targetKey = String(target.key);
+    const {dropPosition} = target;
+    if (roundIds.has(key)) {
+      return roundIds.has(targetKey) && dropPosition !== "on" && targetKey !== key
+        ? {
+            round: {
+              id: key,
+              place: dropPosition === "before" ? {before: targetKey} : {after: targetKey},
+            },
+          }
+        : null;
+    }
+    const puzzle = allPuzzles.get(key);
+    if (!puzzle) return null;
+    const place = (id: string) => (dropPosition === "before" ? {before: id} : {after: id});
+    if (roundIds.has(targetKey)) {
+      return dropPosition === "on"
+        ? {puzzle: {id: key, to: {roundId: targetKey}, place: {end: true as const}}}
+        : null;
+    }
+    const groupRoundId = groupRound.get(targetKey);
+    if (groupRoundId) {
+      // On the group: an unassigned puzzle. Just above it: the last of the round's metas.
+      if (dropPosition === "on" && !puzzle.isMetaPuzzle) {
+        return {puzzle: {id: key, to: {roundId: groupRoundId}, place: {end: true as const}}};
+      }
+      if (dropPosition === "before" && puzzle.isMetaPuzzle) {
+        return {puzzle: {id: key, to: {roundId: groupRoundId}, place: {end: true as const}}};
+      }
+      return null;
+    }
+    const over = allPuzzles.get(targetKey);
+    if (!over || over.id === key) return null;
+    if (dropPosition === "on") {
+      return over.isMetaPuzzle && !isWithin(over.id, key)
+        ? {puzzle: {id: key, to: {metaId: over.id}, place: {end: true as const}}}
+        : null;
+    }
+    if (over.parentPuzzleId !== null && allPuzzles.has(over.parentPuzzleId)) {
+      // Among a meta's feeders (a meta can feed a meta, but not one that feeds it).
+      return isWithin(over.parentPuzzleId, key)
+        ? null
+        : {puzzle: {id: key, to: {metaId: over.parentPuzzleId}, place: place(over.id)}};
+    }
+    // Among a round's metas, or its unassigned puzzles: only with its own kind.
+    return over.isMetaPuzzle === puzzle.isMetaPuzzle
+      ? {puzzle: {id: key, to: {roundId: over.roundId}, place: place(over.id)}}
+      : null;
+  };
+  const {dragAndDropHooks} = useDragAndDrop({
+    isDisabled: !isArranging,
+    getItems: keys => [...keys].map(key => ({"text/plain": String(key)})),
+    getAllowedDropOperations: () => ["move"],
+    onDragStart: e => {
+      draggingKey.current = String([...e.keys][0] ?? "");
+    },
+    onDragEnd: () => {
+      draggingKey.current = null;
+    },
+    getDropOperation: target =>
+      draggingKey.current && moveFor(draggingKey.current, target) ? "move" : "cancel",
+    onMove: e => {
+      const key = [...e.keys][0];
+      const move = key === undefined ? null : moveFor(String(key), e.target);
+      if (move?.round) moveRound({workspaceSlug, ...move.round});
+      if (move?.puzzle) movePuzzle({workspaceSlug, ...move.puzzle});
+    },
+    renderDropIndicator: target => (
+      <DropIndicator
+        target={target}
+        className={({isDropTarget}) =>
+          isDropTarget ? "bg-accent h-0.5 outline-none" : "h-0.5 bg-transparent outline-none"
+        }
+      />
+    ),
+  });
+  const boardRounds = isArranging ? workspace.rounds : rounds;
 
   let filterCount = 0;
   if (tags.length > 0) filterCount += 1;
@@ -835,81 +999,117 @@ function RouteComponent() {
                   </Button>
                 )}
               </div>
+              <ToggleButton
+                size="sm"
+                className={cn(FILTER_TOGGLE, "max-sm:hidden")}
+                isSelected={isArranging}
+                onChange={setIsArranging}>
+                <MoveIcon />
+                Arrange
+              </ToggleButton>
               <SidebarDrawerButton workspaceSlug={workspaceSlug} rounds={rounds} />
               <TeamChatDrawerButton />
             </div>
             <div className="min-h-0 flex-1 overflow-auto">
               <div className="min-w-0">
-                <Table className="h-fit">
-                  <TableHeader className="bg-background sticky top-0 z-10">
-                    <TableRow>
-                      <TableHead className="w-8 p-0" colSpan={1} />
-                      <TableHead className="w-8 p-0" colSpan={1} />
-                      <TableHead>Name</TableHead>
-                      <TableHead className="min-w-28 md:min-w-[150px]">Solution</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className={cn("w-0 px-2", DESKTOP_ONLY)}>
-                        <Tooltip delay={300}>
-                          <Tooltip.Trigger>
-                            {/* Icon-only header keeps the column as narrow as its icons. */}
-                            <Button isIconOnly size="sm" variant="ghost" aria-label="Importance">
-                              <SignalIcon />
-                            </Button>
-                          </Tooltip.Trigger>
-                          <Tooltip.Content>Importance</Tooltip.Content>
-                        </Tooltip>
-                      </TableHead>
-                      <TableHead className={DESKTOP_ONLY}>Tags</TableHead>
-                      <TableHead className={DESKTOP_ONLY}>Working on this</TableHead>
-                      <TableHead className="w-0">
-                        <div className="-my-1 flex items-center justify-end">
-                          <Dropdown>
-                            <Button variant="ghost" isIconOnly className="-my-3">
-                              <EllipsisIcon />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                            <Dropdown.Popover className="w-fit" placement="bottom end">
-                              <Dropdown.Menu>
-                                <Dropdown.Item
-                                  id="add-new-round"
-                                  textValue="Add new round"
-                                  onAction={() => setIsAddNewRoundDialogOpen(true)}>
-                                  <Label>Add new round</Label>
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown.Popover>
-                          </Dropdown>
-                          {/* Mounted only while open: rows would otherwise each keep several idle dialogs. */}
-                          {isAddNewRoundDialogOpen && (
-                            <AddNewRoundDialog
+                {isArranging && (
+                  <p className="bg-accent-soft text-accent-soft-foreground px-3 py-2 text-xs">
+                    Drag rows by their handles to reorder them. Drop a puzzle on a meta to make it a
+                    feeder, or on a round to move it there. Filters are paused while arranging.
+                  </p>
+                )}
+                <ArrangingContext.Provider value={isArranging}>
+                  <Table variant="secondary">
+                    {/* The board's scroll box is the scroll container; an inner overflow box would
+                      stop the sticky header from sticking. */}
+                    <Table.ScrollContainer className="overflow-visible">
+                      <Table.Content
+                        aria-label="Blackboard"
+                        className="h-fit text-xs"
+                        treeColumn="tree"
+                        expandedKeys={expandedKeys}
+                        onExpandedChange={onExpandedChange}
+                        // Always passed (React Aria can't add or drop them later); off outside Arrange.
+                        dragAndDropHooks={dragAndDropHooks}>
+                        <Table.Header className="bg-background sticky top-0 z-10">
+                          <Table.Column className="w-8 p-0" aria-label="Hunt link">
+                            <span className="sr-only">Hunt link</span>
+                          </Table.Column>
+                          <Table.Column id="tree" className="w-8 p-0" aria-label="Expand">
+                            <span className="sr-only">Expand</span>
+                          </Table.Column>
+                          <Table.Column id="name" isRowHeader className={COLUMN}>
+                            Name
+                          </Table.Column>
+                          <Table.Column className={cn(COLUMN, "min-w-28 md:min-w-[150px]")}>
+                            Solution
+                          </Table.Column>
+                          <Table.Column className={COLUMN}>Status</Table.Column>
+                          <Table.Column
+                            className={cn(COLUMN, "w-0", DESKTOP_ONLY)}
+                            aria-label="Importance">
+                            <SignalIcon className="size-4" aria-hidden />
+                          </Table.Column>
+                          <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>Tags</Table.Column>
+                          <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>
+                            Working on this
+                          </Table.Column>
+                          <Table.Column className={cn(COLUMN, "w-0")} aria-label="Actions">
+                            <div className="-my-1 flex items-center justify-end">
+                              <Dropdown>
+                                <Button
+                                  variant="ghost"
+                                  isIconOnly
+                                  size="sm"
+                                  aria-label="Board menu">
+                                  <EllipsisIcon />
+                                </Button>
+                                <Dropdown.Popover className="w-fit" placement="bottom end">
+                                  <Dropdown.Menu>
+                                    <Dropdown.Item
+                                      id="add-new-round"
+                                      textValue="Add new round"
+                                      onAction={() => setIsAddNewRoundDialogOpen(true)}>
+                                      <Label>Add new round</Label>
+                                    </Dropdown.Item>
+                                  </Dropdown.Menu>
+                                </Dropdown.Popover>
+                              </Dropdown>
+                            </div>
+                          </Table.Column>
+                        </Table.Header>
+                        <Table.Body
+                          items={boardRounds}
+                          dependencies={[
+                            workspace.tags,
+                            favoriteSet,
+                            roundProgress,
+                            expandedKeys,
+                            isArranging,
+                          ]}>
+                          {round => (
+                            <BlackboardRound
                               workspaceSlug={workspaceSlug}
-                              open={isAddNewRoundDialogOpen}
-                              setOpen={setIsAddNewRoundDialogOpen}
+                              round={round}
+                              solvedCount={roundProgress.get(round.id)?.solved ?? 0}
+                              puzzleCount={roundProgress.get(round.id)?.total ?? 0}
+                              tags={workspace.tags}
+                              favoritePuzzleIds={favoriteSet}
                             />
                           )}
-                        </div>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  {/* Rows slide into place as puzzles are added, removed or re-sorted. */}
-                  <TableBody ref={animatedBodyRef}>
-                    {rounds.map(round => (
-                      <BlackboardRound
-                        key={round.id}
-                        workspaceSlug={workspaceSlug}
-                        round={round}
-                        solvedCount={roundProgress.get(round.id)?.solved ?? 0}
-                        puzzleCount={roundProgress.get(round.id)?.total ?? 0}
-                        tags={workspace.tags}
-                        favoritePuzzleIds={favoriteSet}
-                      />
-                    ))}
-                    {/* Gets rid of the scroll bar when the last row is hidden. */}
-                    <TableRow>
-                      <TableCell colSpan={9} className="py-0" />
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                        </Table.Body>
+                      </Table.Content>
+                    </Table.ScrollContainer>
+                  </Table>
+                </ArrangingContext.Provider>
+                {/* Mounted only while open. */}
+                {isAddNewRoundDialogOpen && (
+                  <AddNewRoundDialog
+                    workspaceSlug={workspaceSlug}
+                    open={isAddNewRoundDialogOpen}
+                    setOpen={setIsAddNewRoundDialogOpen}
+                  />
+                )}
                 {workspace.rounds.length === 0 && (
                   // A new workspace: say what goes here, with the first step one click away.
                   <EmptyState className="py-16">
@@ -966,13 +1166,23 @@ const BlackboardRound = memo(function BlackboardRound({
     useState(false);
   const [isEditRoundDialogOpen, setIsEditRoundDialogOpen] = useState(false);
   const [isDeleteRoundDialogOpen, setIsDeleteRoundDialogOpen] = useState(false);
-  const [isAssignedUnassignedPuzzlesDialogOpen, setIsAssignUnassignedPuzzlesDialogOpen] =
-    useState(false);
+  const isArranging = useContext(ArrangingContext);
 
-  const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${round.id}`, false);
-  const [isUnassignedCollapsed, setIsUnassignedCollapsed] = useLocalStorage(
-    `isUnassignedCollapsed-${round.id}`,
-    false
+  // Metas, then the unassigned puzzles as one group (kept stable so rows aren't rebuilt).
+  const children = useMemo<RoundChild[]>(
+    () =>
+      round.unassignedPuzzles.length > 0
+        ? [
+            ...round.topLevelMetaPuzzles,
+            {
+              id: unassignedGroupId(round.id),
+              kind: "unassigned",
+              roundId: round.id,
+              puzzles: round.unassignedPuzzles,
+            },
+          ]
+        : round.topLevelMetaPuzzles,
+    [round.id, round.topLevelMetaPuzzles, round.unassignedPuzzles]
   );
 
   function onStatusChange(value: string | null) {
@@ -980,37 +1190,26 @@ const BlackboardRound = memo(function BlackboardRound({
   }
 
   return (
-    <>
-      <TableRow
-        // Target of the sidebar's round links.
-        id={round.id}
-        className="bg-surface-secondary text-foreground group scroll-mt-20">
-        <TableCell className="-p-2 relative">
-          <div
-            className={cn(
-              "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
-              round.status === "solved" ? "hidden" : "flex"
-            )}>
-            <Button
-              variant="ghost"
-              isIconOnly
-              aria-label={`Toggle round ${round.name}`}
-              aria-expanded={!isCollapsed}
-              className="relative scroll-mt-20 select-none"
-              onPress={() => {
-                setIsCollapsed(!isCollapsed);
-              }}>
-              <ChevronRightIcon className={cn("transition", !isCollapsed && "rotate-90")} />
-            </Button>
-          </div>
-          {round.status === "solved" && (
-            <div className="absolute inset-0 flex h-full flex-col items-center justify-center group-hover:hidden">
-              <CheckIcon className="size-3.5 text-green-500" />
-            </div>
-          )}
-        </TableCell>
-        <TableCell colSpan={3}>
-          <div className="flex items-center gap-3">
+    <Table.Row
+      id={round.id}
+      textValue={round.name}
+      className="bg-surface-secondary text-foreground group">
+      <Table.Cell className="p-0">{isArranging && <DragHandle label={round.name} />}</Table.Cell>
+      <Table.Cell className={TREE_CELL}>
+        {({isExpanded, hasChildItems}) => (
+          <span className="flex justify-center">
+            {hasChildItems && (
+              <RowChevron label={`Toggle round ${round.name}`} isExpanded={isExpanded} />
+            )}
+          </span>
+        )}
+      </Table.Cell>
+      <Table.Cell colSpan={2} className={CELL} textValue={round.name}>
+        {() => (
+          <div className="flex items-center gap-2">
+            {/* Target of the sidebar's round links. */}
+            <span id={round.id} className="scroll-mt-20" />
+            {round.status === "solved" && <CheckIcon className="size-3.5 text-green-500" />}
             <span className="text-foreground truncate text-sm font-semibold">{round.name}</span>
             {puzzleCount > 0 && (
               <div className="flex shrink-0 items-center gap-2">
@@ -1031,245 +1230,237 @@ const BlackboardRound = memo(function BlackboardRound({
               </div>
             )}
           </div>
-        </TableCell>
-        <TableCell>
-          <DeferredSelect
-            aria-label="Round status"
-            valueText={round.status === "solved" ? "Solved" : "None"}
-            value={round.status === "solved" ? "Solved" : "None"}
-            triggerClassName={SELECT_TRIGGER_CLASS}>
-            {deferred => (
-              <Select
-                {...deferred}
-                aria-label="Round status"
-                value={round.status ?? NONE_KEY}
-                onChange={value => onStatusChange(fromKey(value))}>
-                <Select.Trigger className={SELECT_TRIGGER_CLASS}>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    <ListBox.Item id={NONE_KEY} textValue="None">
-                      None
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                    <ListBox.Item
-                      id="solved"
-                      textValue="Solved"
-                      className={getBgColorClassNamesForPuzzleStatus("solved")}>
-                      Solved
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            )}
-          </DeferredSelect>
-        </TableCell>
-        <TableCell colSpan={3} className={DESKTOP_ONLY} />
-        <TableCell>
-          <div className="-my-3 flex items-center justify-end">
-            <Dropdown>
-              <Button isDisabled={isBeingCreated} variant="ghost" isIconOnly>
-                <EllipsisIcon />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-              <Dropdown.Popover className="w-fit" placement="bottom end">
-                <Dropdown.Menu>
+        )}
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <DeferredSelect
+          aria-label="Round status"
+          valueText={round.status === "solved" ? "Solved" : "None"}
+          value={round.status === "solved" ? "Solved" : "None"}
+          triggerClassName={SELECT_TRIGGER_CLASS}>
+          {deferred => (
+            <Select
+              {...deferred}
+              aria-label="Round status"
+              value={round.status ?? NONE_KEY}
+              onChange={value => onStatusChange(fromKey(value))}>
+              <Select.Trigger className={SELECT_TRIGGER_CLASS}>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id={NONE_KEY} textValue="None">
+                    None
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item
+                    id="solved"
+                    textValue="Solved"
+                    className={getBgColorClassNamesForPuzzleStatus("solved")}>
+                    Solved
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                </ListBox>
+              </Select.Popover>
+            </Select>
+          )}
+        </DeferredSelect>
+      </Table.Cell>
+      <Table.Cell colSpan={3} className={cn(CELL, DESKTOP_ONLY)}>
+        {null}
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <div className="-my-3 flex items-center justify-end">
+          <Dropdown>
+            <Button isDisabled={isBeingCreated} variant="ghost" isIconOnly>
+              <EllipsisIcon />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+            <Dropdown.Popover className="w-fit" placement="bottom end">
+              <Dropdown.Menu>
+                <Dropdown.Item
+                  id="add-meta"
+                  textValue="Add new meta puzzle"
+                  onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
+                  <Label>Add new meta puzzle</Label>
+                </Dropdown.Item>
+                {round.metaPuzzles.length > 0 ? (
                   <Dropdown.Item
-                    id="add-meta"
-                    textValue="Add new meta puzzle"
-                    onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
-                    <Label>Add new meta puzzle</Label>
+                    id="add-unassigned-disabled"
+                    textValue="Add new unassigned puzzle"
+                    isDisabled
+                    // Disabled menu items get `pointer-events: none`; re-enable them so the
+                    // explanatory tooltip can still be hovered.
+                    className="pointer-events-auto!">
+                    <Label>Add new unassigned puzzle</Label>
+                    <Tooltip>
+                      <Tooltip.Trigger>
+                        <InfoIcon className="ms-auto" />
+                      </Tooltip.Trigger>
+                      <Tooltip.Content placement="left">
+                        You can only add unassigned puzzles when there are no meta puzzles in the
+                        round.
+                      </Tooltip.Content>
+                    </Tooltip>
                   </Dropdown.Item>
-                  {round.metaPuzzles.length > 0 ? (
-                    <Dropdown.Item
-                      id="add-unassigned-disabled"
-                      textValue="Add new unassigned puzzle"
-                      isDisabled
-                      // Disabled menu items get `pointer-events: none`; re-enable them so the
-                      // explanatory tooltip can still be hovered.
-                      className="pointer-events-auto!">
-                      <Label>Add new unassigned puzzle</Label>
-                      <Tooltip>
-                        <Tooltip.Trigger>
-                          <InfoIcon className="ms-auto" />
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="left">
-                          You can only add unassigned puzzles when there are no meta puzzles in the
-                          round.
-                        </Tooltip.Content>
-                      </Tooltip>
-                    </Dropdown.Item>
-                  ) : (
-                    <Dropdown.Item
-                      id="add-unassigned"
-                      textValue="Add new unassigned puzzle"
-                      onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
-                      <Label>Add new unassigned puzzle</Label>
-                    </Dropdown.Item>
-                  )}
+                ) : (
                   <Dropdown.Item
-                    id="edit-round"
-                    textValue="Edit round"
-                    onAction={() => setIsEditRoundDialogOpen(true)}>
-                    <Label>Edit round</Label>
+                    id="add-unassigned"
+                    textValue="Add new unassigned puzzle"
+                    onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                    <Label>Add new unassigned puzzle</Label>
                   </Dropdown.Item>
-                  <Dropdown.Item
-                    id="delete-round"
-                    textValue="Delete round"
-                    onAction={() => setIsDeleteRoundDialogOpen(true)}>
-                    <Label>Delete round</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </div>
-          {isAddNewMetaPuzzleDialogOpen && (
-            <AddNewMetaPuzzleDialog
+                )}
+                <Dropdown.Item
+                  id="edit-round"
+                  textValue="Edit round"
+                  onAction={() => setIsEditRoundDialogOpen(true)}>
+                  <Label>Edit round</Label>
+                </Dropdown.Item>
+                <Dropdown.Item
+                  id="delete-round"
+                  textValue="Delete round"
+                  onAction={() => setIsDeleteRoundDialogOpen(true)}>
+                  <Label>Delete round</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+        {isAddNewMetaPuzzleDialogOpen && (
+          <AddNewMetaPuzzleDialog
+            workspaceSlug={workspaceSlug}
+            roundId={round.id}
+            open={isAddNewMetaPuzzleDialogOpen}
+            setOpen={setIsAddNewMetaPuzzleDialogOpen}
+          />
+        )}
+        {isAddNewUnassignedPuzzleDialogOpen && (
+          <AddNewPuzzleDialog
+            workspaceSlug={workspaceSlug}
+            roundId={round.id}
+            open={isAddNewUnassignedPuzzleDialogOpen}
+            setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
+          />
+        )}
+        {isEditRoundDialogOpen && (
+          <EditRoundDialog
+            workspaceSlug={workspaceSlug}
+            round={round}
+            open={isEditRoundDialogOpen}
+            setOpen={setIsEditRoundDialogOpen}
+          />
+        )}
+        {isDeleteRoundDialogOpen && (
+          <DeleteRoundDialog
+            workspaceSlug={workspaceSlug}
+            roundId={round.id}
+            open={isDeleteRoundDialogOpen}
+            setOpen={setIsDeleteRoundDialogOpen}
+          />
+        )}
+      </Table.Cell>
+      <Table.Collection items={children} dependencies={[tags, favoritePuzzleIds]}>
+        {child =>
+          "kind" in child ? (
+            <BlackboardUnassigned
               workspaceSlug={workspaceSlug}
-              roundId={round.id}
-              open={isAddNewMetaPuzzleDialogOpen}
-              setOpen={setIsAddNewMetaPuzzleDialogOpen}
-            />
-          )}
-          {isAddNewUnassignedPuzzleDialogOpen && (
-            <AddNewPuzzleDialog
-              workspaceSlug={workspaceSlug}
-              roundId={round.id}
-              open={isAddNewUnassignedPuzzleDialogOpen}
-              setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
-            />
-          )}
-          {isEditRoundDialogOpen && (
-            <EditRoundDialog
-              workspaceSlug={workspaceSlug}
-              round={round}
-              open={isEditRoundDialogOpen}
-              setOpen={setIsEditRoundDialogOpen}
-            />
-          )}
-          {isDeleteRoundDialogOpen && (
-            <DeleteRoundDialog
-              workspaceSlug={workspaceSlug}
-              roundId={round.id}
-              open={isDeleteRoundDialogOpen}
-              setOpen={setIsDeleteRoundDialogOpen}
-            />
-          )}
-        </TableCell>
-      </TableRow>
-      {round.metaPuzzles.map(metaPuzzle => (
-        <BlackboardMetaPuzzle
-          key={metaPuzzle.id}
-          workspaceSlug={workspaceSlug}
-          metaPuzzle={metaPuzzle}
-          isParentCollapsed={isCollapsed}
-          tags={tags}
-          favoritePuzzleIds={favoritePuzzleIds}
-        />
-      ))}
-      {round.unassignedPuzzles.length > 0 && (
-        <>
-          <TableRow className={cn("group", isCollapsed ? "collapse" : "")}>
-            <TableCell className="p-0" />
-            <TableCell className="relative p-0">
-              <div
-                className={cn(
-                  "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
-                  !isUnassignedCollapsed ? "hidden" : "flex"
-                )}>
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  aria-label="Toggle unassigned puzzles"
-                  aria-expanded={!isUnassignedCollapsed}
-                  className="relative scroll-mt-20 select-none"
-                  style={{color: "grey"}}
-                  onPress={() => {
-                    setIsUnassignedCollapsed(v => !v);
-                  }}>
-                  <ChevronRightIcon
-                    className={cn("transition", !isUnassignedCollapsed && "rotate-90")}
-                  />
-                </Button>
-              </div>
-              {!isUnassignedCollapsed && (
-                <div className="absolute inset-0 flex h-full flex-col items-center justify-center group-hover:hidden">
-                  <div className={cn("flex-1", isUnassignedCollapsed && "hidden")} />
-                  <div
-                    style={{
-                      backgroundColor: isUnassignedCollapsed ? "transparent" : "grey",
-                      borderColor: "grey",
-                    }}
-                    className="size-2 rounded-full border"></div>
-                  <div
-                    style={{backgroundColor: "grey"}}
-                    className={cn("w-px flex-1", isUnassignedCollapsed && "hidden")}></div>
-                </div>
-              )}
-            </TableCell>
-            <TableCell className="font-semibold italic" colSpan={6}>
-              Unassigned Puzzles
-            </TableCell>
-            <TableCell>
-              <div className="-my-3 flex items-center justify-end">
-                <Dropdown>
-                  <Button isDisabled={isBeingCreated} variant="ghost" isIconOnly>
-                    <EllipsisIcon />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                  <Dropdown.Popover className="w-fit" placement="bottom end">
-                    <Dropdown.Menu>
-                      <Dropdown.Item
-                        id="assign-all"
-                        textValue="Assign all unassigned puzzles"
-                        onAction={() => setIsAssignUnassignedPuzzlesDialogOpen(true)}>
-                        <Label>Assign all unassigned puzzles</Label>
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </Dropdown>
-              </div>
-              {isAssignedUnassignedPuzzlesDialogOpen && (
-                <AssignUnassignedPuzzlesDialog
-                  workspaceSlug={workspaceSlug}
-                  roundId={round.id}
-                  open={isAssignedUnassignedPuzzlesDialogOpen}
-                  setOpen={setIsAssignUnassignedPuzzlesDialogOpen}
-                />
-              )}
-            </TableCell>
-          </TableRow>
-          {round.unassignedPuzzles.map(puzzle => (
-            <BlackboardPuzzle
-              color="grey"
-              key={puzzle.id}
-              workspaceSlug={workspaceSlug}
-              puzzle={puzzle}
-              isCollapsed={isCollapsed || isUnassignedCollapsed}
-              isLast={puzzle === round.unassignedPuzzles[round.unassignedPuzzles.length - 1]}
+              group={child}
               tags={tags}
-              isFavorite={favoritePuzzleIds.has(puzzle.id)}
+              favoritePuzzleIds={favoritePuzzleIds}
             />
-          ))}
-        </>
-      )}
-    </>
+          ) : (
+            <BlackboardMetaPuzzle
+              workspaceSlug={workspaceSlug}
+              metaPuzzle={child}
+              tags={tags}
+              favoritePuzzleIds={favoritePuzzleIds}
+            />
+          )
+        }
+      </Table.Collection>
+    </Table.Row>
+  );
+});
+
+/** A round's unassigned puzzles, as one collapsible group. */
+const BlackboardUnassigned = memo(function BlackboardUnassigned({
+  workspaceSlug,
+  group,
+  tags,
+  favoritePuzzleIds,
+}: {
+  workspaceSlug: string;
+  group: UnassignedGroup;
+  tags: string[];
+  favoritePuzzleIds: ReadonlySet<string>;
+}) {
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  return (
+    <Table.Row id={group.id} textValue="Unassigned puzzles" className="group">
+      <Table.Cell className="p-0">{null}</Table.Cell>
+      <Table.Cell className={TREE_CELL}>
+        {({isExpanded}) => (
+          <span className="flex justify-center">
+            <RowChevron label="Toggle unassigned puzzles" isExpanded={isExpanded} color="grey" />
+          </span>
+        )}
+      </Table.Cell>
+      <Table.Cell colSpan={6} className={CELL} textValue="Unassigned puzzles">
+        <span className="font-semibold italic">Unassigned puzzles</span>
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <div className="-my-3 flex items-center justify-end">
+          <Dropdown>
+            <Button variant="ghost" isIconOnly>
+              <EllipsisIcon />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+            <Dropdown.Popover className="w-fit" placement="bottom end">
+              <Dropdown.Menu>
+                <Dropdown.Item
+                  id="assign-all"
+                  textValue="Assign all unassigned puzzles"
+                  onAction={() => setIsAssignDialogOpen(true)}>
+                  <Label>Assign all unassigned puzzles</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+        {isAssignDialogOpen && (
+          <AssignUnassignedPuzzlesDialog
+            workspaceSlug={workspaceSlug}
+            roundId={group.roundId}
+            open={isAssignDialogOpen}
+            setOpen={setIsAssignDialogOpen}
+          />
+        )}
+      </Table.Cell>
+      <Table.Collection items={group.puzzles} dependencies={[tags, favoritePuzzleIds]}>
+        {puzzle => (
+          <BlackboardPuzzle
+            color="grey"
+            workspaceSlug={workspaceSlug}
+            puzzle={puzzle}
+            tags={tags}
+            isFavorite={favoritePuzzleIds.has(puzzle.id)}
+          />
+        )}
+      </Table.Collection>
+    </Table.Row>
   );
 });
 
 const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   workspaceSlug,
   metaPuzzle,
-  isParentCollapsed,
   tags,
   favoritePuzzleIds,
 }: {
   workspaceSlug: string;
-  metaPuzzle: RouterOutputs["rounds"]["list"][0]["metaPuzzles"][0];
-  isParentCollapsed: boolean;
+  metaPuzzle: WorkspaceRoomState["rounds"][0]["topLevelMetaPuzzles"][0];
   tags: string[];
   favoritePuzzleIds: ReadonlySet<string>;
 }) {
@@ -1283,37 +1474,25 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const isFavorite = favoritePuzzleIds.has(metaPuzzle.id);
   const toggleFavorite = useToggleFavorite(workspaceSlug);
-
-  const [isCollapsed, setIsCollapsed] = useLocalStorage(`isCollapsed-${metaPuzzle.id}`, false);
-  const color = ((id: string) => {
-    const hash = sha256(id);
-    let hue = parseInt(hash.substring(0, 4), 16) % (360 - 150);
-    if (hue > 30) {
-      hue += 150;
-    }
-    let saturation, lightness;
-    saturation = (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 80 + 50;
-    lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.5 * 70;
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-  })(metaPuzzle.id);
-
+  const color = metaColor(metaPuzzle.id);
+  const isArranging = useContext(ArrangingContext);
   const presences = useAppSelector(state => state.presences.value[metaPuzzle.id]) ?? NO_PRESENCES;
 
   return (
-    <>
-      <TableRow
-        // Target of the sidebar's puzzle links. (Not on the toggle button: that's display:none
-        // while the meta is expanded, and a hidden element can't be scrolled to.)
-        id={metaPuzzle.id}
-        className={cn(
-          "group group/row scroll-mt-20",
-          getRowClassNamesForStatus(metaPuzzle.status),
-          getRowClassNamesForImportance(metaPuzzle.importance, metaPuzzle.status),
-          isBeingCreated && "pointer-events-none cursor-wait opacity-70",
-          isParentCollapsed ? "collapse" : ""
-        )}>
-        <TableCell className="p-0">
-          {metaPuzzle.link && (
+    <Table.Row
+      id={metaPuzzle.id}
+      textValue={metaPuzzle.name}
+      className={cn(
+        "group group/row",
+        getRowClassNamesForStatus(metaPuzzle.status),
+        getRowClassNamesForImportance(metaPuzzle.importance, metaPuzzle.status),
+        isBeingCreated && "pointer-events-none cursor-wait opacity-70"
+      )}>
+      <Table.Cell className="p-0">
+        {isArranging ? (
+          <DragHandle label={metaPuzzle.name} />
+        ) : (
+          metaPuzzle.link && (
             <a
               className={buttonVariants({variant: "ghost", isIconOnly: true})}
               aria-label={`Hunt link to ${metaPuzzle.name}`}
@@ -1322,193 +1501,172 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
               rel="noopener noreferrer">
               <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
             </a>
-          )}
-        </TableCell>
-        <TableCell className="relative p-0">
-          <div
-            className={cn(
-              "absolute flex-col items-center justify-center inset-0 group-hover:flex h-full",
-              !isCollapsed ? "hidden" : "flex"
-            )}>
-            <Button
-              variant="ghost"
-              isIconOnly
-              aria-label={`Toggle meta puzzle ${metaPuzzle.name}`}
-              aria-expanded={!isCollapsed}
-              className="relative scroll-mt-20 select-none"
-              style={{color}}
-              onPress={() => {
-                setIsCollapsed(v => !v);
-              }}>
-              <ChevronRightIcon className={cn("transition", !isCollapsed && "rotate-90")} />
-            </Button>
-          </div>
-          {!isCollapsed && (
-            <div className="absolute inset-0 flex h-full flex-col items-center justify-center group-hover:hidden">
-              <div className={cn("flex-1", isCollapsed && "hidden")} />
-              <div
-                style={{backgroundColor: isCollapsed ? "transparent" : color, borderColor: color}}
-                className="size-2 rounded-full border"></div>
-              <div
-                style={{backgroundColor: color}}
-                className={cn("w-px flex-1", isCollapsed && "hidden")}></div>
-            </div>
-          )}
-        </TableCell>
-        <TableCell className={cn("relative font-semibold", NAME_CELL_ON_PHONES)}>
-          <TeammateChangeFlash puzzleId={metaPuzzle.id} />
-          <Link
-            to="/$workspaceSlug/puzzles/$puzzleId"
-            params={{workspaceSlug, puzzleId: metaPuzzle.id}}
-            title={metaPuzzle.name}
-            className="-m-2 block truncate p-2 hover:underline">
-            <SolvedMark status={metaPuzzle.status} />
-            {metaPuzzle.name}
-          </Link>
-        </TableCell>
-        <TableCell className="relative">
-          <AnswerInput
-            puzzleName={metaPuzzle.name}
-            value={metaPuzzle.answer}
-            onCommit={answer => update({answer})}
-          />
-        </TableCell>
-        <TableCell>
-          <PuzzleStatusSelect
-            value={metaPuzzle.status}
-            onChange={status => {
-              if (status !== metaPuzzle.status) update({status});
-            }}
-            triggerClassName={SELECT_TRIGGER_CLASS}
-          />
-        </TableCell>
-        <TableCell className={DESKTOP_ONLY}>
-          <PuzzleImportanceSelect
-            value={metaPuzzle.importance}
-            onChange={importance => {
-              if (importance !== metaPuzzle.importance) update({importance});
-            }}
-            triggerClassName={cn(
-              IMPORTANCE_TRIGGER_CLASS,
-              getImportanceCellClassNames(metaPuzzle.importance, metaPuzzle.status)
+          )
+        )}
+      </Table.Cell>
+      <Table.Cell className={TREE_CELL}>
+        {({isExpanded, hasChildItems}) => (
+          <span className="flex justify-center">
+            {hasChildItems ? (
+              <RowChevron
+                label={`Toggle meta puzzle ${metaPuzzle.name}`}
+                isExpanded={isExpanded}
+                color={color}
+              />
+            ) : (
+              <span className="size-2 rounded-full" style={{backgroundColor: color}} />
             )}
-          />
-        </TableCell>
-        <TableCell className={cn("p-0", DESKTOP_ONLY)}>
-          <TagsCell
-            puzzleName={metaPuzzle.name}
-            value={metaPuzzle.tags}
-            tags={tags}
-            onCommit={next => update({tags: next})}
-          />
-        </TableCell>
-        <TableCell className={cn("py-1", DESKTOP_ONLY)}>
-          <UserPresenceAvatars users={presences} />
-        </TableCell>
-        <TableCell>
-          <div className="-my-3 flex items-center justify-end">
-            <ToggleButton
-              variant="ghost"
-              isIconOnly
-              aria-label="Favorite"
-              isSelected={isFavorite}
-              onChange={value => toggleFavorite(metaPuzzle.id, value)}
-              className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
-              <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
-            </ToggleButton>
-            <Dropdown>
-              <Button variant="ghost" isIconOnly>
-                <EllipsisIcon />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-              <Dropdown.Popover className="w-fit" placement="bottom end">
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    id="add-feeding"
-                    textValue="Add new puzzle feeding this meta puzzle"
-                    onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
-                    <Label>Add new puzzle feeding this meta puzzle</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    id="edit-meta"
-                    textValue="Edit this meta puzzle"
-                    onAction={() => setIsEditPuzzleDialogOpen(true)}>
-                    <Label>Edit this meta puzzle</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    id="delete-meta"
-                    textValue="Delete this meta puzzle"
-                    onAction={() => setIsDeletePuzzleDialogOpen(true)}>
-                    <Label>Delete this meta puzzle</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </div>
-          {isAddNewPuzzleFeedingThisMetaDialogOpen && (
-            <AddNewPuzzleDialog
-              workspaceSlug={workspaceSlug}
-              roundId={metaPuzzle.roundId}
-              parentPuzzleId={metaPuzzle.id}
-              open={isAddNewPuzzleFeedingThisMetaDialogOpen}
-              setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
-            />
-          )}
-          {isEditPuzzleDialogOpen && (
-            <EditPuzzleDialog
-              workspaceSlug={workspaceSlug}
-              puzzle={metaPuzzle}
-              open={isEditPuzzleDialogOpen}
-              setOpen={setIsEditPuzzleDialogOpen}
-            />
-          )}
-          {isDeletePuzzleDialogOpen && (
-            <DeletePuzzleDialog
-              workspaceSlug={workspaceSlug}
-              puzzleId={metaPuzzle.id}
-              open={isDeletePuzzleDialogOpen}
-              setOpen={setIsDeletePuzzleDialogOpen}
-            />
-          )}
-        </TableCell>
-      </TableRow>
-      {metaPuzzle.childPuzzles.map((puzzle, idx) => (
-        <BlackboardPuzzle
-          key={puzzle.id}
-          workspaceSlug={workspaceSlug}
-          color={color}
-          puzzle={puzzle}
-          isCollapsed={isParentCollapsed || isCollapsed}
-          isLast={idx === metaPuzzle.childPuzzles.length - 1}
-          tags={tags}
-          isFavorite={favoritePuzzleIds.has(puzzle.id)}
-        />
-      ))}
-      {metaPuzzle.childPuzzles.length === 0 && !isParentCollapsed && !isCollapsed && (
-        <TableRow>
-          <TableCell colSpan={1} />
-          <TableCell className="p-0">
-            <div className="flex h-full flex-col">
-              <div className="flex flex-1 items-stretch">
-                <div className="flex-1" />
-                <div className="w-px" style={{backgroundColor: color, borderColor: color}} />
-                <div className="flex-1" />
-              </div>
-              <div className="flex items-center">
-                <div className="flex-1" />
-                <div className="h-px w-px" style={{backgroundColor: color, borderColor: color}} />
-                <div className="h-px flex-1" style={{backgroundColor: color}} />
-              </div>
-              <div className="flex flex-1 items-stretch"></div>
+          </span>
+        )}
+      </Table.Cell>
+      <Table.Cell
+        className={cn(CELL, "relative font-semibold", NAME_CELL_ON_PHONES)}
+        textValue={metaPuzzle.name}>
+        {() => (
+          <>
+            <TeammateChangeFlash puzzleId={metaPuzzle.id} />
+            <div className="flex min-w-0 items-center gap-2">
+              {/* Target of the sidebar's puzzle links. */}
+              <span id={metaPuzzle.id} className="scroll-mt-20" />
+              <Link
+                to="/$workspaceSlug/puzzles/$puzzleId"
+                params={{workspaceSlug, puzzleId: metaPuzzle.id}}
+                title={metaPuzzle.name}
+                className="-m-2 block min-w-0 truncate p-2 hover:underline">
+                <SolvedMark status={metaPuzzle.status} />
+                {metaPuzzle.name}
+              </Link>
             </div>
-            <span className="relative scroll-mt-20" />
-          </TableCell>
-          <TableCell colSpan={6} className="text-muted text-xs italic">
-            There are no visible puzzles feeding this meta puzzle.
-          </TableCell>
-        </TableRow>
-      )}
-    </>
+          </>
+        )}
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "relative")}>
+        <AnswerInput
+          puzzleName={metaPuzzle.name}
+          value={metaPuzzle.answer}
+          onCommit={answer => update({answer})}
+        />
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <PuzzleStatusSelect
+          value={metaPuzzle.status}
+          onChange={status => {
+            if (status !== metaPuzzle.status) update({status});
+          }}
+          triggerClassName={SELECT_TRIGGER_CLASS}
+        />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, DESKTOP_ONLY)}>
+        <PuzzleImportanceSelect
+          value={metaPuzzle.importance}
+          onChange={importance => {
+            if (importance !== metaPuzzle.importance) update({importance});
+          }}
+          triggerClassName={cn(
+            IMPORTANCE_TRIGGER_CLASS,
+            getImportanceCellClassNames(metaPuzzle.importance, metaPuzzle.status)
+          )}
+        />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "p-0", DESKTOP_ONLY)}>
+        <TagsCell
+          puzzleName={metaPuzzle.name}
+          value={metaPuzzle.tags}
+          tags={tags}
+          onCommit={next => update({tags: next})}
+        />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY)}>
+        <UserPresenceAvatars users={presences} />
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <div className="-my-3 flex items-center justify-end">
+          <ToggleButton
+            variant="ghost"
+            isIconOnly
+            aria-label="Favorite"
+            isSelected={isFavorite}
+            onChange={value => toggleFavorite(metaPuzzle.id, value)}
+            className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
+            <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
+          </ToggleButton>
+          <Dropdown>
+            <Button variant="ghost" isIconOnly>
+              <EllipsisIcon />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+            <Dropdown.Popover className="w-fit" placement="bottom end">
+              <Dropdown.Menu>
+                <Dropdown.Item
+                  id="add-feeding"
+                  textValue="Add new puzzle feeding this meta puzzle"
+                  onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
+                  <Label>Add new puzzle feeding this meta puzzle</Label>
+                </Dropdown.Item>
+                <Dropdown.Item
+                  id="edit-meta"
+                  textValue="Edit this meta puzzle"
+                  onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                  <Label>Edit this meta puzzle</Label>
+                </Dropdown.Item>
+                <Dropdown.Item
+                  id="delete-meta"
+                  textValue="Delete this meta puzzle"
+                  onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                  <Label>Delete this meta puzzle</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+        {isAddNewPuzzleFeedingThisMetaDialogOpen && (
+          <AddNewPuzzleDialog
+            workspaceSlug={workspaceSlug}
+            roundId={metaPuzzle.roundId}
+            parentPuzzleId={metaPuzzle.id}
+            open={isAddNewPuzzleFeedingThisMetaDialogOpen}
+            setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
+          />
+        )}
+        {isEditPuzzleDialogOpen && (
+          <EditPuzzleDialog
+            workspaceSlug={workspaceSlug}
+            puzzle={metaPuzzle}
+            open={isEditPuzzleDialogOpen}
+            setOpen={setIsEditPuzzleDialogOpen}
+          />
+        )}
+        {isDeletePuzzleDialogOpen && (
+          <DeletePuzzleDialog
+            workspaceSlug={workspaceSlug}
+            puzzleId={metaPuzzle.id}
+            open={isDeletePuzzleDialogOpen}
+            setOpen={setIsDeletePuzzleDialogOpen}
+          />
+        )}
+      </Table.Cell>
+      <Table.Collection items={metaPuzzle.childPuzzles} dependencies={[tags, favoritePuzzleIds]}>
+        {puzzle =>
+          // A meta can feed another meta: it nests here, with its own feeders.
+          puzzle.isMetaPuzzle ? (
+            <BlackboardMetaPuzzle
+              workspaceSlug={workspaceSlug}
+              metaPuzzle={puzzle}
+              tags={tags}
+              favoritePuzzleIds={favoritePuzzleIds}
+            />
+          ) : (
+            <BlackboardPuzzle
+              workspaceSlug={workspaceSlug}
+              color={color}
+              puzzle={puzzle}
+              tags={tags}
+              isFavorite={favoritePuzzleIds.has(puzzle.id)}
+            />
+          )
+        }
+      </Table.Collection>
+    </Table.Row>
   );
 });
 
@@ -1516,16 +1674,13 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   workspaceSlug,
   puzzle,
   color,
-  isCollapsed,
-  isLast,
   tags,
   isFavorite,
 }: {
   workspaceSlug: string;
-  puzzle: RouterOutputs["rounds"]["list"][0]["puzzles"][0]["childPuzzles"][0];
-  color?: string;
-  isCollapsed?: boolean;
-  isLast?: boolean;
+  puzzle: WorkspaceRoomState["rounds"][0]["puzzles"][0];
+  /** The colour of the meta it feeds (grey when unassigned). */
+  color: string;
   tags: string[];
   isFavorite: boolean;
 }) {
@@ -1537,19 +1692,23 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
   const toggleFavorite = useToggleFavorite(workspaceSlug);
   const presences = useAppSelector(state => state.presences.value[puzzle.id]) ?? NO_PRESENCES;
+  const isArranging = useContext(ArrangingContext);
 
   return (
-    <>
-      <TableRow
-        className={cn(
-          "group/row",
-          getRowClassNamesForStatus(puzzle.status),
-          getRowClassNamesForImportance(puzzle.importance, puzzle.status),
-          isBeingCreated && "pointer-events-none cursor-wait opacity-70",
-          isCollapsed ? "collapse" : ""
-        )}>
-        <TableCell className="p-0">
-          {puzzle.link && (
+    <Table.Row
+      id={puzzle.id}
+      textValue={puzzle.name}
+      className={cn(
+        "group/row",
+        getRowClassNamesForStatus(puzzle.status),
+        getRowClassNamesForImportance(puzzle.importance, puzzle.status),
+        isBeingCreated && "pointer-events-none cursor-wait opacity-70"
+      )}>
+      <Table.Cell className="p-0">
+        {isArranging ? (
+          <DragHandle label={puzzle.name} />
+        ) : (
+          puzzle.link && (
             <a
               className={buttonVariants({variant: "ghost", isIconOnly: true})}
               title="Hunt Link to this puzzle"
@@ -1559,136 +1718,118 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
               rel="noopener noreferrer">
               <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
             </a>
+          )
+        )}
+      </Table.Cell>
+      <Table.Cell className={TREE_CELL}>
+        <FeederLine color={color} />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "relative", NAME_CELL_ON_PHONES)} textValue={puzzle.name}>
+        <TeammateChangeFlash puzzleId={puzzle.id} />
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Target of the sidebar's puzzle links. */}
+          <span id={puzzle.id} className="scroll-mt-20" />
+          <Link
+            to="/$workspaceSlug/puzzles/$puzzleId"
+            params={{workspaceSlug, puzzleId: puzzle.id}}
+            title={puzzle.name}
+            className="-m-2 block min-w-0 flex-1 truncate p-2 hover:underline">
+            <SolvedMark status={puzzle.status} />
+            {puzzle.name}
+          </Link>
+          <VoiceRoomBadge room={puzzle.id} />
+        </div>
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "relative")}>
+        <AnswerInput
+          puzzleName={puzzle.name}
+          value={puzzle.answer}
+          onCommit={answer => update({answer})}
+        />
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <PuzzleStatusSelect
+          value={puzzle.status}
+          onChange={status => {
+            if (status !== puzzle.status) update({status});
+          }}
+          triggerClassName={PUZZLE_STATUS_TRIGGER_CLASS}
+        />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, DESKTOP_ONLY)}>
+        <PuzzleImportanceSelect
+          value={puzzle.importance}
+          onChange={importance => {
+            if (importance !== puzzle.importance) update({importance});
+          }}
+          triggerClassName={cn(
+            IMPORTANCE_TRIGGER_CLASS,
+            getImportanceCellClassNames(puzzle.importance, puzzle.status)
           )}
-        </TableCell>
-        <TableCell className="p-0">
-          <div className="flex h-full flex-col">
-            <div className="flex flex-1 items-stretch">
-              <div className="flex-1" />
-              <div className="w-px" style={{backgroundColor: color, borderColor: color}} />
-              <div className="flex-1" />
-            </div>
-            <div className="flex items-center">
-              <div className="flex-1" />
-              <div className="h-px w-px" style={{backgroundColor: color, borderColor: color}} />
-              <div className="h-px flex-1" style={{backgroundColor: color}} />
-            </div>
-            <div className="flex flex-1 items-stretch">
-              <div className="flex-1" />
-              <div
-                className={cn("w-px", isLast && "hidden")}
-                style={{backgroundColor: color, borderColor: color}}
-              />
-              <div className="flex-1" />
-            </div>
-          </div>
-          <span id={puzzle.id} className="relative scroll-mt-20" />
-        </TableCell>
-        <TableCell className={cn("relative", NAME_CELL_ON_PHONES)}>
-          <TeammateChangeFlash puzzleId={puzzle.id} />
-          <div className="flex items-center gap-2">
-            <Link
-              to="/$workspaceSlug/puzzles/$puzzleId"
-              params={{workspaceSlug, puzzleId: puzzle.id}}
-              title={puzzle.name}
-              className="-m-2 block min-w-0 flex-1 truncate p-2 hover:underline">
-              <SolvedMark status={puzzle.status} />
-              {puzzle.name}
-            </Link>
-            <VoiceRoomBadge room={puzzle.id} />
-          </div>
-        </TableCell>
-        <TableCell className="relative">
-          <AnswerInput
-            puzzleName={puzzle.name}
-            value={puzzle.answer}
-            onCommit={answer => update({answer})}
+        />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "p-0", DESKTOP_ONLY)}>
+        <TagsCell
+          puzzleName={puzzle.name}
+          value={puzzle.tags}
+          tags={tags}
+          onCommit={next => update({tags: next})}
+        />
+      </Table.Cell>
+      <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY)}>
+        <UserPresenceAvatars users={presences} />
+      </Table.Cell>
+      <Table.Cell className={CELL}>
+        <div className="-my-3 flex items-center justify-end">
+          <ToggleButton
+            variant="ghost"
+            isIconOnly
+            aria-label="Favorite"
+            isSelected={isFavorite}
+            onChange={value => toggleFavorite(puzzle.id, value)}
+            className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
+            <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
+          </ToggleButton>
+          <Dropdown>
+            <Button variant="ghost" isIconOnly>
+              <EllipsisIcon />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+            <Dropdown.Popover className="w-fit" placement="bottom end">
+              <Dropdown.Menu>
+                <Dropdown.Item
+                  id="edit-puzzle"
+                  textValue="Edit this puzzle"
+                  onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                  <Label>Edit this puzzle</Label>
+                </Dropdown.Item>
+                <Dropdown.Item
+                  id="delete-puzzle"
+                  textValue="Delete this puzzle"
+                  onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                  <Label>Delete this puzzle</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+        {isEditPuzzleDialogOpen && (
+          <EditPuzzleDialog
+            workspaceSlug={workspaceSlug}
+            puzzle={puzzle}
+            open={isEditPuzzleDialogOpen}
+            setOpen={setIsEditPuzzleDialogOpen}
           />
-        </TableCell>
-        <TableCell>
-          <PuzzleStatusSelect
-            value={puzzle.status}
-            onChange={status => {
-              if (status !== puzzle.status) update({status});
-            }}
-            triggerClassName={PUZZLE_STATUS_TRIGGER_CLASS}
+        )}
+        {isDeletePuzzleDialogOpen && (
+          <DeletePuzzleDialog
+            workspaceSlug={workspaceSlug}
+            puzzleId={puzzle.id}
+            open={isDeletePuzzleDialogOpen}
+            setOpen={setIsDeletePuzzleDialogOpen}
           />
-        </TableCell>
-        <TableCell className={DESKTOP_ONLY}>
-          <PuzzleImportanceSelect
-            value={puzzle.importance}
-            onChange={importance => {
-              if (importance !== puzzle.importance) update({importance});
-            }}
-            triggerClassName={cn(
-              IMPORTANCE_TRIGGER_CLASS,
-              getImportanceCellClassNames(puzzle.importance, puzzle.status)
-            )}
-          />
-        </TableCell>
-        <TableCell className={cn("p-0", DESKTOP_ONLY)}>
-          <TagsCell
-            puzzleName={puzzle.name}
-            value={puzzle.tags}
-            tags={tags}
-            onCommit={next => update({tags: next})}
-          />
-        </TableCell>
-        <TableCell className={cn("py-1", DESKTOP_ONLY)}>
-          <UserPresenceAvatars users={presences} />
-        </TableCell>
-        <TableCell>
-          <div className="-my-3 flex items-center justify-end">
-            <ToggleButton
-              variant="ghost"
-              isIconOnly
-              aria-label="Favorite"
-              isSelected={isFavorite}
-              onChange={value => toggleFavorite(puzzle.id, value)}
-              className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
-              <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
-            </ToggleButton>
-            <Dropdown>
-              <Button variant="ghost" isIconOnly>
-                <EllipsisIcon />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-              <Dropdown.Popover className="w-fit" placement="bottom end">
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    id="edit-puzzle"
-                    textValue="Edit this puzzle"
-                    onAction={() => setIsEditPuzzleDialogOpen(true)}>
-                    <Label>Edit this puzzle</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    id="delete-puzzle"
-                    textValue="Delete this puzzle"
-                    onAction={() => setIsDeletePuzzleDialogOpen(true)}>
-                    <Label>Delete this puzzle</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </div>
-          {isEditPuzzleDialogOpen && (
-            <EditPuzzleDialog
-              workspaceSlug={workspaceSlug}
-              puzzle={puzzle}
-              open={isEditPuzzleDialogOpen}
-              setOpen={setIsEditPuzzleDialogOpen}
-            />
-          )}
-          {isDeletePuzzleDialogOpen && (
-            <DeletePuzzleDialog
-              workspaceSlug={workspaceSlug}
-              puzzleId={puzzle.id}
-              open={isDeletePuzzleDialogOpen}
-              setOpen={setIsDeletePuzzleDialogOpen}
-            />
-          )}
-        </TableCell>
-      </TableRow>
-    </>
+        )}
+      </Table.Cell>
+    </Table.Row>
   );
 });
