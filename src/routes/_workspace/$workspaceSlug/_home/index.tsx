@@ -1,4 +1,5 @@
 import {useAutoAnimate} from "@formkit/auto-animate/react";
+import {EmptyState} from "@heroui-pro/react";
 import {
   Button,
   buttonVariants,
@@ -29,6 +30,8 @@ import {
   EllipsisIcon,
   FunnelIcon,
   InfoIcon,
+  ListPlusIcon,
+  PlusIcon,
   PuzzleIcon,
   SignalHighIcon,
   SignalIcon,
@@ -873,6 +876,27 @@ function RouteComponent() {
                     </TableRow>
                   </TableBody>
                 </Table>
+                {workspace.rounds.length === 0 && (
+                  // A new workspace: say what goes here, with the first step one click away.
+                  <EmptyState className="py-16">
+                    <EmptyState.Header>
+                      <EmptyState.Media variant="icon">
+                        <ListPlusIcon />
+                      </EmptyState.Media>
+                      <EmptyState.Title>No rounds yet</EmptyState.Title>
+                      <EmptyState.Description>
+                        Add a round, then add its puzzles as they unlock. Everyone in the workspace
+                        sees them here as they're added.
+                      </EmptyState.Description>
+                    </EmptyState.Header>
+                    <EmptyState.Content>
+                      <Button onPress={() => setIsAddNewRoundDialogOpen(true)}>
+                        <PlusIcon />
+                        Add a round
+                      </Button>
+                    </EmptyState.Content>
+                  </EmptyState>
+                )}
               </div>
             </div>
           </div>
