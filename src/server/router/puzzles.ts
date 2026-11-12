@@ -390,11 +390,12 @@ export const puzzlesRouter = {
       });
 
       await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input.id));
-      // Its chat and whiteboard (with their images) go with it, off the response path.
+      // Its chat, whiteboard and built-in spreadsheet (with their images) go with it, off the response path.
       waitUntil(
         Promise.all([
           env.CHAT_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
           env.WHITEBOARD_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
+          env.SHEET_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
         ])
       );
 

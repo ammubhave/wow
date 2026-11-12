@@ -35,12 +35,21 @@ export function HelpPage() {
           one).
         </p>
         <p />
+        <h4 id="built-in-sheet">Built-in Spreadsheet</h4>
+        <p>
+          Puzzles in workspaces without Google Drive use WOW's built-in spreadsheet. Everyone edits
+          it at once: teammates' selected cells are outlined with their names, and clicking a
+          teammate's avatar (top right of the sheet) jumps to where they are and follows them. It
+          supports nearly all Google Sheets functions, plus <code>=CAESAR(text, shift)</code> and{" "}
+          <code>=A1Z26(text)</code>. Filters are personal: filtering hides rows only for you.
+        </p>
+        <p />
         <h4 id="403s">Fix 403s on Puzzle Page</h4>
         <p>
-          If you are getting 403s when opening a puzzle spreadsheet, make sure that you are signed
-          into the right Google account (see the top right corner of the page underneath your name).
-          Then, open the spreadsheet link directly in a new tab (top right icon next to the puzzle
-          name) then refresh the page.
+          If you are getting 403s when opening a puzzle's Google spreadsheet, make sure that you are
+          signed into the right Google account (see the top right corner of the page underneath your
+          name). Then, open the spreadsheet link directly in a new tab (top right icon next to the
+          puzzle name) then refresh the page.
         </p>
         <p />
         <h4 id="code">Code in Puzzle Chat</h4>

@@ -46,6 +46,12 @@ function RouteComponent() {
         <Link to="/docs/discord">Discord</Link>. Both are optional and can be done later from the
         workspace settings.
       </p>
+      <p>
+        Without Google Drive, every puzzle gets WOW's built-in spreadsheet, which your whole team
+        edits live: you see who has which cells selected, and it has checkboxes, comments, images,
+        filters and puzzle formulas like <code>=CAESAR</code> and <code>=A1Z26</code>. Connect Drive
+        if you'd rather use Google Sheets.
+      </p>
 
       <h2>3. Invite your team</h2>
       <p>
@@ -56,16 +62,17 @@ function RouteComponent() {
       <h2>4. Add rounds and puzzles</h2>
       <p>
         On the <Link to="/docs/blackboard">blackboard</Link>, add a round, then add puzzles to it as
-        they unlock. Give each puzzle a name and a link to its page on the hunt site, and choose
-        whether it needs a spreadsheet or a drawing. Metas collect their feeder puzzles, so you can
-        see every feeder answer while you work on the meta.
+        they unlock. Give each puzzle a name and a link to its page on the hunt site (with Google
+        Drive connected, also choose whether it needs a spreadsheet or a drawing). Metas collect
+        their feeder puzzles, so you can see every feeder answer while you work on the meta.
       </p>
 
       <h2>5. Solve</h2>
       <p>
-        Open a puzzle to get its spreadsheet, its chat and its details side by side. Set its status
-        (needs eyes, in progress, stuck…) so the team knows where help is needed, and type the
-        answer when you crack it: the puzzle is marked solved for everyone at once.
+        Open a puzzle to get its spreadsheet (or a shared whiteboard), its chat and its details side
+        by side. Set its status (needs eyes, in progress, stuck…) so the team knows where help is
+        needed, and type the answer when you crack it: the puzzle is marked solved for everyone at
+        once.
       </p>
 
       <h2>Handy shortcuts</h2>

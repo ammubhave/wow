@@ -27,6 +27,20 @@ const posthogSourcemapsPlugin = process.env.POSTHOG_PERSONAL_API_KEY
     }
   : undefined;
 
+// The spreadsheet (Univer, several MB) and whiteboard (Excalidraw) editors are lazily loaded,
+// browser-only chunks. The Worker never renders a page (pure SPA), but its build still bundles
+// every route's imports, which pushed it past the Worker size limit. Stub them out there.
+const BROWSER_ONLY_IMPORT = /(?:^|\/)(?:sheet-canvas|whiteboard-canvas)$/;
+const BROWSER_ONLY_STUB = "\0browser-only-stub";
+const stubBrowserOnlyInWorker = {
+  name: "wow:stub-browser-only-in-worker",
+  enforce: "pre" as const,
+  applyToEnvironment: (environment: {name: string}) => environment.name === "ssr",
+  resolveId: (source: string) => (BROWSER_ONLY_IMPORT.test(source) ? BROWSER_ONLY_STUB : null),
+  load: (id: string) =>
+    id === BROWSER_ONLY_STUB ? "export default function BrowserOnly() { return null; }" : null,
+};
+
 const config = defineConfig({
   staged: {"*": "vp fmt --no-error-on-unmatched-pattern"},
   fmt: {
@@ -184,6 +198,7 @@ const config = defineConfig({
   resolve: {tsconfigPaths: true},
   plugins: [
     devtools(),
+    stubBrowserOnlyInWorker,
     cloudflare({viteEnvironment: {name: "ssr"}}),
     tailwindcss(),
     tanstackStart({spa: {enabled: true, prerender: {outputPath: "/index"}}}),
@@ -205,6 +220,27 @@ const config = defineConfig({
       "partytracks/client",
       "webrtc-adapter",
       "rxjs",
+      "@univerjs/presets",
+      "@univerjs/preset-sheets-core",
+      "@univerjs/preset-sheets-core/locales/en-US",
+      "@univerjs/preset-sheets-conditional-formatting",
+      "@univerjs/preset-sheets-conditional-formatting/locales/en-US",
+      "@univerjs/preset-sheets-data-validation",
+      "@univerjs/preset-sheets-data-validation/locales/en-US",
+      "@univerjs/preset-sheets-drawing",
+      "@univerjs/preset-sheets-drawing/locales/en-US",
+      "@univerjs/preset-sheets-filter",
+      "@univerjs/preset-sheets-filter/locales/en-US",
+      "@univerjs/preset-sheets-find-replace",
+      "@univerjs/preset-sheets-find-replace/locales/en-US",
+      "@univerjs/preset-sheets-hyper-link",
+      "@univerjs/preset-sheets-hyper-link/locales/en-US",
+      "@univerjs/preset-sheets-note",
+      "@univerjs/preset-sheets-note/locales/en-US",
+      "@univerjs/preset-sheets-sort",
+      "@univerjs/preset-sheets-sort/locales/en-US",
+      "@univerjs/preset-sheets-thread-comment",
+      "@univerjs/preset-sheets-thread-comment/locales/en-US",
     ],
   },
   ssr: {optimizeDeps: {exclude: ["@tanstack/start-server-core"]}},

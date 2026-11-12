@@ -1,4 +1,3 @@
-import {EmptyState} from "@heroui-pro/react";
 import {Resizable} from "@heroui-pro/react/resizable";
 import {
   Button,
@@ -37,6 +36,7 @@ import {useAppForm} from "@/components/form";
 import {NotFoundPage} from "@/components/not-found-page";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contributors";
+import {PuzzleSheet} from "@/components/sheet/sheet";
 import {SolveSpark} from "@/components/solve-spark";
 import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
 import {formatPuzzleTime, usePuzzleTimeTracker} from "@/hooks/use-puzzle-time";
@@ -520,9 +520,10 @@ function PanelLink({href, label, icon}: {href: string; label: string; icon: Reac
 }
 
 /**
- * The puzzle's working surface: its Google sheet (or drawing) and a shared whiteboard, switched
- * from a tab bar. Both stay mounted once opened, so switching never reloads the sheet; the
- * whiteboard only loads (and connects) when it's first opened.
+ * The puzzle's working surface: its sheet and a shared whiteboard, switched from a tab bar. The
+ * sheet is the puzzle's Google sheet (or drawing) if it has one; otherwise it's the built-in
+ * spreadsheet. Both stay mounted once opened, so
+ * switching never reloads the sheet; the whiteboard only loads (and connects) when first opened.
  */
 function WorksheetPane({
   puzzle,
@@ -539,16 +540,18 @@ function WorksheetPane({
   phone?: {chat: ReactNode; info: ReactNode};
 }) {
   const navigate = useNavigate({from: Route.fullPath});
-  const hasWorksheet = Boolean(puzzle.googleSpreadsheetId || puzzle.googleDrawingId);
-  // Without a Google worksheet, the whiteboard is the useful default.
-  const defaultView = hasWorksheet ? "sheet" : "whiteboard";
+  // A Google sheet (or drawing) made for this puzzle is shown even if the workspace has since
+  // disconnected Drive (it still opens for anyone with access); other puzzles get the built-in one.
+  const googleWorksheet = Boolean(puzzle.googleSpreadsheetId || puzzle.googleDrawingId);
+  const defaultView = "sheet";
   const requested = Route.useSearch().view ?? defaultView;
   // Chat and details are only views on phones; a phone link opened on desktop shows the sheet.
   const view = !phone && (requested === "chat" || requested === "info") ? defaultView : requested;
   // Mount the whiteboard the first time it's shown, then keep it (and its connection) around.
   const [whiteboardOpened, setWhiteboardOpened] = useState(view === "whiteboard");
   if (view === "whiteboard" && !whiteboardOpened) setWhiteboardOpened(true);
-  const sheetLabel = puzzle.googleDrawingId && !puzzle.googleSpreadsheetId ? "Drawing" : "Sheet";
+  const sheetLabel =
+    googleWorksheet && puzzle.googleDrawingId && !puzzle.googleSpreadsheetId ? "Drawing" : "Sheet";
 
   return (
     <>
@@ -593,7 +596,7 @@ function WorksheetPane({
         <PuzzleTimer puzzleId={puzzle.id} />
       </div>
       <div className={cn("flex min-h-0 flex-1 flex-col", view !== "sheet" && "hidden")}>
-        {hasWorksheet ? (
+        {googleWorksheet ? (
           <WorksheetFrame
             // A new puzzle gets a fresh frame (and loading state).
             key={puzzle.id}
@@ -610,34 +613,7 @@ function WorksheetPane({
             }
           />
         ) : (
-          // No worksheet (e.g. Google Drive isn't connected): the page still has the whiteboard,
-          // chat, answer and status, so say so rather than embedding a broken frame.
-          <div className="flex flex-1 items-center justify-center p-6">
-            <EmptyState>
-              <EmptyState.Header>
-                <EmptyState.Media variant="icon">
-                  <SheetIcon />
-                </EmptyState.Media>
-                <EmptyState.Title>No spreadsheet for this puzzle</EmptyState.Title>
-                <EmptyState.Description>
-                  Connect Google Drive in the workspace settings to get a sheet for new puzzles. The
-                  whiteboard, chat and answer work without one.
-                </EmptyState.Description>
-              </EmptyState.Header>
-              {puzzle.link && (
-                <EmptyState.Content>
-                  <a
-                    href={puzzle.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={buttonVariants({variant: "secondary"})}>
-                    Open the puzzle on the hunt site
-                    <ExternalLinkIcon />
-                  </a>
-                </EmptyState.Content>
-              )}
-            </EmptyState>
-          </div>
+          <PuzzleSheet key={puzzle.id} puzzleId={puzzle.id} />
         )}
       </div>
       {whiteboardOpened && (

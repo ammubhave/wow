@@ -77,8 +77,9 @@ export function GoogleDriveCardContents({
       <Card.Header>
         <Card.Title>Google Drive Connection</Card.Title>
         <Card.Description>
-          You can connect your Google Drive account to this workspace. This allows your workspace to
-          automatically create new spreadsheets whenever you create a new puzzle.
+          Optional. Without Google Drive, every puzzle gets a built-in spreadsheet. Connect your
+          Google Drive account to use Google Sheets instead: a new sheet is created for each new
+          puzzle.
         </Card.Description>
       </Card.Header>
       <Card.Content>

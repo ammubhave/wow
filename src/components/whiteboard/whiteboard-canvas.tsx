@@ -17,7 +17,7 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import {useEffect, useRef, useState} from "react";
 
-import {useTheme} from "@/components/theme-provider";
+import {useResolvedTheme} from "@/components/theme-provider";
 import {useWebSocket} from "@/lib/use-websocket";
 import type {WhiteboardReceivedMessage, WhiteboardSentMessage} from "@/server/do/whiteboard";
 
@@ -41,20 +41,6 @@ const asFileData = (id: string, mimeType: string, dataURL: string): BinaryFileDa
   created: Date.now(),
 });
 /* oxlint-enable typescript/no-unsafe-type-assertion */
-
-function useResolvedTheme() {
-  const {theme} = useTheme();
-  const [systemDark, setSystemDark] = useState(
-    () => window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setSystemDark(query.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-  return theme === "dark" || (theme === "system" && systemDark) ? "dark" : "light";
-}
 
 async function dataUrlToBlob(dataURL: string) {
   return await (await fetch(dataURL)).blob();

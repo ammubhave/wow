@@ -61,15 +61,8 @@ function RouteComponent() {
                   render={props => (
                     <Link
                       {...props}
-                      {...(!workspace.googleFolderId
-                        ? ({
-                            to: "/workspaces/create/$workspaceSlug",
-                            params: {workspaceSlug: workspace.slug},
-                          } as const)
-                        : ({
-                            to: "/$workspaceSlug",
-                            params: {workspaceSlug: workspace.slug},
-                          } as const))}
+                      to="/$workspaceSlug"
+                      params={{workspaceSlug: workspace.slug}}
                     />
                   )}>
                   <ItemCard.Content>

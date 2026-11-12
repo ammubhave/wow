@@ -15,6 +15,10 @@ function RouteComponent() {
         </strong>
       </p>
       <p>
+        Google Drive is optional: without it, every puzzle gets WOW's built-in spreadsheet, edited
+        live by your whole team. Connect Drive if you'd rather work in Google Sheets.
+      </p>
+      <p>
         By connecting your Google Drive account to your WOW workspace, you can automate the creation
         of new spreadsheets for each puzzle you add. This eliminates the manual task of setting up a
         new spreadsheet for every puzzle, saving you time and effort.

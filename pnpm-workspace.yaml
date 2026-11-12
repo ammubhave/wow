@@ -39,3 +39,5 @@ allowBuilds:
   "@zowe/secrets-for-zowe-sdk": false
   core-js: false
   msw: false
+  # Via Univer; its postinstall only checks the optional pbjs CLI's dependencies.
+  protobufjs: false

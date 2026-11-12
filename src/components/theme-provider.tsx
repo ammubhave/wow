@@ -1,5 +1,5 @@
 import {ScriptOnce} from "@tanstack/react-router";
-import {createContext, useContext, useEffect} from "react";
+import {createContext, useContext, useEffect, useState} from "react";
 import {useLocalStorage} from "usehooks-ts";
 
 type Theme = "dark" | "light" | "system";
@@ -64,3 +64,18 @@ export const useTheme = () => {
 
   return context;
 };
+
+/** The theme actually showing ("system" resolved to the OS setting, and kept up to date). */
+export function useResolvedTheme() {
+  const {theme} = useTheme();
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => setSystemDark(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  return theme === "dark" || (theme === "system" && systemDark) ? "dark" : "light";
+}

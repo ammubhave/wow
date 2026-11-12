@@ -86,3 +86,4 @@ export {PresenceRoom} from "./server/do/presence";
 export {DeleteChannelAfterDelayWorkflow} from "./server/do/discord-client";
 export {WorkspaceRoom} from "./server/do/workspace";
 export {WhiteboardRoom} from "./server/do/whiteboard";
+export {SheetRoom} from "./server/do/sheet";

@@ -6,7 +6,7 @@ import {toast} from "sonner";
 
 import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
-import {useWorkspace, WorkspaceProvider} from "@/hooks/use-workspace";
+import {WorkspaceProvider} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceSlug")({
@@ -25,7 +25,6 @@ function RouteComponent() {
 
 function RouteComponentInner() {
   const {workspaceSlug} = Route.useParams();
-  const workspace = useWorkspace();
   const navigate = Route.useNavigate();
   const workspaceDeleteMutation = useMutation(
     orpc.workspaces.delete.mutationOptions({
@@ -66,15 +65,9 @@ function RouteComponentInner() {
               Delete workspace
             </Button>
 
-            {!workspace.googleConnected && (
-              <span className="text-muted text-xs">
-                You must connect your Google Drive account first.
-              </span>
-            )}
             <Link
               to="/$workspaceSlug"
               params={{workspaceSlug}}
-              disabled={!workspace.googleConnected}
               className={buttonVariants({variant: "primary"})}>
               Go to blackboard
               <ArrowRightIcon />

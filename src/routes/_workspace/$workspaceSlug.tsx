@@ -6,6 +6,7 @@ import {useEffect} from "react";
 
 import {WorkspaceSkeleton} from "@/components/page-skeletons";
 import {PresencesWebSocket} from "@/components/presences-websocket";
+import {preloadSheet} from "@/components/sheet/sheet";
 import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
 import {AwaySummary, NotificationsWebSocket} from "@/features/notifications/notifications";
@@ -54,6 +55,16 @@ function WorkspaceAnalyticsGroup() {
   return null;
 }
 
+/**
+ * Without Google Drive, puzzles use the built-in spreadsheet: fetch its code in the background
+ * so opening the first puzzle doesn't wait for it.
+ */
+function SheetPreloader() {
+  const {googleConnected} = useWorkspace();
+  useEffect(() => (googleConnected ? undefined : preloadSheet()), [googleConnected]);
+  return null;
+}
+
 /** Tints the page with the workspace's accent color while you're in it. */
 function WorkspaceAccent() {
   const {accent} = useWorkspace().theme;
@@ -82,6 +93,7 @@ function RouteComponent() {
             <CallBar />
             <AwaySummary workspaceSlug={workspaceSlug} />
             <WorkspaceAccent />
+            <SheetPreloader />
             <WorkspaceAnalyticsGroup />
           </VoiceProvider>
         </PresencesWebSocket>
