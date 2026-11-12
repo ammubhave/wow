@@ -113,6 +113,36 @@ type Member = {id: string; name: string; email: string; image: string | null};
  * A chat: a puzzle's (with that puzzle's call), or, without `puzzleId`, the team's chat on the
  * blackboard (with the lobby call).
  */
+/**
+ * Keeps the chat on its newest message when the room above it changes: people's chips arriving in
+ * the strip just after the page opens, or the pinned bar appearing, shrink the conversation's box.
+ * HeroUI's conversation follows new messages but not its own box shrinking, which left the newest
+ * messages out of view. If you were reading at the bottom, you stay there; if you'd scrolled up,
+ * your place is left alone.
+ */
+function useStayAtNewest(rootRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const log = rootRef.current?.querySelector<HTMLElement>('[data-slot="chat-conversation"]');
+    if (!log || typeof ResizeObserver === "undefined") return undefined;
+    // Within a line of the bottom counts as at the bottom.
+    const isAtBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 24;
+    const reading = {atBottom: true};
+    const onScroll = () => {
+      reading.atBottom = isAtBottom();
+    };
+    // A box getting smaller doesn't scroll, so `reading.atBottom` still says where you were.
+    const observer = new ResizeObserver(() => {
+      if (reading.atBottom && !isAtBottom()) log.scrollTop = log.scrollHeight;
+    });
+    log.addEventListener("scroll", onScroll, {passive: true});
+    observer.observe(log);
+    return () => {
+      log.removeEventListener("scroll", onScroll);
+      observer.disconnect();
+    };
+  }, [rootRef]);
+}
+
 export function Chat({puzzleId}: {puzzleId?: string}) {
   const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
   const chatPath = puzzleId ? `/api/chat/${puzzleId}` : `/api/workspaces/${workspaceSlug}/chat`;
@@ -285,6 +315,9 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
     }
   };
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useStayAtNewest(rootRef);
+
   // Who's here: on this puzzle, or (team chat) on the workspace's other pages, like the board.
   const presences =
     useAppSelector(state => state.presences.value[puzzleId ?? workspaceSlug]) ?? NO_PRESENCES;
@@ -292,7 +325,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
   const presenceByName = new Map(presences.map(user => [user.name, user]));
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col pb-4">
+    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col pb-4">
       <PuzzleVoiceStrip room={puzzleId ?? VOICE_LOBBY} viewers={presences} />
       <PinnedBar
         pinned={pinned}

@@ -1,17 +1,36 @@
 import {Button, InputGroup, Tooltip} from "@heroui/react";
-import {useMutation} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {PencilIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
 import {RelativeTime} from "./activity-log";
 import {useAppForm} from "./form";
 import {LazyMarkdown} from "./lazy-markdown";
+import {UserHoverCard} from "./user-hover-card";
 
 // Placeholders older versions saved as the comment itself when it was cleared; show them as empty.
 const LEGACY_EMPTY_COMMENTS = new Set(["No pinned comment.", "No comment set."]);
+
+/**
+ * Who last edited the notes, with their name card (as in the activity feed). Only their name is
+ * saved with the notes, so it's matched to a member of the workspace; a name that matches no one
+ * (or more than one person) is shown as plain text.
+ */
+function EditorName({workspaceSlug, name}: {workspaceSlug: string; name: string}) {
+  const {data} = useQuery(orpc.workspaces.members.list.queryOptions({input: {workspaceSlug}}));
+  const matches = data?.members.filter(member => member.user.name === name) ?? [];
+  const user = matches.length === 1 ? matches[0]!.user : null;
+  if (!user) return <>{name}</>;
+  return (
+    <UserHoverCard user={user}>
+      <span className="text-foreground hover:text-muted cursor-default font-medium">{name}</span>
+    </UserHoverCard>
+  );
+}
 
 export function CommentBox({
   comment: rawComment,
@@ -135,7 +154,12 @@ export function CommentBox({
           {(commentUpdatedAt || commentUpdatedBy) && (
             <p className="text-muted text-xs">
               Updated {commentUpdatedAt ? <RelativeTime date={commentUpdatedAt} /> : ""}
-              {commentUpdatedBy ? ` by ${commentUpdatedBy}` : ""}
+              {commentUpdatedBy && (
+                <>
+                  {" by "}
+                  <EditorName workspaceSlug={workspaceSlug} name={commentUpdatedBy} />
+                </>
+              )}
             </p>
           )}
         </>
