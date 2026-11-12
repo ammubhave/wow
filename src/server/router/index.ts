@@ -1,6 +1,7 @@
 import type {InferRouterInputs, InferRouterOutputs} from "@orpc/server";
 
 import {exchangeRouter} from "./exchange";
+import {meRouter} from "./me";
 import {puzzlesRouter} from "./puzzles";
 import {roundsRouter} from "./rounds";
 import {workspacesRouter} from "./workspaces";
@@ -10,6 +11,7 @@ export const router = {
   rounds: roundsRouter,
   workspaces: workspacesRouter,
   exchange: exchangeRouter,
+  me: meRouter,
 };
 
 export type RouterInputs = InferRouterInputs<typeof router>;

@@ -2,6 +2,7 @@ import {Avatar, Button, Dropdown, Header, Label, Separator, Skeleton} from "@her
 import {useQueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
 import {
+  BarChart3Icon,
   BellRingIcon,
   BugIcon,
   ExternalLinkIcon,
@@ -136,6 +137,10 @@ export function NavUser({children}: {children?: React.ReactNode}) {
                 </Dropdown.Menu>
               </Dropdown.Popover>
             </Dropdown.SubmenuTrigger>
+            <Dropdown.Item id="stats" textValue="My stats" href="/stats">
+              <BarChart3Icon />
+              <Label>My stats</Label>
+            </Dropdown.Item>
             <Dropdown.Item id="account" textValue="Account" href="/profile">
               <UserCogIcon />
               <Label>Account</Label>
