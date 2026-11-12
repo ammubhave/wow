@@ -31,16 +31,44 @@ pnpm db:migrate
 pnpm run dev
 ```
 
-## Technologies Used
+## Tech Stack
 
-This project uses:
+WOW is a single-page React app served by one Cloudflare Worker. The Worker serves the app shell as a static file and runs only `/api/*`.
 
-- [Tanstack Start](https://tanstack.com/start) as the full-stack framework for React applications.
-- [Tailwind CSS](https://tailwindcss.com/) for styling.
-- [HeroUI](https://heroui.com/) and HeroUI Pro for components.
-- [Drizzle ORM](https://orm.drizzle.team/) with [Cloudflare D1](https://developers.cloudflare.com/d1/) for the database.
-- [React Bits](https://reactbits.dev/) and [Lucide](https://lucide.dev/) for small components.
-- [Cloudflare Workers](https://developers.cloudflare.com/workers/) as the hosting platform.
+### Frontend
+
+- [React](https://react.dev/) with [TanStack Router](https://tanstack.com/router) (file-based routes in `src/routes/`), built by [TanStack Start](https://tanstack.com/start) in SPA mode.
+- [TanStack Query](https://tanstack.com/query) for server data and [TanStack Form](https://tanstack.com/form) for forms. [Redux Toolkit](https://redux-toolkit.js.org/) holds a little client state, such as presence.
+- [HeroUI](https://heroui.com/) and HeroUI Pro for components (on [React Aria](https://react-spectrum.adobe.com/react-aria/)), styled with [Tailwind CSS](https://tailwindcss.com/) v4. [Lucide](https://lucide.dev/) icons, plus a few [React Bits](https://reactbits.dev/) effects.
+- [Univer](https://univer.ai/) for the built-in collaborative spreadsheet, [Excalidraw](https://excalidraw.com/) for whiteboards, [Tiptap](https://tiptap.dev/) for rich text, and [Recharts](https://recharts.org/) (through HeroUI Pro) for charts.
+
+### Backend
+
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/) host everything. The API uses [oRPC](https://orpc.unnoq.com/) procedures (`src/server/router/`) validated with [Zod](https://zod.dev/), plus a few [Hono](https://hono.dev/) routes.
+- [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) for data, through [Drizzle ORM](https://orm.drizzle.team/).
+- [Durable Objects](https://developers.cloudflare.com/durable-objects/) for anything live over WebSockets: the workspace board, chat, presence, notifications, whiteboards and spreadsheets (`src/server/do/`).
+- [R2](https://developers.cloudflare.com/r2/) for uploaded files, [Workflows](https://developers.cloudflare.com/workflows/) for delayed jobs, and [Email Routing and Sending](https://developers.cloudflare.com/email-routing/) for email.
+- [Cloudflare Realtime](https://developers.cloudflare.com/realtime/) through [PartyTracks](https://github.com/threepointone/partytracks) for voice chat.
+- [Better Auth](https://www.better-auth.com/) for accounts (email, Google sign-in and passkeys), with [Turnstile](https://developers.cloudflare.com/turnstile/) against bots.
+
+### Integrations
+
+- The Google Drive and Sheets APIs, for teams that keep puzzle sheets in Google Drive (optional).
+- A Discord bot, for puzzle channels and voice.
+- [PostHog](https://posthog.com/) for product analytics and error tracking.
+
+### Tooling
+
+- [Vite+](https://viteplus.dev/) (`vp`) runs the dev server, build, tests ([Vitest](https://vitest.dev/)), linting ([Oxlint](https://oxc.rs/), with type checks) and formatting.
+- [pnpm](https://pnpm.io/) for packages, [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for Cloudflare, and [dotenvx](https://dotenvx.com/) for encrypted secrets.
+- Pushes to `main` deploy to production through [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/).
+
+Before sending a change, run:
+
+```bash
+pnpm lint
+pnpm build
+```
 
 ## Database Migrations
 
