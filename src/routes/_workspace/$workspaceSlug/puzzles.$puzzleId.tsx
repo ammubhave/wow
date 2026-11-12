@@ -14,6 +14,7 @@ import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
   BrushIcon,
   ChevronRightIcon,
+  CopyIcon,
   EditIcon,
   ExternalLinkIcon,
   InfoIcon,
@@ -25,6 +26,7 @@ import {
   TimerIcon,
 } from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
+import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {useMediaQuery} from "usehooks-ts";
 import {z} from "zod";
@@ -435,6 +437,21 @@ function PuzzleContext({
   );
 }
 
+/**
+ * Puzzles as tab-separated rows (name, then answer; blank while unsolved), so they paste into a
+ * spreadsheet one puzzle per row. Tabs and line breaks inside a name would split cells, so they
+ * become spaces.
+ */
+function puzzlesToTsv(puzzles: {name: string; answer: string | null}[]) {
+  return puzzles
+    .map(p => `${cell(p.name)}\t${p.answer ? cell(p.answer.toUpperCase()) : ""}`)
+    .join("\n");
+}
+
+function cell(value: string) {
+  return value.replace(/[\t\r\n]+/g, " ").trim();
+}
+
 /** A list of puzzles with their answers (a meta's feeders, a feeder's siblings), as links. */
 function PuzzleList({
   workspaceSlug,
@@ -447,7 +464,28 @@ function PuzzleList({
 }) {
   return (
     <section className="border-separator flex flex-col gap-1.5 border-t p-3" aria-label={title}>
-      <h3 className="text-muted text-xs font-medium">{title}</h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-muted text-xs font-medium">{title}</h3>
+        <Tooltip delay={300}>
+          <Tooltip.Trigger>
+            <Button
+              size="sm"
+              isIconOnly
+              variant="ghost"
+              className="-my-1.5 size-6 min-w-6"
+              aria-label={`Copy ${title.toLowerCase()}`}
+              onPress={() => {
+                toast.promise(navigator.clipboard.writeText(puzzlesToTsv(puzzles)), {
+                  success: `Copied ${puzzles.length} ${puzzles.length === 1 ? "row" : "rows"} — paste into a spreadsheet`,
+                  error: "Couldn't copy to the clipboard",
+                });
+              }}>
+              <CopyIcon className="size-3.5" />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>Copy names and answers for a spreadsheet</Tooltip.Content>
+        </Tooltip>
+      </div>
       <ul className="flex flex-col gap-1 text-sm">
         {puzzles.map(child => (
           <li key={child.id} className="flex items-baseline justify-between gap-3">
