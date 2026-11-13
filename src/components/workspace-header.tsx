@@ -109,6 +109,10 @@ export function WorkspaceHeader() {
             )}
           </Link>
         </Navbar.Brand>
+        {/* Phones have no tabs: on a puzzle, its name says where you are. */}
+        {newPuzzleId && puzzle && (
+          <span className="min-w-0 truncate text-sm font-medium md:hidden">{puzzle.name}</span>
+        )}
         {/* Real links (⌘/middle-click work) with a segmented look. Sections are icon-only except the
             current one, which also shows its label; the current puzzle always shows its name. */}
         <Tabs selectedKey={selectedKey} className="hidden md:flex">

@@ -98,10 +98,11 @@ function RouteComponent() {
         </Breadcrumbs>
       </ExchangeTopBar>
       <div className="flex flex-col items-center gap-4">
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
-          <div />
+        {/* Phones: the title, then its buttons under it (side by side they squeezed the title). */}
+        <div className="flex w-full flex-col items-center gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]">
+          <div className="hidden sm:block" />
           <div className="text-center text-2xl font-bold">{puzzle.hunt_puzzles.title}</div>
-          <div className="flex items-center gap-1 justify-self-end">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-self-end">
             {puzzle.hunt_puzzles.hints && puzzle.hunt_puzzles.hints.length > 0 && (
               <Dropdown>
                 <Button variant="outline">

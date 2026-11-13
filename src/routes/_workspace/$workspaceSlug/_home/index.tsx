@@ -1019,7 +1019,9 @@ function RouteComponent() {
                   </p>
                 )}
                 <ArrangingContext.Provider value={isArranging}>
-                  <Table variant="secondary">
+                  {/* overflow-visible: HeroUI clips the table sideways, which on phones hid
+                    the status and row menu; the board's scroll box scrolls it instead. */}
+                  <Table variant="secondary" className="overflow-visible">
                     {/* The board's scroll box is the scroll container; an inner overflow box would
                       stop the sticky header from sticking. */}
                     <Table.ScrollContainer className="overflow-visible">
