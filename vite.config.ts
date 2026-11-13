@@ -1,3 +1,6 @@
+import {existsSync, readFileSync, writeFileSync} from "node:fs";
+import {join} from "node:path";
+
 import {cloudflare} from "@cloudflare/vite-plugin";
 import posthogSourcemaps from "@posthog/rollup-plugin";
 import tailwindcss from "@tailwindcss/vite";
@@ -26,6 +29,31 @@ const posthogSourcemapsPlugin = process.env.POSTHOG_PERSONAL_API_KEY
       applyToEnvironment: (environment: {name: string}) => environment.name === "client",
     }
   : undefined;
+
+// Univer's source map (the sheet chunk's) had outgrown Cloudflare's 25 MiB per-file asset limit,
+// which breaks the build's page shell and the deploy. Drop the embedded source text of
+// dependencies' files from the browser maps: stack traces still map to their files and lines,
+// and our own files keep their source for code context.
+const slimClientSourceMaps = {
+  name: "wow:slim-client-source-maps",
+  applyToEnvironment: (environment: {name: string}) => environment.name === "client",
+  // Synchronous, so it finishes before the PostHog plugin's writeBundle reads the maps.
+  writeBundle(options: {dir?: string}, bundle: Record<string, unknown>) {
+    for (const fileName of Object.keys(bundle)) {
+      if (!fileName.endsWith(".js") || !options.dir) continue;
+      const path = join(options.dir, `${fileName}.map`);
+      if (!existsSync(path)) continue;
+      const map: {sources: string[]; sourcesContent?: (string | null)[]} = JSON.parse(
+        readFileSync(path, "utf8")
+      );
+      if (!map.sourcesContent) continue;
+      map.sourcesContent = map.sourcesContent.map((content, i) =>
+        map.sources[i]?.includes("node_modules/") ? null : content
+      );
+      writeFileSync(path, JSON.stringify(map));
+    }
+  },
+};
 
 // The spreadsheet (Univer, several MB) and whiteboard (Excalidraw) editors are lazily loaded,
 // browser-only chunks. The Worker never renders a page (pure SPA), but its build still bundles
@@ -203,6 +231,7 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart({spa: {enabled: true, prerender: {outputPath: "/index"}}}),
     viteReact({compiler: true}),
+    slimClientSourceMaps,
     posthogSourcemapsPlugin,
   ],
   build: {sourcemap: true},

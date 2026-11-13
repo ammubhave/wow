@@ -21,11 +21,37 @@ function selection(api: FUniver) {
   return sheet ? {sheet, ranges} : null;
 }
 
+/** Puts a formula in the selected cell (the top-left one of a range); false when none is. */
+export function insertFormula(api: FUniver, formula: string) {
+  const current = selection(api);
+  const range = current?.ranges[0];
+  if (!current || !range) return false;
+  current.sheet.getRange(range.getRow(), range.getColumn()).setValue(formula);
+  return true;
+}
+
 /**
- * WOW's own sheet actions: highlighting cells in your colour (the one teammates see your cursor
- * in), in the toolbar and the right-click menu, and crossword grids, in the right-click menu.
+ * WOW's own sheet actions: the puzzle tools (formulas, with examples; also in the bar above the
+ * sheet) and crossword grids, in the right-click menu, and highlighting cells in your colour (the
+ * one teammates see your cursor in), in the toolbar and the right-click menu.
  */
-export function registerSheetMenus(api: FUniver, currentUserId: () => string | undefined) {
+export function registerSheetMenus(
+  api: FUniver,
+  currentUserId: () => string | undefined,
+  openTools: () => void
+) {
+  api
+    .createMenu({
+      id: "wow.puzzle-tools",
+      title: "Puzzle tools…",
+      icon: "FunctionIcon",
+      action: () => {
+        openTools();
+        track("sheet_tools_opened");
+      },
+    })
+    .appendTo(CELL_MENU);
+
   const highlight = (id: string) =>
     api.createMenu({
       id,

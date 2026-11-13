@@ -1,4 +1,4 @@
-import {CheckIcon, CloudOffIcon, LoaderIcon} from "lucide-react";
+import {CheckIcon, CloudOffIcon, LoaderIcon, SquareFunctionIcon} from "lucide-react";
 
 import type {SheetPeer} from "@/server/do/sheet";
 
@@ -31,16 +31,28 @@ export function CollabBar({
   following,
   onFollow,
   status,
+  onOpenTools,
 }: {
   peers: ReadonlyMap<string, SheetPeer>;
   following: string | null;
   onFollow: (peerId: string | null) => void;
   status: SyncStatus;
+  onOpenTools: () => void;
 }) {
   const {icon: Icon, label, spin} = STATUS[status];
   const followed = following ? peers.get(following) : undefined;
   return (
     <div className="absolute top-1 right-2 z-20 flex h-6 items-center gap-2">
+      <button
+        type="button"
+        onClick={onOpenTools}
+        aria-label="Puzzle tools"
+        title="Word lookups, ciphers, extraction and crossword grids"
+        className="text-foreground hover:bg-default flex h-6 items-center gap-1 rounded px-1.5 text-[11px] font-medium">
+        <SquareFunctionIcon className="size-3.5" />
+        {/* Icon only on phones, where the toolbar needs the room. */}
+        <span className="hidden sm:inline">Puzzle tools</span>
+      </button>
       {followed && (
         <button
           type="button"

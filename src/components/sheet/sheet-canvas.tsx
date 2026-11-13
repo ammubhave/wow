@@ -69,11 +69,12 @@ import {CrosswordOverlay} from "./sheet-crossword-overlay";
 import {isPersonalMutation, restoreFilters, saveFilters, shiftFilters} from "./sheet-filters";
 import {firstVisibleCell, viewportOf} from "./sheet-geometry";
 import {uploadImagesToPuzzleFiles} from "./sheet-images";
-import {registerSheetMenus} from "./sheet-menus";
+import {insertFormula, registerSheetMenus} from "./sheet-menus";
 import {mapRanges} from "./sheet-ot";
 import {PresenceOverlay} from "./sheet-presence";
 import {isForUnit, SheetSync, wireBytes} from "./sheet-sync";
 import {sheetTheme} from "./sheet-theme";
+import {SheetToolsDialog} from "./sheet-tools-dialog";
 
 // Selections go out at most this often while someone drags across cells.
 const PRESENCE_THROTTLE_MS = 80;
@@ -120,6 +121,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const [pending, setPending] = useState(false);
   /** Bumped when cells move on screen (edits, resizing), to redraw the overlay. */
   const [layout, setLayout] = useState(0);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const myPresence = useRef<SheetPresence | null>(null);
   /** The signed-in user's id, for toolbar actions (Univer's menus are set up once). */
@@ -225,7 +227,11 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
         UniverSheetsThreadCommentPreset(),
       ],
     });
-    registerSheetMenus(univerAPI, () => myUserId.current);
+    registerSheetMenus(
+      univerAPI,
+      () => myUserId.current,
+      () => setToolsOpen(true)
+    );
     // Images go to the puzzle's files (R2), not into the sheet itself.
     // oxlint-disable-next-line no-underscore-dangle -- Univer's dependency injector.
     uploadImagesToPuzzleFiles(univer.__getInjector().get(IImageIoService), puzzleId);
@@ -474,7 +480,28 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
       {engine && <CrosswordOverlay api={engine.api} layout={layout} />}
       {engine && <PresenceOverlay api={engine.api} peers={peers} layout={layout} />}
-      <CollabBar peers={peers} following={following} onFollow={setFollowing} status={status} />
+      <CollabBar
+        peers={peers}
+        following={following}
+        onFollow={setFollowing}
+        status={status}
+        onOpenTools={() => {
+          setToolsOpen(true);
+          track("sheet_tools_opened");
+        }}
+      />
+      <SheetToolsDialog
+        isOpen={toolsOpen}
+        onOpenChange={setToolsOpen}
+        onInsert={formula => {
+          if (engine && insertFormula(engine.api, formula)) {
+            track("sheet_tools_inserted", {formula: formula.slice(1, formula.indexOf("("))});
+            return true;
+          }
+          toast.info("Select a cell first.");
+          return false;
+        }}
+      />
     </div>
   );
 }
