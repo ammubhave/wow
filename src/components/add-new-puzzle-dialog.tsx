@@ -132,29 +132,37 @@ export function AddNewPuzzleDialog({
                     />
                   )}
                 />
-                <form.AppField
-                  name="worksheetType"
-                  children={field => {
-                    const items = [
-                      {value: "google_spreadsheet", label: "Google Spreadsheet"},
-                      {value: "google_drawing", label: "Google Drawing"},
-                    ];
-                    return (
-                      <field.SelectField
-                        variant="secondary"
-                        label="Worksheet Type"
-                        description="The kind of puzzle worksheet you want to use."
-                        items={items}>
-                        {items.map(item => (
-                          <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
-                            {item.label}
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        ))}
-                      </field.SelectField>
-                    );
-                  }}
-                />
+                {/* Only with Drive: without it every puzzle gets the built-in sheet and whiteboard,
+                    so offering "Google Spreadsheet" would promise something it doesn't do. */}
+                {!workspace.googleConnected ? (
+                  <p className="text-muted text-sm">
+                    Each puzzle gets a built-in spreadsheet and whiteboard your team edits together.
+                  </p>
+                ) : (
+                  <form.AppField
+                    name="worksheetType"
+                    children={field => {
+                      const items = [
+                        {value: "google_spreadsheet", label: "Google Spreadsheet"},
+                        {value: "google_drawing", label: "Google Drawing"},
+                      ];
+                      return (
+                        <field.SelectField
+                          variant="secondary"
+                          label="Worksheet Type"
+                          description="The kind of puzzle worksheet you want to use."
+                          items={items}>
+                          {items.map(item => (
+                            <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
+                              {item.label}
+                              <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                          ))}
+                        </field.SelectField>
+                      );
+                    }}
+                  />
+                )}
               </form.Form>
             </Modal.Body>
             <Modal.Footer>

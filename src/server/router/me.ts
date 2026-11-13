@@ -1,13 +1,69 @@
-import {and, eq, inArray, ne, or, sql} from "drizzle-orm";
+import {and, count, eq, inArray, ne, or, sql} from "drizzle-orm";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
+import {toWorkspaceRole} from "../workspace-access";
 import {procedure} from "./base";
 
 const SOLVED = ["solved", "backsolved"];
 
 export const meRouter = {
+  /// The workspaces you're in, for the workspace list: your role, the hunt's dates, how many are
+  /// on the team, and how far the board has got.
+  workspaces: procedure.handler(async ({context}) => {
+    const userId = context.session.user.id;
+    const myWorkspaces = db
+      .select({id: schema.member.organizationId})
+      .from(schema.member)
+      .where(eq(schema.member.userId, userId));
+    const [workspaces, puzzles, members] = await Promise.all([
+      db
+        .select({
+          id: schema.organization.id,
+          slug: schema.organization.slug,
+          teamName: schema.organization.teamName,
+          eventName: schema.organization.eventName,
+          huntStartsAt: schema.organization.huntStartsAt,
+          huntEndsAt: schema.organization.huntEndsAt,
+          createdAt: schema.organization.createdAt,
+          role: schema.member.role,
+        })
+        .from(schema.member)
+        .innerJoin(schema.organization, eq(schema.organization.id, schema.member.organizationId))
+        .where(eq(schema.member.userId, userId)),
+      db
+        .select({
+          workspaceId: schema.round.workspaceId,
+          total: count(schema.puzzle.id),
+          solved: sql<number>`cast(sum(case when ${schema.puzzle.status} in ('solved', 'backsolved') then 1 else 0 end) as integer)`,
+        })
+        .from(schema.puzzle)
+        .innerJoin(schema.round, eq(schema.round.id, schema.puzzle.roundId))
+        .where(inArray(schema.round.workspaceId, myWorkspaces))
+        .groupBy(schema.round.workspaceId),
+      db
+        .select({workspaceId: schema.member.organizationId, members: count()})
+        .from(schema.member)
+        .where(inArray(schema.member.organizationId, myWorkspaces))
+        .groupBy(schema.member.organizationId),
+    ]);
+    const puzzlesBy = new Map(puzzles.map(p => [p.workspaceId, p]));
+    const membersBy = new Map(members.map(m => [m.workspaceId, m.members]));
+    return workspaces.map(w => ({
+      slug: w.slug,
+      teamName: w.teamName,
+      eventName: w.eventName,
+      role: toWorkspaceRole(w.role),
+      huntStartsAt: w.huntStartsAt?.getTime() ?? null,
+      huntEndsAt: w.huntEndsAt?.getTime() ?? null,
+      createdAt: w.createdAt.getTime(),
+      members: membersBy.get(w.id) ?? 0,
+      puzzles: puzzlesBy.get(w.id)?.total ?? 0,
+      solved: puzzlesBy.get(w.id)?.solved ?? 0,
+    }));
+  }),
+
   /// Your own numbers across the hunts you're in: time on puzzles, what you helped solve, and who
   /// with. Only workspaces you're still a member of count. The stats are computed in the browser.
   stats: procedure.handler(async ({context}) => {
