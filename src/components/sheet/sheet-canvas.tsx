@@ -79,6 +79,8 @@ import {sheetTheme} from "./sheet-theme";
 const PRESENCE_THROTTLE_MS = 80;
 // How long after a filter change it's remembered (a filter change is several edits in a row).
 const FILTER_SAVE_MS = 300;
+// Below this width (phones, a narrow pane) Univer's toolbar folds into one row, which fits.
+const COMPACT_TOOLBAR_WIDTH = 640;
 // After scrolling stops, how long until the new top-left cell is shared (for followers).
 const VIEW_SETTLE_MS = 250;
 
@@ -356,7 +358,14 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
         }, VIEW_SETTLE_MS);
       }),
     ];
-    const resize = new ResizeObserver(redraw);
+    let compactToolbar: boolean | null = null;
+    const resize = new ResizeObserver(([entry]) => {
+      redraw();
+      const compact = (entry?.contentRect.width ?? Infinity) < COMPACT_TOOLBAR_WIDTH;
+      if (compact === compactToolbar) return;
+      compactToolbar = compact;
+      univerAPI.setRibbonType(compact ? "collapsed" : "classic");
+    });
     resize.observe(container);
     // For poking at the sheet from the console while developing.
     if (import.meta.env.DEV) Object.assign(window, {__sheet: next});

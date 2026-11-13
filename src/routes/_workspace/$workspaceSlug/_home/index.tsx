@@ -482,8 +482,9 @@ function PuzzleStatusSelect({
 }
 
 // Unfavorited stars only show on row hover (or keyboard focus) to cut clutter; favorites always show.
+// Touch screens can't hover, so there the star always shows (faintly), or it couldn't be found.
 const FAVORITE_HIDDEN_CLASS =
-  "opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100";
+  "opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-50";
 
 const isSolvedStatus = (status: string | null) => status === "solved" || status === "backsolved";
 

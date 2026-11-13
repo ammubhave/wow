@@ -316,7 +316,8 @@ function RemoteVideo({
           size="sm"
           variant="secondary"
           aria-label={`Show ${label} fullscreen`}
-          className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100"
+          // Always shown on touch screens, which can't hover.
+          className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
           onPress={() => void containerRef.current?.requestFullscreen()}>
           <MaximizeIcon />
         </Button>
@@ -355,7 +356,8 @@ export function CallBar() {
       {others.map(p => (
         <RemoteAudio key={p.connectionId} participant={p} />
       ))}
-      <div className="pointer-events-none fixed inset-x-0 bottom-12 z-40 flex flex-col items-center gap-2 px-4">
+      {/* Under the header (z-40), so its open menu covers the bar; above the page's own layers. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-12 z-30 flex flex-col items-center gap-2 px-4">
         {hasMedia && isPanelOpen && (
           <div className="bg-overlay pointer-events-auto grid max-h-[60vh] w-full max-w-2xl grid-cols-2 gap-2 overflow-y-auto rounded-2xl p-2 shadow-lg">
             {videos.map(v => (
