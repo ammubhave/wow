@@ -4,3 +4,7 @@
 # visit revalidate all ~75 files the app shell loads.)
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The sheet's word list: the file name changes with its contents (scripts/build-wordlist.mjs).
+/wordlist/words-*
+  Cache-Control: public, max-age=31536000, immutable

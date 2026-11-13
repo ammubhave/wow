@@ -1,7 +1,7 @@
 import {describe, expect, test} from "vite-plus/test";
 
 import {compare, countUnique, flatten, sortN, split} from "./google-functions";
-import {a1z26, caesar} from "./puzzle-functions";
+import {a1z26, caesar, caesarAll, morse, nth} from "./puzzle-functions";
 
 describe("SPLIT", () => {
   test("splits on a delimiter", () => expect(split("a,b,c", ",")).toEqual([["a", "b", "c"]]));
@@ -73,4 +73,35 @@ describe("puzzle functions", () => {
     expect(a1z26("8 5 12 12 15")).toBe("HELLO");
     expect(a1z26("hello")).toBe("8 5 12 12 15");
   });
+});
+
+describe("MORSE", () => {
+  test("decodes letters and words", () =>
+    expect(morse(".... . .-.. .-.. --- / .-- --- .-. .-.. -..")).toBe("HELLO WORLD"));
+  test("accepts other dits, dahs and word breaks", () => {
+    expect(morse("··· ——— ···")).toBe("SOS");
+    expect(morse("•••  ___  •••")).toBe("S O S");
+    expect(morse(".- | -... −.−.")).toBe("A BC");
+  });
+  test("marks unknown codes", () => expect(morse("...... .-")).toBe("?A"));
+  test("encodes text", () => expect(morse("Hi there!")).toBe(".... .. / - .... . .-. . -.-.--"));
+});
+
+describe("NTH", () => {
+  test("counts letters only", () => {
+    expect(nth("New York, 2nd!", 4)).toBe("Y");
+    expect(nth("O'Brien", 2)).toBe("B");
+  });
+  test("negative counts from the end", () => expect(nth("ABC DEF", -1)).toBe("F"));
+  test("blank when out of range or zero", () => {
+    expect(nth("abc", 4)).toBe("");
+    expect(nth("abc", 0)).toBe("");
+  });
+});
+
+test("CAESARALL lists every shift", () => {
+  const all = caesarAll("abc");
+  expect(all).toHaveLength(25);
+  expect(all[0]).toEqual([1, "bcd"]);
+  expect(all[24]).toEqual([25, "zab"]);
 });

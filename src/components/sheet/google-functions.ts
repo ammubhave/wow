@@ -10,10 +10,11 @@ import type {FUniver} from "@univerjs/presets";
  * spills a returned 2-D array into the cells around the formula, as Google Sheets does.
  */
 
-type Value = string | number | boolean | null;
-type Matrix = Value[][];
+export type Value = string | number | boolean | null;
+export type Matrix = Value[][];
 
-const isMatrix = (arg: unknown): arg is Matrix => Array.isArray(arg) && arg.every(Array.isArray);
+export const isMatrix = (arg: unknown): arg is Matrix =>
+  Array.isArray(arg) && arg.every(Array.isArray);
 
 /** A value from an argument (a range's first cell). */
 export function scalar(arg: unknown): Value {
@@ -35,11 +36,15 @@ export function toNumber(value: Value): number {
   return typeof value === "number" ? value : Number(value);
 }
 
-const toText = (value: Value) =>
+export const toText = (value: Value) =>
   value === null ? "" : typeof value === "boolean" ? (value ? "TRUE" : "FALSE") : String(value);
 
 /** Applies `fn` to every cell (when given a range) or to the value, like Google's operators. */
-function elementwise(a: unknown, b: unknown, fn: (x: Value, y: Value) => Value): Value | Matrix {
+export function elementwise(
+  a: unknown,
+  b: unknown,
+  fn: (x: Value, y: Value) => Value
+): Value | Matrix {
   if (isMatrix(a) || isMatrix(b)) {
     const rows = Math.max(isMatrix(a) ? a.length : 1, isMatrix(b) ? b.length : 1);
     const cols = Math.max(

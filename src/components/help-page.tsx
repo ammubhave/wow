@@ -40,8 +40,27 @@ export function HelpPage() {
           Puzzles in workspaces without Google Drive use WOW's built-in spreadsheet. Everyone edits
           it at once: teammates' selected cells are outlined with their names, and clicking a
           teammate's avatar (top right of the sheet) jumps to where they are and follows them. It
-          supports nearly all Google Sheets functions, plus <code>=CAESAR(text, shift)</code> and{" "}
-          <code>=A1Z26(text)</code>. Filters are personal: filtering hides rows only for you.
+          supports nearly all Google Sheets functions, plus <code>=CAESAR(text, shift)</code>,{" "}
+          <code>=CAESARALL(text)</code>, <code>=A1Z26(text)</code>, <code>=MORSE(text)</code> and{" "}
+          <code>=NTH(text, n)</code>. Filters are personal: filtering hides rows only for you.
+        </p>
+        <p>
+          Word lookups use a list of about 566,000 words and phrases (phrases without spaces, like{" "}
+          <code>ICECREAMBAR</code>), best entries first: <code>=MATCHES("C?T")</code> (
+          <code>?</code> any letter, <code>*</code> any run, <code>@</code> a vowel, <code>#</code>{" "}
+          a consonant, <code>[AB]</code> either letter), <code>=ANAGRAMS(text)</code> (
+          <code>?</code> is a blank) and <code>=ISWORD(text)</code>. Add a number to list more:{" "}
+          <code>=MATCHES("C?T", 200)</code>. The list is the{" "}
+          <a href="https://github.com/Crossword-Nexus/collaborative-word-list">
+            Collaborative Word List
+          </a>{" "}
+          (MIT license).
+        </p>
+        <p>
+          Right-click selected cells for <strong>Make crossword grid</strong>: square cells with
+          clue numbers that update as you type <code>#</code> or <code>.</code> for black squares.{" "}
+          <strong>Highlight in my color</strong> (toolbar or right-click) tints cells in your cursor
+          color, so teammates can see which part you're working on.
         </p>
         <p />
         <h4 id="403s">Fix 403s on Puzzle Page</h4>

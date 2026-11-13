@@ -1,16 +1,10 @@
 import type {FUniver} from "@univerjs/presets";
-import {type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
+import type {ReactNode} from "react";
 
 import type {SheetPeer} from "@/server/do/sheet";
 
-import {
-  type Box,
-  cellPieces,
-  findCanvas,
-  type Piece,
-  rangePieces,
-  viewportOf,
-} from "./sheet-geometry";
+import {type Box, cellPieces, type Piece, rangePieces} from "./sheet-geometry";
+import {useSheetView} from "./use-sheet-view";
 
 // Distinct, readable on light and dark sheets (like Google Sheets' collaborator colours).
 const COLORS = [
@@ -47,7 +41,7 @@ function NameTag({name, color, inside}: {name: string; color: string; inside: bo
  * A piece of an outline, clipped to its part of the sheet (frozen or scrolling); `children` gets
  * the piece's box relative to that part.
  */
-function Clipped({piece, children}: {piece: Piece; children: (box: Box) => ReactNode}) {
+export function Clipped({piece, children}: {piece: Piece; children: (box: Box) => ReactNode}) {
   const {box, clip} = piece;
   return (
     <div className="absolute overflow-hidden" style={clip}>
@@ -70,60 +64,8 @@ export function PresenceOverlay({
   peers: ReadonlyMap<string, SheetPeer>;
   layout: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [canvas, setCanvas] = useState<Box>();
-  useLayoutEffect(() => {
-    const host = ref.current?.parentElement;
-    if (!host) return;
-    const next = findCanvas(host);
-    setCanvas(current =>
-      current &&
-      next &&
-      current.left === next.left &&
-      current.top === next.top &&
-      current.width === next.width &&
-      current.height === next.height
-        ? current
-        : next
-    );
-    // `layout` is the trigger: the canvas moves when Univer's toolbar or our pane resizes.
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [layout]);
-
-  // Univer's scroll event fires as scrolling starts, before the position settles (and smooth
-  // scrolling keeps moving): while there's anything to draw, follow the viewport every frame,
-  // redrawing only when it actually moved.
-  const [viewKey, setViewKey] = useState("");
   const anything = [...peers.values()].some(peer => peer.presence);
-  useEffect(() => {
-    if (!anything) return undefined;
-    let frame = requestAnimationFrame(function tick() {
-      try {
-        const workbook = api.getActiveWorkbook();
-        const active = workbook?.getActiveSheet();
-        if (active) {
-          const scroll = workbook?.getScrollStateBySheetId(active.getSheetId());
-          setViewKey(
-            [
-              active.getSheetId(),
-              scroll?.sheetViewStartRow,
-              scroll?.sheetViewStartColumn,
-              scroll?.offsetX,
-              scroll?.offsetY,
-              active.getZoom(),
-            ].join(":")
-          );
-        }
-      } catch {
-        // Univer's renderer isn't up (the sheet is hidden): check again next frame.
-      }
-      frame = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [api, anything]);
-
-  const sheet = api.getActiveWorkbook()?.getActiveSheet();
-  const view = sheet && canvas ? viewportOf(api, sheet) : undefined;
+  const {ref, viewKey, sheet, view, canvas} = useSheetView(api, layout, anything);
   const sheetId = sheet?.getSheetId();
   return (
     <div

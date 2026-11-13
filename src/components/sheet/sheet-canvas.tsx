@@ -65,9 +65,11 @@ import type {
 import {registerGoogleFunctions} from "./google-functions";
 import {registerPuzzleFunctions} from "./puzzle-functions";
 import {CollabBar, type SyncStatus} from "./sheet-collab-bar";
+import {CrosswordOverlay} from "./sheet-crossword-overlay";
 import {isPersonalMutation, restoreFilters, saveFilters, shiftFilters} from "./sheet-filters";
 import {firstVisibleCell, viewportOf} from "./sheet-geometry";
 import {uploadImagesToPuzzleFiles} from "./sheet-images";
+import {registerSheetMenus} from "./sheet-menus";
 import {mapRanges} from "./sheet-ot";
 import {PresenceOverlay} from "./sheet-presence";
 import {isForUnit, SheetSync, wireBytes} from "./sheet-sync";
@@ -118,6 +120,8 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const [layout, setLayout] = useState(0);
 
   const myPresence = useRef<SheetPresence | null>(null);
+  /** The signed-in user's id, for toolbar actions (Univer's menus are set up once). */
+  const myUserId = useRef<string | undefined>(undefined);
   const presenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {sendJsonMessage, readyState} = useWebSocket(`/api/sheet/${puzzleId}`, {
@@ -219,6 +223,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
         UniverSheetsThreadCommentPreset(),
       ],
     });
+    registerSheetMenus(univerAPI, () => myUserId.current);
     // Images go to the puzzle's files (R2), not into the sheet itself.
     // oxlint-disable-next-line no-underscore-dangle -- Univer's dependency injector.
     uploadImagesToPuzzleFiles(univer.__getInjector().get(IImageIoService), puzzleId);
@@ -406,6 +411,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   // built-in permissions grant editing by user id prefix ("Owner_…"; any other id is read-only),
   // and everyone on the team may edit, so every WOW user is an owner here.
   const me = authClient.useSession().data?.user;
+  myUserId.current = me?.id;
   const workspace = useWorkspace();
   const members = useQuery(
     orpc.workspaces.members.list.queryOptions({input: {workspaceSlug: workspace.slug}})
@@ -457,6 +463,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
 
   return (
     <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
+      {engine && <CrosswordOverlay api={engine.api} layout={layout} />}
       {engine && <PresenceOverlay api={engine.api} peers={peers} layout={layout} />}
       <CollabBar peers={peers} following={following} onFollow={setFollowing} status={status} />
     </div>

@@ -49,8 +49,8 @@ function RouteComponent() {
       <p>
         Without Google Drive, every puzzle gets WOW's built-in spreadsheet, which your whole team
         edits live: you see who has which cells selected, and it has checkboxes, comments, images,
-        filters and puzzle formulas like <code>=CAESAR</code> and <code>=A1Z26</code>. Connect Drive
-        if you'd rather use Google Sheets.
+        filters and puzzle formulas like <code>=CAESAR</code>, <code>=MORSE</code> and{" "}
+        <code>=NTH</code>. Connect Drive if you'd rather use Google Sheets.
       </p>
 
       <h2>3. Invite your team</h2>
