@@ -91,9 +91,10 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
 
 // Columns that only fit on wider screens: on phones the board is name, answer and status.
 const DESKTOP_ONLY = "hidden md:table-cell";
-// On phones a name cell is capped (its link truncates with an ellipsis) so long puzzle names don't
-// make the table wider than the screen.
-const NAME_CELL_ON_PHONES = "max-w-44 md:max-w-none";
+// A name cell is capped (its link truncates with an ellipsis, the full name on hover) so one long
+// puzzle name doesn't push the other columns and the row menus off the board: narrow on phones,
+// enough for the board to fit beside the sidebar on a laptop, roomier on big screens.
+const NAME_CELL_ON_PHONES = "max-w-44 md:max-w-64 2xl:max-w-96";
 const CELL = "p-2 text-xs whitespace-nowrap";
 const COLUMN = "px-2 whitespace-nowrap";
 

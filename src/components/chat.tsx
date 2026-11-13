@@ -497,8 +497,8 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                         <PromptInput.TokenInput
                           tokens={tokens}
                           aria-label="Chat message"
-                          // Short enough for one line on a phone; the empty chat explains !help.
-                          placeholder="Message… (@ to mention, !help)"
+                          // One line even in the puzzle page's narrow chat column; the empty chat explains !help.
+                          placeholder="Message… (@ to mention)"
                         />
                       </div>
                     </PromptInput.Content>

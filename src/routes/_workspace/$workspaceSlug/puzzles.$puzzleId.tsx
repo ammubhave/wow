@@ -17,8 +17,6 @@ import {
   CopyIcon,
   EditIcon,
   ExternalLinkIcon,
-  InfoIcon,
-  MessagesSquareIcon,
   PresentationIcon,
   PuzzleIcon,
   SheetIcon,
@@ -103,17 +101,18 @@ function RouteComponent() {
       <PresencesWebSocket workspaceSlug={workspaceSlug} puzzleId={puzzleId}>
         <div className="flex flex-1">
           <Resizable orientation="horizontal">
-            <Resizable.Panel defaultSize={80} className="flex min-h-0 flex-col">
+            <Resizable.Panel defaultSize={75} className="flex min-h-0 flex-col">
               <WorksheetPane puzzle={puzzle.data} />
             </Resizable.Panel>
             <Resizable.Handle type="drag" />
-            <Resizable.Panel defaultSize={20}>
+            {/* Wide enough for an answer and tags; the info half tall enough for its fields. */}
+            <Resizable.Panel defaultSize={25}>
               <Resizable orientation="vertical">
-                <Resizable.Panel defaultSize={30} className="flex">
+                <Resizable.Panel defaultSize={45} className="flex">
                   {info}
                 </Resizable.Panel>
                 <Resizable.Handle type="drag" />
-                <Resizable.Panel defaultSize={60} className="flex flex-col">
+                <Resizable.Panel defaultSize={55} className="flex flex-col">
                   {chat}
                 </Resizable.Panel>
               </Resizable>
@@ -605,25 +604,24 @@ function WorksheetPane({
           <Tabs.ListContainer>
             <Tabs.List aria-label="Puzzle views" className={cn(phone ? "w-full" : "w-fit")}>
               <Tabs.Tab id="sheet" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
-                <SheetIcon className="size-3.5" />
-                <span className="ms-1.5">{sheetLabel}</span>
+                {/* Phones: words only, so all four tabs fit next to the timer. */}
+                {!phone && <SheetIcon className="me-1.5 size-3.5" />}
+                <span>{sheetLabel}</span>
                 <Tabs.Indicator />
               </Tabs.Tab>
               <Tabs.Tab id="whiteboard" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
-                <PresentationIcon className="size-3.5" />
-                <span className="ms-1.5">{phone ? "Draw" : "Whiteboard"}</span>
+                {!phone && <PresentationIcon className="me-1.5 size-3.5" />}
+                <span>Whiteboard</span>
                 <Tabs.Indicator />
               </Tabs.Tab>
               {phone && (
                 <>
                   <Tabs.Tab id="chat" className="h-7 flex-1 px-3 text-xs">
-                    <MessagesSquareIcon className="size-3.5" />
-                    <span className="ms-1.5">Chat</span>
+                    <span>Chat</span>
                     <Tabs.Indicator />
                   </Tabs.Tab>
                   <Tabs.Tab id="info" className="h-7 flex-1 px-3 text-xs">
-                    <InfoIcon className="size-3.5" />
-                    <span className="ms-1.5">Info</span>
+                    <span>Info</span>
                     <Tabs.Indicator />
                   </Tabs.Tab>
                 </>
