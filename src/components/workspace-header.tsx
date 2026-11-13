@@ -1,5 +1,5 @@
 import {Navbar} from "@heroui-pro/react";
-import {Tabs} from "@heroui/react";
+import {Tabs, Tooltip} from "@heroui/react";
 import {Link, useChildMatches} from "@tanstack/react-router";
 import {
   ExternalLinkIcon,
@@ -9,7 +9,7 @@ import {
   PuzzleIcon,
   SettingsIcon,
 } from "lucide-react";
-import {useEffect} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {NotificationBell} from "@/features/notifications/notifications";
@@ -36,6 +36,40 @@ const SECTIONS = [
   {routeId: "/$workspaceSlug/help-page", path: "/help-page", label: "Help", Icon: InfoIcon},
 ] as const;
 
+// How long the pointer rests on an icon before its name shows (like the app's other tooltips).
+const HINT_DELAY_MS = 300;
+
+/**
+ * The name of the section tab under the pointer, after a short pause. Tabs live in a collection,
+ * so they can't be wrapped in a tooltip trigger: one tooltip is anchored to whichever is hovered.
+ */
+function useSectionHint() {
+  const tabs = useRef(new Map<string, HTMLElement>());
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [hint, setHint] = useState<{id: string; anchor: HTMLElement} | null>(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const onHoverChange = (id: string, hovering: boolean) => {
+    clearTimeout(timer.current);
+    if (hovering) {
+      timer.current = setTimeout(() => {
+        const anchor = tabs.current.get(id);
+        if (anchor) setHint({id, anchor});
+      }, HINT_DELAY_MS);
+    } else setHint(current => (current?.id === id ? null : current));
+  };
+  const tabRef = (id: string) => (element: HTMLElement | null) => {
+    if (element) tabs.current.set(id, element);
+    else tabs.current.delete(id);
+  };
+  const hide = () => {
+    clearTimeout(timer.current);
+    setHint(null);
+  };
+  // The tooltip closing itself (Escape) hides it without cancelling a hint that's on its way.
+  const dismiss = () => setHint(null);
+  return {hint: hint?.id ?? null, anchor: hint?.anchor, onHoverChange, tabRef, hide, dismiss};
+}
+
 export function WorkspaceHeader() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
@@ -57,6 +91,9 @@ export function WorkspaceHeader() {
   const puzzleId = newPuzzleId ?? lastActivePuzzleId;
   const puzzle = workspace.rounds.flatMap(round => round.puzzles).find(p => p.id === puzzleId);
   const puzzleHref = puzzle && `/${workspaceSlug}/puzzles/${puzzle.id}`;
+  const sectionHint = useSectionHint();
+  const selectedKey = newPuzzleId ? "puzzle" : currentSection;
+  const hinted = SECTIONS.find(section => section.routeId === sectionHint.hint);
 
   return (
     <Navbar aria-label="Workspace" maxWidth="full" size="sm" shouldBlockScroll={false}>
@@ -74,7 +111,7 @@ export function WorkspaceHeader() {
         </Navbar.Brand>
         {/* Real links (⌘/middle-click work) with a segmented look. Sections are icon-only except the
             current one, which also shows its label; the current puzzle always shows its name. */}
-        <Tabs selectedKey={newPuzzleId ? "puzzle" : currentSection} className="hidden md:flex">
+        <Tabs selectedKey={selectedKey} className="hidden md:flex">
           <Tabs.ListContainer>
             <Tabs.List aria-label="Workspace sections" className="w-fit">
               {SECTIONS.map(({routeId, path, label, Icon}) => (
@@ -83,7 +120,10 @@ export function WorkspaceHeader() {
                   className="w-auto flex-none whitespace-nowrap"
                   id={routeId}
                   href={`/${workspaceSlug}${path}`}
-                  aria-label={label}>
+                  aria-label={label}
+                  ref={sectionHint.tabRef(routeId)}
+                  onHoverChange={hovering => sectionHint.onHoverChange(routeId, hovering)}
+                  onPress={sectionHint.hide}>
                   {({isSelected}) => (
                     <>
                       <Icon className="size-4 shrink-0" />
@@ -107,6 +147,16 @@ export function WorkspaceHeader() {
             </Tabs.List>
           </Tabs.ListContainer>
         </Tabs>
+        {/* The icon-only tabs' names (the current one shows its name already). */}
+        <Tooltip
+          isOpen={Boolean(hinted && sectionHint.anchor && hinted.routeId !== selectedKey)}
+          onOpenChange={open => {
+            if (!open) sectionHint.dismiss();
+          }}>
+          <Tooltip.Content placement="bottom" triggerRef={{current: sectionHint.anchor ?? null}}>
+            {hinted?.label}
+          </Tooltip.Content>
+        </Tooltip>
         <Navbar.Spacer />
         <Navbar.Content className="min-w-0">
           {workspace.links.map(link => (
