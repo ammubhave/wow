@@ -1,7 +1,8 @@
 import {env} from "cloudflare:workers";
 
 import {auth} from "@/lib/auth";
-import {isPuzzleMember} from "@/server/workspace-access";
+import {trackUsage} from "@/server/posthog";
+import {isPuzzleMember, trackWorkspaceRequest} from "@/server/workspace-access";
 
 // Images shared on a puzzle (chat, whiteboard), stored in R2 under `<area>/<puzzleId>/<id>`. Ids
 // are content hashes, so a file never changes once uploaded.
@@ -11,9 +12,11 @@ export const puzzleFilesPrefix = (area: string, puzzleId: string) => `${area}/${
 
 async function authorize(request: Request, puzzleId: string) {
   const session = await auth.api.getSession({headers: request.headers});
-  if (!session) return new Response(null, {status: 401});
-  if (!(await isPuzzleMember(puzzleId, session.user.id))) return new Response(null, {status: 404});
-  return null;
+  if (!session) return {denied: new Response(null, {status: 401})} as const;
+  const workspaceId = await isPuzzleMember(puzzleId, session.user.id);
+  if (!workspaceId) return {denied: new Response(null, {status: 404})} as const;
+  trackWorkspaceRequest(request, {workspaceId, userId: session.user.id});
+  return {workspaceId, userId: session.user.id} as const;
 }
 
 async function sha256Hex(body: ArrayBuffer) {
@@ -59,18 +62,23 @@ export async function serveImage(key: string) {
   });
 }
 
+/** Who stored a file, for usage attribution (`usage_storage`). */
+export type StorageUsage = {workspaceId: string; userId: string; area: string};
+
 /**
  * Stores an uploaded image under `key`. With `verifySha256`, `fileId` must be the SHA-256 of the
- * bytes, so nobody can put different content under an id someone else will send.
+ * bytes, so nobody can put different content under an id someone else will send. A new file is
+ * recorded as `usage_storage` for its workspace (a re-upload of the same content isn't).
  */
 export async function storeImage(
   request: Request,
   key: string,
   {
     fileId,
+    usage,
     verifySha256 = false,
     maxBytes = MAX_IMAGE_BYTES,
-  }: {fileId: string; verifySha256?: boolean; maxBytes?: number}
+  }: {fileId: string; usage: StorageUsage; verifySha256?: boolean; maxBytes?: number}
 ) {
   const contentType = (request.headers.get("content-type") ?? "")
     .split(";")[0]!
@@ -83,25 +91,37 @@ export async function storeImage(
   // Already there (same content): skip the write.
   if ((await env.R2.head(key)) === null) {
     await env.R2.put(key, body, {httpMetadata: {contentType}});
+    trackUsage("usage_storage", {
+      workspaceId: usage.workspaceId,
+      userId: usage.userId,
+      properties: {area: usage.area, bytes: body.byteLength},
+    });
   }
   return new Response(null, {status: 204});
 }
 
-/** GET/PUT handlers for one area's puzzle images (see `storeImage` for `verifySha256`). */
-export function puzzleFileHandlers(area: string, {verifySha256 = false} = {}) {
+/**
+ * GET/PUT handlers for one area's puzzle images (see `storeImage` for `verifySha256`). `usageArea`
+ * names the area in usage events (e.g. `puzzle_chat`).
+ */
+export function puzzleFileHandlers(
+  area: string,
+  {verifySha256 = false, usageArea}: {verifySha256?: boolean; usageArea: string}
+) {
   type Params = {params: {puzzleId: string; fileId: string}; request: Request};
   return {
     GET: async ({request, params: {puzzleId, fileId}}: Params) => {
-      const denied = await authorize(request, puzzleId);
-      if (denied) return denied;
+      const authz = await authorize(request, puzzleId);
+      if (authz.denied) return authz.denied;
       return await serveImage(puzzleFilesPrefix(area, puzzleId) + fileId);
     },
     PUT: async ({request, params: {puzzleId, fileId}}: Params) => {
-      const denied = await authorize(request, puzzleId);
-      if (denied) return denied;
+      const authz = await authorize(request, puzzleId);
+      if (authz.denied) return authz.denied;
       return await storeImage(request, puzzleFilesPrefix(area, puzzleId) + fileId, {
         fileId,
         verifySha256,
+        usage: {workspaceId: authz.workspaceId, userId: authz.userId, area: usageArea},
       });
     },
   };

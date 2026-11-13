@@ -65,3 +65,40 @@ export type VoiceHello = {type: "voiceHello"; connectionId: string};
 export type VoiceMute = {type: "voiceMute"};
 
 export type VoiceServerMessage = VoiceState | VoiceSpeaking | VoiceHello | VoiceMute;
+
+/**
+ * Voice usage accounting: people (connections) in each call room since `at`. Kept by the workspace
+ * room and closed out whenever anyone joins, leaves or changes their call state.
+ */
+export type VoiceUsageSample = {at: number; rooms: Record<string, number>};
+
+/** One call room's usage over a period, as sent in `usage_voice`. */
+export type VoiceUsagePeriod = {
+  room: string;
+  participants: number;
+  durationSeconds: number;
+  /**
+   * Seconds of audio streams the voice service delivered: everyone hears everyone else, so n people
+   * for t seconds is n × (n − 1) × t. This is what the SFU bills (egress).
+   */
+  streamSeconds: number;
+};
+
+/** The usage of each call room from `sample.at` until `now` (at the head-count of the sample). */
+export function voiceUsageSince(
+  sample: VoiceUsageSample | undefined,
+  now: number
+): VoiceUsagePeriod[] {
+  if (!sample) return [];
+  const durationSeconds = Math.max(0, (now - sample.at) / 1000);
+  // Under a second (e.g. two state changes in a row): not worth an event.
+  if (durationSeconds < 1) return [];
+  return Object.entries(sample.rooms)
+    .filter(([, participants]) => participants > 0)
+    .map(([room, participants]) => ({
+      room,
+      participants,
+      durationSeconds,
+      streamSeconds: durationSeconds * participants * (participants - 1),
+    }));
+}

@@ -41,6 +41,26 @@ export function captureServerException(
 }
 
 /**
+ * A usage event (`usage_request`, `usage_voice`, `usage_storage`): what a workspace uses, for
+ * attributing running costs to teams. Always in the workspace's group. By the person who caused it
+ * when there is one, otherwise sent as the workspace itself, without creating a person profile.
+ */
+export function trackUsage(
+  event: `usage_${string}`,
+  {
+    workspaceId,
+    userId,
+    properties,
+  }: {workspaceId: string; userId?: string; properties?: Record<string, unknown>}
+) {
+  trackServerEvent(event, {
+    distinctId: userId ?? `workspace:${workspaceId}`,
+    workspaceId,
+    properties: userId ? properties : {...properties, $process_person_profile: false},
+  });
+}
+
+/**
  * A product event, by the person who did it (the same id the browser identifies them by), and in
  * their workspace's group, so it counts toward that team.
  */

@@ -19,9 +19,13 @@ import {
   type VoiceMute,
   type VoiceSpeaking,
   type VoiceUpdate,
+  type VoiceUsageSample,
   type VoiceUser,
   voiceClientMessageSchema,
+  voiceUsageSince,
 } from "@/server/voice";
+
+import {trackUsage} from "../posthog";
 
 /// Who's on each websocket, and their call state (kept as the socket's attachment, so it survives
 /// the room hibernating).
@@ -40,6 +44,13 @@ const VOICE_SESSION_TTL_MS = 1000 * 60 * 60 * 48;
 /// per-app limit, so one misbehaving client can't exhaust it for the team.
 const VOICE_SESSIONS_PER_MINUTE = 10;
 type VoiceSessionRecord = {userId: string; createdAt: number};
+/// Storage key for voice usage accounting (see `#recordVoiceUsage`).
+const VOICE_USAGE_KEY = "voiceUsage";
+
+/// Whether two head-counts per call room are the same.
+const sameRooms = (a: Record<string, number>, b: Record<string, number>) =>
+  Object.keys(a).length === Object.keys(b).length &&
+  Object.entries(a).every(([room, count]) => b[room] === count);
 
 // Overlap window when re-reading the activity log incrementally, so entries committed slightly out
 // of `createdAt` order are not missed (results are de-duplicated by id).
@@ -196,6 +207,22 @@ export class WorkspaceRoom extends DurableObject<Env> {
   #workspaceId: string | undefined;
   /// `workspace` as sent to clients (recent activity only), serialized once per reload.
   #message: string | undefined;
+  /// Who has been in each call room since when, for `usage_voice` (also in storage, so a long call
+  /// is still counted when the room hibernates mid-call).
+  #voiceUsage: VoiceUsageSample | undefined;
+
+  constructor(ctx: DurableObjectState, workerEnv: Env) {
+    super(ctx, workerEnv);
+    void ctx.blockConcurrencyWhile(async () => {
+      const saved = await ctx.storage.get<VoiceUsageSample>(VOICE_USAGE_KEY);
+      if (!saved) return;
+      // Waking from hibernation, the calls are still there. After a restart (a deploy), sockets
+      // dropped without a goodbye: when a call ended is unknown, so that tail isn't counted, rather
+      // than billing every hour until the room woke up again.
+      if (sameRooms(saved.rooms, this.#voiceRoomCounts())) this.#voiceUsage = saved;
+      else await ctx.storage.delete(VOICE_USAGE_KEY);
+    });
+  }
 
   /// Loads the workspace data and broadcasts it to all connected clients.
   async #load(workspaceId: string) {
@@ -425,8 +452,43 @@ export class WorkspaceRoom extends DurableObject<Env> {
     return {type: "voice", rooms};
   }
 
+  /// People (connections) in each call room right now.
+  #voiceRoomCounts(closing?: WebSocket) {
+    return Object.fromEntries(
+      Object.entries(this.#voiceState(closing).rooms).map(([room, people]) => [room, people.length])
+    );
+  }
+
+  /// Closes out the period since the last call change as `usage_voice` events (one per room, at
+  /// the head-count it had), then starts a new period with `rooms`.
+  #recordVoiceUsage(rooms: Record<string, number>) {
+    const now = Date.now();
+    const workspaceId = this.ctx.id.name;
+    if (workspaceId) {
+      for (const period of voiceUsageSince(this.#voiceUsage, now)) {
+        trackUsage("usage_voice", {
+          workspaceId,
+          properties: {
+            room: period.room,
+            participants: period.participants,
+            duration_seconds: Math.round(period.durationSeconds),
+            stream_seconds: Math.round(period.streamSeconds),
+          },
+        });
+      }
+    }
+    this.#voiceUsage = Object.keys(rooms).length > 0 ? {at: now, rooms} : undefined;
+    void (this.#voiceUsage
+      ? this.ctx.storage.put(VOICE_USAGE_KEY, this.#voiceUsage)
+      : this.ctx.storage.delete(VOICE_USAGE_KEY));
+  }
+
   #broadcastVoice(closing?: WebSocket) {
-    const message = JSON.stringify(this.#voiceState(closing));
+    const state = this.#voiceState(closing);
+    this.#recordVoiceUsage(
+      Object.fromEntries(Object.entries(state.rooms).map(([room, people]) => [room, people.length]))
+    );
+    const message = JSON.stringify(state);
     for (const ws of this.ctx.getWebSockets()) {
       if (ws !== closing) ws.send(message);
     }

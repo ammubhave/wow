@@ -2,7 +2,7 @@ import {ORPCError, os} from "@orpc/server";
 
 import {auth} from "@/lib/auth";
 
-import {trackServerEvent} from "../posthog";
+import {trackServerEvent, trackUsage} from "../posthog";
 import {getMemberWorkspace, type WorkspaceRole} from "../workspace-access";
 import {ActivityLogService} from "./services/activity-log";
 import {DiscordService} from "./services/discord";
@@ -45,6 +45,11 @@ export const preauthorize = os
   .middleware(async ({context, next, path}, input: {workspaceSlug: string}) => {
     const result = await getMemberWorkspace(input.workspaceSlug, context.session.user.id);
     if (result.status !== "OK") throw new ORPCError(result.status);
+    trackUsage("usage_request", {
+      workspaceId: result.workspace.id,
+      userId: context.session.user.id,
+      properties: {kind: "rpc", name: path.join(".")},
+    });
     const output = await next({context: {workspace: result.workspace, role: result.role}});
     const tracked = TRACKED_PROCEDURES[path.join(".")];
     if (tracked) {

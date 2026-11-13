@@ -20,6 +20,11 @@ export const Route = createFileRoute("/api/workspaces/$workspaceSlug/chat/images
         return await storeImage(request, key(authz.workspace.id, fileId), {
           fileId,
           verifySha256: true,
+          usage: {
+            workspaceId: authz.workspace.id,
+            userId: authz.session.user.id,
+            area: "team_chat",
+          },
         });
       },
     },

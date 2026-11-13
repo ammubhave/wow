@@ -22,6 +22,7 @@ export const Route = createFileRoute("/api/workspaces/$workspaceSlug/emoji/$file
           fileId,
           verifySha256: true,
           maxBytes: MAX_EMOJI_BYTES,
+          usage: {workspaceId: authz.workspace.id, userId: authz.session.user.id, area: "emoji"},
         });
       },
     },

@@ -4,6 +4,8 @@ import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
+import {trackUsage} from "./posthog";
+
 // Every organization column except the server-only Google OAuth credentials.
 const {
   googleAccessToken: _googleAccessToken,
@@ -49,10 +51,13 @@ export type MemberWorkspace = Extract<
   {status: "OK"}
 >["workspace"];
 
-/** Whether `userId` is a member of the workspace that owns `puzzleId` (puzzle -> round -> workspace). */
+/**
+ * Whether `userId` is a member of the workspace that owns `puzzleId` (puzzle -> round -> workspace):
+ * that workspace's id if so (for usage attribution), undefined if not.
+ */
 export async function isPuzzleMember(puzzleId: string, userId: string) {
   const row = await db
-    .select({id: schema.member.id})
+    .select({workspaceId: schema.round.workspaceId})
     .from(schema.puzzle)
     .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
     .innerJoin(
@@ -64,7 +69,38 @@ export async function isPuzzleMember(puzzleId: string, userId: string) {
     )
     .where(eq(schema.puzzle.id, puzzleId))
     .get();
-  return row !== undefined;
+  return row?.workspaceId;
+}
+
+/**
+ * Records a `usage_request` for an API route a workspace member called (see `trackUsage`). Named by
+ * kind and route, with workspace slugs and ids masked, so routes group together in PostHog.
+ */
+export function trackWorkspaceRequest(
+  request: Request,
+  {
+    workspaceId,
+    userId,
+    workspaceSlug,
+  }: {workspaceId: string; userId: string; workspaceSlug?: string}
+) {
+  const path = new URL(request.url).pathname;
+  const kind = isWebSocketUpgrade(request)
+    ? "socket"
+    : path.startsWith("/api/voice/")
+      ? "voice_signaling"
+      : "file";
+  const name = path
+    .split("/")
+    .map(segment =>
+      segment === workspaceSlug
+        ? ":workspace"
+        : /^[0-9a-f-]{16,}$/i.test(segment) || /^[A-Za-z0-9_-]{24,}$/.test(segment)
+          ? ":id"
+          : segment
+    )
+    .join("/");
+  trackUsage("usage_request", {workspaceId, userId, properties: {kind, name}});
 }
 
 /** Only allow same-origin relative redirects (e.g. "/my-team/settings"), never "//evil.com". */
@@ -96,6 +132,11 @@ export async function authorizeWorkspaceRequest(
   if (result.status === "FORBIDDEN" || (ownerOnly && result.role !== "owner")) {
     return {response: new Response(null, {status: 403})} as const;
   }
+  trackWorkspaceRequest(request, {
+    workspaceId: result.workspace.id,
+    userId: session.user.id,
+    workspaceSlug,
+  });
   return {session, workspace: result.workspace, role: result.role} as const;
 }
 
