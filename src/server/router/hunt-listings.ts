@@ -27,17 +27,23 @@ const series = (name: string) => normalize(name).replace(/[0-9]/g, "");
 const overlaps = (a: string, b: string) =>
   Math.min(a.length, b.length) >= 5 && (a.includes(b) || b.includes(a));
 
+/**
+ * Before the first cron run (a fresh database, a new deploy), fills the table now, so whichever
+ * of the hunt lists is opened first has hunts to show.
+ */
+async function fillIfEmpty() {
+  const [{rows} = {rows: 0}] = await db.select({rows: count()}).from(huntListings);
+  if (rows > 0) return;
+  await syncHuntListings().catch((error: unknown) => {
+    console.error("Hunt listings sync failed:", error);
+    captureServerException(error, {properties: {task: "hunt listings sync"}});
+  });
+}
+
 export const huntListingsRouter = {
   /** Ongoing and upcoming hunts (online and in person), soonest first: event name suggestions. */
   current: procedure.handler(async () => {
-    // Before the first cron run (a fresh database), fill the table now.
-    const [{rows} = {rows: 0}] = await db.select({rows: count()}).from(huntListings);
-    if (rows === 0) {
-      await syncHuntListings().catch((error: unknown) => {
-        console.error("Hunt listings sync failed:", error);
-        captureServerException(error, {properties: {task: "hunt listings sync"}});
-      });
-    }
+    await fillIfEmpty();
     return db
       .select({
         id: huntListings.id,
@@ -68,6 +74,7 @@ export const huntListingsRouter = {
    * play), and ones other teams on WOW play (this one, or past years').
    */
   forYou: procedure.handler(async ({context}) => {
+    await fillIfEmpty();
     const now = Date.now();
     const [listings, mine, all] = await Promise.all([
       db
@@ -145,6 +152,7 @@ export const huntListingsRouter = {
   range: procedure
     .input(z.object({from: z.number(), to: z.number()}))
     .handler(async ({context, input}) => {
+      await fillIfEmpty();
       const [listings, mine, all] = await Promise.all([
         db
           .select()
