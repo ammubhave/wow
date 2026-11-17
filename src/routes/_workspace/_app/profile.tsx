@@ -1,10 +1,11 @@
-import {Avatar, buttonVariants, Card, Label, Link} from "@heroui/react";
-import {createFileRoute, Link as RouterLink} from "@tanstack/react-router";
-import {ArrowLeftIcon} from "lucide-react";
+import {Avatar, Card, Label, Link} from "@heroui/react";
+import {createFileRoute} from "@tanstack/react-router";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 
 import {DangerZoneCard, SessionsCard, SignInMethodsCard} from "@/components/account-settings";
 import {useAppForm} from "@/components/form";
+import {Page, READING_WIDTH} from "@/components/page";
 import {PasskeysCard} from "@/components/passkeys-card";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {authClient} from "@/lib/auth-client";
@@ -18,21 +19,15 @@ function RouteComponent() {
   const {data} = authClient.useSession();
   if (!data) return null;
   return (
-    <div className="flex w-full flex-1 justify-center">
-      <div className="flex w-full max-w-xl flex-col gap-4">
-        <div>
-          <RouterLink to="/workspaces" className={buttonVariants({variant: "ghost", size: "sm"})}>
-            <ArrowLeftIcon /> Back
-          </RouterLink>
-        </div>
-        <h1 className="text-2xl font-semibold">Account</h1>
+    <Page title="Account">
+      <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
         <ProfileCard user={data.user} />
         <SignInMethodsCard email={data.user.email} />
         <PasskeysCard />
         <SessionsCard currentToken={data.session.token} />
         <DangerZoneCard />
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -44,6 +39,7 @@ function ProfileCard({
   const form = useAppForm({
     defaultValues: {name: user.name, email: user.email},
     onSubmit: async ({value}) => {
+      const result = {saved: true};
       if (user.name !== value.name) {
         await authClient.updateUser(
           {name: value.name},
@@ -52,6 +48,7 @@ function ProfileCard({
               toast.success("Profile saved");
             },
             onError: error => {
+              result.saved = false;
               toast.error(error.error.message);
             },
           }
@@ -67,11 +64,14 @@ function ProfileCard({
               );
             },
             onError: error => {
+              result.saved = false;
               toast.error(error.error.message);
             },
           }
         );
       }
+      // Saved: the form is clean again (its Save button says so).
+      if (result.saved) form.reset(value);
     },
   });
   return (
@@ -113,7 +113,7 @@ function ProfileCard({
       </Card.Content>
       <Card.Footer className="mt-4">
         <form.AppForm>
-          <form.SubmitButton>Save</form.SubmitButton>
+          <form.SubmitButton savesChanges>Save</form.SubmitButton>
         </form.AppForm>
       </Card.Footer>
     </Card>

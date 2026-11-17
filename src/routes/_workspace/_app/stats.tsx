@@ -1,8 +1,9 @@
-import {Avatar, buttonVariants, Card, Skeleton} from "@heroui/react";
+import {Avatar, Card, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {ArrowLeftIcon} from "lucide-react";
+import {cn} from "tailwind-variants";
 
+import {Page, READING_WIDTH} from "@/components/page";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {formatPuzzleTime} from "@/hooks/use-puzzle-time";
 import {orpc} from "@/lib/orpc";
@@ -84,14 +85,8 @@ function computeStats(stats: Stats) {
 function RouteComponent() {
   const {data} = useQuery(orpc.me.stats.queryOptions());
   return (
-    <div className="flex w-full flex-1 justify-center">
-      <div className="flex w-full max-w-2xl flex-col gap-4">
-        <div>
-          <Link to="/workspaces" className={buttonVariants({variant: "ghost", size: "sm"})}>
-            <ArrowLeftIcon /> Back
-          </Link>
-        </div>
-        <h1 className="text-2xl font-semibold">My stats</h1>
+    <Page title="My stats">
+      <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
         {data ? (
           <StatsBody stats={data} />
         ) : (
@@ -101,7 +96,7 @@ function RouteComponent() {
           </>
         )}
       </div>
-    </div>
+    </Page>
   );
 }
 

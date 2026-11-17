@@ -5,6 +5,7 @@ import PostalMime from "postal-mime";
 import {db} from "./lib/db";
 import * as schema from "./lib/db/schema";
 import {fetchDiscord} from "./server/do/discord-client";
+import {syncHuntListings} from "./server/hunt-calendar";
 import {captureServerException} from "./server/posthog";
 
 /**
@@ -40,6 +41,17 @@ export default {
       captureServerException(error, {properties: {path: new URL(request.url).pathname}});
       throw error;
     }
+  },
+
+  // Cron triggers (wrangler.jsonc): refresh the hunt listings.
+  scheduled(_controller, _env, ctx) {
+    ctx.waitUntil(
+      syncHuntListings().catch((error: unknown) => {
+        console.error("Hunt listings sync failed:", error);
+        captureServerException(error, {properties: {task: "hunt listings sync"}});
+        throw error;
+      })
+    );
   },
 
   async email(message) {

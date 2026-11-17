@@ -29,7 +29,6 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
         <Card.Description>
           Give the workspace your hunt's colors: an accent color for buttons, progress and
           highlights, and an emoji beside your team name.
-          {!isOwner && " Only owners can change these."}
         </Card.Description>
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">
@@ -46,7 +45,7 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
                     disabled={!isOwner}
                     onClick={() => update.mutate({workspaceSlug, accent: accent.id})}
                     className={cn(
-                      "ring-offset-surface flex size-8 items-center justify-center rounded-full ring-offset-2 transition disabled:cursor-not-allowed",
+                      "ring-offset-surface flex size-8 items-center justify-center rounded-full ring-offset-2 transition disabled:cursor-not-allowed disabled:opacity-50",
                       current === accent.id && "ring-foreground ring-2"
                     )}
                     style={{background: accent.color ?? "oklch(66.98% 0.1605 57.71)"}}>
@@ -71,7 +70,7 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
             variant="secondary"
             value={emoji}
             onChange={setEmoji}
-            isReadOnly={!isOwner}
+            isDisabled={!isOwner}
             className="w-32">
             <Label>Team emoji</Label>
             <Input placeholder="🧇" maxLength={16} />
@@ -80,81 +79,6 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
             <Button type="submit" variant="secondary">
               Save
             </Button>
-          )}
-        </form>
-      </Card.Content>
-    </Card>
-  );
-}
-
-const pad = (n: number) => String(n).padStart(2, "0");
-const toMs = (value: string) => (value ? new Date(value).getTime() : null);
-
-/** `datetime-local` value for a timestamp, in this browser's time zone. */
-function toLocalInput(date: Date | string | null | undefined) {
-  if (!date) return "";
-  const d = new Date(date);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-/** Optional hunt start/end times (owners): the header shows a clock, the chart the window. */
-export function HuntClockCard({workspaceSlug}: {workspaceSlug: string}) {
-  const workspace = useWorkspace();
-  const isOwner = useIsWorkspaceOwner();
-  const update = useMutation(workspaceMutations.workspaces.update());
-  const [start, setStart] = useState(toLocalInput(workspace.huntStartsAt));
-  const [end, setEnd] = useState(toLocalInput(workspace.huntEndsAt));
-  return (
-    <Card>
-      <Card.Header>
-        <Card.Title>Hunt clock</Card.Title>
-        <Card.Description>
-          Optional. With a start (and end) time, the header counts the hunt down and up, and the
-          solves chart covers the hunt.
-          {!isOwner && " Only owners can change these."}
-        </Card.Description>
-      </Card.Header>
-      <Card.Content>
-        <form
-          className="flex flex-wrap items-end gap-3"
-          onSubmit={event => {
-            event.preventDefault();
-            const huntStartsAt = toMs(start);
-            const huntEndsAt = toMs(end);
-            if (huntStartsAt && huntEndsAt && huntEndsAt <= huntStartsAt) {
-              toast.error("The hunt has to end after it starts.");
-              return;
-            }
-            update.mutate(
-              {workspaceSlug, huntStartsAt, huntEndsAt},
-              {onSuccess: () => toast.success("Hunt clock saved.")}
-            );
-          }}>
-          <TextField variant="secondary" value={start} onChange={setStart} isReadOnly={!isOwner}>
-            <Label>Starts</Label>
-            <Input type="datetime-local" />
-          </TextField>
-          <TextField variant="secondary" value={end} onChange={setEnd} isReadOnly={!isOwner}>
-            <Label>Ends</Label>
-            <Input type="datetime-local" />
-          </TextField>
-          {isOwner && (
-            <div className="flex gap-2">
-              <Button type="submit" variant="secondary">
-                Save
-              </Button>
-              {(start || end) && (
-                <Button
-                  variant="ghost"
-                  onPress={() => {
-                    setStart("");
-                    setEnd("");
-                    update.mutate({workspaceSlug, huntStartsAt: null, huntEndsAt: null});
-                  }}>
-                  Clear
-                </Button>
-              )}
-            </div>
           )}
         </form>
       </Card.Content>

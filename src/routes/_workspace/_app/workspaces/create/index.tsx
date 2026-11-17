@@ -1,26 +1,56 @@
-import {buttonVariants, Card} from "@heroui/react";
+import {Card} from "@heroui/react";
 import {useQueryClient} from "@tanstack/react-query";
-import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
-import {ArrowLeftIcon} from "lucide-react";
+import {createFileRoute, useRouter} from "@tanstack/react-router";
+import {useEffect} from "react";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
+import {Page, READING_WIDTH} from "@/components/page";
+import {
+  huntDetails,
+  huntWebsiteLink,
+  type Listing,
+  useHuntSuggestions,
+} from "@/hooks/use-hunt-suggestions";
 import {authClient} from "@/lib/auth-client";
+import {fromLocalInput} from "@/lib/datetime-local";
+import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   component: RouteComponent,
+  // From a hunt shortcut (My workspaces): the hunt listing, and its name to start the form with.
+  validateSearch: z.object({hunt: z.string().optional(), event: z.string().optional()}),
   head: () => ({meta: [{title: "Create Workspace | WOW"}]}),
 });
 
 const reservedSlugs = new Set(["exchange"]);
 
 function RouteComponent() {
+  const {suggestions: huntSuggestions, byId: huntsById} = useHuntSuggestions();
+  const search = Route.useSearch();
   const router = useRouter();
   const queryClient = useQueryClient();
   const form = useAppForm({
-    defaultValues: {teamName: "", eventName: "", workspaceSlug: "", password: ""},
+    defaultValues: {
+      teamName: "",
+      eventName: search.event ?? "",
+      huntStartsAt: "",
+      huntEndsAt: "",
+      huntLocation: "",
+      huntWebsite: "",
+      workspaceSlug: "",
+      password: "",
+    },
     onSubmit: async ({value}) => {
+      const huntStartsAt = fromLocalInput(value.huntStartsAt);
+      const huntEndsAt = fromLocalInput(value.huntEndsAt);
+      if (huntStartsAt && huntEndsAt && huntEndsAt <= huntStartsAt) {
+        toast.error("The hunt has to end after it starts.");
+        return;
+      }
+      const huntUrl = value.huntWebsite.trim();
       if (!(await authClient.organization.checkSlug({slug: value.workspaceSlug})).data) {
         toast.error("Workspace ID is already taken. Please choose another one.");
         return;
@@ -31,52 +61,74 @@ function RouteComponent() {
         );
         return;
       }
-      toast.promise(
-        authClient.organization.create(
+      const create = async () => {
+        await authClient.organization.create(
           {
             name: `${value.teamName} - ${value.eventName}`,
             slug: value.workspaceSlug,
             teamName: value.teamName,
             eventName: value.eventName,
             password: value.password,
+            ...(value.huntLocation.trim() ? {huntLocation: value.huntLocation.trim()} : {}),
+            ...(huntUrl ? {links: [huntWebsiteLink(huntUrl)]} : {}),
           },
-          {
-            throw: true,
-            onSuccess: () => {
-              void queryClient.invalidateQueries();
-              form.reset();
-              void router.navigate({
-                to: "/workspaces/create/$workspaceSlug",
-                params: {workspaceSlug: value.workspaceSlug},
-              });
-            },
-          }
-        ),
-        {
-          loading: "Creating workspace...",
-          success: "Success! Your workspace has been created.",
-          error: "Oops! Something went wrong.",
-          description: `${value.teamName} · ${value.eventName}`,
+          {throw: true}
+        );
+        // Dates go separately: the sign-in library's create takes no dates over JSON.
+        if (huntStartsAt !== null || huntEndsAt !== null) {
+          await orpc.workspaces.update.call({
+            workspaceSlug: value.workspaceSlug,
+            huntStartsAt,
+            huntEndsAt,
+          });
         }
-      );
+        void queryClient.invalidateQueries();
+        form.reset();
+        void router.navigate({
+          to: "/workspaces/create/$workspaceSlug",
+          params: {workspaceSlug: value.workspaceSlug},
+        });
+      };
+      toast.promise(create(), {
+        loading: "Creating workspace...",
+        success: "Success! Your workspace has been created.",
+        error: "Oops! Something went wrong.",
+        description: `${value.teamName} · ${value.eventName}`,
+      });
     },
   });
 
+  const applyHunt = (listing: Listing) => {
+    const details = huntDetails(listing);
+    form.setFieldValue("huntStartsAt", details.huntStartsAt);
+    form.setFieldValue("huntEndsAt", details.huntEndsAt);
+    form.setFieldValue("huntLocation", details.huntLocation);
+    form.setFieldValue("huntWebsite", listing.url ?? "");
+  };
+  /** A hunt was picked: fill in its dates and place (still editable). */
+  const fillFrom = (id: string | null) => {
+    const listing = id ? huntsById.get(id) : undefined;
+    if (!listing) return;
+    applyHunt(listing);
+  };
+  // From a hunt shortcut: fill them in once the hunts have loaded.
+  const shortcutHunt = search.hunt ? huntsById.get(search.hunt) : undefined;
+  useEffect(() => {
+    if (!shortcutHunt || form.getFieldValue("huntStartsAt")) return;
+    applyHunt(shortcutHunt);
+    // Once, when that hunt arrives.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [shortcutHunt?.id]);
+
   return (
-    <div className="flex w-full justify-center">
-      <div className="flex max-w-3xl flex-1 flex-col items-stretch gap-4">
-        <div>
-          <Link to="/workspaces" className={buttonVariants({variant: "ghost", size: "sm"})}>
-            <ArrowLeftIcon /> Back
-          </Link>
-        </div>
+    <Page title="Create workspace">
+      <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
         <form.AppForm>
           <Card>
             <Card.Header>
-              <Card.Title>Create workspace</Card.Title>
               <Card.Description>
-                You need to provide a team name and an event name to create your workspace. You also
-                need to provide a password that other users can use to join your workspace.
+                Your team, and the hunt you're playing. Teammates join with the workspace ID and
+                password (or the invitation link).
               </Card.Description>
             </Card.Header>
             <Card.Content>
@@ -84,11 +136,60 @@ function RouteComponent() {
                 <form.AppField
                   name="teamName"
                   validators={{onBlur: z.string().min(1)}}
-                  children={field => <field.TextField variant="secondary" label="Team name" />}
+                  children={field => (
+                    <field.TextField variant="secondary" label="Team name" isRequired />
+                  )}
                 />
                 <form.AppField
                   name="eventName"
-                  children={field => <field.TextField variant="secondary" label="Event name" />}
+                  children={field => (
+                    <field.SuggestField
+                      variant="secondary"
+                      label="Event name"
+                      isRequired
+                      placeholder="e.g. MIT Mystery Hunt 2027"
+                      description="Start typing to pick an upcoming hunt (it fills in the rest of the hunt details), or enter any name."
+                      suggestions={huntSuggestions}
+                      onPick={fillFrom}
+                    />
+                  )}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <form.AppField
+                    name="huntStartsAt"
+                    children={field => (
+                      <field.TextField variant="secondary" label="Starts" type="datetime-local" />
+                    )}
+                  />
+                  <form.AppField
+                    name="huntEndsAt"
+                    children={field => (
+                      <field.TextField variant="secondary" label="Ends" type="datetime-local" />
+                    )}
+                  />
+                </div>
+                <form.AppField
+                  name="huntLocation"
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Location"
+                      placeholder="Online, or a city"
+                    />
+                  )}
+                />
+                <form.AppField
+                  name="huntWebsite"
+                  validators={{onBlur: z.union([z.literal(""), z.url({protocol: /^https?$/})])}}
+                  children={field => (
+                    <field.TextField
+                      variant="secondary"
+                      label="Hunt website"
+                      type="url"
+                      placeholder="https://"
+                      description="Linked from the workspace's header."
+                    />
+                  )}
                 />
                 <form.AppField
                   name="workspaceSlug"
@@ -96,14 +197,24 @@ function RouteComponent() {
                     <field.TextField
                       variant="secondary"
                       label="Workspace ID"
-                      description="This is the ID that will be used to identify your workspace and will be used by other users to join your workspace. (E.g. myteam2025)"
+                      isRequired
+                      placeholder="e.g. myteam2027"
+                      autoComplete="off"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      description="Identifies the workspace; teammates use it to join."
                     />
                   )}
                 />
                 <form.AppField
                   name="password"
                   children={field => (
-                    <field.TextField variant="secondary" label="Workspace password" />
+                    <field.PasswordField
+                      variant="secondary"
+                      label="Workspace password"
+                      isRequired
+                      description="Teammates enter it to join."
+                    />
                   )}
                 />
               </form.Form>
@@ -114,6 +225,6 @@ function RouteComponent() {
           </Card>
         </form.AppForm>
       </div>
-    </div>
+    </Page>
   );
 }

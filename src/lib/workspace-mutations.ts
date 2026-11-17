@@ -342,7 +342,16 @@ const toDate = (ms: number | null | undefined) =>
   ms === undefined ? undefined : ms === null ? null : new Date(ms);
 
 function updateWorkspace(wire: Wire, input: RouterInputs["workspaces"]["update"]): Wire {
-  const {workspaceSlug: _, comment, huntStartsAt, huntEndsAt, accent, emoji, ...fields} = input;
+  const {
+    workspaceSlug: _,
+    comment,
+    huntStartsAt,
+    huntEndsAt,
+    huntLocation,
+    accent,
+    emoji,
+    ...fields
+  } = input;
   return {
     ...wire,
     ...defined({
@@ -350,6 +359,8 @@ function updateWorkspace(wire: Wire, input: RouterInputs["workspaces"]["update"]
       comment: comment === undefined ? undefined : comment || null,
       huntStartsAt: toDate(huntStartsAt),
       huntEndsAt: toDate(huntEndsAt),
+      // As the server stores it: trimmed, and empty clears it.
+      huntLocation: huntLocation === undefined ? undefined : huntLocation?.trim() || null,
     }),
     theme: {
       ...wire.theme,

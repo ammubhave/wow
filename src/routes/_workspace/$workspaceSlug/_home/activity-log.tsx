@@ -5,6 +5,7 @@ import {
   ActivityFeedSkeleton,
   activityLogQueryOptions,
 } from "@/components/activity-feed";
+import {Page} from "@/components/page";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/activity-log")({
   // Prefetch the first page (also on link hover, via intent preloading) so switching here from the
@@ -12,9 +13,9 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/activity-
   loader: ({context: {queryClient}, params: {workspaceSlug}}) =>
     queryClient.ensureInfiniteQueryData(activityLogQueryOptions(workspaceSlug)),
   pendingComponent: () => (
-    <div className="w-full p-4 md:p-8">
+    <Page>
       <ActivityFeedSkeleton />
-    </div>
+    </Page>
   ),
   component: RouteComponent,
   head: () => ({meta: [{title: "Activity Log | WOW"}]}),
@@ -22,8 +23,8 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/activity-
 
 function RouteComponent() {
   return (
-    <div className="w-full p-4 md:p-8">
+    <Page>
       <ActivityFeed />
-    </div>
+    </Page>
   );
 }

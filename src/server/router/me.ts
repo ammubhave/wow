@@ -26,6 +26,7 @@ export const meRouter = {
           eventName: schema.organization.eventName,
           huntStartsAt: schema.organization.huntStartsAt,
           huntEndsAt: schema.organization.huntEndsAt,
+          huntLocation: schema.organization.huntLocation,
           createdAt: schema.organization.createdAt,
           role: schema.member.role,
         })
@@ -57,6 +58,7 @@ export const meRouter = {
       role: toWorkspaceRole(w.role),
       huntStartsAt: w.huntStartsAt?.getTime() ?? null,
       huntEndsAt: w.huntEndsAt?.getTime() ?? null,
+      huntLocation: w.huntLocation,
       createdAt: w.createdAt.getTime(),
       members: membersBy.get(w.id) ?? 0,
       puzzles: puzzlesBy.get(w.id)?.total ?? 0,

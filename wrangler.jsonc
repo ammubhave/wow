@@ -12,6 +12,8 @@
     "logs": {"enabled": true, "destinations": ["posthog-logs"]},
   },
   "placement": {"mode": "smart"},
+  // Refreshes hunt listings from the puzzle hunt calendars (src/server/hunt-calendar.ts).
+  "triggers": {"crons": ["17 */6 * * *"]},
   // A pure SPA: no page is rendered on the server. The app shell is a static file (TanStack Start
   // SPA mode writes it to index.html at build), so page loads are served from static assets
   // without running the Worker: a navigation to a URL with no matching file gets index.html. The

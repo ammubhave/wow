@@ -2,10 +2,9 @@ import {Link} from "@heroui/react";
 
 export function HelpPage() {
   return (
-    <div className="prose flex justify-center">
-      <div className="max-w-4xl">
-        <h2>Help Page</h2>
-        <p />
+    // Prose at the page's reading width, from the page's left edge (the page draws the title).
+    <div className="prose max-w-3xl">
+      <div>
         <h4 id="swipe">Swipe between pages</h4>
         <p>
           To turn off swipe between pages on Chrome, visit this link to toggle the option:

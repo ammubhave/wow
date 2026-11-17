@@ -9,7 +9,9 @@ function RouteComponent() {
     <div className="[--header-height:calc(--spacing(14))]">
       <div className="flex flex-col">
         <SiteHeader />
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-auto p-4 md:gap-8 md:p-10">
+        {/* Pages bring their own frame (Page); this is at least the screen's height below the
+            header, so a full-screen page (joining a workspace) can center itself in it. */}
+        <div className="flex min-h-[calc(100svh-var(--header-height))] flex-col">
           <Outlet />
         </div>
       </div>

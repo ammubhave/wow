@@ -5,6 +5,7 @@ import {organization} from "better-auth/plugins";
 import {captcha, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {eq} from "drizzle-orm";
+import {z} from "zod";
 
 import {sendActionEmail} from "../server/email";
 import {trackServerEvent} from "../server/posthog";
@@ -13,6 +14,14 @@ import * as schema from "./db/schema";
 
 // Owns the activity of accounts that have been deleted (see `user.deleteUser` below).
 const DELETED_USER_ID = "deleted-user";
+
+/** The links a new workspace was created with: well-formed web links only, a few at most. */
+const givenLinks = (links: unknown) =>
+  z
+    .array(z.object({name: z.string().min(1).max(100), url: z.url({protocol: /^https?$/})}))
+    .max(5)
+    .catch([])
+    .parse(links);
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
@@ -123,7 +132,10 @@ export const auth = betterAuth({
             .update(schema.organization)
             .set({
               tags: ["crossword", "physical"],
+              // Links given at creation (the hunt's website, when picked from the hunt list) come
+              // first, then the usual solving tools.
               links: [
+                ...givenLinks(org.links),
                 {name: "Nutrimatic", url: "https://nutrimatic.org"},
                 {name: "Qat", url: "https://www.quinapalus.com/cgi-bin/qat"},
                 {name: "util.in", url: "https://util.in"},
@@ -157,6 +169,7 @@ export const auth = betterAuth({
             // Optional hunt clock (the header shows elapsed/remaining time when set).
             huntStartsAt: {type: "date", required: false},
             huntEndsAt: {type: "date", required: false},
+            huntLocation: {type: "string", required: false},
             // Look and feel: accent color, emoji, team custom emoji (see workspace-theme.ts).
             theme: {type: "json", required: false},
           },

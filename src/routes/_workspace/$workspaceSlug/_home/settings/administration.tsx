@@ -117,7 +117,7 @@ function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
         </Card.Content>
         {isOwner && (
           <Card.Footer>
-            <form.SubmitButton>Save</form.SubmitButton>
+            <form.SubmitButton savesChanges>Save</form.SubmitButton>
           </Card.Footer>
         )}
       </form.AppForm>

@@ -223,3 +223,16 @@
     animation-duration: 0.01ms;
   }
 }
+
+/* Shiny text (adapted from React Bits): a band of light sweeping across the letters. */
+@theme {
+  --animate-shine: shine 3s linear infinite;
+}
+@keyframes shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}

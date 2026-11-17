@@ -148,6 +148,14 @@ export const workspacesRouter = {
         // Optional hunt clock (ms since epoch; null clears it).
         huntStartsAt: z.number().nullable().optional(),
         huntEndsAt: z.number().nullable().optional(),
+        // Where the hunt is: "Online", a city, … (empty clears it).
+        huntLocation: z
+          .string()
+          .trim()
+          .max(200)
+          .transform(val => (val.length === 0 ? null : val))
+          .nullable()
+          .optional(),
         // The workspace's look (custom emoji have their own procedures).
         accent: workspaceThemeSchema.shape.accent,
         emoji: z.string().max(16).nullable().optional(),
@@ -162,13 +170,14 @@ export const workspacesRouter = {
         input.password,
         input.huntStartsAt,
         input.huntEndsAt,
+        input.huntLocation,
         input.accent,
         input.emoji,
       ];
       if (context.role !== "owner" && ownerFields.some(value => value !== undefined)) {
         throw new ORPCError("FORBIDDEN", {
           message:
-            "Only workspace owners can change the team or event name, password, hunt clock or look.",
+            "Only workspace owners can change the team or event name, password, hunt dates and location, or look.",
         });
       }
       let theme: SQL | undefined;
@@ -201,6 +210,7 @@ export const workspacesRouter = {
           links: input.links,
           huntStartsAt: toDate(input.huntStartsAt),
           huntEndsAt: toDate(input.huntEndsAt),
+          huntLocation: input.huntLocation,
           theme,
         })
         .where(eq(schema.organization.id, context.workspace.id))

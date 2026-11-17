@@ -1,13 +1,16 @@
-import {Button, Card, InputGroup, Label, Separator} from "@heroui/react";
+import {Alert, Button, Card, InputGroup, Label, Separator} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {CopyIcon, PlusIcon, TrashIcon} from "lucide-react";
+import {useState} from "react";
 import {toast} from "sonner";
 
 import {useAppForm} from "@/components/form";
-import {HuntClockCard, LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
+import {LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
+import {huntDetails, huntWebsiteLink, useHuntSuggestions} from "@/hooks/use-hunt-suggestions";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
+import {fromLocalInput, toLocalInput} from "@/lib/datetime-local";
 import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -17,11 +20,23 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/
 
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
+  const isOwner = useIsWorkspaceOwner();
   return (
     <>
+      {!isOwner && (
+        <Alert>
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Only owners can change the details and look</Alert.Title>
+            <Alert.Description>
+              Anyone can add team emoji, links and tags below. Ask an owner (see Members) if
+              something else needs changing.
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
       <DetailsCard />
       <LookCard workspaceSlug={workspaceSlug} />
-      <HuntClockCard workspaceSlug={workspaceSlug} />
       <TeamEmojiCard workspaceSlug={workspaceSlug} />
       <UpdateLinksCard />
       <UpdateTagsCard />
@@ -118,7 +133,7 @@ function UpdateLinksCard() {
           </form.Form>
         </Card.Content>
         <Card.Footer>
-          <form.SubmitButton>Save</form.SubmitButton>
+          <form.SubmitButton savesChanges>Save</form.SubmitButton>
         </Card.Footer>
       </form.AppForm>
     </Card>
@@ -164,6 +179,9 @@ function LeaveWorkspaceCard() {
   );
 }
 function DetailsCard() {
+  const {suggestions: huntSuggestions, byId: huntsById} = useHuntSuggestions();
+  // The hunt picked from the suggestions, for its website link.
+  const [pickedHuntId, setPickedHuntId] = useState<string | null>(null);
   const {workspaceSlug} = Route.useParams();
   const isOwner = useIsWorkspaceOwner();
   const workspace = useWorkspace();
@@ -172,11 +190,38 @@ function DetailsCard() {
     defaultValues: {
       teamName: workspace.teamName ?? undefined,
       eventName: workspace.eventName ?? undefined,
+      huntStartsAt: toLocalInput(workspace.huntStartsAt),
+      huntEndsAt: toLocalInput(workspace.huntEndsAt),
+      huntLocation: workspace.huntLocation ?? "",
     },
     onSubmit: ({value}) => {
+      const huntStartsAt = fromLocalInput(value.huntStartsAt);
+      const huntEndsAt = fromLocalInput(value.huntEndsAt);
+      if (huntStartsAt && huntEndsAt && huntEndsAt <= huntStartsAt) {
+        toast.error("The hunt has to end after it starts.");
+        return;
+      }
+      const pickedHunt = pickedHuntId ? huntsById.get(pickedHuntId) : undefined;
+      const huntUrl = pickedHunt && pickedHunt.name === value.eventName ? pickedHunt.url : null;
+      const links = workspace.links.map(({name, url}) => ({name, url}));
+      // Picked a hunt: add its website to the workspace's links (unless it's there already).
+      const addLink = huntUrl !== null && !links.some(link => link.url === huntUrl);
       mutation.mutate(
-        {workspaceSlug, ...value},
-        {onSuccess: () => toast.success("Your changes have been saved.")}
+        {
+          workspaceSlug,
+          ...value,
+          huntStartsAt,
+          huntEndsAt,
+          ...(addLink ? {links: [...links, huntWebsiteLink(huntUrl)]} : {}),
+        },
+        {
+          onSuccess: () =>
+            toast.success(
+              addLink
+                ? "Your changes have been saved, and the hunt's website added to the links."
+                : "Your changes have been saved."
+            ),
+        }
       );
       // Untouched again, the form follows the workspace (now showing this change) from here on.
       form.reset(value);
@@ -188,8 +233,8 @@ function DetailsCard() {
       <Card.Header>
         <Card.Title>Details</Card.Title>
         <Card.Description>
-          General information about this workspace.
-          {!isOwner && " Only owners can change the team and event names."}
+          The team, and the hunt: when and where it is. With dates, the header counts the hunt down
+          and up, and the solves chart covers it.
         </Card.Description>
       </Card.Header>
       <form.AppForm>
@@ -198,13 +243,63 @@ function DetailsCard() {
             <form.AppField
               name="teamName"
               children={field => (
-                <field.TextField variant="secondary" label="Team Name" readOnly={!isOwner} />
+                <field.TextField variant="secondary" label="Team Name" isDisabled={!isOwner} />
               )}
             />
             <form.AppField
               name="eventName"
               children={field => (
-                <field.TextField variant="secondary" label="Event Name" readOnly={!isOwner} />
+                <field.SuggestField
+                  variant="secondary"
+                  label="Event Name"
+                  isDisabled={!isOwner}
+                  suggestions={huntSuggestions}
+                  onPick={id => {
+                    setPickedHuntId(id);
+                    const listing = id ? huntsById.get(id) : undefined;
+                    if (!listing) return;
+                    // Picked a hunt: its dates and place too (still editable before saving).
+                    const details = huntDetails(listing);
+                    form.setFieldValue("huntStartsAt", details.huntStartsAt);
+                    form.setFieldValue("huntEndsAt", details.huntEndsAt);
+                    form.setFieldValue("huntLocation", details.huntLocation);
+                  }}
+                />
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <form.AppField
+                name="huntStartsAt"
+                children={field => (
+                  <field.TextField
+                    variant="secondary"
+                    label="Starts"
+                    type="datetime-local"
+                    isDisabled={!isOwner}
+                  />
+                )}
+              />
+              <form.AppField
+                name="huntEndsAt"
+                children={field => (
+                  <field.TextField
+                    variant="secondary"
+                    label="Ends"
+                    type="datetime-local"
+                    isDisabled={!isOwner}
+                  />
+                )}
+              />
+            </div>
+            <form.AppField
+              name="huntLocation"
+              children={field => (
+                <field.TextField
+                  variant="secondary"
+                  label="Location"
+                  placeholder="Online, or a city"
+                  isDisabled={!isOwner}
+                />
               )}
             />
             <div className="flex flex-col gap-1">
@@ -234,7 +329,7 @@ function DetailsCard() {
         </Card.Content>
         {isOwner && (
           <Card.Footer>
-            <form.SubmitButton>Save</form.SubmitButton>
+            <form.SubmitButton savesChanges>Save</form.SubmitButton>
           </Card.Footer>
         )}
       </form.AppForm>
@@ -312,7 +407,7 @@ function UpdateTagsCard() {
           </form.Form>
         </Card.Content>
         <Card.Footer>
-          <form.SubmitButton>Save</form.SubmitButton>
+          <form.SubmitButton savesChanges>Save</form.SubmitButton>
         </Card.Footer>
       </form.AppForm>
     </Card>

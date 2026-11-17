@@ -1,11 +1,13 @@
 import {Button, buttonVariants, Card, Separator} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {ArrowLeftIcon, ArrowRightIcon} from "lucide-react";
+import {ArrowRightIcon} from "lucide-react";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 
 import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
+import {Page, READING_WIDTH} from "@/components/page";
 import {WorkspaceProvider} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
@@ -34,13 +36,8 @@ function RouteComponentInner() {
   );
 
   return (
-    <div className="flex w-full justify-center">
-      <div className="flex max-w-3xl flex-1 flex-col gap-4">
-        <div>
-          <Link to="/workspaces" className={buttonVariants({variant: "ghost", size: "sm"})}>
-            <ArrowLeftIcon /> Back
-          </Link>
-        </div>
+    <Page title="Set up your workspace">
+      <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
         <Card>
           <GoogleDriveCardContents
             workspaceSlug={workspaceSlug}
@@ -75,6 +72,6 @@ function RouteComponentInner() {
           </Card.Footer>
         </Card>
       </div>
-    </div>
+    </Page>
   );
 }

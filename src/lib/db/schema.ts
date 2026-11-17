@@ -6,6 +6,7 @@ import {
   primaryKey,
   sqliteTable,
   text,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import {v7 as uuid7} from "uuid";
 
@@ -204,4 +205,36 @@ export const huntPuzzles = sqliteTable(
     solution: text({mode: "json"}).$type<JSONContent>(),
   },
   t => [index("hunt_puzzles_huntId_idx").on(t.huntId)]
+);
+
+// Hunt listings: puzzle hunts happening anywhere (synced from public calendars, or added by hand),
+// suggested as a workspace's event name.
+
+export const huntListings = sqliteTable(
+  "hunt_listings",
+  {
+    ...base,
+    /** Where it came from: a synced calendar ("puzzlehuntcalendar"), or "manual". */
+    source: text().notNull(),
+    /** The event's ID in its source (an iCal UID), so syncs update it in place. */
+    sourceId: text().notNull(),
+    name: text().notNull(),
+    /** The calendar's note after the name, e.g. "requires programming, cash prizes". */
+    note: text(),
+    url: text(),
+    location: text(),
+    isOnline: integer({mode: "boolean"}).notNull(),
+    /** Whole days (no time of day): startsAt and endsAt are UTC midnights, endsAt exclusive. */
+    allDay: integer({mode: "boolean"}).notNull(),
+    startsAt: integer({mode: "timestamp_ms"}).notNull(),
+    endsAt: integer({mode: "timestamp_ms"}).notNull(),
+    /** Kept out of suggestions (set by hand; syncs leave it alone). */
+    hidden: integer({mode: "boolean"}).default(false).notNull(),
+    /** When a sync last saw it; a synced listing its calendar no longer has is removed. */
+    syncedAt: integer({mode: "timestamp_ms"}),
+  },
+  t => [
+    uniqueIndex("hunt_listings_source_sourceId_idx").on(t.source, t.sourceId),
+    index("hunt_listings_endsAt_idx").on(t.endsAt),
+  ]
 );

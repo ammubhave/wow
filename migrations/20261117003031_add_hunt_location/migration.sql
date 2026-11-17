@@ -1,0 +1,1 @@
+ALTER TABLE `organization` ADD `hunt_location` text;

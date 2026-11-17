@@ -2,6 +2,7 @@ import {
   Autocomplete,
   Button,
   Checkbox,
+  ComboBox,
   Description,
   EmptyState,
   FieldError,
@@ -19,7 +20,7 @@ import {
   useFilter,
 } from "@heroui/react";
 import {createFormHook, createFormHookContexts} from "@tanstack/react-form";
-import {EyeIcon, EyeOffIcon} from "lucide-react";
+import {CheckIcon, EyeIcon, EyeOffIcon} from "lucide-react";
 import React, {useState} from "react";
 import {cn} from "tailwind-variants";
 
@@ -58,17 +59,20 @@ function PasswordField({
   label,
   description,
   variant,
+  isRequired,
   ...props
 }: {
   label?: string;
   description?: React.ReactNode | string;
   variant?: React.ComponentProps<typeof TextField>["variant"];
+  isRequired?: boolean;
 } & Omit<React.ComponentProps<typeof InputGroup.Input>, "type">) {
   const field = useFieldContext<string>();
   const [isVisible, setIsVisible] = useState(false);
   return (
     <TextField
       variant={variant}
+      isRequired={isRequired}
       isInvalid={field.state.meta.errors.length > 0}
       value={field.state.value}
       onChange={value => field.handleChange(value)}
@@ -98,14 +102,25 @@ function FormTextField({
   description,
   variant,
   fullWidth,
+  isDisabled,
+  isRequired,
   ...props
-}: {label?: string; description?: React.ReactNode | string} & React.ComponentProps<typeof Input>) {
+}: {
+  label?: string;
+  description?: React.ReactNode | string;
+  /** Can't be changed (shown dimmed); unlike readOnly, it doesn't look editable. */
+  isDisabled?: boolean;
+  /** Must be filled in: the label gets the required mark, and the form won't submit without it. */
+  isRequired?: boolean;
+} & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.errors.length > 0;
   return (
     <TextField
       variant={variant}
       fullWidth={fullWidth}
+      isDisabled={isDisabled}
+      isRequired={isRequired}
       isInvalid={isInvalid}
       value={field.state.value}
       onChange={value => field.handleChange(value)}
@@ -282,21 +297,148 @@ function ComboboxMultipleField({
   );
 }
 
-function SubmitButton({children, ...props}: React.ComponentProps<typeof Button>) {
+/** A suggestion for a SuggestField: its text, and an optional detail line under it. */
+export type Suggestion = {id: string; text: string; detail?: string};
+
+/**
+ * A text field that suggests known values as you type (picking one fills it in), but takes
+ * anything: the suggestions are a shortcut, not a list to choose from.
+ */
+function SuggestField({
+  label,
+  description,
+  variant,
+  placeholder,
+  suggestions,
+  isReadOnly,
+  isDisabled,
+  isRequired,
+  onPick,
+}: {
+  label?: string;
+  description?: React.ReactNode | string;
+  variant?: FieldVariant;
+  placeholder?: string;
+  suggestions: Suggestion[];
+  isReadOnly?: boolean;
+  isDisabled?: boolean;
+  isRequired?: boolean;
+  /** A suggestion was picked (its id), or the text was typed instead (null). */
+  onPick?: (id: string | null) => void;
+}) {
+  const field = useFieldContext<string>();
+  const {contains} = useFilter({sensitivity: "base"});
+  return (
+    <ComboBox
+      allowsCustomValue
+      menuTrigger="input"
+      variant={variant}
+      isReadOnly={isReadOnly}
+      isDisabled={isDisabled}
+      isRequired={isRequired}
+      isInvalid={field.state.meta.errors.length > 0}
+      inputValue={field.state.value}
+      onInputChange={value => field.handleChange(value)}
+      onSelectionChange={key => onPick?.(key === null ? null : String(key))}
+      onBlur={() => field.handleBlur()}
+      items={suggestions.filter(suggestion => contains(suggestion.text, field.state.value))}>
+      {label && <Label>{label}</Label>}
+      <ComboBox.InputGroup>
+        <Input placeholder={placeholder} />
+      </ComboBox.InputGroup>
+      {description && <Description>{description}</Description>}
+      <FieldError>{field.state.meta.errors.map(error => error?.message).join(", ")}</FieldError>
+      <ComboBox.Popover>
+        <ListBox>
+          {(suggestion: Suggestion) => (
+            <ListBox.Item id={suggestion.id} textValue={suggestion.text}>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate">{suggestion.text}</span>
+                {suggestion.detail && (
+                  <span className="text-muted truncate text-xs">{suggestion.detail}</span>
+                )}
+              </div>
+            </ListBox.Item>
+          )}
+        </ListBox>
+      </ComboBox.Popover>
+    </ComboBox>
+  );
+}
+
+function SubmitButton({
+  children,
+  savesChanges,
+  ...props
+}: React.ComponentProps<typeof Button> & {
+  /**
+   * For forms that edit something already saved (settings): disabled until there's a change, and
+   * "Saved" once the change is saved, until the next edit. The form must reset to the saved values
+   * after submitting (form.reset(value)), which is what marks it saved.
+   */
+  savesChanges?: boolean;
+}) {
   const form = useFormContext();
   return (
-    <form.Subscribe selector={state => state.isSubmitting}>
-      {isSubmitting => (
-        <Button
-          type="submit"
-          isPending={isSubmitting}
-          isDisabled={isSubmitting}
-          form={form.formId}
-          {...props}>
-          {children}
-        </Button>
-      )}
+    <form.Subscribe selector={state => [state.isSubmitting, state.isDirty] as const}>
+      {([isSubmitting, isDirty]) =>
+        savesChanges ? (
+          <SaveChangesButton
+            isSubmitting={isSubmitting}
+            isDirty={isDirty}
+            formId={form.formId}
+            {...props}>
+            {children}
+          </SaveChangesButton>
+        ) : (
+          <Button
+            type="submit"
+            isPending={isSubmitting}
+            isDisabled={isSubmitting}
+            form={form.formId}
+            {...props}>
+            {children}
+          </Button>
+        )
+      }
     </form.Subscribe>
+  );
+}
+
+function SaveChangesButton({
+  isSubmitting,
+  isDirty,
+  formId,
+  children,
+  ...props
+}: React.ComponentProps<typeof Button> & {
+  isSubmitting: boolean;
+  isDirty: boolean;
+  formId: string;
+}) {
+  // Changed, then clean again: that's the reset after a save (editing back by hand stays dirty).
+  const [justSaved, setJustSaved] = useState(false);
+  const [wasDirty, setWasDirty] = useState(isDirty);
+  if (wasDirty !== isDirty) {
+    setWasDirty(isDirty);
+    setJustSaved(wasDirty && !isDirty);
+  }
+  return (
+    <Button
+      type="submit"
+      isPending={isSubmitting}
+      isDisabled={isSubmitting || !isDirty}
+      form={formId}
+      {...props}>
+      {justSaved && !isDirty ? (
+        <>
+          <CheckIcon />
+          Saved
+        </>
+      ) : (
+        children
+      )}
+    </Button>
   );
 }
 
@@ -327,6 +469,7 @@ const {useAppForm} = createFormHook({
     CheckboxField,
     SelectField,
     ComboboxMultipleField,
+    SuggestField,
   },
   formComponents: {SubmitButton, Form},
   fieldContext,
