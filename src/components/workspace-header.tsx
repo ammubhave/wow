@@ -8,6 +8,7 @@ import {
   InfoIcon,
   PuzzleIcon,
   SettingsIcon,
+  TrophyIcon,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
@@ -33,6 +34,8 @@ const SECTIONS = [
     label: "Activity log",
     Icon: HistoryIcon,
   },
+  // The awards race: live standings during the hunt, the recap after.
+  {routeId: "/$workspaceSlug/recap", path: "/recap", label: "Leaderboard", Icon: TrophyIcon},
   {routeId: "/$workspaceSlug/help-page", path: "/help-page", label: "Help", Icon: InfoIcon},
 ] as const;
 

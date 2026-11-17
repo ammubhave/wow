@@ -1,4 +1,4 @@
-import {Timeline} from "@heroui-pro/react";
+import {FloatingToc, Timeline} from "@heroui-pro/react";
 import {
   Avatar,
   Button,
@@ -14,6 +14,7 @@ import {
 import {useSuspenseInfiniteQuery} from "@tanstack/react-query";
 import {Link, useParams} from "@tanstack/react-router";
 import {
+  ArrowDownToLineIcon,
   CircleCheckIcon,
   CircleIcon,
   FunnelIcon,
@@ -27,12 +28,14 @@ import {
   TriangleAlertIcon,
   UsersIcon,
 } from "lucide-react";
-import {lazy, Suspense} from "react";
+import {lazy, Suspense, useEffect, useState} from "react";
 import type {Key, Selection} from "react-aria-components";
 import {useInView} from "react-intersection-observer";
+import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 import {useLocalStorage} from "usehooks-ts";
 
+import {PageTitle, READING_WIDTH} from "@/components/page";
 import {PuzzleContributorAvatars} from "@/components/puzzle-contributors";
 import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -256,11 +259,13 @@ function FeedItem({
       </Timeline.Marker>
       <Timeline.Content>
         <div className="flex min-w-0 items-center justify-between gap-4">
-          <p className="text-muted m-0 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
+          {/* Baseline-aligned, so the name, the words and a chip's text (an answer, a status) all
+              sit on one line; only the avatar is centered. */}
+          <p className="text-muted m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm">
             {user && (
               <UserHoverCard user={user}>
-                <span className="text-foreground inline-flex cursor-default items-center gap-1.5 font-medium">
-                  <Avatar className="size-5" size="sm">
+                <span className="text-foreground inline-flex cursor-default items-baseline gap-1.5 font-medium">
+                  <Avatar className="size-5 self-center" size="sm">
                     <Avatar.Image
                       alt=""
                       src={user.image ?? gravatarUrl(user.email ?? "", {size: 64, d: "identicon"})}
@@ -331,13 +336,104 @@ export function activityLogQueryOptions(workspaceSlug: string) {
   });
 }
 
+/** Scrolls an element into view, smoothly unless reduced motion is on. */
+function scrollToId(id: string, block: ScrollLogicalPosition = "start") {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById(id)?.scrollIntoView({behavior: reduce ? "auto" : "smooth", block});
+}
+
+/**
+ * A floating table of contents for the feed: one bar per day loaded so far (the one you're
+ * reading highlighted), to jump between days, and "Beginning", which loads the older pages (as
+ * scrolling would, just without the scrolling) and jumps to the first entry.
+ */
+function ActivityToc({
+  days,
+  hasNextPage,
+  loadEverything,
+}: {
+  days: string[];
+  hasNextPage: boolean;
+  loadEverything: () => Promise<void>;
+}) {
+  const [active, setActive] = useState(0);
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
+  // The day you're reading: the last one whose section starts above the top fifth of the screen
+  // (or the last day, at the very end).
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = window.innerHeight * 0.2;
+      const sections = [...document.querySelectorAll<HTMLElement>("[data-activity-day]")];
+      const above = sections.filter(section => section.getBoundingClientRect().top <= line);
+      // Scrolled to the end: the last day, though it may never reach the top of the screen.
+      const end = document.getElementById("activity-end")?.getBoundingClientRect();
+      const atEnd = end !== undefined && end.bottom <= window.innerHeight && above.length > 0;
+      setActive(atEnd ? sections.length - 1 : Number(above.at(-1)?.dataset.activityDay ?? 0));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    // Capture: the feed scrolls inside the page's own scroll area, not the window.
+    window.addEventListener("scroll", onScroll, {capture: true, passive: true});
+    return () => {
+      window.removeEventListener("scroll", onScroll, {capture: true});
+      if (frame) cancelAnimationFrame(frame);
+    };
+    // Re-measured when days load (older pages arriving), as well as on scroll.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [days.length]);
+
+  return (
+    <div className="fixed top-1/2 right-6 z-20 hidden -translate-y-1/2 md:block">
+      <FloatingToc>
+        <FloatingToc.Trigger aria-label="Jump to a day">
+          {days.map((day, i) => (
+            <FloatingToc.Bar key={day} active={i === active} />
+          ))}
+          <FloatingToc.Bar level={2} />
+        </FloatingToc.Trigger>
+        <FloatingToc.Content>
+          <span className="text-muted mb-1 block px-3 py-1 text-[10px] font-semibold tracking-wider uppercase">
+            Jump to
+          </span>
+          {days.map((day, i) => (
+            <FloatingToc.Item
+              key={day}
+              active={i === active}
+              onClick={() => scrollToId(`activity-day-${i}`)}>
+              {day}
+            </FloatingToc.Item>
+          ))}
+          <FloatingToc.Item
+            disabled={isLoadingAll}
+            onClick={() => {
+              setIsLoadingAll(true);
+              void loadEverything()
+                .then(() => requestAnimationFrame(() => scrollToId("activity-end", "end")))
+                .finally(() => setIsLoadingAll(false));
+            }}>
+            <span className="flex items-center gap-2">
+              {isLoadingAll ? <Spinner size="sm" /> : <ArrowDownToLineIcon className="size-3.5" />}
+              {isLoadingAll
+                ? "Loading older activity…"
+                : hasNextPage
+                  ? "Beginning (loads the rest)"
+                  : "Beginning"}
+            </span>
+          </FloatingToc.Item>
+        </FloatingToc.Content>
+      </FloatingToc>
+    </div>
+  );
+}
+
 /** Shown only when the first page is slow (the route loader usually has it ready). */
 export function ActivityFeedSkeleton() {
   return (
-    <div
-      className="mx-auto flex w-full max-w-3xl flex-col gap-6"
-      aria-busy="true"
-      aria-label="Loading">
+    <div className={cn(READING_WIDTH, "flex flex-col gap-6")} aria-busy="true" aria-label="Loading">
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-32 rounded-lg" />
         <Skeleton className="h-9 w-24 rounded-lg" />
@@ -405,9 +501,9 @@ export function ActivityFeed() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Activity</h1>
+    <div className={cn(READING_WIDTH, "flex flex-col gap-6")}>
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
+        <PageTitle>Activity</PageTitle>
         <div className="flex items-center gap-2">
           <Link
             to="/$workspaceSlug/recap"
@@ -494,8 +590,12 @@ export function ActivityFeed() {
       <Suspense fallback={null}>
         <SolvesChart />
       </Suspense>
-      {days.map(day => (
-        <section key={day.label} className="flex flex-col gap-3">
+      {days.map((day, i) => (
+        <section
+          key={day.label}
+          id={`activity-day-${i}`}
+          data-activity-day={i}
+          className="flex scroll-mt-2 flex-col gap-3">
           <div className="bg-background sticky top-0 z-10 flex items-center gap-3 py-1">
             <h2 className="text-muted m-0 shrink-0 text-xs font-medium tracking-wide uppercase">
               {day.label}
@@ -515,7 +615,19 @@ export function ActivityFeed() {
           </Timeline>
         </section>
       ))}
-      <div ref={endRef} className="flex justify-center py-4">
+      {days.length > 1 && (
+        <ActivityToc
+          days={days.map(day => day.label)}
+          hasNextPage={hasNextPage}
+          loadEverything={async () => {
+            // Page by page, as scrolling would, until the first entry is in.
+            let more = hasNextPage;
+            // oxlint-disable-next-line no-await-in-loop -- each page's cursor comes from the last.
+            while (more) more = (await fetchNextPage()).hasNextPage;
+          }}
+        />
+      )}
+      <div ref={endRef} id="activity-end" className="flex justify-center py-4">
         {isFetchingNextPage && <Spinner size="sm" />}
         {!isFetchingNextPage && !hasNextPage && days.length === 0 && (
           <span className="text-muted text-sm">
