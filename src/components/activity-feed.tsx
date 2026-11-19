@@ -39,6 +39,7 @@ import {PageTitle, READING_WIDTH} from "@/components/page";
 import {PuzzleContributorAvatars} from "@/components/puzzle-contributors";
 import {gravatarUrl, UserHoverCard} from "@/components/user-hover-card";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {formatAnswers} from "@/lib/answers";
 import {ARRIVE_FROM_TOP, useMountedAt} from "@/lib/arrivals";
 import {orpc} from "@/lib/orpc";
 import {getPuzzleStatusGroups, getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
@@ -162,7 +163,7 @@ function EventText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}
         <>
           set the answer of {name} to{" "}
           <Chip size="sm" variant="secondary" className="font-mono uppercase">
-            {puzzle.field}
+            {formatAnswers(puzzle.field)}
           </Chip>
         </>
       );

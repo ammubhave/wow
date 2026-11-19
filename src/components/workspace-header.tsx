@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
+import {GuessQueueButton} from "@/components/guess-queue";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {NotificationBell} from "@/features/notifications/notifications";
 import {LobbyButton} from "@/features/voice/voice-ui";
@@ -36,7 +37,7 @@ const SECTIONS = [
   },
   // The awards race: live standings during the hunt, the recap after.
   {routeId: "/$workspaceSlug/recap", path: "/recap", label: "Leaderboard", Icon: TrophyIcon},
-  {routeId: "/$workspaceSlug/help-page", path: "/help-page", label: "Help", Icon: InfoIcon},
+  {routeId: "/$workspaceSlug/help", path: "/help", label: "Help", Icon: InfoIcon},
 ] as const;
 
 // How long the pointer rests on an icon before its name shows (like the app's other tooltips).
@@ -177,6 +178,7 @@ export function WorkspaceHeader() {
             </Navbar.Item>
           ))}
           <HuntClock />
+          <GuessQueueButton workspaceSlug={workspaceSlug} />
           <NotificationBell workspaceSlug={workspaceSlug} />
           <LobbyButton />
           <WorkspaceCommandDialog workspaceSlug={workspaceSlug} />

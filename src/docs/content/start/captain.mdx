@@ -1,0 +1,93 @@
+import createWorkspaceImage from "../../images/create-workspace.webp";
+
+You're setting WOW up for your team. This page covers what to do before the hunt: find the hunt, create a workspace, invite everyone, and get the board ready. Whoever creates the workspace becomes its first owner.
+
+## Find the hunt
+
+You don't have to start from a blank form. WOW knows about upcoming puzzle hunts from the Puzzle Hunt Calendar:
+
+- On **My workspaces**, **Hunts coming up** shows a featured hunt and a few more, picked from the series you've played before and what's starting soon.
+- **Hunts** in the header opens the full list and calendar at `/hunts`, with search and **Online** / **In person** filters.
+
+Choose **Set up workspace** on a hunt, and the create form opens with the hunt's name, dates, location and website already filled in. See [Find a hunt](/docs/guides/find-a-hunt).
+
+## Create the workspace
+
+<Screenshot
+  src={createWorkspaceImage}
+  alt="The create workspace form, filled in from a hunt suggestion"
+  caption="Picking a hunt from the suggestions fills in its dates, location and website."
+/>
+
+<Steps>
+
+1. Choose **Set up workspace** on a hunt, or **Create workspace** on My workspaces.
+2. Fill in the form. Required fields are marked with \*.
+   - **Team name** and **Event name**. Typing an event name suggests known hunts; picking one fills in the dates, location and website.
+   - **Starts** and **Ends**: these drive the hunt clock in the header and the solves chart in the activity log.
+   - **Location**, and the **Hunt website**, which becomes a link in the workspace header.
+   - **Workspace ID**: the workspace's address, `wafflehaus.io/` followed by the ID. It must not already be in use.
+   - **Workspace password**: teammates enter it to join.
+3. Choose **Create**.
+
+</Steps>
+
+Owners can change the names, dates and location later in <UiPath path="Settings > General > Details" />, and the password in <UiPath path="Settings > Administration" />. The hunt website lives with the other header links in <UiPath path="Settings > General > Links" />. The workspace ID can't be changed. More detail: [Create a workspace](/docs/guides/create-a-workspace).
+
+## Connect Google Drive or Discord (optional) <OwnerOnly />
+
+Right after creating, **Set up your workspace** offers two optional connections. Skip both and choose **Go to blackboard** if you're not sure; you can connect them later from <UiPath path="Settings > Administration" />.
+
+- **Google Drive**: every new puzzle gets a Google Sheet in your team's folder instead of the built-in spreadsheet. Worth it if your team prefers Google Sheets. See [Connect Google Drive](/docs/google-drive).
+- **Discord**: WOW keeps a Discord server in step with the board, with a voice channel per puzzle. Worth it if your team already lives in Discord. See [Connect Discord](/docs/discord).
+
+Without either, WOW's built-in spreadsheet and voice calls cover the same ground.
+
+## Invite your team
+
+Share the invitation link, `https://join.wafflehaus.io/` followed by your workspace ID, together with the password. You'll find the link with a copy button in <UiPath path="Settings > General > Details" />.
+
+Anyone who opens the link signs in (or creates an account), enters the password and chooses **Join**. They become members. If you'd rather make another captain an owner too, change their role in <UiPath path="Settings > Members" />. See [Invite your team](/docs/guides/invite-your-team) and [Members and roles](/docs/guides/members-and-roles).
+
+<Callout type="note">
+  Members can see the workspace password in Settings, so any teammate can pass it on.
+</Callout>
+
+## Build the board
+
+The blackboard starts empty, with **No rounds yet**. Most hunts release puzzles in rounds as you go, so you'll keep adding to the board during the hunt. Anyone on the team can, not just owners.
+
+<Steps>
+
+1. **Add a round**: choose **Add new round** on the empty board, or later from the **…** menu in the board's header row.
+2. **Add a meta**: in the round's menu, choose **Add new meta puzzle**. Give it a name and the link to the puzzle on the hunt site.
+3. **Add feeders**: in the meta's menu, choose **Add new puzzle feeding this meta puzzle**.
+4. **Don't know the meta yet?** Choose **Add new unassigned puzzle** in the round's menu. When the meta appears, add it with **Assign unassigned puzzles**, or use **Assign all unassigned puzzles** on the unassigned group.
+
+</Steps>
+
+Always fill in the **Link** so solvers can open the puzzle in one click. See [Rounds, metas and feeders](/docs/concepts/hunt-structure) for how these fit together.
+
+## Make it yours
+
+In <UiPath path="Settings > General" />, set an **Accent color** and a **Team emoji** <OwnerOnly />, and add **Links** (the hunt site, your team's answer-submission page, a shared doc) that appear in the header for everyone. See [Make it yours](/docs/guides/customize).
+
+## Hunt-day checklist
+
+Before the hunt starts:
+
+- [ ] **Starts** and **Ends** are set, so the hunt clock counts down and the leaderboard knows when the hunt ends.
+- [ ] Everyone has joined. Check the list in <UiPath path="Settings > Members" />.
+- [ ] Your links are in the header: the hunt site and anywhere you call in answers.
+- [ ] Your team agrees on statuses: what **Stuck**, **Needs Eyes** and **Extraction** mean to you. See [Statuses and importance](/docs/reference/statuses).
+- [ ] Someone owns calling in answers, using the [guess queue](/docs/guides/guess-queue).
+- [ ] Teammates know to mark **I helped** on puzzles they worked on, so the awards are fair.
+- [ ] If you're solving on MIT guest Wi-Fi with Discord, have a backup network for voice. See [Troubleshooting](/docs/help/troubleshooting).
+
+When the hunt opens, add the first round and its puzzles, and post an announcement from the megaphone on the blackboard sidebar to get everyone going.
+
+## Next
+
+- [Tutorial: your first hunt](/docs/tutorial): the whole hunt, step by step.
+- [The blackboard](/docs/blackboard): everything you can do on the board.
+- [Permissions](/docs/reference/permissions): what owners and members can each do.

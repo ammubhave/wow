@@ -1,0 +1,82 @@
+Most puzzle hunts are built the same way: puzzles come in **rounds**, and each round ends in a **meta**, a puzzle whose inputs are the answers to other puzzles. The blackboard mirrors that shape so your board looks like the hunt.
+
+## The pieces
+
+| Piece                 | What it is                                                         | On the blackboard                                                  |
+| --------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| **Round**             | A group of puzzles the hunt releases together, often with a theme. | A top-level row with a progress bar and a status (None or Solved). |
+| **Meta**              | A puzzle solved using the answers of other puzzles.                | A row under its round, with its feeders under it.                  |
+| **Feeder**            | A puzzle whose answer is used by a meta.                           | A row under its meta.                                              |
+| **Unassigned puzzle** | A puzzle in a round that isn't attached to a meta yet.             | Under **Unassigned puzzles** in its round.                         |
+
+A round's progress bar counts every puzzle in the round, metas included.
+
+## Rounds
+
+Hunts usually unlock rounds as you go, so you'll add rounds during the hunt, not all at the start. Name them as the hunt does, so everyone can match the board to the hunt site.
+
+A round's status is either **None** or **Solved**; set it to **Solved** when the hunt tells you you've finished the round.
+
+## Metas and feeders
+
+Add a meta from its round's menu with **Add new meta puzzle**, then add its feeders from the meta's menu with **Add new puzzle feeding this meta puzzle**. To move a puzzle to a different meta, change **Feeds Into** in **Edit this puzzle**, or drag it onto the meta while **Arrange** is on (desktop only).
+
+On a meta's page, **Feeder answers** lists every feeder with its answer as they come in, and **Copy table** copies them for the meta's sheet. On a feeder's page, **Other feeders** shows the rest of its meta's feeders. See [Solving metas](/docs/guides/metas).
+
+### Metas that feed metas
+
+Some hunts have a meta whose inputs include other metas' answers, such as a final "metameta" at the end of the hunt. WOW handles this: a meta can feed another meta. Pick the larger meta in the smaller meta's **Feeds Into**, and the tree on the board nests one level deeper.
+
+### Turning a puzzle into a meta
+
+If a puzzle you added as a feeder turns out to be a meta, open **Edit this puzzle** and tick **Is this a meta puzzle?**.
+
+## Unassigned puzzles
+
+Sometimes the hunt releases puzzles before you know which meta they belong to, or before a round's meta has appeared at all. Add them with **Add new unassigned puzzle** from the round's menu, and they gather under **Unassigned puzzles**.
+
+When the meta arrives:
+
+- add it with **Add new meta puzzle** and tick **Assign unassigned puzzles** to move them all under it, or
+- use **Assign all unassigned puzzles** in the unassigned group's menu and choose the meta in **Feeds Into**, or
+- assign them one at a time with **Feeds Into** in each puzzle's edit dialog.
+
+Once a round has a meta, **Add new unassigned puzzle** is no longer offered for it; add new puzzles under a meta instead.
+
+## Puzzles with several answers
+
+Some puzzles have more than one answer, for example a puzzle with three parts or a meta that asks for a list. In **Edit this puzzle**, set **How many** (1 to 20). The puzzle page then shows one box per answer ("Answer 1", "Answer 2"…) with "N of M found", and the puzzle counts as solved once every answer is in.
+
+On the blackboard, several answers show as `FOO · BAR`. To type them there, separate them with a semicolon: `FOO; BAR`.
+
+## Statuses and importance
+
+Every puzzle has a **status** that tells the team where it stands, and an optional **importance** that tells the team where to look.
+
+- **Statuses**: None, Active, Solved, Backsolved, Needs Eyes, Extraction, Stuck, Pending, Very Stuck. Solved and backsolved rows are tinted green, the "warning" statuses (Needs Eyes, Extraction) yellow, and the stuck ones red.
+- **Importance**: Important, Normal or Obsolete, or none. Obsolete is for puzzles you no longer need, for example once their meta is solved, and the **Hide obsolete** filter clears them away.
+
+What each one means, and how teams use them: [Statuses and importance](/docs/reference/statuses).
+
+## Mapping a real hunt
+
+Take the MIT Mystery Hunt as an example. It typically has several rounds that unlock over the weekend, each with one or more metas, and an endgame that ties the rounds together. On the board, that becomes:
+
+- a round row for each of the hunt's rounds,
+- a meta row for each round's meta, with that round's puzzles under it as feeders,
+- unassigned puzzles while you're still working out which meta a puzzle feeds,
+- a final round for the endgame, with its meta fed by the round metas if the hunt works that way.
+
+Smaller hunts may have a single round and one meta. Keep the board as close to the hunt's own structure as you can: it makes the meta's **Feeder answers** list right, and makes it easy to see which rounds need people.
+
+## Backsolving
+
+**Backsolving** is working out a feeder's answer from the meta instead of from the feeder itself. For example, if you've solved the meta and know the missing feeder's answer must be a five-letter fish with an R second, you might call in `TROUT` without finishing the feeder.
+
+Mark those puzzles **Backsolved** instead of **Solved**. Both count as solved on the board, in the solves chart and in the recap, but **Backsolved** tells your team the puzzle itself wasn't worked through, in case anyone wants to go back to it after the hunt.
+
+## Next
+
+- [The blackboard](/docs/blackboard): adding, editing, filtering and arranging.
+- [Solving metas](/docs/guides/metas): feeder answers and copying them as a table.
+- [Statuses and importance](/docs/reference/statuses): what each status means.

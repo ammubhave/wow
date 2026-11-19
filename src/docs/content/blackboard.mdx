@@ -1,0 +1,293 @@
+import boardImage from "../images/board.webp";
+import phoneBoardImage from "../images/phone-board.webp";
+
+The blackboard is the first thing you see when you open a workspace, and the place your team comes back to all hunt. It lists every round and puzzle, who's on what, and what's solved. Everything on it updates live for everyone.
+
+## How the board is laid out
+
+The board is a tree. Each **round** is a top-level row. Inside a round you'll find:
+
+<Screenshot
+  src={boardImage}
+  alt="The blackboard"
+  caption="Rounds, metas and their feeders, with answers, statuses and tags. Notes and team chat are on the right."
+/>
+
+- **Meta puzzles**, each with the **feeder** puzzles that feed it nested underneath. A meta can feed another meta, so the tree can go several levels deep.
+- **Unassigned puzzles**, a group for puzzles that don't belong to a meta yet. This is where a round's puzzles live before you know its structure, or in rounds with no metas at all.
+
+Click the chevron on a round, meta or unassigned group to collapse or expand it. WOW remembers what you've collapsed for each workspace, in your browser.
+
+Each feeder row has a coloured line on the left matching its meta, so you can tell at a glance which meta a puzzle belongs to.
+
+If you're new to how rounds, metas and feeders fit together, read [Rounds, metas and feeders](/docs/concepts/hunt-structure) first.
+
+### Columns
+
+| Column                   | What it shows                                                                                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hunt link (puzzle icon)  | Opens the puzzle on the hunt's website in a new tab. Only there if the puzzle has a link.                                                                                         |
+| Expand                   | The chevron for rounds and metas; a coloured line for feeders.                                                                                                                    |
+| **Name**                 | The puzzle's name. Click it to open the [puzzle page](/docs/guides/puzzle-page). A ✓ marks solved puzzles.                                                                        |
+| **Solution**             | The answer. Click to type one in.                                                                                                                                                 |
+| **Status**               | Where the puzzle stands: None, Active, Solved, Backsolved, Needs Eyes, Extraction, Stuck, Pending or Very Stuck. States that need attention colour the row; solved rows go quiet. |
+| Importance (signal icon) | Important, Normal, Obsolete, or none.                                                                                                                                             |
+| **Tags**                 | The puzzle's tags, like "crossword" or "music".                                                                                                                                   |
+| **Working on this**      | Avatars of teammates who have the puzzle open right now.                                                                                                                          |
+| Actions                  | The favourite star and the row's ⋯ menu.                                                                                                                                          |
+
+Round rows are a little different: they show the round's name, a progress bar with "X/Y" solved, and a round status (None or Solved) instead of a puzzle status.
+
+See [Statuses and importance](/docs/reference/statuses) for what each status means and how teams tend to use them.
+
+## Add rounds and puzzles
+
+Anyone in the workspace can add, edit and delete rounds and puzzles.
+
+### Add a round
+
+<Steps>
+
+1. Click the **Board menu** (⋯) at the right end of the board's header row. On an empty board, use the button under **No rounds yet** instead.
+2. Choose **Add new round**.
+3. Type the round's **Name** and click **Save**.
+
+</Steps>
+
+To rename a round later, open its ⋯ menu and choose **Edit round**.
+
+### Add a meta puzzle
+
+<Steps>
+
+1. Open the round's ⋯ menu and choose **Add new meta puzzle**.
+2. Fill in the dialog (fields below).
+3. Click **Save**.
+
+</Steps>
+
+| Field                         | What it's for                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Name**                      | The meta's name.                                                                                                                                 |
+| **Tags**                      | Optional tags.                                                                                                                                   |
+| **Link**                      | The meta's page on the hunt website. Shown as the hunt link icon on the board.                                                                   |
+| **Assign unassigned puzzles** | On by default. Moves the round's unassigned puzzles under this new meta as its feeders. Turn it off if those puzzles belong to a different meta. |
+
+### Add a puzzle
+
+How you add a puzzle depends on where it goes:
+
+- **Feeding a meta**: open the meta's ⋯ menu and choose **Add new puzzle feeding this meta puzzle**.
+- **Unassigned**: open the round's ⋯ menu and choose **Add new unassigned puzzle**. This is only available while the round has no metas; once it has one, add puzzles to a meta instead.
+
+The **Add new puzzle** dialog has:
+
+| Field              | What it's for                                                                                                                                                                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Name**           | The puzzle's name, as the hunt gives it.                                                                                                                                                                                                                   |
+| **Tags**           | Optional tags.                                                                                                                                                                                                                                             |
+| **Link**           | The puzzle's page on the hunt website. Paste it in so everyone can open the puzzle from the board in one click.                                                                                                                                            |
+| **Worksheet Type** | Only when the workspace has [Google Drive connected](/docs/google-drive): **Google Spreadsheet** or **Google Drawing**. Without Drive, every puzzle gets the [built-in spreadsheet](/docs/guides/spreadsheet) and a [whiteboard](/docs/guides/whiteboard). |
+
+After you click **Save**, a **Puzzle added** toast appears with a link to go straight to the new puzzle.
+
+<Callout type="tip" title="Add puzzles as they unlock">
+  Have one person add new puzzles the moment the hunt releases them, with the link. Everyone else
+  sees them appear on the board immediately and can start right away.
+</Callout>
+
+### Assign all unassigned puzzles at once
+
+When you figure out which meta a batch of unassigned puzzles belongs to:
+
+<Steps>
+
+1. Open the ⋯ menu on the round's **Unassigned puzzles** row.
+2. Choose **Assign all unassigned puzzles**.
+3. Pick the meta in **Feeds Into** and click **Save**.
+
+</Steps>
+
+To move a single puzzle, edit it and change **Feeds Into**, or drag it in [Arrange mode](#arrange-the-board).
+
+## Edit puzzles in place
+
+Most changes happen right on the board, without opening anything.
+
+### Answers
+
+<Steps>
+
+1. Click the puzzle's **Solution** cell.
+2. Type the answer. It's shown in capitals.
+3. Press <Kbd>Enter</Kbd> (or click away) to save, or <Kbd>Esc</Kbd> to cancel.
+
+</Steps>
+
+Typing an answer on the board does not change the puzzle's status. Set the status to **Solved** yourself, or fill the answer in on the [puzzle page](/docs/guides/puzzle-page), which marks it solved for you.
+
+For a puzzle with [more than one answer](/docs/guides/metas#puzzles-with-more-than-one-answer), the cell shows the answers as `FOO · BAR` and a hint like "1/3 answers". When you click it, it switches to `FOO; BAR`: separate the answers with `;`.
+
+### Status, importance and tags
+
+- **Status**: pick from the dropdown. Rows that need attention (Needs Eyes, Stuck and so on) take the status colour, and solved rows turn muted so the open puzzles stand out.
+- **Importance**: pick **Important**, **Normal**, **Obsolete**, or **None** from the signal icon. On unsolved puzzles, Important rows get an accent edge and bolder text, and Obsolete rows fade until you hover them. Solved rows look the same whatever their importance.
+- **Tags**: click the tags cell to add or remove tags. Each change saves immediately. Tags come from the workspace's list, which anyone can edit in <UiPath path="Settings > General > Tags" />.
+
+### The edit dialog
+
+For everything else, open the puzzle's ⋯ menu and choose **Edit this puzzle** (or **Edit this meta puzzle**). The **Edit puzzle** dialog has:
+
+| Field                      | What it's for                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| **Name**                   | Rename the puzzle.                                                                          |
+| **Feeds Into**             | Which meta it feeds, or the round's unassigned group. Moving it here moves it on the board. |
+| **Answer**                 | The answer. "Several? Put ; between them."                                                  |
+| **How many**               | How many answers the puzzle has, from 1 to 20. See [Solving metas](/docs/guides/metas).     |
+| **Status**                 | The puzzle's status.                                                                        |
+| **Tags**                   | Its tags.                                                                                   |
+| **Link**                   | The puzzle's page on the hunt website.                                                      |
+| **Is this a meta puzzle?** | Turn a puzzle into a meta (or back).                                                        |
+
+### Delete a puzzle or round
+
+Open the row's ⋯ menu and choose **Delete this puzzle**, **Delete this meta puzzle** or **Delete round**. You'll be asked to confirm.
+
+<Callout type="warning">
+  Deleting can't be undone, and any member can do it. Double-check you've got the right row.
+</Callout>
+
+## Favourites
+
+Hover over a row and click the star to mark a puzzle as a favourite. Favourites are yours alone; teammates don't see them.
+
+Starring doesn't move the puzzle. To see only your starred puzzles, turn on the **Favorites** filter in the toolbar. It's a handy way to keep track of the handful of puzzles you're juggling.
+
+<Callout type="phone">On touch screens the star is always visible, since there's no hover.</Callout>
+
+## Search and filter
+
+The toolbar above the board narrows what you see.
+
+### Search
+
+Type in **Search puzzles…**, or press <Kbd>/</Kbd> anywhere on the board to jump to it. Search matches a puzzle's name, answer, notes and tags. A meta stays visible when any of its feeders match.
+
+### Filters
+
+| Filter                | What it does                                                                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hide solved**       | Hides puzzles that are Solved or Backsolved. Round progress still counts them.                                                                      |
+| **Hide solved metas** | Hides metas marked Solved, with their feeders.                                                                                                      |
+| **Favorites**         | Shows only the puzzles you've starred.                                                                                                              |
+| **Hide obsolete**     | Hides puzzles marked Obsolete.                                                                                                                      |
+| **Tags**              | Shows only puzzles with any of the tags you pick. **(Untagged)** picks puzzles with no tags. **Select all** and **Reset filter** are at the bottom. |
+| **Importance**        | Shows only puzzles with the importance levels you pick, including **None**.                                                                         |
+
+The **Tags** and **Importance** buttons show how many you've picked, like "Tags · 2". When any filter is on, a **Clear** button (an ✕ on narrower windows) turns them all off.
+
+Filters are saved in your browser, so they're still there when you come back, and they only affect your view.
+
+## Arrange the board
+
+**Arrange** mode is for reorganising the board by dragging. It's in the toolbar on desktop.
+
+<Steps>
+
+1. Click **Arrange** in the toolbar. Each row gets a drag handle, and filters pause so you see every row.
+2. Drag rows by their handles:
+   - Drag a **round** above or below another round to reorder rounds.
+   - Drag a **puzzle** between its siblings to reorder it.
+   - Drop a puzzle **on a meta** to make it that meta's feeder.
+   - Drop a puzzle **on a round** to move it into that round.
+   - Drop a puzzle **on a round's Unassigned puzzles row** to make it unassigned.
+3. Click **Arrange** again when you're done.
+
+</Steps>
+
+Metas can feed other metas, but WOW won't let you drop a meta into one of its own feeders.
+
+<Callout type="phone">
+  Arrange isn't available on phones. Use **Edit this puzzle** and its **Feeds Into** field to move a
+  puzzle instead.
+</Callout>
+
+## Row menus at a glance
+
+| Row                | Menu items                                                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Board header (⋯)   | **Add new round**                                                                                                            |
+| Round              | **Add new meta puzzle**, **Add new unassigned puzzle** (only while the round has no metas), **Edit round**, **Delete round** |
+| Unassigned puzzles | **Assign all unassigned puzzles**                                                                                            |
+| Meta               | **Add new puzzle feeding this meta puzzle**, **Edit this meta puzzle**, **Delete this meta puzzle**                          |
+| Puzzle             | **Edit this puzzle**, **Delete this puzzle**                                                                                 |
+
+## See what your team is doing
+
+The board shows activity as it happens:
+
+- **Working on this**: avatars of teammates who have the puzzle open now. Use it to find a puzzle that needs more people, or one that's crowded.
+- **Change glow**: when a teammate changes a cell, it glows briefly with their avatar, so you notice what moved.
+- **Solve sparkle**: a puzzle that gets solved sparkles.
+- **Voice badge**: a headphones icon with a number next to a puzzle's name shows how many people are in its [voice call](/docs/guides/voice). Hover it to see who. It pulses while someone's talking.
+
+WOW doesn't assign puzzles to people. Presence shows who's looking at what, and the **I helped** toggle on the puzzle page records who actually helped. See [Working together live](/docs/concepts/live-collaboration).
+
+## The sidebar
+
+On desktop, a sidebar on the right of the board holds shared notes, progress, announcements and the team chat. Drag the handle between its two halves to resize them.
+
+### Notes
+
+Shared notes for the whole team: the hunt's phone number, the plan for tonight, links you keep needing.
+
+<Steps>
+
+1. Click the empty notes area (or the pencil when there are already notes).
+2. Type. Markdown works: headings, lists, links, bold.
+3. Click **Save** or press <Kbd>⌘ Enter</Kbd> (<Kbd>Ctrl Enter</Kbd> on Windows). <Kbd>Esc</Kbd> or **Cancel** discards your changes. **Clear** empties the notes.
+
+</Steps>
+
+Under the notes you'll see when they were last updated, and by whom. After saving or clearing, a toast offers **Undo**.
+
+### Progress squares
+
+Below the notes, each round has a row of small numbered squares, one per puzzle, coloured by status. Hover one to see the puzzle's name; click it to scroll the board to that puzzle. Click a round's name to jump to the round.
+
+### Announcements
+
+The megaphone button opens **Make an announcement**. Type your **Message**, optionally pick a **Discord Channel** to post it to as well (only when [Discord is connected](/docs/discord)), and click **Submit**. Everyone in the workspace gets it in their bell and as a pop-up. See [Chat and announcements](/docs/guides/chat#announcements).
+
+### Team chat
+
+The lower part of the sidebar is the team chat, with the lobby voice call above it. See [Chat and announcements](/docs/guides/chat) and [Voice and screen sharing](/docs/guides/voice).
+
+## On your phone
+
+<Screenshot
+  src={phoneBoardImage}
+  alt="The blackboard on a phone"
+  caption="On a phone, the board shows name, solution and status."
+  narrow
+/>
+
+<Callout type="phone">
+The board is simplified on small screens:
+
+- Only the **Name**, **Solution** and **Status** columns show.
+- The filters sit in their own row under the search box; swipe it sideways to see them all.
+- The sidebar is replaced by two buttons in the toolbar: **Notes and progress** and **Team chat**, each opening a drawer from the side.
+- There's no Arrange mode.
+- The favourite star is always visible.
+
+</Callout>
+
+See [WOW on your phone](/docs/guides/phone) for more.
+
+## Related
+
+- [Working on a puzzle](/docs/guides/puzzle-page)
+- [Rounds, metas and feeders](/docs/concepts/hunt-structure)
+- [Statuses and importance](/docs/reference/statuses)
+- [Solving metas](/docs/guides/metas)

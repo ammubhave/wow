@@ -202,6 +202,7 @@ function createPuzzle(wire: Wire, input: RouterInputs["puzzles"]["create"]): Wir
     googleSpreadsheetId: null,
     googleDrawingId: null,
     answer: null,
+    answerCount: 1,
     status: null,
     importance: "normal",
     comment: null,

@@ -54,7 +54,10 @@ export const puzzle = sqliteTable(
     link: text(),
     googleSpreadsheetId: text(),
     googleDrawingId: text(),
+    /** Its answers, one per line (most puzzles have one; see `answerCount`). */
     answer: text(),
+    /** How many answers it has: it's solved once all of them are in. */
+    answerCount: integer().default(1).notNull(),
     status: text(),
     importance: text(),
     comment: text(),
@@ -75,6 +78,39 @@ export const puzzle = sqliteTable(
   t => [
     index("puzzle_roundId_idx").on(t.roundId),
     index("puzzle_parentPuzzleId_idx").on(t.parentPuzzleId),
+  ]
+);
+
+/**
+ * Answers the team means to call in (or has), oldest first: queued while waiting their turn (a hunt
+ * rate-limiting guesses, a backoff), then submitted, then the hunt's verdict.
+ */
+export const puzzleGuess = sqliteTable(
+  "puzzle_guess",
+  {
+    ...base,
+    workspaceId: text()
+      .notNull()
+      .references(() => auth.organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    puzzleId: text()
+      .notNull()
+      .references(() => puzzle.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    answer: text().notNull(),
+    /** queued, submitted, correct, incorrect, partial (the hunt said keep going) or withdrawn. */
+    status: text().default("queued").notNull(),
+    /** What the hunt said back, or a note ("rate limited", "try the other spelling"). */
+    response: text(),
+    /** Not to be submitted before this (a hunt's backoff after wrong guesses). */
+    retryAt: integer({mode: "timestamp_ms"}),
+    createdBy: text()
+      .notNull()
+      .references(() => auth.user.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    /** Who last moved it along (submitted it, or recorded the verdict). */
+    updatedBy: text(),
+  },
+  t => [
+    index("puzzle_guess_workspaceId_idx").on(t.workspaceId),
+    index("puzzle_guess_puzzleId_idx").on(t.puzzleId),
   ]
 );
 

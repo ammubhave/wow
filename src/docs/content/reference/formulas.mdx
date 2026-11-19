@@ -1,0 +1,59 @@
+The built-in spreadsheet has a set of formulas made for puzzle solving: word searches, anagrams, ciphers and letter extraction. They sit alongside the usual spreadsheet functions.
+
+## Entering a formula
+
+Type `=` in a cell, then the formula, then press Enter. For example, `=ANAGRAMS("SILENT")` fills the cells below it with every anagram it finds.
+
+You don't have to remember them. Click **Puzzle tools** at the top right of the sheet (or right-click a cell and choose **Puzzle tools…**) to see every formula, grouped as **Words**, **Ciphers** and **Extraction**, each with an example. **Insert** puts the example in the selected cell, ready to edit.
+
+<Callout type="note" title="Built-in sheet only">
+  These formulas work in WOW's built-in spreadsheet. If your team uses [Google
+  Drive](/docs/google-drive), puzzles get Google Sheets instead, and Google Sheets doesn't have
+  them.
+</Callout>
+
+## Puzzle formulas
+
+Arguments in brackets are optional.
+
+<PuzzleFormulas />
+
+## Pattern syntax
+
+`MATCHES` takes a pattern, where each character stands for one letter unless it's `*`.
+
+| In the pattern      | Matches                        | Example     | Finds                   |
+| ------------------- | ------------------------------ | ----------- | ----------------------- |
+| `?` (or `.` or `_`) | any one letter                 | `C?T`       | CAT, COT, CUT           |
+| `*`                 | any run of letters, or none    | `SUN*`      | SUN, SUNDAY, SUNFLOWER… |
+| `@`                 | a vowel                        | `B@T`       | BAT, BET, BIT…          |
+| `#`                 | a consonant                    | `#AT`       | BAT, CAT, HAT…          |
+| `[ABC]`             | one of the letters in brackets | `[BC]AT`    | BAT, CAT                |
+| Any other letter    | itself                         | `CROSSWORD` | CROSSWORD               |
+
+Spaces and hyphens in the pattern are ignored, so you can paste a pattern like `? ? ? - ? ? ?` straight from a puzzle.
+
+## The word list
+
+`MATCHES`, `ANAGRAMS` and `ISWORD` look words up in the [Collaborative Word List](https://github.com/Crossword-Nexus/collaborative-word-list) (MIT licence), about 566,000 words and phrases.
+
+- **Phrases are written without spaces**, as in crosswords: ICE CREAM BAR is `ICECREAMBAR`. `ISWORD` ignores spaces in what you give it, so `=ISWORD("ICE CREAM")` works.
+- **Results come best first.** The list ranks its entries, so the common words you're probably looking for come before obscure ones.
+- `MATCHES` and `ANAGRAMS` return 50 results unless you ask for more with the second argument, up to 1000.
+
+## Ranges
+
+- **Results spill down.** `MATCHES`, `ANAGRAMS` and `CAESARALL` return several results, one per row, into the cells below. Leave room under the formula. `CAESARALL` fills two columns: the shift, then the shifted text.
+- **NTH works row by row over ranges.** `=NTH(A1:A10, B1:B10)` takes the letter from each word in column A at the position in column B, giving ten letters down the column. That's the usual extraction step in one formula.
+
+## Google Sheets extras
+
+Nearly all the standard Google Sheets functions also work in the built-in sheet, so formulas copied from a Google sheet usually just work. These are the Google-specific ones WOW adds on top:
+
+<GoogleFormulas />
+
+## Related
+
+- [The built-in spreadsheet](/docs/guides/spreadsheet)
+- [Solving metas](/docs/guides/metas)
+- [Connect Google Drive](/docs/google-drive)

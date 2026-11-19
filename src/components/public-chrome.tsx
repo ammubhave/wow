@@ -3,6 +3,7 @@ import {Button, buttonVariants, Dropdown, Header, Label, Separator} from "@herou
 import {Link, useRouterState} from "@tanstack/react-router";
 import {MonitorIcon, MoonIcon, PaletteIcon, SunIcon} from "lucide-react";
 
+import {findDoc} from "@/docs/registry";
 import {authClient} from "@/lib/auth-client";
 
 import {CoffeeIcon} from "./coffee-icon";
@@ -129,15 +130,6 @@ const FOOTER_COLUMNS = [
     ],
   },
   {
-    title: "Learn",
-    links: [
-      {to: "/docs", label: "Getting started"},
-      {to: "/docs/blackboard", label: "Blackboard"},
-      {to: "/docs/google-drive", label: "Google Drive"},
-      {to: "/docs/discord", label: "Discord"},
-    ],
-  },
-  {
     title: "Legal",
     links: [
       {to: "/tos", label: "Terms of Service"},
@@ -145,6 +137,25 @@ const FOOTER_COLUMNS = [
     ],
   },
 ] as const;
+
+/** Docs pages the footer links to, after the docs home. */
+const FOOTER_DOCS = ["start/solver", "start/captain", "tutorial", "reference/formulas", "help/faq"];
+
+function FooterColumn({column}: {column: (typeof FOOTER_COLUMNS)[number]}) {
+  return (
+    <nav aria-label={column.title} className="flex flex-col gap-3">
+      <h2 className="text-sm font-semibold">{column.title}</h2>
+      {column.links.map(link => (
+        <Link
+          key={link.to}
+          to={link.to}
+          className="text-muted hover:text-foreground w-fit text-sm transition-colors">
+          {link.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
 
 export function PublicFooter() {
   return (
@@ -167,21 +178,33 @@ export function PublicFooter() {
             Buy me a puzzle
           </a>
         </div>
-        {FOOTER_COLUMNS.map(column => (
-          <nav key={column.title} aria-label={column.title} className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold">{column.title}</h2>
-            {column.links.map(link => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="text-muted hover:text-foreground w-fit text-sm transition-colors">
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+        {FOOTER_COLUMNS.slice(0, 1).map(column => (
+          <FooterColumn key={column.title} column={column} />
+        ))}
+        {/* The docs' front doors (pages from the docs registry). */}
+        <nav aria-label="Learn" className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold">Learn</h2>
+          <Link
+            to="/docs"
+            className="text-muted hover:text-foreground w-fit text-sm transition-colors">
+            Docs home
+          </Link>
+          {FOOTER_DOCS.map(slug => (
+            <Link
+              key={slug}
+              to="/docs/$"
+              params={{_splat: slug}}
+              className="text-muted hover:text-foreground w-fit text-sm transition-colors">
+              {findDoc(slug)?.title}
+            </Link>
+          ))}
+        </nav>
+        {FOOTER_COLUMNS.slice(1).map(column => (
+          <FooterColumn key={column.title} column={column} />
         ))}
       </div>
       <Separator />
+
       <p className="text-muted mx-auto max-w-7xl px-6 py-6 text-xs">
         © {new Date().getFullYear()} Wafflehaüs
       </p>

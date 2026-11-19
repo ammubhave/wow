@@ -1,0 +1,120 @@
+import workspacesImage from "../../images/workspaces.webp";
+
+Anyone with a WOW account can join your workspace if they know its ID and password. You can hand those out in two ways: send the **invitation link**, which only needs the password, or share the **workspace ID and password** for teammates to type in.
+
+## Share the invitation link
+
+The invitation link is `https://join.wafflehaus.io/<workspace-id>`. For a workspace with the ID `waffles2027`, it's `https://join.wafflehaus.io/waffles2027`.
+
+<Steps>
+
+1. In the workspace, open <UiPath path="Settings > General > Details" />.
+2. Under **Invitation Link**, click the copy button next to the link. You'll see "Join link copied!".
+3. Paste the link into your team's chat or email, along with the workspace password.
+
+</Steps>
+
+Any member can copy the link, not just owners, and any member can see the password in <UiPath path="Settings > Administration" /> under **Workspace Password**. So if a teammate asks how to get in, anyone already inside can answer.
+
+<Callout type="tip">
+  A link to any page inside the workspace works as an invitation too. If a teammate who hasn't
+  joined opens a link to the board or a puzzle, WOW shows them the join page first, then takes them
+  in.
+</Callout>
+
+## What joiners see
+
+When someone opens the invitation link:
+
+<Steps>
+
+1. **If they're not signed in**, WOW asks them to log in. People without an account can click through to sign up, with Google or with a name, email and password. Either way, WOW brings them back to the join page afterwards.
+2. **The join page** says "Join workspace" followed by the ID, with a card showing your team name and event, so they can check it's the right one.
+3. They type the **Workspace password** and click **Join**.
+4. WOW adds them as a member and opens the blackboard.
+
+</Steps>
+
+If they get the password wrong, WOW says "That password isn't right." and they can try again.
+
+If they're already a member, the join page sends them straight on to the workspace. So it's fine to open the link twice, or to post it somewhere teammates who've already joined will see it.
+
+<Callout type="note">
+  Everyone who joins this way is a **member**. Members can do almost everything during a hunt: add
+  and edit puzzles, chat, call, and change tags and links. If you want someone else to manage the
+  workspace's settings with you, make them an owner in <UiPath path="Settings > Members" />. See
+  [Members and roles](/docs/guides/members-and-roles).
+</Callout>
+
+## Join with the ID and password
+
+If you don't have the link, you can join from **My workspaces** with the ID and password your team shared.
+
+<Screenshot
+  src={workspacesImage}
+  alt="My workspaces with the Join a workspace card"
+  caption="The Join a workspace card sits beside your workspaces."
+/>
+
+<Steps>
+
+1. Go to **My workspaces**.
+2. Find the **Join a workspace** card. On a wide screen it's beside your list of workspaces. On a narrower screen it's below the list: click **Join workspace** at the top of the page to jump to it.
+3. Enter the **Workspace ID** and the **Workspace password**.
+4. Click **Join workspace**.
+
+</Steps>
+
+You'll go straight to the workspace's blackboard, and it appears in your list on My workspaces from then on.
+
+<Callout type="phone">
+  On a phone, the **Join workspace** button at the top of My workspaces scrolls down to the Join a
+  workspace card and puts your cursor in the ID field.
+</Callout>
+
+## Google Drive access for members
+
+If the workspace uses [Google Drive](/docs/google-drive), each puzzle's Google Sheet lives in the team's Drive folder. When someone joins, WOW automatically gives their account's email address edit access to that folder, so the sheets open for them without asking.
+
+Things to know:
+
+- **Access goes to the email address of their WOW account.** If someone signs in to WOW with one address but is logged in to Google in their browser with another, the embedded sheets may show a Google "403" or "You need access" error. See [Troubleshooting](/docs/help/troubleshooting).
+- **If sharing fails**, every owner gets a notification that pops up even if pop-ups are turned down, with a link to open the folder or the file causing the problem. The usual cause is a file in the folder that was added outside WOW, which stops WOW sharing the whole folder.
+- **Owners can share again with everyone.** In <UiPath path="Settings > Administration" />, the Google Drive card has a **Share with everyone** button that re-shares the folder with every member. Use it after fixing the cause, or for people who joined before the folder was chosen. Sharing with someone who already has access changes nothing.
+
+## Change the password <OwnerOnly />
+
+Change the password if it's leaked somewhere public, or between hunts if you reuse a workspace.
+
+<Steps>
+
+1. Open <UiPath path="Settings > Administration" />.
+2. Under **Workspace Password**, type the new password. It must be at least 8 characters.
+3. Click **Save**. You'll see "The workspace password has been updated."
+
+</Steps>
+
+Changing the password doesn't remove anyone. People who already joined stay members. It only affects people joining from now on, so let your team know the new one. The invitation link doesn't change, since it only contains the workspace ID.
+
+Members who aren't owners can see the password but not edit it, and the **Save** button doesn't appear for them.
+
+## People already signed in vs new accounts
+
+| Teammate                         | What happens when they open the link                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| Already signed in to WOW         | Goes straight to the join page, enters the password, and is in.                            |
+| Has an account but is signed out | Logs in (with Google, a passkey, or email and password), then comes back to the join page. |
+| New to WOW                       | Clicks through to sign up, creates an account, then comes back to the join page.           |
+| Already a member                 | Goes straight to the workspace.                                                            |
+
+<Callout type="tip">
+  Ask teammates to sign up with the same email address they use for Google. That way, if your team
+  uses Google Drive, the sheets open for them without any account switching.
+</Callout>
+
+## Related
+
+- [Members and roles](/docs/guides/members-and-roles)
+- [Connect Google Drive](/docs/google-drive)
+- [Quick start for solvers](/docs/start/solver)
+- [Your account](/docs/reference/account)

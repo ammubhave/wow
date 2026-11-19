@@ -1,0 +1,146 @@
+import puzzlePageImage from "../../images/puzzle-page.webp";
+import infoPanelImage from "../../images/info-panel.webp";
+import phonePuzzleImage from "../../images/phone-puzzle.webp";
+
+Every puzzle has its own page in WOW. Click a puzzle's name on the [blackboard](/docs/blackboard) to open it. It's where you'll spend most of the hunt: a sheet to work in, a whiteboard, the puzzle's chat and voice call, and an info panel with its answer and status.
+
+## The layout
+
+On desktop the page has three panels:
+
+<Screenshot
+  src={phonePuzzleImage}
+  alt="A puzzle's Info tab on a phone"
+  caption="On a phone, the puzzle page has Sheet, Whiteboard, Chat and Info tabs."
+  narrow
+/>
+
+<Screenshot
+  src={puzzlePageImage}
+  alt="A puzzle page"
+  caption="The sheet on the left; the info panel above the chat on the right."
+/>
+
+| Panel     | Where                                   | What's in it                                                                                                                                  |
+| --------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worksheet | Left, about three quarters of the width | The puzzle's **Sheet** (or **Drawing**) and **Whiteboard**, switched with the tabs at the top. Your timer is at the right end of the tab bar. |
+| Info      | Top right                               | The puzzle's answer, status, importance, tags, solvers, guesses, feeder answers and notes.                                                    |
+| Chat      | Bottom right                            | The puzzle's chat, with its voice call above it.                                                                                              |
+
+Drag the handles between panels to resize them: widen the sheet for a big grid, or make the chat taller during a discussion.
+
+The sheet and whiteboard stay loaded once you've opened them, so switching tabs never reloads your work. The whiteboard only loads the first time you open its tab.
+
+<Callout type="phone">
+  On a phone you see one thing at a time, with four tabs at the top: **Sheet**, **Whiteboard**,
+  **Chat** and **Info**. The chosen tab is part of the address (for example `?view=chat`), so a link
+  can open a puzzle straight to its chat. See [WOW on your phone](/docs/guides/phone).
+</Callout>
+
+## Sheet, drawing or built-in spreadsheet
+
+What the **Sheet** tab shows depends on how the workspace is set up:
+
+- **Google Sheet**: if the workspace has [Google Drive connected](/docs/google-drive), each new puzzle gets its own Google Sheet, embedded right in the page.
+- **Google Drawing**: if someone chose **Google Drawing** as the **Worksheet Type** when adding the puzzle, the tab is labelled **Drawing** and embeds that instead.
+- **Built-in spreadsheet**: without Drive, every puzzle uses WOW's [built-in spreadsheet](/docs/guides/spreadsheet), with live cursors and puzzle formulas.
+
+A puzzle that already has a Google Sheet keeps it even if Drive is later disconnected.
+
+Google can be slow to load. While it loads you'll see "Unfolding the sheet…"; if it takes more than 15 seconds, you get **Retry** and **Open in a new tab** buttons.
+
+<Callout type="tip" title="Seeing a Google 403 error?">
+  You're probably signed into Google with a different account from the one that has access. Open the
+  sheet in a new tab and switch Google accounts there, or ask an owner to re-share the folder. See
+  [Troubleshooting](/docs/help/troubleshooting).
+</Callout>
+
+The **Whiteboard** tab is a shared drawing canvas for every puzzle, whatever kind of sheet it has. See [The whiteboard](/docs/guides/whiteboard).
+
+## The info panel
+
+The info panel holds everything about the puzzle except the work itself. Each field saves as soon as you change it, and teammates see the change right away.
+
+<Screenshot
+  src={infoPanelImage}
+  alt="The info panel of a puzzle"
+  caption="The info panel: answer, status, importance, tags and solvers."
+/>
+
+### Header and breadcrumb
+
+The top line shows the puzzle's name and a few icon buttons (hover for their names):
+
+| Icon                              | What it does                                                                                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Open on the hunt site**         | Opens the puzzle's page on the hunt website. Only there if the puzzle has a link.                                                                                                         |
+| **Open spreadsheet in a new tab** | Opens the Google Sheet in its own tab, with Google's full menus. Only for Google Sheet puzzles. (**Open drawing in a new tab** for drawings.)                                             |
+| **Edit puzzle**                   | Opens the **Edit puzzle** dialog: name, **Feeds Into**, answer, **How many**, status, tags, link, and **Is this a meta puzzle?**. See [The blackboard](/docs/blackboard#the-edit-dialog). |
+
+Below it, a breadcrumb shows where the puzzle sits: its round, then its meta if it feeds one. Click the round to jump to it on the blackboard, or the meta to open the meta's page.
+
+### Fields
+
+| Field          | What it does                                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Answer**     | Type the answer and press <Kbd>Enter</Kbd> or click away. "Not solved yet" shows while it's empty. Filling it in marks the puzzle **Solved** for everyone, with a solve sparkle.                                                                       |
+| **Answers**    | For a puzzle with more than one answer: one numbered box per answer ("Not found yet"), and "N of M found" underneath. The puzzle is marked Solved once every box is filled. See [Solving metas](/docs/guides/metas#puzzles-with-more-than-one-answer). |
+| **Status**     | None, Active, Solved, Backsolved, Needs Eyes, Extraction, Stuck, Pending or Very Stuck, grouped by colour.                                                                                                                                             |
+| **Importance** | Important, Normal or Obsolete.                                                                                                                                                                                                                         |
+| **Tags**       | Pick from the workspace's tags.                                                                                                                                                                                                                        |
+| **Solvers**    | Avatars of everyone credited with helping, and your **I helped** toggle.                                                                                                                                                                               |
+
+<Callout type="warning" title="Changing the status can clear the answer">
+  On the puzzle page, setting the status to anything other than Solved or Backsolved clears the
+  answer. That keeps a wrong answer from lingering on a puzzle that's been reopened.
+</Callout>
+
+See [Statuses and importance](/docs/reference/statuses) for what each status means.
+
+### Solvers and "I helped"
+
+WOW doesn't assign puzzles. Instead, people mark themselves as having helped:
+
+- Click **I helped** to add yourself. It changes to **You helped**; click it again to undo.
+- It's self-reported, on the honour system. Mark it if you contributed, even a little.
+- It feeds the [leaderboard and recap](/docs/guides/leaderboard) awards and [your stats](/docs/guides/your-stats).
+
+When a puzzle you were working on gets solved, the solve pop-up also offers an **I helped** button, so you don't have to come back to do it. See [Notifications](/docs/guides/notifications#the-i-helped-prompt).
+
+### Guesses
+
+The **Guesses** section is where you line up answers to call in to the hunt, and record what the hunt said. It's collapsed while the puzzle has no guesses. Click **Guesses (0)** to open it. See [Calling in answers](/docs/guides/guess-queue).
+
+### Feeder answers and other feeders
+
+- On a **meta**, **Feeder answers** lists every feeder with its answer so far and a "(solved/total)" count.
+- On a **feeder**, **Other feeders** lists the meta's other feeders the same way, so you can see what's been found nearby.
+
+Each list has a **Copy table** button. See [Solving metas](/docs/guides/metas).
+
+### Notes
+
+Each puzzle has its own **Notes**, separate from the board's team notes. Use them for what a newcomer needs: "Rows 1 to 12 done; the colours are a red herring". They support Markdown. Click the notes area (or the pencil) to edit, then **Save** or <Kbd>⌘ Enter</Kbd>; <Kbd>Esc</Kbd> cancels. Notes are included in the board's search.
+
+## Your timer
+
+The chip with a timer icon at the right end of the tab bar shows how long you've spent on this puzzle.
+
+- It only counts while this tab is the one in front of you. Switch to another tab or app and it pauses (the chip dims).
+- It's your time, not the team's.
+- It feeds [your stats](/docs/guides/your-stats), the time-based awards on the [leaderboard](/docs/guides/leaderboard), and whether you're offered the **I helped** prompt when the puzzle is solved (a minute or more counts).
+
+## The puzzle tab in the header
+
+On desktop, the header shows a tab with a puzzle icon and the name of the puzzle you're on, or the last one you opened. Click it to get back to that puzzle from the blackboard or anywhere else in the workspace. On phones the puzzle's name shows next to the menu button instead.
+
+## Chat and voice
+
+The chat panel is the puzzle's own chat, separate from the team chat. Above it, a strip shows who's looking at the puzzle and who's in its voice call, with buttons to listen in or talk. See [Chat and announcements](/docs/guides/chat) and [Voice and screen sharing](/docs/guides/voice).
+
+## Related
+
+- [The built-in spreadsheet](/docs/guides/spreadsheet)
+- [Calling in answers](/docs/guides/guess-queue)
+- [Solving metas](/docs/guides/metas)
+- [The blackboard](/docs/blackboard)

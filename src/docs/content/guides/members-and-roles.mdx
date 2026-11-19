@@ -1,0 +1,110 @@
+Everyone in a workspace is either an **owner** or a **member**. Members can do almost everything a hunt needs. Owners can also manage the workspace itself. This page covers the **Members** tab, changing roles, and leaving. For the full list of who can do what, see [Permissions](/docs/reference/permissions).
+
+## Owners and members
+
+|                                                     | Members | Owners |
+| --------------------------------------------------- | ------- | ------ |
+| Add, edit and delete puzzles and rounds             | Yes     | Yes    |
+| Answers, statuses, importance, tags on puzzles      | Yes     | Yes    |
+| Chat, calls, announcements, guesses                 | Yes     | Yes    |
+| Header links, workspace tags, custom reaction emoji | Yes     | Yes    |
+| See the workspace password and invitation link      | Yes     | Yes    |
+| Team and event name, hunt dates and location        | No      | Yes    |
+| Accent colour and team emoji                        | No      | Yes    |
+| Change the workspace password                       | No      | Yes    |
+| Connect Google Drive and Discord                    | No      | Yes    |
+| Change people's roles                               | No      | Yes    |
+| See members' email addresses                        | No      | Yes    |
+
+Whoever creates a workspace is its first owner. Everyone who joins with the password or invitation link is a member.
+
+<Callout type="tip">
+  Make at least two people owners: the captain and a deputy. Then if the captain is asleep or away
+  when the hunt changes its start time, someone else can update the dates, or reconnect Google Drive
+  if it lapses.
+</Callout>
+
+## The Members tab
+
+Open <UiPath path="Settings > Members" />. The card's title shows how many people are in the workspace, for example **Members (14)**.
+
+- Owners are listed first, then everyone else, in alphabetical order.
+- Each person shows their avatar and name. Your own row says "(you)".
+- **If you're an owner**, each row also shows the person's email address, and a role menu (**Owner** or **Member**) on the right.
+- **If you're a member**, you see the names, with an **Owner** chip beside each owner, so you know who to ask when something needs changing.
+
+<Callout type="phone">
+  On a narrow screen, the settings tabs (**General**, **Members**, **Administration**) run across
+  the top of the page instead of down the side.
+</Callout>
+
+## Make someone an owner <OwnerOnly />
+
+<Steps>
+
+1. Open <UiPath path="Settings > Members" />.
+2. Find the person, and open the role menu on the right of their row.
+3. Choose **Owner**.
+
+</Steps>
+
+You'll see "_Name_ is now an owner." The change takes effect immediately. If they have Settings open already, they may need to reload the page to see the owner-only settings unlock.
+
+To make an owner a member again, choose **Member** in the same menu. You'll see "_Name_ is now a member."
+
+You can change your own role this way too, as long as another owner remains.
+
+### The last owner
+
+A workspace always needs at least one owner, so someone can manage it. If you try to make the only owner a member, WOW refuses with "A workspace needs at least one owner. Make someone else an owner first."
+
+To hand a workspace over to someone else, make them an owner first, then change yourself to **Member**.
+
+## Leave a workspace
+
+Anyone can leave a workspace they no longer need, for example an old hunt cluttering My workspaces.
+
+<Steps>
+
+1. Open <UiPath path="Settings > General" />.
+2. Scroll to the bottom, to the **Leave Workspace** card.
+3. Click **Leave**.
+
+</Steps>
+
+<Callout type="warning">
+  There's no confirmation step: clicking **Leave** removes you right away and takes you back to My
+  workspaces.
+</Callout>
+
+What happens when you leave:
+
+- You can no longer open the workspace, and it disappears from My workspaces.
+- Your past activity stays: your chat messages, board changes and "I helped" marks are part of the team's history and still appear for everyone else.
+- The workspace no longer counts towards [your stats](/docs/guides/your-stats), which only cover workspaces you're still in.
+- If you're the only owner, WOW won't let you leave. Make someone else an owner first.
+
+To come back, join again with the workspace ID and password, or the invitation link. You'll rejoin as a member. See [Invite your team](/docs/guides/invite-your-team).
+
+## What non-owners see
+
+Members can open every settings tab, but some things are read-only for them:
+
+- **General**: a note at the top says "Only owners can change the details and look". The **Details** fields and the **Look** card are greyed out. The custom **Team emoji**, **Links** and **Tags** cards below still work for everyone, and so does the invitation link's copy button.
+- **Members**: names and owner chips, without emails or role menus.
+- **Administration**: a note says "Only owners can change these settings". Members can still see the **Workspace Password**, so they can tell teammates how to join, and which Google Drive folder and Discord server are connected. The buttons are disabled.
+
+If something needs changing, ask one of the people with the **Owner** chip.
+
+## Removing people and deleting workspaces
+
+There's no way to remove another member from a workspace. If a password has leaked, an owner can change it in <UiPath path="Settings > Administration" />, so nobody new can join with the old one. People who already joined stay.
+
+Archiving and deleting workspaces aren't available yet: the **Delete Workspace** card in Administration says to contact support.
+
+## Related
+
+- [Workspaces, owners and members](/docs/concepts/workspaces)
+- [Permissions](/docs/reference/permissions)
+- [Invite your team](/docs/guides/invite-your-team)
+- [Make it yours](/docs/guides/customize)

@@ -1,0 +1,90 @@
+Find your problem below. If none of these fixes it, use **Report a bug** in the account menu and tell us what happened.
+
+## Google Sheets
+
+### A Google sheet says you need permission (403)
+
+This almost always means your browser is signed into Google with a different account from the one WOW shared the folder with: WOW shares your team's Drive folder with the email on your WOW account.
+
+- Open the sheet with the **Open spreadsheet in a new tab** icon in the puzzle's info panel, then switch to the right Google account (your avatar at the top right in Google Sheets). Reload the puzzle page.
+- Or sign out of the other Google account, or use a browser profile that's only signed into the right one.
+- Still stuck? Ask an owner to click **Share with everyone** in <UiPath path="Settings > Administration" /> (the Google Drive card), which re-shares the folder with every member.
+
+If you never got access at all, check the email on your [account](/docs/reference/account) is the Google address you want to use.
+
+### A Google sheet won't load
+
+If a sheet hasn't appeared after a while, you'll see "Google is taking its time…" with two buttons:
+
+- **Retry** loads it again.
+- **Open in a new tab** opens the sheet directly in Google Sheets, which also shows any sign-in or permission prompt Google is waiting on.
+
+### "Couldn't share the Google Drive folder" <OwnerOnly />
+
+Owners get this notification when WOW couldn't give someone who just joined access to the Drive folder. It stays on screen until you close it.
+
+<Steps>
+
+1. Click **Open folder** (or **Open the file**, when one particular file is blocking the share).
+2. Share the folder with the email address in the notification, as an editor.
+3. If a file was blocking it, check who owns that file and move or re-share it.
+
+</Steps>
+
+## Voice
+
+### Discord or voice calls don't connect on MIT guest Wi-Fi
+
+MIT's guest Wi-Fi blocks Discord voice. Switch to another network, or use your phone's hotspot for the call.
+
+## Browser
+
+### The page jumps back while scrolling a sheet sideways
+
+In Chrome, swiping sideways on a trackpad can go back a page when you meant to scroll a spreadsheet. Turn the gesture off:
+
+- Open `chrome://settings/?search=swipe+between+pages` and turn off swiping between pages, or
+- on macOS, quit Chrome and run this in Terminal, then reopen Chrome:
+
+```
+defaults write com.google.Chrome AppleEnableSwipeNavigateWithScrolls -bool FALSE
+```
+
+### "Reconnecting…" at the bottom of the page
+
+You've lost your connection to WOW, for example on flaky Wi-Fi. You'll see "Reconnecting… teammates' changes will appear once you're back online." Keep working: your sheet edits are kept and sync when you reconnect (the sheet shows "Offline: edits will sync when you reconnect"). When the connection returns, the banner says "Back online" and everything catches up.
+
+If it doesn't come back, check your internet connection and reload the page.
+
+### Desktop notifications don't appear
+
+Check each of these:
+
+1. **Turned on in this browser.** Open the bell, click the gear, and turn on **Desktop notifications when the tab is hidden**. The setting is per browser, so turn it on again on each computer.
+2. **Allowed by the browser.** If you clicked Block when the browser asked, WOW shows "Your browser blocked notifications for this site." Allow notifications for WOW in your browser's site settings (the icon left of the address bar), then turn the switch on again. Check your operating system allows notifications from the browser, too.
+3. **The tab is hidden.** Desktop notifications only appear while the WOW tab isn't in view. When you're looking at it, you get the pop-up instead.
+4. **That type pops up.** Desktop notifications follow the "Pop up when…" switches, and the account menu's **Notifications** must be **Enabled**.
+
+## Workspaces
+
+### You can't change workspace settings
+
+Team and event name, hunt dates, location, look, password, Google Drive, Discord and roles are for owners only. Non-owners see "Only owners can change the details and look" and the fields are greyed out. Ask an owner (they're listed in <UiPath path="Settings > Members" />) to make the change, or to make you an owner. See [Permissions](/docs/reference/permissions).
+
+### You can't join a workspace
+
+- **"That password isn't right."** Check the password with a teammate; any member can see it in <UiPath path="Settings > Administration" />.
+- **"Oops! Something went wrong."** on the **Join a workspace** card usually means the workspace ID or password is wrong. Workspace IDs are exact, so check the spelling.
+- **Easiest fix:** ask a teammate for the invitation link (in <UiPath path="Settings > General" />, under Details). It fills in the workspace ID for you, so you only need the password.
+
+See [Invite your team](/docs/guides/invite-your-team).
+
+### "Workspace ID is already taken"
+
+Someone else's workspace already uses that ID, and IDs are unique across WOW. Pick another, for example by adding the hunt's year: `myteam-mh2027`. A few words are also reserved and can't be used.
+
+## Related
+
+- [FAQ](/docs/help/faq)
+- [Connect Google Drive](/docs/google-drive)
+- [Notification types](/docs/reference/notifications)

@@ -8,6 +8,7 @@ import {cn} from "tailwind-variants";
 
 import {Page, READING_WIDTH} from "@/components/page";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
+import {HelpLink} from "@/docs/components/help-link";
 import {formatPuzzleTime, useMyPuzzleTimes} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
@@ -260,7 +261,10 @@ function Standings({
     <section aria-label="Standings" className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">{isLive ? "The race so far" : "Final standings"}</h2>
-        {isLive && <span className="text-muted text-xs">Updates every minute</span>}
+        <span className="flex items-center gap-3">
+          {isLive && <span className="text-muted text-xs">Updates every minute</span>}
+          <HelpLink slug="guides/leaderboard">How awards work</HelpLink>
+        </span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {standings.map(standing => {

@@ -1,0 +1,138 @@
+import huntsListImage from "../../images/hunts-list.webp";
+import huntsCalendarImage from "../../images/hunts-calendar.webp";
+import workspacesImage from "../../images/workspaces.webp";
+
+WOW keeps a calendar of puzzle hunts, so you can see what's coming up and set up a workspace for one without typing its dates, place and website by hand. There are two places to look: the **Puzzle hunts** page, which lists everything, and **Hunts coming up** on My workspaces, which picks out the few you're most likely to play next.
+
+## The Puzzle hunts page
+
+Open it from **Hunts** (the calendar icon) in the header at the top of any account page, such as My workspaces, or from **All hunts** beside Hunts coming up. Its address is `/hunts`.
+
+<Screenshot
+  src={huntsListImage}
+  alt="The Puzzle hunts page as a list"
+  caption="Hunts happening now and coming up, by month."
+/>
+
+The page has two views, picked with the **List** and **Calendar** tabs at the top right, and two ways to narrow it down:
+
+| Control                              | What it does                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Search hunts**                     | Matches a hunt's name, its note (for example "registration open") and its location.                                                                     |
+| **All** / **Online** / **In person** | **Online** shows hunts you can play remotely. **In person** shows hunts held somewhere. A hybrid hunt, held in a city and online too, shows under both. |
+
+The view and the All / Online / In person choice are saved in the page's address, so if you send someone the link they'll see the same view. The search text isn't saved.
+
+<Callout type="phone">
+  On a phone the header shows only the calendar icon for **Hunts**, without the word. In the list,
+  each hunt's buttons wrap onto a line below its name.
+</Callout>
+
+### List view
+
+The list shows what's running and what's coming up over roughly the next year:
+
+- **Happening now** comes first: hunts that have started and haven't ended. They have a green date tile and a **Live** chip.
+- Then a group for each month, in order, by when each hunt starts.
+- **Just ended** comes last: hunts that finished in the past three days, in case your team is setting up late or wants to write up a recap.
+
+If nothing matches your search or filter, you'll see "No hunts match". Clear the search or pick **All**.
+
+### Calendar view
+
+The calendar shows one month at a time. Use the arrows to go to the previous or next month (past months work too, which helps if you want to look back at a hunt), and **Today** to come back to this month. Today's date is circled in your accent colour.
+
+- Each day lists up to three hunts running that day, with "+N more" when there are others. A hunt that runs over several days stretches across them.
+- Pills are coloured by where the hunt is played. **Online (or online too)** uses the accent colour. **In person only** is teal. A key below the grid shows which is which.
+- Hunts that run longer than two weeks, such as a months-long puzzle trail, aren't drawn on every day. They appear in an **Also running** strip above the grid.
+- Click any hunt to show its details in a row below the calendar, with the same buttons as the list.
+
+## What each hunt shows
+
+Every hunt, in either view, shows:
+
+<Screenshot
+  src={huntsCalendarImage}
+  alt="The Puzzle hunts page as a calendar"
+  caption="The calendar view: online hunts in the accent colour, in-person ones in teal."
+/>
+
+| Detail               | Notes                                                                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date tile            | The month and day it starts.                                                                                                                                      |
+| Name                 | With a **Live** chip while it's running.                                                                                                                          |
+| "N on WOW"           | How many teams already have a WOW workspace for this hunt. Hover it for the exact wording. Hidden when there are none.                                            |
+| When and where       | The dates, the place (a pin for in person, a globe for online) and any note from the listing.                                                                     |
+| **Set up workspace** | Opens the create form with this hunt picked, so its dates, location and website are already filled in. See [Create a workspace](/docs/guides/create-a-workspace). |
+| **Your workspace**   | Appears instead of **Set up workspace** when you're already in a workspace for this hunt. It takes you straight there.                                            |
+| Website arrow        | Opens the hunt's own website in a new tab, when the listing has one.                                                                                              |
+
+<Callout type="tip">
+  **Your workspace** is matched by event name. If you named your workspace's event something quite
+  different from the listing, for example "Mystery Hunt" instead of "MIT Mystery Hunt 2027", WOW may
+  not recognise it and will offer **Set up workspace** instead. Picking the hunt from the
+  suggestions when you create the workspace avoids this.
+</Callout>
+
+## Set up a workspace from a listing
+
+<Steps>
+
+1. Find the hunt on the **Puzzle hunts** page or under **Hunts coming up**.
+2. Click **Set up workspace**.
+3. Check the details WOW filled in: **Event name**, **Starts**, **Ends**, **Location** and **Hunt website**. You can change any of them.
+4. Fill in **Team name**, **Workspace ID** and **Workspace password**.
+5. Click **Create**.
+
+</Steps>
+
+The rest of the form is explained in [Create a workspace](/docs/guides/create-a-workspace).
+
+## Where the listings come from
+
+Listings come from the [Puzzle Hunt Calendar](https://puzzlehuntcalendar.com/), a community-run calendar of puzzle hunts. WOW refreshes them every few hours, so a new or changed hunt shows up here later the same day.
+
+If a hunt is missing or its details are wrong, it needs fixing at the Puzzle Hunt Calendar, not in WOW. If you're running a hunt, send it to them to be listed. You can always create a workspace for a hunt that isn't listed: type any event name on the create form and fill in the details yourself.
+
+## Hunts coming up
+
+On **My workspaces**, below your list of workspaces, **Hunts coming up** suggests up to five hunts you might want a workspace for next. The first is a large featured card. The others are smaller cards beside and below it.
+
+<Screenshot
+  src={workspacesImage}
+  alt="My workspaces with Hunts coming up"
+  caption="My workspaces, with the join card and Hunts coming up."
+/>
+
+Each card shows:
+
+- How soon it starts. Within two days of a timed start, this is a countdown to the second. Otherwise it says "Starts today", "Starts tomorrow" or "Starts in N days". A hunt that has already started says **Live now**.
+- How many teams on WOW have a workspace for it.
+- Its name, dates and place.
+- **Set up workspace**, which opens the create form with the hunt filled in, and a link to the hunt's website.
+
+**All hunts**, at the top right of the section, opens the full Puzzle hunts page.
+
+### How the suggestions are picked
+
+WOW looks at hunts that are running now or starting in the next six weeks or so. For a hunt in a series you've played before, or one other teams on WOW have played, it looks further ahead, up to about four months. That way next year's Mystery Hunt appears well before teams usually think about setting up.
+
+It then ranks them. In plain words, a hunt moves up the list when:
+
+1. **You've played that series before.** If you've been in a workspace for "MIT Mystery Hunt 2026", then "MIT Mystery Hunt 2027" is the strongest suggestion. This counts for more than anything else.
+2. **It starts soon.** Sooner hunts rank higher. A hunt that's already been running for a while slowly drops back.
+3. **It's online.** Anyone can play an online hunt, so in-person-only hunts rank a little lower.
+4. **It's popular on WOW.** The more teams have a workspace for this hunt, or played earlier years of it, the higher it ranks.
+
+Hunts you already have a workspace for are left out, since you don't need to set them up again. If there's nothing to suggest, the section doesn't appear.
+
+<Callout type="note">
+  The suggestions are worked out from event names. If your past workspaces have generic event names,
+  WOW has less to go on, and the suggestions lean on dates and popularity instead.
+</Callout>
+
+## Related
+
+- [Create a workspace](/docs/guides/create-a-workspace)
+- [Invite your team](/docs/guides/invite-your-team)
+- [Quick start for captains](/docs/start/captain)

@@ -1,15 +1,12 @@
-import {Button, buttonVariants, Card, Separator} from "@heroui/react";
-import {useMutation} from "@tanstack/react-query";
+import {buttonVariants, Card, Separator} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowRightIcon} from "lucide-react";
-import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
 import {DiscordCardContents} from "@/components/discord-card-contents";
 import {GoogleDriveCardContents} from "@/components/google-drive-contents";
 import {Page, READING_WIDTH} from "@/components/page";
 import {WorkspaceProvider} from "@/hooks/use-workspace";
-import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceSlug")({
   component: RouteComponent,
@@ -27,14 +24,6 @@ function RouteComponent() {
 
 function RouteComponentInner() {
   const {workspaceSlug} = Route.useParams();
-  const navigate = Route.useNavigate();
-  const workspaceDeleteMutation = useMutation(
-    orpc.workspaces.delete.mutationOptions({
-      // The workspace no longer exists, so don't leave the user on its setup page.
-      onSuccess: () => navigate({to: "/workspaces"}),
-    })
-  );
-
   return (
     <Page title="Set up your workspace">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
@@ -49,19 +38,8 @@ function RouteComponentInner() {
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
           <Separator />
-          <Card.Footer className="justify-between gap-4">
-            <Button
-              variant="ghost"
-              onPress={() => {
-                toast.promise(workspaceDeleteMutation.mutateAsync({workspaceSlug}), {
-                  loading: "Deleting workspace...",
-                  success: "Success! Your workspace has been deleted.",
-                  error: "Oops! Something went wrong.",
-                });
-              }}>
-              Delete workspace
-            </Button>
-
+          {/* No "Delete workspace" here: deleting workspaces isn't available yet (the server refuses). */}
+          <Card.Footer className="justify-end gap-4">
             <Link
               to="/$workspaceSlug"
               params={{workspaceSlug}}

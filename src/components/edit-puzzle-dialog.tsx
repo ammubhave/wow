@@ -3,6 +3,7 @@ import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 
 import {useWorkspace} from "@/hooks/use-workspace";
+import {parseTypedAnswers, splitAnswers} from "@/lib/answers";
 import {getPuzzleStatusGroups, getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -23,6 +24,7 @@ export function EditPuzzleDialog({
     parentPuzzleId: string | null;
     name: string;
     answer: string | null;
+    answerCount: number;
     status: string | null;
     link: string | null;
     googleSpreadsheetId: string | null;
@@ -40,7 +42,9 @@ export function EditPuzzleDialog({
     defaultValues: {
       parentPuzzleId: puzzle.parentPuzzleId ?? puzzle.roundId,
       name: puzzle.name,
-      answer: puzzle.answer ?? "",
+      // Several answers edit in one box, "; " between them.
+      answer: splitAnswers(puzzle.answer).join("; "),
+      answerCount: String(puzzle.answerCount),
       link: puzzle.link ?? "",
       status: puzzle.status ?? "",
       isMetaPuzzle: puzzle.isMetaPuzzle,
@@ -51,7 +55,8 @@ export function EditPuzzleDialog({
         workspaceSlug,
         id: puzzle.id,
         ...value,
-        answer: value.answer === "" ? null : value.answer.toUpperCase(),
+        answer: parseTypedAnswers(value.answer),
+        answerCount: Math.min(20, Math.max(1, Math.trunc(Number(value.answerCount)) || 1)),
         link: value.link === "" ? null : value.link,
         status: value.status === "" ? null : value.status,
       });
@@ -122,17 +127,33 @@ export function EditPuzzleDialog({
                     );
                   }}
                 />
-                <form.AppField
-                  name="answer"
-                  children={field => (
-                    <field.TextField
-                      variant="secondary"
-                      label="Answer"
-                      className="font-mono"
-                      autoComplete="off"
-                    />
-                  )}
-                />
+                <div className="grid grid-cols-[minmax(0,1fr)_7rem] items-start gap-3">
+                  <form.AppField
+                    name="answer"
+                    children={field => (
+                      <field.TextField
+                        variant="secondary"
+                        label="Answer"
+                        className="font-mono"
+                        autoComplete="off"
+                        description="Several? Put ; between them."
+                      />
+                    )}
+                  />
+                  <form.AppField
+                    name="answerCount"
+                    children={field => (
+                      <field.TextField
+                        variant="secondary"
+                        label="How many"
+                        type="number"
+                        min={1}
+                        max={20}
+                        description="Answers it has."
+                      />
+                    )}
+                  />
+                </div>
                 <form.AppField
                   name="status"
                   children={field => {

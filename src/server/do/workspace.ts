@@ -58,6 +58,8 @@ const ACTIVITY_LOG_OVERLAP_MS = 10_000;
 // The room state carries only the newest activity entries (the footer shows the latest); the
 // activity page pages through older ones (`workspaces.activityLog`).
 const RECENT_ACTIVITY_LOG_ENTRIES = 50;
+/** Guesses sent with the room state: the queue and recent history (older ones aren't needed). */
+const RECENT_GUESSES = 300;
 
 /// Position in the activity log, newest first: an entry's createdAt and id (ties broken by id).
 export type ActivityLogCursor = {createdAt: number; id: string};
@@ -121,7 +123,7 @@ type ActivityLogEntries = Awaited<ReturnType<typeof getActivityLogEntries>>;
 async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityLogEntries) {
   const newest = previousActivityLog?.[0]?.activity_log_entry.createdAt;
   const since = newest ? new Date(newest.getTime() - ACTIVITY_LOG_OVERLAP_MS) : undefined;
-  const [workspace, rounds, newActivityLogEntries] = await Promise.all([
+  const [workspace, rounds, newActivityLogEntries, guesses] = await Promise.all([
     db.select().from(schema.organization).where(eq(schema.organization.id, workspaceId)).get(),
     db.query.round.findMany({
       where: {workspaceId},
@@ -129,6 +131,25 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
     }),
     // Cold: just the newest entries. Warm: only what's new since the newest cached one.
     getActivityLogEntries(workspaceId, since ? {since} : {limit: RECENT_ACTIVITY_LOG_ENTRIES}),
+    // The guess queue and recent history (newest first), with who queued each.
+    db
+      .select({
+        id: schema.puzzleGuess.id,
+        puzzleId: schema.puzzleGuess.puzzleId,
+        answer: schema.puzzleGuess.answer,
+        status: schema.puzzleGuess.status,
+        response: schema.puzzleGuess.response,
+        retryAt: schema.puzzleGuess.retryAt,
+        createdAt: schema.puzzleGuess.createdAt,
+        updatedAt: schema.puzzleGuess.updatedAt,
+        createdBy: schema.puzzleGuess.createdBy,
+        createdByName: schema.user.name,
+      })
+      .from(schema.puzzleGuess)
+      .innerJoin(schema.user, eq(schema.user.id, schema.puzzleGuess.createdBy))
+      .where(eq(schema.puzzleGuess.workspaceId, workspaceId))
+      .orderBy(desc(schema.puzzleGuess.createdAt))
+      .limit(RECENT_GUESSES),
   ]);
   if (!workspace) throw new Error(`Workspace ${workspaceId} not found`);
 
@@ -153,6 +174,7 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
     ...publicWorkspace,
     googleConnected: googleAccessToken !== null,
     activityLogEntries,
+    guesses,
     // Flat: each puzzle is sent once; clients derive children/metas (see expandWorkspaceState).
     // oxlint-disable-next-line oxc/no-map-spread -- a new shape (contributors → contributorIds).
     rounds: rounds.map(round => ({

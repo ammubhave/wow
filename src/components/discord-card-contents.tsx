@@ -4,6 +4,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
 import {XIcon} from "lucide-react";
 
+import {HelpLink} from "@/docs/components/help-link";
 import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
@@ -74,7 +75,8 @@ export function DiscordCardContents({
         <Card.Title>Discord</Card.Title>
         <Card.Description>
           You can connect your Discord account to this workspace. This allows the workspace to
-          automatically create voice channels whenever you create a new puzzle.
+          automatically create voice channels whenever you create a new puzzle.{" "}
+          <HelpLink slug="discord">How the Discord sync works</HelpLink>
         </Card.Description>
       </Card.Header>
       <Card.Content>

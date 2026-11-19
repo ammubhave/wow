@@ -1,0 +1,129 @@
+import leaderboardImage from "../../images/leaderboard.webp";
+
+The **Leaderboard** tab (the trophy icon in the workspace header) celebrates the people behind your team's hunt. While the hunt is on, it's a live race for a set of fun awards. Once the hunt ends, the same page becomes the **Hunt recap**, with final standings and a card you can save and share.
+
+## Live leaderboard or recap
+
+Which one you see depends on the hunt's dates in <UiPath path="Settings > General > Details" />:
+
+<Screenshot
+  src={leaderboardImage}
+  alt="The leaderboard during a hunt"
+  caption="During the hunt: the race for every award, updated every minute."
+/>
+
+| When                             | Page title                                  | What you see                                                                  |
+| -------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------- |
+| Between the hunt's start and end | **Leaderboard**, with a green **Live** chip | "The race so far", updating every minute, then your hunt, then the team card  |
+| After the end time               | **Hunt recap**                              | The team card first, then your hunt, then "Final standings"                   |
+| Before the start time            | **Hunt recap**                              | The same layout as after the hunt. Most awards will still say "Up for grabs." |
+| No dates set                     | **Leaderboard**, with **Live**              | Live standings, all the time                                                  |
+
+The page decides when you open it, so if the hunt ends while you're looking at the live leaderboard, reload to see the recap.
+
+<Callout type="tip">
+  Set the hunt's end time, even roughly. That's what turns the live leaderboard into the recap, with
+  the shareable card at the top. An owner can set it in{" "}
+  <UiPath path="Settings > General > Details" />.
+</Callout>
+
+You can also reach the page from the **Hunt recap** button at the top of the [activity log](/docs/guides/activity-log).
+
+## The awards
+
+Solving is a team effort, so nothing here credits whoever happened to type the answer or mark a puzzle solved. People are credited for the puzzles they say they helped solve, for the time they spent on puzzles, and for keeping the board up to date.
+
+| Award               | Goes to                                | How it's counted                                                                                   |
+| ------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 🏆 **MVP**          | Most puzzles helped solve              | Puzzles you marked **I helped** that are solved or backsolved now.                                 |
+| 👑 **Meta Maestro** | Most metas helped solve                | The same, counting only metas.                                                                     |
+| 🦉 **Night Owl**    | Most puzzling between midnight and 6am | Your active time on puzzle pages between midnight and 6am, in your own time zone.                  |
+| 🌅 **Early Bird**   | Most puzzling between 6 and 10am       | Your active time on puzzle pages between 6am and 10am, in your own time zone.                      |
+| 🏃 **Marathoner**   | Most time actively puzzling            | All your active time on puzzle pages.                                                              |
+| 📋 **Board Keeper** | Most board updates                     | Each time you add a puzzle or round, change a puzzle's status or importance, or change its answer. |
+
+Some details:
+
+- **Only puzzles that are solved now count** towards MVP and Meta Maestro. If a puzzle is marked solved by mistake and then un-solved, the "I helped" marks on it stop counting.
+- **Time awards need at least 10 minutes** before anyone wins them, so a few stray minutes don't take a trophy. People with less still appear in the standings.
+- **Local time is wherever you were.** WOW records the hour on your own device's clock, so a Night Owl in London and one in California are both puzzling after midnight where they are.
+- **Ties** go to whoever got there first.
+
+### How time is counted
+
+Puzzle time is counted only while a puzzle's page is in the browser tab you're looking at: the tab is in front, the window has focus, and you haven't gone idle. If you don't move the mouse, type, scroll or touch the screen for five minutes, the clock stops. Inside an embedded Google Sheet, where WOW can't see your typing, it waits 30 minutes before deciding you've stepped away.
+
+So leaving a dozen puzzle tabs open in the background doesn't count, and neither does time on the blackboard, chat or settings. The **timer** chip on each puzzle page shows your own time on that puzzle. See [Working on a puzzle](/docs/guides/puzzle-page).
+
+### Why "I helped" matters
+
+WOW doesn't guess who solved a puzzle. It relies on each person saying so, an honour system. You can mark it in two places:
+
+- the **I helped** toggle under **Solvers** in a puzzle's info panel, which changes to **You helped** once you've marked it;
+- the **I helped** button on the pop-up you get when a puzzle is solved, if you were on that puzzle or spent at least a minute on it.
+
+These marks drive MVP and Meta Maestro, the **solvers** count on the team card, the names on solve entries in the activity log, and [your stats](/docs/guides/your-stats). If people forget to mark them, the recap undercounts what they did.
+
+<Callout type="tip">
+  Before the hunt, tell your team to click **I helped** whenever they contributed to a solve: an
+  idea, an extraction, a key letter. It's meant to be generous. If someone forgot, they can still
+  mark it after the hunt from the puzzle's info panel.
+</Callout>
+
+## Standings
+
+Each award has its own card showing the top three, with 🥇, 🥈 and 🥉, their avatars and their numbers. If you're further down, your own place is added below them, highlighted, so you can see how far you are from a medal. Your rows say "You" instead of your name.
+
+An award nobody has any of yet says "Up for grabs."
+
+During the hunt, the section is called "The race so far" and refreshes every minute. After the hunt it's called "Final standings".
+
+## The shareable card
+
+The large card, coloured with the workspace's accent, sums up the hunt in one picture:
+
+| On the card          | What it is                                                                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Event and team       | The event name, your team emoji, and your team name.                                                                                     |
+| **puzzles solved**   | Puzzles solved or backsolved now.                                                                                                        |
+| **metas**            | How many of those are metas.                                                                                                             |
+| **solvers**          | People who marked **I helped** on at least one solved puzzle. If nobody has marked any yet, it counts everyone with puzzle time instead. |
+| **hours of hunting** | From the team's first board activity to its last solve.                                                                                  |
+| Top awards           | The first three awards that have a winner, with the winner's name.                                                                       |
+| **Busiest hour**     | The hour with the most solves, such as "Saturday 3 PM (5 solves)".                                                                       |
+
+### Save it as an image
+
+<Steps>
+
+1. Click **Save as image** at the top right of the page.
+2. Your browser downloads a PNG of the card, named after your team, for example "Waffles hunt recap.png".
+3. Share it in your team's chat, or post it with your hunt write-up.
+
+</Steps>
+
+If the image can't be made, WOW says "Couldn't make the image. Try a screenshot instead!" A screenshot of the card works just as well.
+
+## Your hunt card
+
+Below the team card is **Your hunt**, just for you. It shows:
+
+- how many puzzles you helped solve,
+- your total active time on puzzles,
+- how many board updates you made,
+- any awards you won,
+- and **Where your time went**: the five puzzles you spent longest on, each linked, with your time on each.
+
+It only appears once you've done something: helped solve a puzzle, spent time on one, or updated the board. Nobody else sees your card. They see their own.
+
+<Callout type="phone">
+  The leaderboard works on a phone, with the cards stacked in one column. **Save as image**
+  downloads the PNG to your phone's downloads or files.
+</Callout>
+
+## Related
+
+- [The activity log](/docs/guides/activity-log)
+- [Your stats](/docs/guides/your-stats)
+- [Working on a puzzle](/docs/guides/puzzle-page)
+- [Notifications](/docs/guides/notifications)

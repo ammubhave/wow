@@ -65,6 +65,7 @@ import {UserPresenceAvatars} from "@/components/user-hover-card";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {VoiceRoomBadge} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {formatAnswers, parseTypedAnswers, splitAnswers} from "@/lib/answers";
 import {orpc} from "@/lib/orpc";
 import {
   getColorClassNamesForPuzzleImportances,
@@ -269,28 +270,39 @@ const ANSWER_INPUT_CLASS =
 /**
  * Shows the (optimistic) answer; while focused it edits a local draft, committed on blur or Enter
  * (Escape discards it). Committing per keystroke would log half-typed answers to the activity feed.
+ * A puzzle with several answers shows them as "FOO · BAR" and edits them as "FOO; BAR".
  */
 function AnswerInput({
   puzzleName,
   value,
+  count,
   onCommit,
 }: {
   puzzleName: string;
   value: string | null;
+  /** How many answers the puzzle has. */
+  count: number;
   onCommit: (answer: string) => void;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
+  const isMulti = count > 1;
   const commit = () => {
     if (draft === null) return;
     setDraft(null);
-    const answer = draft.toUpperCase();
+    const answer = isMulti ? (parseTypedAnswers(draft) ?? "") : draft.toUpperCase();
     if (answer !== (value ?? "")) onCommit(answer);
   };
+  const found = splitAnswers(value).length;
   return (
     <input
       aria-label={`Answer for ${puzzleName}`}
       className={ANSWER_INPUT_CLASS}
-      value={draft ?? value ?? ""}
+      placeholder={isMulti ? `${found}/${count} answers` : undefined}
+      title={isMulti ? `${found} of ${count} answers; separate them with ;` : undefined}
+      value={draft ?? (isMulti ? formatAnswers(value) : (value ?? ""))}
+      onFocus={() => {
+        if (isMulti) setDraft(splitAnswers(value).join("; "));
+      }}
       onChange={e => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={e => {
@@ -1548,6 +1560,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
         <AnswerInput
           puzzleName={metaPuzzle.name}
           value={metaPuzzle.answer}
+          count={metaPuzzle.answerCount}
           onCommit={answer => update({answer})}
         />
       </Table.Cell>
@@ -1748,6 +1761,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
         <AnswerInput
           puzzleName={puzzle.name}
           value={puzzle.answer}
+          count={puzzle.answerCount}
           onCommit={answer => update({answer})}
         />
       </Table.Cell>

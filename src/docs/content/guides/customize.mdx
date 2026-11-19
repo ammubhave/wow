@@ -1,0 +1,148 @@
+import settingsImage from "../../images/settings.webp";
+
+A few settings make a workspace feel like your team's: its colour and emoji, your own reaction emoji, quick links in the header, and a set of tags for sorting puzzles. They're all on the **General** tab of <UiPath path="Settings" />. Some are for owners only, and the rest anyone in the workspace can change.
+
+| Setting                  | Who can change it    | Where it shows                                                                        |
+| ------------------------ | -------------------- | ------------------------------------------------------------------------------------- |
+| Accent color             | Owners <OwnerOnly /> | Buttons, progress bars, highlights and the recap card, for everyone in this workspace |
+| Team emoji (in **Look**) | Owners <OwnerOnly /> | Beside your team in the workspace header                                              |
+| Custom reaction emoji    | Anyone               | The reaction picker in every chat                                                     |
+| Links                    | Anyone               | The header, the phone menu and the command palette                                    |
+| Tags                     | Anyone               | Puzzle dialogs, the board's Tags column and filter, and your stats                    |
+
+## Accent colour <OwnerOnly />
+
+The accent colour tints the workspace's buttons, progress bars and highlights, and it's the background of the shareable card on the [leaderboard](/docs/guides/leaderboard). Teams often match it to the hunt's theme.
+
+<Screenshot
+  src={settingsImage}
+  alt="Workspace settings"
+  caption="Settings > General: details, look, team emoji, links and tags."
+/>
+
+<Steps>
+
+1. Open <UiPath path="Settings > General" /> and find the **Look** card.
+2. Under **Accent color**, click a colour. Hover a swatch to see its name.
+
+</Steps>
+
+The change applies straight away, for everyone in the workspace. There's no Save button for this one.
+
+The colours are **Waffle (default)**, **Red**, **Pink**, **Violet**, **Blue**, **Teal**, **Green** and **Gold**. The accent belongs to this workspace only, so each of your workspaces can have its own.
+
+## Team emoji <OwnerOnly />
+
+The team emoji replaces the WOW logo at the top left of the workspace header, beside the section tabs. That spot also links back to My workspaces.
+
+<Steps>
+
+1. In the **Look** card, type or paste an emoji into **Team emoji**, for example 🧇 or 🦆.
+2. Click **Save**. You'll see "Emoji saved."
+
+</Steps>
+
+To go back to the WOW logo, clear the field and click **Save** ("Emoji removed.").
+
+Members who aren't owners see the **Look** card greyed out, with a note at the top of the page: "Only owners can change the details and look".
+
+## Custom reaction emoji
+
+Any member can add the team's own reaction emoji: a small image with a name, such as an in-joke or the hunt's mascot. They appear in the reaction picker on every chat message in this workspace, alongside the usual emoji.
+
+<Steps>
+
+1. Open <UiPath path="Settings > General" /> and find the **Team emoji** card. This is the second card with that name, below **Look**.
+2. Click **Choose image** and pick an image file. A preview replaces the icon.
+3. Type a **Name**, for example `partyparrot`.
+4. Click **Add**. You'll see ":partyparrot: added."
+
+</Steps>
+
+Things to know:
+
+- Names are lowercase letters, numbers, hyphens and underscores, up to 32 characters. When you click **Add**, WOW makes capitals lowercase and drops any other characters.
+- Square images look best, since emoji are shown small and square. Large images are shrunk automatically. If an image still can't be made small enough, WOW says "That image is too large."
+- Adding an emoji with a name that's already used replaces the old one.
+- To remove one, click the bin button next to it in the list. Anyone can remove any custom emoji, so agree as a team before tidying up.
+
+See [Chat and announcements](/docs/guides/chat) for using reactions.
+
+## Header links
+
+Links put the sites your team uses most one click away: the hunt website, the team's shared doc, a hunt's answer-submission page, and so on.
+
+<Steps>
+
+1. Open <UiPath path="Settings > General" /> and find the **Links** card.
+2. Click **Add link**.
+3. Type a short **Name**, such as "Hunt" or "Team doc", and paste the **URL**.
+4. Click **Save**.
+
+</Steps>
+
+To remove a link, click the bin button at the end of its row, then **Save**. The **Save** button stays disabled until you change something.
+
+Where links show:
+
+- **In the workspace header** on desktop, to the right, each with an external-link icon. They open in a new tab.
+- **In the menu** on phones, below the sections.
+- **In the command palette** (<Kbd>⌘ K</Kbd> or <Kbd>Ctrl K</Kbd>), under **Links**, so you can open one without the mouse.
+
+If you picked your hunt from the suggestions when creating the workspace, a "Hunt website" link is already there.
+
+<Callout type="tip">
+  Keep names short. Every link takes up room in the header, next to the hunt clock and buttons, so
+  two or three short names work better than a long list.
+</Callout>
+
+<Callout type="phone">
+  Links don't appear in the header on a phone, where there isn't room. Tap the menu button to find
+  them.
+</Callout>
+
+## Tags
+
+Tags are labels for puzzles, like "crossword" or "music". The workspace keeps one list of tags, and anyone can tag puzzles from that list. Tags help in several places:
+
+- On the [blackboard](/docs/blackboard), the **Tags** column shows each puzzle's tags, and the **Tags** filter shows only the puzzles with the tags you pick, or the "(Untagged)" ones.
+- Board search also matches tags.
+- [Your stats](/docs/guides/your-stats) show your **Favourite puzzle types**: your time on puzzles, by tag.
+
+### Set up the tag list
+
+<Steps>
+
+1. Open <UiPath path="Settings > General" /> and find the **Tags** card.
+2. Click **Add tag** and type a tag. Repeat for each one.
+3. Click **Save**.
+
+</Steps>
+
+To remove a tag from the list, click the bin button beside it, then **Save**. You then pick tags for a puzzle in **Add new puzzle**, **Edit puzzle**, the board's **Tags** cell, or the puzzle page's info panel.
+
+### Suggested tag schemes
+
+Set tags up before the hunt, so everyone picks from the same list instead of inventing near-duplicates during it. Some schemes teams find useful:
+
+| Scheme           | Example tags                                                | Good for                                                   |
+| ---------------- | ----------------------------------------------------------- | ---------------------------------------------------------- |
+| Puzzle type      | crossword, music, logic, word, cryptic, physical, runaround | Sending people to puzzles they enjoy, and your stats       |
+| Skills needed    | coding, trivia, art, languages                              | Finding the teammate who knows the subject                 |
+| Where it happens | on-site, remote                                             | In-person hunts, so remote solvers skip what they can't do |
+| Logistics        | needs-printing, event, interaction, call-in-team            | Things that need someone to act, not just solve            |
+
+A short list works best: around ten tags that cover most puzzles. You can add more mid-hunt if something new comes up.
+
+<Callout type="note">
+  Tags and statuses are different things. Use the **Status** column for where a puzzle stands
+  (Stuck, Needs Eyes, Extraction and so on) and tags for what kind of puzzle it is. See [Statuses
+  and importance](/docs/reference/statuses).
+</Callout>
+
+## Related
+
+- [The blackboard](/docs/blackboard)
+- [Chat and announcements](/docs/guides/chat)
+- [Members and roles](/docs/guides/members-and-roles)
+- [Permissions](/docs/reference/permissions)

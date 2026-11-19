@@ -87,6 +87,7 @@
     "embla-carousel-react": "^8.6.0",
     "fractional-indexing": "3.2.0",
     "frimousse": "^0.4.0",
+    "github-slugger": "^2.0.0",
     "hono": "^4.13.17",
     "html-to-image": "^1.11.13",
     "js-sha256": "^1.0.0",
@@ -130,6 +131,7 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^2.38.2",
     "@libsql/client": "^0.18.0",
+    "@mdx-js/rollup": "^3.1.1",
     "@posthog/rollup-plugin": "^1.6.3",
     "@tanstack/devtools-vite": "^0.8.6",
     "@testing-library/dom": "^10.4.2",
@@ -148,6 +150,7 @@
     "drizzle-kit": "1.0.0-rc.4",
     "jsdom": "^31.0.0",
     "oxc-transform-react": "~0.156.0",
+    "rehype-slug": "^6.0.0",
     "sass-embedded": "^1.108.1",
     "typescript": "^7.0.2",
     "vite": "catalog:",

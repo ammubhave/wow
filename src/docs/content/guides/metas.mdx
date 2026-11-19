@@ -1,0 +1,115 @@
+import feederAnswersImage from "../../images/feeder-answers.webp";
+
+A meta puzzle uses the answers of other puzzles, its feeders, to reach its own answer. WOW keeps every feeder's answer one glance away on the meta's page, lets you copy them as a table, and handles puzzles that have more than one answer.
+
+For how metas and feeders are set up on the board, see [Rounds, metas and feeders](/docs/concepts/hunt-structure) and [The blackboard](/docs/blackboard).
+
+## Feeder answers on the meta
+
+Open a meta's [puzzle page](/docs/guides/puzzle-page). In its info panel, **Feeder answers** lists every puzzle that feeds it:
+
+<Screenshot
+  src={feederAnswersImage}
+  alt="Feeder answers on a meta"
+  caption="Each feeder and its answer so far, with progress and Copy table."
+/>
+
+- Each feeder's name, linked to its page.
+- Its answer in green once found, or "—" while it isn't.
+- A count in the heading, like "(5/8)", of how many feeders have answers.
+
+The list updates live, so the moment a feeder is solved anywhere on the team, its answer appears here.
+
+### Other feeders
+
+On a **feeder** puzzle's page, **Other feeders** lists the meta's other feeders the same way. It's useful when you're solving a feeder and want to see the answers around it, for example to spot a theme or to backsolve.
+
+## Copy the answers as a table
+
+Both lists have a **Copy table** button. It copies a table with three columns:
+
+| Column      | What's in it                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| **Puzzle**  | The feeder's name.                                                                              |
+| **Answer**  | Its answer, or blank. Several answers are shown as `A · B`.                                     |
+| **Letters** | How many letters the answer has, ignoring spaces and punctuation (`8 · 5` for several answers). |
+
+Paste it into a spreadsheet and it fills the cells, one feeder per row. Paste it into a Google Doc or other document and it arrives as a formatted table.
+
+<Steps>
+
+1. On the meta's page, click **Copy table** next to **Feeder answers**.
+2. Open the meta's **Sheet** tab, click an empty cell (say, `A1`), and paste with <Kbd>⌘ V</Kbd> (<Kbd>Ctrl V</Kbd>).
+3. Work with the answers right there, alongside the meta's own data.
+
+</Steps>
+
+<Callout type="tip">
+  Copy the table again as more feeders are solved: paste over the same cells to refresh it.
+</Callout>
+
+## Extraction tips
+
+Once the feeder answers are in a sheet, the [built-in spreadsheet's formulas](/docs/guides/spreadsheet) do a lot of the mechanical work. Say the answers are in `B2:B9` (after pasting the table at `A1`):
+
+- **Indexing**: put the index numbers in `D2:D9`, then `=NTH(B2:B9, D2:D9)` in `E2` takes the nth letter of each answer, one per row. Negative numbers count from the end.
+- **First (or last) letters**: `=NTH(B2:B9, 1)` gives the first letter of each answer; `=NTH(B2:B9, -1)` the last.
+- **Numbers to letters**: if the meta gives you numbers, `=A1Z26("13 5 20 1")` gives META. It also works the other way, letters to numbers.
+- **Joining the result**: `=JOIN("", E2:E9)` reads a column of letters as one word.
+- **Checking a word**: `=ISWORD(F2)` tells you if your extracted string is in the word list; `=ANAGRAMS(F2)` tries rearranging it.
+- **Filling gaps**: missing a feeder or two? `=MATCHES("ME?A")` lists words that fit what you have.
+
+See [Spreadsheet formulas](/docs/reference/formulas) for the full list. These puzzle formulas are only in the built-in spreadsheet, not in Google Sheets.
+
+## Puzzles with more than one answer
+
+Some puzzles have several answers, such as a feeder that gives two words, or a meta with three parts. Tell WOW how many, and it tracks them separately.
+
+### Set how many answers a puzzle has
+
+<Steps>
+
+1. Open the puzzle's ⋯ menu on the board and choose **Edit this puzzle**, or click **Edit puzzle** in the puzzle page's info panel.
+2. Set **How many** to the number of answers, from 1 to 20.
+3. Click **Save**.
+
+</Steps>
+
+### How multi-answer puzzles behave
+
+| Where                                   | What you see                                                                                                |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Puzzle page                             | One numbered box per answer ("Not found yet"), with "N of M found" underneath. Fill each in as you find it. |
+| Blackboard                              | The answers shown as `A · B`, with "1/3 answers" while some are missing. Click to edit them as `A; B`.      |
+| Edit puzzle dialog                      | All answers in the **Answer** field, separated by `;`.                                                      |
+| Feeder answers, Copy table              | `A · B` in one cell, and letter counts like `5 · 4`.                                                        |
+| [Guess queue](/docs/guides/guess-queue) | A **Correct** guess is added to the answers found so far.                                                   |
+
+The puzzle is marked **Solved** only once all its answers are in, whether you fill them in on the puzzle page or mark guesses correct. On the blackboard, as with single answers, typing answers doesn't change the status, so set it yourself if you're working there.
+
+## Backsolving
+
+Sometimes the team works out a feeder's answer from the meta, before or without solving the feeder itself. That's backsolving.
+
+When you do:
+
+<Steps>
+
+1. Fill in the feeder's answer.
+2. Set its status to **Backsolved** rather than Solved.
+
+</Steps>
+
+Backsolved counts as solved everywhere it matters: round progress, **Hide solved**, and the feeder lists. The different status tells the team that the puzzle itself wasn't worked through, which matters if the hunt needs the answer called in, or if you want to go back and solve it properly later.
+
+<Callout type="tip">
+  Many hunts still want a backsolved answer called in on the feeder. [Queue it as a
+  guess](/docs/guides/guess-queue) so the caller doesn't miss it.
+</Callout>
+
+## Related
+
+- [Rounds, metas and feeders](/docs/concepts/hunt-structure)
+- [The built-in spreadsheet](/docs/guides/spreadsheet)
+- [Calling in answers](/docs/guides/guess-queue)
+- [Statuses and importance](/docs/reference/statuses)

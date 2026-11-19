@@ -1,0 +1,102 @@
+WOW has a chat for the whole team and a separate chat on every puzzle, so conversations stay next to the work they're about. Both update live, support images and Markdown, and show who's typing.
+
+## Team chat and puzzle chats
+
+| Chat            | Where                                                                                                               | Use it for                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Team chat**   | The blackboard's sidebar, under the notes (on phones: the **Team chat** button in the board's toolbar).             | Anything hunt-wide: new rounds, who's taking what, breaks, the plan.         |
+| **Puzzle chat** | The right side of each [puzzle page](/docs/guides/puzzle-page), under the info panel (on phones: the **Chat** tab). | Working on that puzzle: ideas, partial findings, "can someone check row 4?". |
+
+Above each chat, a strip shows who's here and who's in the [voice call](/docs/guides/voice) for that place: the lobby for the team chat, the puzzle's own call for a puzzle chat.
+
+<Callout type="tip">
+  Keep puzzle talk in the puzzle's chat. When someone new joins a puzzle later, the history is right
+  there, and the team chat stays readable.
+</Callout>
+
+## Send a message
+
+Type in the box at the bottom ("Message… (@ to mention)").
+
+| Key                    | What it does |
+| ---------------------- | ------------ |
+| <Kbd>Enter</Kbd>       | Send         |
+| <Kbd>Shift Enter</Kbd> | New line     |
+
+When teammates are typing, you'll see "Priya is typing" (or "Priya and Diego are typing", and so on) under the messages. If you've scrolled up, a **Scroll to newest** button takes you back down.
+
+### Mention someone
+
+Type `@` and start typing a name. Pick a teammate from the list, or press <Kbd>Enter</Kbd> or <Kbd>Tab</Kbd> to take the top match. The person you mention gets a [notification](/docs/guides/notifications) that takes them straight to the chat.
+
+### Images
+
+Attach images with the attachment button, or drag them onto the composer. You can send up to 10 images in one message, each up to 5 MB. Remove one before sending with its ✕.
+
+Click an image in the chat to open it in a lightbox, where you can **Zoom in**, **Zoom out**, **Reset zoom**, or **Open original** in a new tab.
+
+### Markdown and code
+
+Messages support Markdown: `**bold**`, `*italic*`, links, lists and so on. For anything where spacing matters (a grid, a list of letters, a cipher), wrap it in a code block with three backticks on the lines before and after:
+
+````
+```
+C A T
+O . O
+W O E
+```
+````
+
+It shows in a fixed-width font, exactly as typed.
+
+## Act on a message
+
+Hover over a message to show its actions.
+
+| Action           | Who               | What it does                                                                                                                                                                                                  |
+| ---------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Add reaction** | Anyone            | React with an emoji: pick a quick one (👍 ❤️ 😂 🎉 🤔 👀 🔥 😭), one of your team's custom emoji, or search every emoji. Click a reaction under a message to add yours, or click it again to take yours back. |
+| **Pin message**  | Anyone            | Pins the message to the top of the chat. **Unpin message** removes it.                                                                                                                                        |
+| **Edit**         | Your own messages | Edit the text in place. <Kbd>Enter</Kbd> saves, <Kbd>Esc</Kbd> cancels. The message is marked "(edited)".                                                                                                     |
+| **Delete**       | Your own messages | Asks "Delete this message for everyone?", then removes it. It shows as "Message deleted".                                                                                                                     |
+
+Custom team emoji are added by anyone in <UiPath path="Settings > General > Team emoji" />. See [Make it yours](/docs/guides/customize).
+
+<Callout type="phone">On a phone there's no hover: tap a message to show its actions.</Callout>
+
+### Pins
+
+Pinned messages appear in a bar above the chat. It shows the latest pin; if there are several, click "N pinned" to expand the list. Click a pin to jump to the message, or the unpin icon to remove it. Pin things the whole puzzle needs: the extraction mechanism, a key finding, the hunt's hint.
+
+## Announcements
+
+An announcement is a message to the whole team that nobody should miss: "Puzzle hunt HQ says there's an erratum on round 3", "Dinner's here".
+
+<Steps>
+
+1. On the blackboard, click the megaphone (**Make an announcement**) in the sidebar. On a phone, it's in the **Notes and progress** drawer.
+2. Type your **Message**.
+3. If the workspace has [Discord connected](/docs/discord), you can also pick a **Discord Channel** to post it to. Leave it on **None** to keep it in WOW.
+4. Click **Submit**.
+
+</Steps>
+
+Everyone in the workspace gets the announcement in their notification bell, and as a pop-up that stays on screen until they dismiss it (unless they've turned announcement pop-ups off). See [Notifications](/docs/guides/notifications).
+
+## Eggö, the chat bot
+
+Eggö is a small bot that lives in every chat. Send one of its commands as a message and Eggö replies:
+
+| Command  | What it does                                                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `!help`  | Lists Eggö's commands.                                                                                                                            |
+| `!stuck` | Shows a random solving hint, like "Read down the first letters." or "Re-read the puzzle. Did you use everything?". Click **🧇 Roll** for another. |
+
+`!stuck` is good for breaking a team out of a rut. See [Eggö commands](/docs/reference/eggo).
+
+## Related
+
+- [Voice and screen sharing](/docs/guides/voice)
+- [Notifications](/docs/guides/notifications)
+- [Eggö commands](/docs/reference/eggo)
+- [Working on a puzzle](/docs/guides/puzzle-page)

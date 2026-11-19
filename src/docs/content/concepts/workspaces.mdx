@@ -1,0 +1,79 @@
+A **workspace** is where one team plays one hunt. It holds the team's board, every puzzle's sheet, whiteboard and chat, and the calls, notes and history that go with them. Everyone in it is either an **owner** or a **member**.
+
+## What a workspace holds
+
+Everything in a workspace is shared by the whole team and updates live:
+
+- **The blackboard**: rounds, metas and puzzles, with their answers, statuses, importance and tags.
+- **Each puzzle's page**: its spreadsheet (or Google Sheet), whiteboard, chat, notes and guess queue.
+- **Team-wide spaces**: the team chat and shared notes on the blackboard sidebar, and announcements.
+- **Calls**: the lobby and a call on every puzzle.
+- **Settings**: the team and event names, hunt dates and location, header links, tags and custom reaction emoji.
+- **History**: the activity log and the leaderboard.
+
+A few things are yours alone: your starred puzzles (the **Favorites** filter shows them), your timer on each puzzle, and your notification choices. The blackboard's filters, and the filters you set in a sheet, are personal too, so hiding solved puzzles never hides them for anyone else.
+
+## One workspace per hunt
+
+Teams usually make a fresh workspace for each hunt they play, rather than reusing one. That keeps each hunt's board, chats and recap separate, and the hunt's dates on each workspace drive its clock, solves chart and leaderboard.
+
+**My workspaces** lists all of yours, live hunts first, then upcoming ones, then those without dates, then finished ones. The workspace name in the footer opens a menu to switch between them.
+
+<Callout type="note">
+  You can't delete or archive a workspace yourself yet. If you need one removed, contact support.
+</Callout>
+
+## Owners and members
+
+Whoever creates a workspace is its first owner. Everyone who joins is a member. Owners can make other people owners in <UiPath path="Settings > Members" />, and there's always at least one owner.
+
+The split is deliberately light. Anything to do with solving is open to everyone; only the settings that define the workspace itself are for owners.
+
+|                                                     | Owners | Members |
+| --------------------------------------------------- | ------ | ------- |
+| Add, edit and delete puzzles and rounds             | ✓      | ✓       |
+| Answers, statuses, importance, tags, notes          | ✓      | ✓       |
+| Header links, workspace tags, custom reaction emoji | ✓      | ✓       |
+| Announcements and guesses                           | ✓      | ✓       |
+| See the workspace password                          | ✓      | ✓       |
+| Team and event name, hunt dates and location        | ✓      |         |
+| Accent color and team emoji                         | ✓      |         |
+| Change the workspace password                       | ✓      |         |
+| Google Drive and Discord                            | ✓      |         |
+| Change members' roles                               | ✓      |         |
+
+The full list is in [Permissions](/docs/reference/permissions).
+
+<Callout type="tip">
+  Because any member can delete a puzzle or a round, agree as a team on who tidies the board.
+  Deletes always ask for confirmation first.
+</Callout>
+
+## ID, address and password
+
+Each workspace has a **Workspace ID**, chosen when it's created. It's the workspace's address: `wafflehaus.io/` followed by the ID. It's also in the invitation link, `https://join.wafflehaus.io/` followed by the ID.
+
+The **Workspace password** is what teammates enter to join. Owners set it when creating the workspace and can change it in <UiPath path="Settings > Administration" />. Members can see it there too, so anyone on the team can invite someone else. Changing the password doesn't remove anyone who has already joined.
+
+See [Invite your team](/docs/guides/invite-your-team) for the ways people can join.
+
+## Hunt details and links
+
+The **Details** in <UiPath path="Settings > General" /> describe the hunt: team name, event name, **Starts** and **Ends**, and location. The dates do the most work:
+
+- The **hunt clock** in the header counts down to the start ("Starts in 2d 4h"), then shows the time left, then "Hunt over".
+- The **Solves** chart in the activity log spans the hunt's dates.
+- The **Leaderboard** is live until the end time, then becomes the final **Hunt recap**.
+
+**Links** are a list of names and URLs that anyone can edit. They appear in the header on desktop and in the command palette (<Kbd>⌘ K</Kbd>). Good candidates are the hunt's website, its answer-submission page, and any team doc you keep outside WOW. If you picked a known hunt when creating the workspace, its website is already there.
+
+<Callout type="phone">
+  On a phone, the header links and sections are in the menu button instead, and the hunt clock is
+  hidden.
+</Callout>
+
+## Next
+
+- [Rounds, metas and feeders](/docs/concepts/hunt-structure): how the board models a hunt.
+- [Create a workspace](/docs/guides/create-a-workspace): every field on the create form.
+- [Members and roles](/docs/guides/members-and-roles): making someone an owner, and leaving.

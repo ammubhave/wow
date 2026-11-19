@@ -1,78 +1,11 @@
 import {Button, Modal} from "@heroui/react";
 
 import {ControlledModal} from "@/components/controlled-dialog";
+import {HelpLink} from "@/docs/components/help-link";
+import {PUZZLE_FORMULA_GROUPS} from "@/lib/formula-docs";
 
-type Tool = {name: string; what: string; example: string; gives: string};
-
-/**
- * WOW's puzzle formulas. Each example is self-contained (no cell references), so it works
- * wherever it's inserted; people then swap the text for a cell.
- */
-const GROUPS: {title: string; tools: Tool[]}[] = [
-  {
-    title: "Words",
-    tools: [
-      {
-        name: "MATCHES",
-        what: "Words and phrases fitting a pattern, best first. ? is any letter, * any run, @ a vowel, # a consonant. An optional second argument sets how many (50 by default).",
-        example: '=MATCHES("C?OSS?ORD")',
-        gives: "CROSSWORD",
-      },
-      {
-        name: "ANAGRAMS",
-        what: "Words and phrases using exactly these letters, best first. ? is a blank.",
-        example: '=ANAGRAMS("SILENT")',
-        gives: "ENLIST, INLETS, LISTEN…",
-      },
-      {
-        name: "ISWORD",
-        what: "TRUE if the text is a word or phrase in the word list (spaces are ignored).",
-        example: '=ISWORD("ICE CREAM")',
-        gives: "TRUE",
-      },
-    ],
-  },
-  {
-    title: "Ciphers",
-    tools: [
-      {
-        name: "CAESAR",
-        what: "Shifts each letter by a number of places.",
-        example: '=CAESAR("HAL", 1)',
-        gives: "IBM",
-      },
-      {
-        name: "CAESARALL",
-        what: "All 25 shifts, one per row, to scan for the one that reads.",
-        example: '=CAESARALL("URYYB")',
-        gives: "13 → HELLO, among others",
-      },
-      {
-        name: "A1Z26",
-        what: "Numbers to letters (1 = A), or letters to numbers.",
-        example: '=A1Z26("8 9")',
-        gives: "HI",
-      },
-      {
-        name: "MORSE",
-        what: "Decodes Morse (. or · for dit, - or _ for dah, / between words), or encodes text.",
-        example: '=MORSE("... --- ...")',
-        gives: "SOS",
-      },
-    ],
-  },
-  {
-    title: "Extraction",
-    tools: [
-      {
-        name: "NTH",
-        what: "The nth letter, skipping spaces, digits and punctuation; negative counts from the end. Works down a range: =NTH(A1:A10, B1:B10).",
-        example: '=NTH("Puzzle hunt", 7)',
-        gives: "h",
-      },
-    ],
-  },
-];
+/** The puzzle formulas, shared with the docs' formula reference (see lib/formula-docs.ts). */
+const GROUPS = PUZZLE_FORMULA_GROUPS.map(group => ({title: group.title, tools: group.formulas}));
 
 /** The built-in sheet's puzzle formulas and actions, with examples to drop into a cell. */
 export function SheetToolsDialog({
@@ -96,6 +29,7 @@ export function SheetToolsDialog({
               Formulas made for puzzles. Select a cell, then insert an example and change its text
               to a cell, like A1.
             </p>
+            <HelpLink slug="reference/formulas">Every formula, with all its options</HelpLink>
           </Modal.Header>
           <Modal.Body className="flex flex-col gap-5">
             {GROUPS.map(group => (

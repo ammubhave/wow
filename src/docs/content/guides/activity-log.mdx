@@ -1,0 +1,112 @@
+import activityLogImage from "../../images/activity-log.webp";
+
+The activity log is the team's history: every puzzle and round added, every status and answer change, every solve and every new member, newest first. Open it from the **Activity log** tab (the clock icon) in the workspace header. The page is titled **Activity**.
+
+It's useful during the hunt, to catch up after a break or check who changed something, and afterwards, to relive how the hunt went.
+
+## What's logged
+
+| Entry                   | Reads like                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Puzzle added or deleted | "Sam added **Cryptic Crossing**", "Sam deleted **Old Puzzle**"                                             |
+| Round added or deleted  | "Sam created round **Round 2**", "Sam deleted round **Round 2**"                                           |
+| Status change           | "Sam moved **Cryptic Crossing** to **Stuck**"                                                              |
+| Importance change       | "Sam marked **Cryptic Crossing** **important**"                                                            |
+| Answer change           | "Sam set the answer of **Cryptic Crossing** to `WAFFLE`"                                                   |
+| Solve                   | "**Cryptic Crossing** solved with" the avatars of everyone who marked **I helped**, then "· marked by Sam" |
+| Backsolve               | The same, saying "backsolved"                                                                              |
+| Someone joining         | "Sam joined the workspace"                                                                                 |
+
+<Screenshot
+  src={activityLogImage}
+  alt="The activity log"
+  caption="The activity log with the solves chart."
+/>
+
+Puzzle names are links to the puzzle. Hover a name to see who the person is, and hover a time to see the full date and how long ago it was.
+
+Each entry has an icon on the timeline, coloured so you can scan it: solves are green, and statuses that signal trouble, such as Stuck, show in amber or red.
+
+### Solves credit the helpers
+
+A solve leads with the puzzle, not the person who marked it, because marking a puzzle solved is bookkeeping. The avatars after "solved with" are the teammates who said they helped, through the **I helped** toggle on the puzzle page. The person who marked it solved is only a footnote. See [why "I helped" matters](/docs/guides/leaderboard#why-i-helped-matters).
+
+### What isn't logged
+
+Chat messages, notes, sheet edits, tags, guesses and voice calls don't appear in the activity log. It's a record of the board, not of every keystroke.
+
+## Day groups
+
+Entries are grouped by day, with a heading for each: **Today**, **Yesterday**, then the weekday and date, such as "Saturday, Jan 17". The heading for the day you're reading sticks to the top as you scroll. Within a day, each entry shows its time.
+
+The newest entries arrive live as your team works. Older entries load as you scroll down.
+
+## Filter the log
+
+Click **Filter** at the top right. A number on the button shows how many kinds of filter are on.
+
+| Filter                          | Shows                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------- |
+| **Solves**                      | Puzzles marked Solved or Backsolved.                                                    |
+| **Status & importance changes** | Every status change (solves included) and importance change.                            |
+| **Answers**                     | Answers typed or changed.                                                               |
+| **Puzzles & rounds**            | Puzzles and rounds added or deleted.                                                    |
+| **Members joining**             | People joining the workspace.                                                           |
+| **People**                      | Opens a list of everyone in the loaded activity. Tick people to see only what they did. |
+| **Reset filters**               | Clears everything.                                                                      |
+
+You can tick several types at once. You'll see entries matching any of them. People and types combine: tick **Answers** and one person to see only that person's answers.
+
+If nothing matches, you'll see "Nothing matches those filters. Sneaky."
+
+<Callout type="note">
+  The **People** filter matches who made each change. For a solve, that's whoever marked it solved,
+  not the helpers. To see what someone helped solve, check their row in the leaderboard, or look for
+  their avatar in solve entries.
+</Callout>
+
+Filters reset when you leave the page.
+
+## Jump to a day
+
+On a desktop screen, once the log covers more than one day, a small column of bars floats at the right edge of the page. Each bar is one loaded day, and the day you're reading is highlighted.
+
+<Steps>
+
+1. Hover the bars to open **Jump to**, a list of the days.
+2. Click a day to scroll to it.
+3. Or click **Beginning** at the bottom of the list to go to the very first entry.
+
+</Steps>
+
+Only the days loaded so far are listed. When there's older activity still to load, the last item says **Beginning (loads the rest)**: clicking it loads every older page, showing "Loading older activity…" while it works, then scrolls to the first entry. On a long hunt this can take a few seconds.
+
+<Callout type="phone">
+  The jump-to-day bars don't appear on phones. Scroll instead: older days load as you reach the
+  bottom.
+</Callout>
+
+## The solves chart
+
+Above the timeline, the **Solves** card shows how many puzzles are solved out of the total, and how many of them are metas, for example "34 of 52 · 5 metas".
+
+Below that is a chart of solves over time:
+
+- The line climbs by one with each solve, so steep parts are your team's hot streaks and flat parts are the slow stretches.
+- A ★ marks each meta solve.
+- Hover any point to see which puzzle was solved then.
+
+If the hunt's dates are set, the chart starts at the hunt's start time and runs to now, or to the end time once the hunt is over. Without dates, it runs from the first solve to now. Owners can set the dates in <UiPath path="Settings > General > Details" />.
+
+Only puzzles that are solved now are counted, at the time they were last marked solved. The card doesn't appear until the first solve.
+
+## Hunt recap
+
+The **Hunt recap** button at the top of the page opens the [Leaderboard and recap](/docs/guides/leaderboard) page: awards, standings and a shareable card for the team.
+
+## Related
+
+- [Leaderboard and recap](/docs/guides/leaderboard)
+- [The blackboard](/docs/blackboard)
+- [Statuses and importance](/docs/reference/statuses)
+- [Your stats](/docs/guides/your-stats)

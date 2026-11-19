@@ -1,0 +1,135 @@
+Connecting Google Drive is optional. Without it, every puzzle gets WOW's [built-in spreadsheet](/docs/guides/spreadsheet). With it, every new puzzle gets its own Google Sheet in a folder your team owns, opened right inside the puzzle page. Only owners can connect Drive. <OwnerOnly />
+
+## Should you connect it?
+
+Both work well for hunting. The choice is mostly about what your team is used to and what happens to the sheets afterwards.
+
+|                     | Built-in spreadsheet                                                      | Google Sheets                                                                                        |
+| ------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Setup               | None                                                                      | An owner connects Google and picks a folder                                                          |
+| Who can open it     | Every workspace member, automatically                                     | Members, once WOW has shared the Drive folder with them                                              |
+| Accounts            | Just your WOW account                                                     | Each solver needs a Google account with the same email as their WOW account, or must switch accounts |
+| Puzzle formulas     | `CAESAR`, `ANAGRAMS`, `ISWORD` and more, plus most Google Sheets formulas | Google Sheets' own formulas, and any add-ons your team uses                                          |
+| Puzzle tools        | **Puzzle tools** panel, crossword grids, **Highlight in my color**        | Google's own features                                                                                |
+| Following teammates | Click a teammate's avatar to follow their cursor                          | Google's own presence                                                                                |
+| Drawings            | The whiteboard on every puzzle                                            | The whiteboard, and also optional Google Drawings                                                    |
+| After the hunt      | Stays in WOW                                                              | The files stay in your Google Drive, to keep or share                                                |
+| Templates           | Not available                                                             | A template sheet copied for every puzzle                                                             |
+
+<Callout type="tip">
+  If your team has a favourite Google Sheets template, with tabs set up the way you like or custom
+  scripts, connect Drive. If you'd rather nobody had to think about Google accounts during the hunt,
+  skip it. You can always connect it later.
+</Callout>
+
+## Connect Google Drive <OwnerOnly />
+
+You can do this on the **Set up your workspace** page right after creating the workspace, or any time in <UiPath path="Settings > Administration" />. The **Google Drive Connection** card walks you through three steps.
+
+<Steps>
+
+1. **Connect with Google.** Click **Connect**, choose the Google account that should own the team's files, and allow access. You come back to WOW, and the step says "You're successfully connected to Google."
+2. **Select Google Drive Folder.** Click **Select Folder** and pick the folder that every puzzle's file should go in. Google's file picker opens over the page. Once you pick one, the step shows the folder's name as a link.
+3. **Select Template File** (optional). Click **Select File** and pick a Google Sheet to copy for each new puzzle. The step then shows the file's name.
+
+</Steps>
+
+Each step unlocks once the one before is done. To change a choice later, use **Reconnect**, **Reselect Folder** or **Reselect File**.
+
+<Callout type="warning">
+  Use a new, empty folder that only WOW puts files in. WOW can only manage the files it created or
+  that you picked for it. If someone adds another file to the folder by hand, Google won't let WOW
+  share the folder with new members, and they won't be able to open the sheets. See
+  [Troubleshooting](#troubleshooting).
+</Callout>
+
+### About the template
+
+The template is optional. Without one, each puzzle gets a blank Google Sheet. With one, WOW copies the template, so every puzzle starts with your team's tabs, headings and formulas already in place.
+
+- The template must be a Google Sheet. It's only used for spreadsheets, not drawings.
+- It can live anywhere in your Drive. It doesn't need to be in the puzzle folder.
+- Changes to the template only affect puzzles added afterwards.
+
+## What happens for each puzzle
+
+Once Drive is connected, the **Add new puzzle** and **Add new meta puzzle** dialogs gain a **Worksheet Type** choice:
+
+| Worksheet Type         | What WOW creates                                                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Google Spreadsheet** | A copy of your template, or a blank Google Sheet if you have no template.                                            |
+| **Google Drawing**     | A blank Google Drawing, for puzzles that are more about pictures than grids. The puzzle page's tab says **Drawing**. |
+
+The file is named after the puzzle and saved in your folder. The puzzle page then shows the Google file where the built-in sheet would be. If Google is slow to load, use **Retry**, or **Open in a new tab** to work on it directly in Google. The **Open spreadsheet in a new tab** icon in the puzzle's info panel does the same any time.
+
+<Callout type="note">
+  Puzzles only get a Google file if Drive is connected when they're added. Puzzles added earlier
+  keep the built-in spreadsheet. If you plan to use Drive, connect it before the hunt starts.
+</Callout>
+
+## Member access
+
+WOW shares the Drive folder with each member, so the sheets inside open for them.
+
+- **When someone joins**, WOW gives the email address of their WOW account edit access to the folder.
+- **If that fails**, every owner gets a notification that always pops up, with **Open folder** (or **Open the file**, if one file is causing the problem) so you can fix it.
+- **Share with everyone**, below the steps in <UiPath path="Settings > Administration" />, shares the folder with every member again. It reports how many members it shared with, and lists anyone it couldn't share with and why. Use it:
+  - after fixing whatever stopped sharing,
+  - for people who joined before you chose the folder,
+  - or whenever a teammate says they can't open the sheets.
+
+Sharing again with someone who already has access does nothing, so it's always safe to click.
+
+<Callout type="note">
+  Members who aren't owners see the Google Drive card in <UiPath path="Settings > Administration" />
+  , with its steps and the folder and template names, but the buttons are disabled for them and
+  **Share with everyone** is hidden.
+</Callout>
+
+## Disconnecting and reconnecting
+
+There's no button to disconnect Drive from a workspace. You can:
+
+- **Reconnect** with a different Google account, or with the same one if WOW's access expired. New puzzles' files then go through that account.
+- **Reselect Folder** to send new puzzles' files to a different folder.
+
+Puzzles that already have a Google file keep it whatever you change. Their files stay wherever they were created.
+
+If you remove WOW's access from your Google account's security settings, WOW can't create Google files any more until an owner reconnects. Existing puzzles keep their Google files.
+
+## Troubleshooting
+
+### A teammate sees a 403 or "You need access"
+
+This usually means they're signed in to Google in their browser with a different account from the email they joined WOW with. Google is checking the wrong account.
+
+<Steps>
+
+1. In the puzzle's info panel, click **Open spreadsheet in a new tab**.
+2. In the Google tab, click the avatar at the top right and switch to the account that matches their WOW email.
+3. Come back to WOW and reload the puzzle.
+
+</Steps>
+
+If they're on the right account and it still fails, ask an owner to click **Share with everyone**.
+
+### Sharing fails for everyone
+
+If **Share with everyone** says a file in the folder was added outside WOW, move that file out of the folder in Google Drive (the message links to it when it can), then click **Share with everyone** again.
+
+### "WOW's connection to Google Drive has expired"
+
+The Google connection needs renewing. An owner should click **Reconnect** on the first step, sign in to Google again, then click **Share with everyone**.
+
+### New puzzles aren't getting Google Sheets
+
+Check the Google Drive card in <UiPath path="Settings > Administration" />. If the first step isn't marked as connected, the connection has lapsed: click **Reconnect**.
+
+More fixes are on the [Troubleshooting](/docs/help/troubleshooting) page.
+
+## Related
+
+- [The built-in spreadsheet](/docs/guides/spreadsheet)
+- [Invite your team](/docs/guides/invite-your-team)
+- [Working on a puzzle](/docs/guides/puzzle-page)
+- [Troubleshooting](/docs/help/troubleshooting)

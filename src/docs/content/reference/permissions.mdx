@@ -1,0 +1,48 @@
+A workspace has two roles: **owners** and **members**. Whoever creates a workspace is its first owner, and everyone who joins is a member. Members can do almost everything during a hunt; owners also look after the workspace's setup. Read more in [Workspaces, owners and members](/docs/concepts/workspaces).
+
+## Permissions matrix
+
+| Action                                                | Owner | Member |
+| ----------------------------------------------------- | :---: | :----: |
+| **Solving**                                           |       |        |
+| Add, edit and delete rounds and puzzles               |   ✓   |   ✓    |
+| Arrange the board (reorder, move, make feeders)       |   ✓   |   ✓    |
+| Enter answers, set statuses, importance and tags      |   ✓   |   ✓    |
+| Edit shared notes (blackboard and puzzle)             |   ✓   |   ✓    |
+| Queue guesses and record results                      |   ✓   |   ✓    |
+| Chat, react, pin messages                             |   ✓   |   ✓    |
+| Edit or delete your own chat messages                 |   ✓   |   ✓    |
+| Make an announcement                                  |   ✓   |   ✓    |
+| Join voice calls and share your screen                |   ✓   |   ✓    |
+| **Settings > General**                                |       |        |
+| Change team name, event name, hunt dates and location |   ✓   |   —    |
+| Change the look (accent colour, team emoji)           |   ✓   |   —    |
+| Add or remove custom reaction emoji                   |   ✓   |   ✓    |
+| Add or remove header links                            |   ✓   |   ✓    |
+| Manage the workspace's tags                           |   ✓   |   ✓    |
+| Copy the invitation link                              |   ✓   |   ✓    |
+| Leave the workspace                                   |   ✓   |   ✓    |
+| **Settings > Members**                                |       |        |
+| See who's in the workspace and their roles            |   ✓   |   ✓    |
+| Make someone an owner or a member                     |   ✓   |   —    |
+| **Settings > Administration**                         |       |        |
+| View the workspace password                           |   ✓   |   ✓    |
+| Change the workspace password                         |   ✓   |   —    |
+| Connect, change or disconnect Google Drive            |   ✓   |   —    |
+| Re-share the Drive folder (**Share with everyone**)   |   ✓   |   —    |
+| Connect, reconnect or disconnect Discord              |   ✓   |   —    |
+| Delete or archive the workspace                       |   —   |   —    |
+
+## Notes
+
+- **Members can see the password.** Anyone in the workspace can look up the password in <UiPath path="Settings > Administration" /> to invite a friend, but only owners can change it.
+- **There's always an owner.** The last owner can't be made a member. To hand over, make someone else an owner first.
+- **Deleting or archiving a workspace isn't available yet.** In <UiPath path="Settings > Administration" />, **Delete Workspace** says "Contact support to delete your workspace" and **Archive Workspace** says "Coming Soon"; see the [FAQ](/docs/help/faq).
+- **Only owners hear about Drive problems.** If WOW can't share the Drive folder with someone who joins, the owners get a notification so one of them can fix it.
+- Non-owners see "Only owners can change the details and look" in Settings, and the owner-only fields are greyed out.
+
+## Related
+
+- [Members and roles](/docs/guides/members-and-roles)
+- [Workspaces, owners and members](/docs/concepts/workspaces)
+- [Invite your team](/docs/guides/invite-your-team)

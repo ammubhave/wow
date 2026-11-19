@@ -1,0 +1,105 @@
+import notificationsImage from "../../images/notifications.webp";
+
+WOW lets you know when something happens that you'd want to hear about: a puzzle is solved, someone makes an announcement, or a teammate mentions you. You can see everything in the bell, choose what pops up, and get desktop notifications when WOW is in the background.
+
+For a full list of notification types, who gets each one and where it takes you, see [Notification types](/docs/reference/notifications).
+
+## What you'll be notified about
+
+| Notification                           | Who gets it          | What it looks like                                                                   |
+| -------------------------------------- | -------------------- | ------------------------------------------------------------------------------------ |
+| **Solved** / **Meta solved**           | Everyone             | "Solved: Puzzle name" with the answer, and confetti.                                 |
+| **Announcement**                       | Everyone             | "Announcement from Name" with the message. The pop-up stays until you dismiss it.    |
+| **Mention**                            | The person mentioned | "Name mentioned you in Puzzle", with an **Open** button that takes you to that chat. |
+| **Drive sharing failed** <OwnerOnly /> | Owners               | WOW couldn't give a new member access to the Google Drive folder.                    |
+
+## The bell
+
+The bell in the header collects your notifications. A red badge shows how many are unread.
+
+<Screenshot
+  src={notificationsImage}
+  alt="The notification bell"
+  caption="The bell lists solves, announcements and your mentions."
+/>
+
+Click it to open the list:
+
+- **All** and **Mentions** tabs at the top. **Mentions** shows only the times someone @-mentioned you.
+- The list shows unread notifications. Click **Show all notifications** at the bottom to see the ones you've read too, and **Show unread only** to go back.
+- Click a notification to mark it read and go to it: a solve opens the puzzle, a mention opens that puzzle's chat (or the blackboard, for the team chat).
+- **Mark all as read** clears the lot.
+
+Read state is kept with your account, so when you read something on your laptop, it's read on your phone too.
+
+## Pop-ups
+
+New notifications also pop up in the corner of the screen. Choose which kinds:
+
+<Steps>
+
+1. Open the bell.
+2. Click the gear (**Notification settings**).
+3. Under **Pop up when…**, turn each kind on or off: **A puzzle is solved**, **There's an announcement**, **Someone mentions you**.
+
+</Steps>
+
+All three are on by default. Notifications still collect in the bell whatever you choose here; these switches only control pop-ups.
+
+These settings are saved in your browser, so you can have different ones on different devices: quiet on your laptop, everything on your phone.
+
+<Callout type="note">
+  Owners always get a pop-up when Drive sharing fails, whatever these settings say, because it needs
+  someone to act.
+</Callout>
+
+## Desktop notifications
+
+If you keep WOW in a background tab while you work in a Google Sheet or on the hunt site, turn on desktop notifications:
+
+<Steps>
+
+1. Open the bell and click the gear.
+2. Turn on **Desktop notifications when the tab is hidden**.
+3. Your browser asks for permission to show notifications. Click **Allow**.
+
+</Steps>
+
+You'll then get a system notification, as well as the usual pop-up, for each kind you've chosen to pop up, but only while the WOW tab is hidden. When you're looking at WOW, the pop-up is enough. Click a desktop notification to jump back to WOW and to what it's about.
+
+It's off by default. If you blocked notifications for the site earlier, WOW says "Your browser blocked notifications for this site." Allow them in your browser's site settings, then try again.
+
+## While you were away
+
+If you've been away from a workspace for 30 minutes or more, WOW greets you with a **While you were away** summary when you come back: how many solves, new rounds and announcements there were, and whether you were mentioned. Click **Show** to open the bell and see the details.
+
+## Turn off all pop-ups
+
+To silence every pop-up, in every workspace, on every device:
+
+<Steps>
+
+1. Click your avatar at the top right to open the account menu.
+2. Under **Notifications**, choose **Disabled**.
+
+</Steps>
+
+Your notifications still collect in the bell. Choose **Enabled** to turn pop-ups back on.
+
+## The "I helped" prompt
+
+When a puzzle is solved, the solve pop-up includes an **I helped** button if you might have helped: you have the puzzle open, or you've spent at least a minute on it (by your [puzzle timer](/docs/guides/puzzle-page#your-timer)). Click it to add yourself to the puzzle's solvers.
+
+It won't ask if you've already marked yourself. You can always use the **I helped** toggle on the puzzle page instead. Your "I helped" marks count towards the [leaderboard](/docs/guides/leaderboard) awards and [your stats](/docs/guides/your-stats).
+
+## Drive sharing alerts <OwnerOnly />
+
+When a new member joins and the workspace has [Google Drive connected](/docs/google-drive), WOW gives them edit access to the team's folder. If that fails, every owner gets a notification: "Couldn't share the Google Drive folder with Name", telling you which email address to share with.
+
+The pop-up stays until you dismiss it, with **Open folder** (or **Open the file**, when a particular file is blocking the share) to fix it in Google Drive.
+
+## Related
+
+- [Notification types](/docs/reference/notifications)
+- [Chat and announcements](/docs/guides/chat)
+- [Working on a puzzle](/docs/guides/puzzle-page)

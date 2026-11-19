@@ -11,6 +11,7 @@ import {memo} from "react";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
+import {formatAnswers} from "@/lib/answers";
 import type {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {UserHoverCard} from "./user-hover-card";
@@ -125,7 +126,9 @@ export const ActivityLogItem = memo(function ActivityLogItem({
                 {" "}
                 to{" "}
                 {activityItem.puzzle_activity_log_entry.subType === "updateAnswer" ? (
-                  <span className="font-mono">{activityItem.puzzle_activity_log_entry.field}</span>
+                  <span className="font-mono">
+                    {formatAnswers(activityItem.puzzle_activity_log_entry.field)}
+                  </span>
                 ) : (
                   activityItem.puzzle_activity_log_entry.field
                 )}

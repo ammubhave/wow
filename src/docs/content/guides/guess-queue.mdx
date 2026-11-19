@@ -1,0 +1,141 @@
+import guessesImage from "../../images/guesses.webp";
+import guessQueueImage from "../../images/guess-queue.webp";
+
+Most hunts have you submit answers on their website, and many limit how often you can guess, or make you wait after a wrong answer. WOW's guess queue keeps track of every guess your team wants to make, what the hunt said about each one, and when you're allowed to try again.
+
+## Why use a guess queue
+
+- **Rate limits and backoffs.** When the hunt makes you wait, the queue counts down and tells you when you're **Ready**, so nobody guesses early and gets locked out longer.
+- **No repeated guesses.** WOW warns you if an answer has already been tried on this puzzle, so you don't waste a guess on something a teammate already got wrong.
+- **One caller.** One person can submit every guess the team has lined up, from a single list in the header, instead of everyone typing into the hunt site at once.
+- **A record.** Every guess, who queued it and what happened to it, stays on the puzzle.
+
+## Queue a guess
+
+<Screenshot
+  src={guessesImage}
+  alt="The Guesses section of a puzzle"
+  caption="A puzzle's guesses: one submitted, one wrong."
+/>
+
+<Steps>
+
+1. On the [puzzle page](/docs/guides/puzzle-page), find **Guesses** in the info panel. While a puzzle has no guesses it's collapsed: click **Guesses (0)** to open it.
+2. Type your answer in **Queue a guess to call in**.
+3. Click **Queue** or press <Kbd>Enter</Kbd>.
+
+</Steps>
+
+The guess appears in the list as **Queued**, with your name and how long ago you added it. The section heading shows how many guesses the puzzle has, and a "N waiting" chip when some are still queued or submitted.
+
+### Already-guessed warning
+
+As you type, WOW checks the puzzle's earlier guesses. If you've typed one that's already been tried, a warning appears, like "Already guessed: wrong (TEAPOT)." or "Already guessed: queued.".
+
+The check ignores case, spaces and punctuation, so `Ice-cream`, `ICE CREAM` and `icecream` all count as the same guess. You can still queue it if you really mean to.
+
+## Guess statuses
+
+| Status         | Meaning                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| **Queued**     | Waiting to be called in. If the hunt has asked you to back off, it shows a countdown, then **Ready**. |
+| **Submitted**  | Called in; waiting for the hunt's reply.                                                              |
+| **Correct**    | The hunt accepted it.                                                                                 |
+| **Wrong**      | The hunt rejected it.                                                                                 |
+| **Keep going** | A partial answer: the hunt said you're on the right track.                                            |
+| **Withdrawn**  | Taken back without calling it in. Shown crossed out.                                                  |
+
+Queued and Submitted guesses are "waiting": they show in the header queue until someone records the outcome.
+
+## Record what happened
+
+Each guess has a button for the usual next step, and a ⋯ menu for everything else.
+
+| Button        | Shows on                                  | What it does                                                    |
+| ------------- | ----------------------------------------- | --------------------------------------------------------------- |
+| **Submitted** | Queued guesses (once any backoff is over) | Marks it called in.                                             |
+| **Correct**   | Submitted guesses                         | Marks it correct, and fills in the puzzle's answer (see below). |
+
+The ⋯ menu has every option:
+
+| Menu item                | What it does                                       |
+| ------------------------ | -------------------------------------------------- |
+| **Submitted**            | Marks it called in.                                |
+| **Correct**              | Marks it correct and fills in the answer.          |
+| **Wrong**                | Marks it rejected.                                 |
+| **Keep going (partial)** | Marks it as a partial answer.                      |
+| **Back off…**            | Puts it back in the queue with a wait (see below). |
+| **Back to the queue**    | Returns it to **Queued**, without a wait.          |
+| **Withdraw**             | Takes it back.                                     |
+
+Anyone in the workspace can update any guess. If you click the wrong one, just pick the right status from the ⋯ menu.
+
+## Back off after a wrong guess
+
+Many hunts make you wait before guessing again, especially after several wrong answers. To record that:
+
+<Steps>
+
+1. Open the guess's ⋯ menu and choose **Back off…**.
+2. Pick how long the hunt asked you to wait: 1, 2, 5, 10, 15 or 30 minutes, or 1 hour.
+
+</Steps>
+
+The guess goes back to **Queued** with an hourglass countdown. While it counts down, the **Submitted** button is hidden, so nobody calls it in too early. When the time's up, it shows **Ready** and the **Submitted** button comes back.
+
+## When a guess is correct
+
+Marking a guess **Correct** does more than change its status:
+
+- The answer is written onto the puzzle.
+- The puzzle is marked **Solved**.
+- Everyone on the team gets the solve pop-up, with confetti, and the puzzle sparkles on the [blackboard](/docs/blackboard).
+
+So the person calling in answers doesn't have to update the board separately.
+
+### Puzzles with several answers
+
+On a puzzle with more than one answer (see [Solving metas](/docs/guides/metas#puzzles-with-more-than-one-answer)), a correct guess is added to the answers found so far, instead of replacing them. The puzzle is only marked Solved once all of its answers are in.
+
+## The header queue
+
+While any guess in the workspace is waiting, a list icon with a count appears in the header. It disappears when nothing is waiting, so it's a good signal that someone needs to act.
+
+<Screenshot
+  src={guessQueueImage}
+  alt="The workspace guess queue"
+  caption="The header queue lists every guess still waiting, across puzzles."
+/>
+
+Click it to see every waiting guess in the workspace, oldest first, so none gets forgotten. It's split into:
+
+- **To call in**: queued guesses, ready to submit (or counting down).
+- **Waiting on the hunt**: guesses that have been submitted and need their outcome recorded.
+
+Each guess links to its puzzle and has the same buttons and ⋯ menu as on the puzzle page, so you can work through the whole queue without leaving the list.
+
+## A workflow for a designated caller
+
+Many teams pick one person to call in answers. A setup that works well:
+
+<Steps>
+
+1. Solvers queue guesses on the puzzle page as soon as they have them, instead of submitting on the hunt site themselves. Add a note in the puzzle chat if the guess needs explaining ("backsolved from the meta").
+2. The caller keeps the header queue open. Working from **To call in**, oldest first, they submit each guess on the hunt site and click **Submitted**.
+3. When the hunt replies, the caller records it: **Correct**, **Wrong**, **Keep going (partial)**, or **Back off…** with the wait the hunt gave.
+4. If the hunt asks for a phone call or more information, the caller says so in the puzzle's chat, or [mentions](/docs/guides/chat#mention-someone) the solvers.
+5. Hand over the role when the caller takes a break. Anyone can pick up the queue, since it's shared.
+
+</Steps>
+
+<Callout type="tip">
+  Even without a designated caller, queueing every guess first means the team has one place to check
+  what's been tried, and the duplicate warning catches repeats.
+</Callout>
+
+## Related
+
+- [Working on a puzzle](/docs/guides/puzzle-page)
+- [Solving metas](/docs/guides/metas)
+- [Notifications](/docs/guides/notifications)
+- [Statuses and importance](/docs/reference/statuses)

@@ -208,6 +208,8 @@ export const puzzlesRouter = {
           .optional(),
         isMetaPuzzle: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
+        /** How many answers it has (most puzzles: 1). */
+        answerCount: z.number().int().min(1).max(20).optional(),
       })
     )
     .use(preauthorize)
@@ -351,15 +353,18 @@ export const puzzlesRouter = {
           commentUpdatedBy,
           isMetaPuzzle: input.isMetaPuzzle,
           tags: input.tags,
+          answerCount: input.answerCount,
         })
         .where(eq(schema.puzzle.id, input.id));
       await invalidateWorkspace(workspaceId);
-      // Discord channels only depend on round membership, name, status and meta-ness: skip the
-      // sync (which re-reads every round and puzzle) for comment/tag/link/answer-only edits.
+      // Discord channels only depend on round membership, name, status, importance (Obsolete
+      // closes the channel) and meta-ness: skip the sync (which re-reads every round and puzzle)
+      // for comment/tag/link/answer-only edits.
       const affectsDiscord =
         (roundId !== undefined && roundId !== puzzle.roundId) ||
         (input.name !== undefined && input.name !== puzzle.name) ||
         (input.status !== undefined && input.status !== puzzle.status) ||
+        (input.importance !== undefined && input.importance !== puzzle.importance) ||
         (input.isMetaPuzzle !== undefined && input.isMetaPuzzle !== puzzle.isMetaPuzzle);
       if (affectsDiscord) waitUntil(context.discord.sync(workspaceId));
     }),

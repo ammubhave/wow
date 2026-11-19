@@ -7,6 +7,7 @@ import {UsersIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {HelpLink} from "@/docs/components/help-link";
 import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
@@ -80,7 +81,7 @@ export function GoogleDriveCardContents({
         <Card.Description>
           Optional. Without Google Drive, every puzzle gets a built-in spreadsheet. Connect your
           Google Drive account to use Google Sheets instead: a new sheet is created for each new
-          puzzle.
+          puzzle. <HelpLink slug="google-drive">Google Sheets or the built-in sheet?</HelpLink>
         </Card.Description>
       </Card.Header>
       <Card.Content>

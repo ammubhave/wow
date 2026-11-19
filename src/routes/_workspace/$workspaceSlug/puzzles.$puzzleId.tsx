@@ -33,6 +33,7 @@ import {Chat} from "@/components/chat";
 import {CommentBox} from "@/components/comment-box";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
+import {PuzzleGuesses} from "@/components/guess-queue";
 import {NotFoundPage} from "@/components/not-found-page";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contributors";
@@ -42,6 +43,7 @@ import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
 import {formatPuzzleTime, usePuzzleTimeTracker} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
+import {formatAnswers, joinAnswers, splitAnswers} from "@/lib/answers";
 import {client} from "@/lib/orpc";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {
@@ -141,6 +143,7 @@ function PuzzleInfoPanel({
     googleSpreadsheetId: string | null;
     googleDrawingId: string | null;
     answer: string | null;
+    answerCount: number;
     status: string | null;
     importance: string | null;
     childPuzzles: {id: string; answer: string | null; name: string}[];
@@ -183,7 +186,9 @@ function PuzzleInfoPanel({
   const siblings = meta?.childPuzzles.filter(child => child.id !== puzzle.id) ?? [];
 
   return (
-    <div className="bg-surface flex min-w-0 flex-1 flex-col overflow-auto">
+    // Scrolls down only: the solve sparks' canvas reaches past the Status field's edge, which
+    // would otherwise add a sideways scroll to the whole panel.
+    <div className="bg-surface flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
       <div className="border-separator flex items-center gap-1 border-b py-1.5 ps-3 pe-1.5">
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" title={puzzle.name}>
           {puzzle.name}
@@ -219,48 +224,54 @@ function PuzzleInfoPanel({
       <form.AppForm>
         {/* A property list: muted labels on the left, full-width controls on the right. */}
         <form.Form className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-3">
-          <span className="text-muted text-xs">Answer</span>
-          <form.AppField
-            name="answer"
-            listeners={{
-              onBlur: async ({fieldApi}) => {
-                // onBlur is called whenever focus is lost. Only actually submit the form if the
-                // field value changed. (A missing answer is shown as "", so compare against
-                // that: otherwise tabbing through an empty answer marks the puzzle solved.)
-                if (fieldApi.state.value === (puzzle.answer ?? "")) {
-                  // Blurring marks the field touched; untouch it so it follows `puzzle` again.
-                  form.reset();
-                  return;
-                }
-                if (form.state.isValid) {
-                  const currentStatus = form.getFieldValue("status");
-                  if (
-                    fieldApi.state.value !== "" &&
-                    currentStatus !== "solved" &&
-                    currentStatus !== "backsolved"
-                  ) {
-                    form.setFieldValue("status", "solved");
+          <span className="text-muted self-start pt-2 text-xs">
+            {puzzle.answerCount > 1 ? "Answers" : "Answer"}
+          </span>
+          {puzzle.answerCount > 1 ? (
+            <MultiAnswers workspaceSlug={workspaceSlug} puzzle={puzzle} />
+          ) : (
+            <form.AppField
+              name="answer"
+              listeners={{
+                onBlur: async ({fieldApi}) => {
+                  // onBlur is called whenever focus is lost. Only actually submit the form if the
+                  // field value changed. (A missing answer is shown as "", so compare against
+                  // that: otherwise tabbing through an empty answer marks the puzzle solved.)
+                  if (fieldApi.state.value === (puzzle.answer ?? "")) {
+                    // Blurring marks the field touched; untouch it so it follows `puzzle` again.
+                    form.reset();
+                    return;
                   }
+                  if (form.state.isValid) {
+                    const currentStatus = form.getFieldValue("status");
+                    if (
+                      fieldApi.state.value !== "" &&
+                      currentStatus !== "solved" &&
+                      currentStatus !== "backsolved"
+                    ) {
+                      form.setFieldValue("status", "solved");
+                    }
 
-                  await form.handleSubmit();
-                }
-              },
-            }}
-            children={field => (
-              <div className="min-w-0">
-                <InputGroup fullWidth variant="secondary">
-                  <field.InputGroupInputField
-                    aria-label="Answer"
-                    placeholder="Not solved yet"
-                    className="font-mono whitespace-pre uppercase placeholder:font-sans placeholder:normal-case"
-                    onKeyDown={e => {
-                      if (e.key === "Enter") e.currentTarget.blur();
-                    }}
-                  />
-                </InputGroup>
-              </div>
-            )}
-          />
+                    await form.handleSubmit();
+                  }
+                },
+              }}
+              children={field => (
+                <div className="min-w-0">
+                  <InputGroup fullWidth variant="secondary">
+                    <field.InputGroupInputField
+                      aria-label="Answer"
+                      placeholder="Not solved yet"
+                      className="font-mono whitespace-pre uppercase placeholder:font-sans placeholder:normal-case"
+                      onKeyDown={e => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                    />
+                  </InputGroup>
+                </div>
+              )}
+            />
+          )}
           <span className="text-muted text-xs">Status</span>
           <form.AppField
             name="status"
@@ -373,6 +384,7 @@ function PuzzleInfoPanel({
           </div>
         </form.Form>
       </form.AppForm>
+      <PuzzleGuesses workspaceSlug={workspaceSlug} puzzleId={puzzle.id} />
       {puzzle.childPuzzles.length > 0 && (
         <PuzzleList
           workspaceSlug={workspaceSlug}
@@ -436,15 +448,40 @@ function PuzzleContext({
   );
 }
 
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]!);
+
 /**
- * Puzzles as tab-separated rows (name, then answer; blank while unsolved), so they paste into a
- * spreadsheet one puzzle per row. Tabs and line breaks inside a name would split cells, so they
- * become spaces.
+ * Copies puzzles as a table, a header row then one puzzle per row (name, answers, letter count),
+ * both as tab-separated text (pastes into a sheet's cells) and as an HTML table (pastes as a table
+ * into docs, and into sheets that prefer it). Several answers share a cell, " · " between them.
  */
-function puzzlesToTsv(puzzles: {name: string; answer: string | null}[]) {
-  return puzzles
-    .map(p => `${cell(p.name)}\t${p.answer ? cell(p.answer.toUpperCase()) : ""}`)
-    .join("\n");
+async function copyPuzzlesTable(puzzles: {name: string; answer: string | null}[]) {
+  const rows = [
+    ["Puzzle", "Answer", "Letters"],
+    ...puzzles.map(p => {
+      const answer = formatAnswers(p.answer);
+      const letters = splitAnswers(p.answer)
+        .map(a => a.replace(/[^\p{L}]/gu, "").length)
+        .join(" · ");
+      return [p.name, answer, letters];
+    }),
+  ].map(row => row.map(cell));
+  const tsv = rows.map(row => row.join("\t")).join("\n");
+  const html = `<table><thead><tr>${rows[0]!.map(c => `<th>${escapeHtml(c)}</th>`).join("")}</tr></thead><tbody>${rows
+    .slice(1)
+    .map(row => `<tr>${row.map(c => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`)
+    .join("")}</tbody></table>`;
+  if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/plain": new Blob([tsv], {type: "text/plain"}),
+        "text/html": new Blob([html], {type: "text/html"}),
+      }),
+    ]);
+  } else {
+    await navigator.clipboard.writeText(tsv);
+  }
 }
 
 function cell(value: string) {
@@ -461,29 +498,31 @@ function PuzzleList({
   title: string;
   puzzles: {id: string; name: string; answer: string | null}[];
 }) {
+  const solved = puzzles.filter(p => p.answer).length;
   return (
     <section className="border-separator flex flex-col gap-1.5 border-t p-3" aria-label={title}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-muted text-xs font-medium">{title}</h3>
-        <Tooltip delay={300}>
-          <Tooltip.Trigger>
-            <Button
-              size="sm"
-              isIconOnly
-              variant="ghost"
-              className="-my-1.5 size-6 min-w-6"
-              aria-label={`Copy ${title.toLowerCase()}`}
-              onPress={() => {
-                toast.promise(navigator.clipboard.writeText(puzzlesToTsv(puzzles)), {
-                  success: `Copied ${puzzles.length} ${puzzles.length === 1 ? "row" : "rows"} — paste into a spreadsheet`,
-                  error: "Couldn't copy to the clipboard",
-                });
-              }}>
-              <CopyIcon className="size-3.5" />
-            </Button>
-          </Tooltip.Trigger>
-          <Tooltip.Content>Copy names and answers for a spreadsheet</Tooltip.Content>
-        </Tooltip>
+        <h3 className="text-muted text-xs font-medium">
+          {title}{" "}
+          <span className="tabular-nums">
+            ({solved}/{puzzles.length})
+          </span>
+        </h3>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="-my-1.5 h-7 px-2 text-xs"
+          aria-label={`Copy ${title.toLowerCase()} as a table`}
+          onPress={() => {
+            toast.promise(copyPuzzlesTable(puzzles), {
+              success: `Copied a table of ${puzzles.length} ${puzzles.length === 1 ? "puzzle" : "puzzles"}: paste it into a sheet or doc`,
+              error: "Couldn't copy to the clipboard",
+            });
+            track("feeder_table_copied", {rows: puzzles.length});
+          }}>
+          <CopyIcon className="size-3.5" />
+          Copy table
+        </Button>
       </div>
       <ul className="flex flex-col gap-1 text-sm">
         {puzzles.map(child => (
@@ -499,12 +538,74 @@ function PuzzleList({
                 "shrink-0 font-mono text-xs",
                 child.answer ? "text-success" : "text-muted"
               )}>
-              {child.answer ? child.answer.toUpperCase() : "—"}
+              {child.answer ? formatAnswers(child.answer) : "—"}
             </span>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * A puzzle with several answers: a box for each. Committed when you leave a box (Enter does too);
+ * once all are in, the puzzle is marked solved, as filling in a single answer does.
+ */
+function MultiAnswers({
+  workspaceSlug,
+  puzzle,
+}: {
+  workspaceSlug: string;
+  puzzle: {id: string; answer: string | null; answerCount: number; status: string | null};
+}) {
+  const {mutate} = useMutation(workspaceMutations.puzzles.update());
+  const found = splitAnswers(puzzle.answer);
+  // While you're typing, your drafts; otherwise the puzzle's answers (as teammates change them).
+  const [drafts, setDrafts] = useState<string[] | null>(null);
+  const values = Array.from({length: puzzle.answerCount}, (_, i) => drafts?.[i] ?? found[i] ?? "");
+  const commit = () => {
+    if (drafts === null) return;
+    const answer = joinAnswers(values);
+    setDrafts(null);
+    if (answer === (puzzle.answer || null)) return;
+    const filled = splitAnswers(answer).length;
+    const isSolved = puzzle.status === "solved" || puzzle.status === "backsolved";
+    mutate({
+      workspaceSlug,
+      id: puzzle.id,
+      answer: answer ?? "",
+      ...(filled >= puzzle.answerCount && !isSolved ? {status: "solved"} : {}),
+    });
+  };
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      {values.map((value, i) => (
+        // oxlint-disable-next-line react/no-array-index-key -- the boxes are positions (answer 1, 2, …), not items.
+        <InputGroup key={i} fullWidth variant="secondary">
+          <InputGroup.Prefix className="text-muted w-6 justify-center text-xs tabular-nums">
+            {i + 1}
+          </InputGroup.Prefix>
+          <InputGroup.Input
+            aria-label={`Answer ${i + 1}`}
+            placeholder="Not found yet"
+            value={value}
+            onChange={e => {
+              const next = [...values];
+              next[i] = e.target.value;
+              setDrafts(next);
+            }}
+            onBlur={commit}
+            onKeyDown={e => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            className="font-mono uppercase placeholder:font-sans placeholder:normal-case"
+          />
+        </InputGroup>
+      ))}
+      <span className="text-muted text-xs tabular-nums">
+        {found.length} of {puzzle.answerCount} found
+      </span>
+    </div>
   );
 }
 

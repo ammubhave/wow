@@ -1,0 +1,305 @@
+import boardImage from "../images/board.webp";
+import puzzlePageImage from "../images/puzzle-page.webp";
+import guessQueueImage from "../images/guess-queue.webp";
+import feederAnswersImage from "../images/feeder-answers.webp";
+import leaderboardImage from "../images/leaderboard.webp";
+
+This tutorial follows one team through one hunt, from an empty workspace to the recap at the end. The team is **The Red Herrings**, the hunt is **Example Hunt 2027**, and you'll play the captain who sets it all up and then solves alongside everyone else.
+
+Every hunt, team and puzzle here is made up, but every button is real. You can follow along in a workspace of your own: nothing you do in it affects anyone else.
+
+<Callout type="tip" title="Short on time?">
+  The [quick start for solvers](/docs/start/solver) and the [quick start for
+  captains](/docs/start/captain) cover the essentials in five minutes each. Come back here when you
+  want the whole picture.
+</Callout>
+
+## Part 1: Setting up
+
+A week before the hunt, you decide The Red Herrings should try WOW. Everything starts with a **workspace**: one shared space for this team and this hunt. Next year's hunt gets a new one.
+
+### Create the workspace
+
+<Steps>
+
+1. Sign in and go to **My workspaces**. If Example Hunt 2027 were a real hunt, it might appear under **Hunts coming up** with a **Set up workspace** button that fills in the form for you. For a made-up hunt, choose **Create workspace** instead.
+2. Fill in the form:
+   - **Team name**: `The Red Herrings`
+   - **Event name**: `Example Hunt 2027`
+   - **Starts** and **Ends**: the hunt's start and end, in your local time.
+   - **Location**: `Online`
+   - **Hunt website**: the hunt's site. It becomes a link in the workspace header.
+   - **Workspace ID**: `red-herrings-2027`. This is your workspace's address.
+   - **Workspace password**: something your team can type, such as `kipper`.
+3. Choose **Create**.
+
+</Steps>
+
+You're now on **Set up your workspace**, which offers to connect [Google Drive](/docs/google-drive) and [Discord](/docs/discord). The Red Herrings are happy with WOW's built-in spreadsheet and calls, so choose **Go to blackboard**. You can always connect them later.
+
+<Callout type="note">
+  The **Starts** and **Ends** times matter more than they look. They drive the hunt clock in the
+  header, the solves chart in the activity log, and when the leaderboard turns into the final recap.
+</Callout>
+
+### Invite the team
+
+Open <UiPath path="Settings > General > Details" /> and find the **Invitation link**: `https://join.wafflehaus.io/red-herrings-2027`. Copy it with the button beside it and post it, with the password, wherever your team talks.
+
+When a teammate opens the link, WOW asks them to sign in or create an account, then shows **Join workspace red-herrings-2027**. They enter `kipper`, choose **Join**, and land on the blackboard as a member.
+
+Your co-captain Priya should be able to change settings too, so once she's joined, open <UiPath path="Settings > Members" /> and change her role to **Owner**. Owners can change the team details, look, password and integrations; everyone else can do everything else. See [Permissions](/docs/reference/permissions).
+
+### Make it yours
+
+Still in <UiPath path="Settings > General" />:
+
+- Under **Look**, pick the **Red** accent color (it's only fitting) and a 🐟 **Team emoji** for the header.
+- Under **Links**, add `Answer submission` with the hunt's call-in page. Links appear in the header for everyone and in the command palette.
+- Under **Tags**, add a few tags your team uses, like `wordplay`, `logic` and `cryptic`.
+
+Each section has its own save button, which lights up once you change something.
+
+## Part 2: Building the board
+
+It's hunt day. The hunt opens, and the first round, **The Aquarium**, has a meta called **Something Fishy** and three puzzles: **Tide Tables**, **Sea Shift** and **Coral Code**. Time to put them on the board.
+
+<Screenshot
+  src={boardImage}
+  alt="The finished board with two rounds and their metas"
+  caption="The Red Herrings' board partway through the hunt."
+/>
+
+### Add the round
+
+The blackboard is empty and says **No rounds yet**. Choose **Add new round**, name it `The Aquarium`, and save. (On a board that already has rounds, **Add new round** is in the **…** menu in the board's header row.)
+
+### Add the meta
+
+Open the round's menu (the **⋯** at the end of its row) and choose **Add new meta puzzle**. Enter:
+
+- **Name**: `Something Fishy`
+- **Link**: the meta's page on the hunt site
+- **Tags**: leave empty for now
+
+Save, and the meta appears under the round.
+
+### Add the feeders
+
+Open the meta's menu and choose **Add new puzzle feeding this meta puzzle**. Add `Tide Tables` with its link, then do the same for `Sea Shift` and `Coral Code`. Tag `Sea Shift` with `cryptic` while you're there.
+
+Your board now looks like this:
+
+| Row             | Kind                              |
+| --------------- | --------------------------------- |
+| The Aquarium    | round, with a progress bar at 0/4 |
+| Something Fishy | meta                              |
+| Tide Tables     | feeds Something Fishy             |
+| Sea Shift       | feeds Something Fishy             |
+| Coral Code      | feeds Something Fishy             |
+
+<Callout type="tip" title="When you don't know the meta yet">
+  Some hunts release puzzles before you know which meta they feed. Choose **Add new unassigned
+  puzzle** in the round's menu, and they collect under **Unassigned puzzles**. When the meta turns
+  up, its **Add new meta puzzle** dialog offers **Assign unassigned puzzles**. See [Rounds, metas
+  and feeders](/docs/concepts/hunt-structure).
+</Callout>
+
+### Post an announcement
+
+Let everyone know you're live. On the blackboard sidebar, choose the megaphone (**Make an announcement**), type `Round 1 is up! Pick a puzzle and say hi in its chat.`, and send it. It pops up for everyone and goes into their notification bell.
+
+As teammates open puzzles, their avatars appear in the **Working on this** column, so you can see at a glance where people are.
+
+## Part 3: Solving a puzzle together
+
+You open **Sea Shift** by clicking its name on the board. The page has three parts:
+
+<Screenshot
+  src={puzzlePageImage}
+  alt="A puzzle sheet using NTH to extract letters"
+  caption="Extracting letters with NTH, and a MATCHES search for the pattern."
+/>
+
+- **The sheet** on the left, a spreadsheet the whole team edits live. (With Google Drive connected, this would be a Google Sheet instead.)
+- **The info panel** on the right: the answer, status, solvers, guesses and notes.
+- **The chat** below the info panel.
+
+Choose the **Open on the hunt site** icon in the info panel to open the puzzle in a new tab. It's a short block of text, and one line jumps out: `FNYZBA`. Smells like a Caesar shift.
+
+### Use a puzzle formula
+
+Click cell **A1** in the sheet and type:
+
+```
+=CAESARALL("FNYZBA")
+```
+
+Press <Kbd>Enter</Kbd>. WOW fills two columns with all 25 shifts: the shift number, then the shifted text. Scan down, and at shift 13 it reads `SALMON`.
+
+You didn't need to remember the formula's name. The **Puzzle tools** button at the top right of the sheet (or right-click, **Puzzle tools…**) lists every puzzle formula grouped as **Words**, **Ciphers** and **Extraction**, each with an example and an **Insert** button. The [formula reference](/docs/reference/formulas) has the details.
+
+Meanwhile your teammate Sam is on **Tide Tables**, which ends with a five-letter fish starting with T and ending in OUT. In that puzzle's sheet, Sam types `=MATCHES("T?OUT")`, and the matching words fill the column below, most common first. `TROUT` is at the top.
+
+### See who's where
+
+In the top right of the sheet is a row of avatars: everyone with this sheet open. Their selected cells are outlined in their colour with their name. Click someone's avatar to jump to where they are and follow along as they move; click again, or **Following …** **✕**, to stop.
+
+To claim a block of cells, select it, right-click and choose **Highlight in my color**. Teammates then see at a glance which part you're working on.
+
+### Draw on the whiteboard
+
+**Coral Code** is a picture of coral branches, some long and some short. Priya switches from **Sheet** to **Whiteboard** above the sheet and sketches the branches as dots and dashes. Everyone on the puzzle sees her strokes appear live. Reading them off gives `--- -.-- ... - . .-.`, and back in the sheet `=MORSE("--- -.-- ... - . .-.")` returns `OYSTER`.
+
+### Chat and mention
+
+Priya wants a second opinion, so in Coral Code's chat she types:
+
+```
+@Sam can you check my reading of the branches? I get OYSTER
+```
+
+Sam gets a mention notification that opens Coral Code's chat in one click. Press <Kbd>Enter</Kbd> to send a message and <Kbd>Shift Enter</Kbd> for a new line. Hover over a message to add a reaction or pin it; on a phone, tap it.
+
+If you're ever properly stuck, type `!stuck` in any chat and Eggö, WOW's bot, offers a random solving hint.
+
+### Talk it through
+
+Typing is slow when you're both staring at the same branches. Above Coral Code's chat, the call strip shows who's viewing and who's in the call. Choose **Listen in** to join, then **Unmute and talk here** to speak. Everyone arrives muted.
+
+Your call follows you: if you go back to the blackboard, a floating call bar keeps you connected with the same controls. For team-wide chatter that isn't about one puzzle, the headphones button in the header joins the **lobby**.
+
+<Callout type="phone">
+  On a phone, the puzzle page shows **Sheet**, **Whiteboard**, **Chat** and **Info** as tabs. The
+  call strip is above the chat, in the **Chat** tab.
+</Callout>
+
+## Part 4: Calling in answers
+
+Three puzzles, three candidate answers. Most hunts want answers submitted through their website, sometimes with limits on how often you can guess. The Red Herrings decide Priya will call in answers, using the **guess queue** to keep track.
+
+<Screenshot
+  src={guessQueueImage}
+  alt="The guess queue in the header"
+  caption="The header's guess queue: one to call in (backing off), one waiting on the hunt."
+/>
+
+### Queue a guess
+
+Sam's first idea for Tide Tables is actually `BASS`. On Tide Tables' info panel, Sam opens the **Guesses (0)** section, types `BASS` in **Queue a guess to call in**, and chooses **Queue**.
+
+A list icon with a badge appears in everyone's header: the workspace-wide guess queue. Priya opens it and sees **BASS** under **To call in**, with a link to Tide Tables.
+
+### Submitted, then wrong
+
+Priya submits `BASS` on the hunt site and chooses **Submitted** on the guess. It moves to **Waiting on the hunt**. The hunt says no, so she opens the guess's **⋯** menu and chooses **Wrong**.
+
+Sam, meanwhile, has the `MATCHES` result and queues `TROUT`. If anyone later tries to queue `BASS` again, WOW warns **Already guessed** before it goes anywhere. Case, spaces and punctuation are ignored, so `bass` and `B.A.S.S.` count as the same guess.
+
+### Back off
+
+Priya tries to submit `TROUT`, but the hunt site says the team must wait five minutes after a wrong answer. In the guess's **⋯** menu she chooses **Back off…** and then **5 minutes**. The guess shows a countdown, then **Ready**, and the **Submitted** button comes back. Nobody has to remember to try again.
+
+### Correct
+
+Five minutes later Priya submits `TROUT`, chooses **Submitted**, and when the hunt confirms it, **Correct**. WOW writes `TROUT` into Tide Tables' answer and marks it **Solved**. Everyone sees a solve pop-up with confetti, and the row on the blackboard sparkles.
+
+The other two go faster: `SALMON` and `OYSTER` are both **Correct** first time.
+
+<Callout type="note" title="No queue? No problem">
+  If your team doesn't use the queue, type the confirmed answer straight into the **Answer** box on
+  the puzzle page, or click the **Solution** cell on the blackboard. On the puzzle page, filling in
+  the answer marks the puzzle solved. On the blackboard, set the status separately.
+</Callout>
+
+### Say who helped
+
+The solve pop-up has an **I helped** button for anyone who was on the puzzle or spent at least a minute on it. You can also choose **I helped** in the puzzle's **Solvers** section at any time. It's self-reported, and it's what the leaderboard's awards count, so Sam, Priya and you each mark the puzzles you worked on.
+
+See [Calling in answers](/docs/guides/guess-queue) for everything else the queue can do, including **Keep going (partial)** for hunts that tell you you're on the right track.
+
+## Part 5: Solving the meta
+
+With all three feeders solved, open **Something Fishy**. Its info panel has a **Feeder answers** section listing each feeder with its answer, and a count: **(3/3)**.
+
+<Screenshot
+  src={feederAnswersImage}
+  alt="Feeder answers on a meta puzzle"
+  caption="A meta's feeder answers, with Copy table."
+/>
+
+The meta's flavour text says: _"Second thoughts are the best thoughts."_ That sounds like taking the second letter of each answer.
+
+### Copy the answers into the sheet
+
+Choose **Copy table** on **Feeder answers**. WOW copies a table with three columns, **Puzzle**, **Answer** and **Letters** (the letter count), ready to paste into a sheet or doc. Click **A1** in the meta's sheet and paste:
+
+|     | A           | B      | C       |
+| --- | ----------- | ------ | ------- |
+| 1   | Puzzle      | Answer | Letters |
+| 2   | Tide Tables | TROUT  | 5       |
+| 3   | Sea Shift   | SALMON | 6       |
+| 4   | Coral Code  | OYSTER | 6       |
+
+### Extract with NTH
+
+Put the index `2` in **D2**, **D3** and **D4**, then in **E2** type:
+
+```
+=NTH(B2:B4, D2:D4)
+```
+
+`NTH` takes the nth letter of each answer, row by row, skipping spaces and punctuation. Down column E you get **R**, **A**, **Y**. The meta answer is `RAY`.
+
+Queue it, call it in, and mark it **Correct**. A meta solve gets its own **Meta solved** pop-up, and the round's progress bar fills up at 4/4 (metas count too).
+
+<Callout type="tip">
+  On a feeder, the same section is called **Other feeders**, so whoever is solving one feeder can
+  see what the others came to. See [Solving metas](/docs/guides/metas).
+</Callout>
+
+## Part 6: After the hunt
+
+Many rounds later, Example Hunt 2027 is over. The Red Herrings want to know how it went.
+
+<Screenshot
+  src={leaderboardImage}
+  alt="The live leaderboard"
+  caption="The leaderboard during the hunt."
+/>
+
+### The leaderboard becomes the recap
+
+Open the **Leaderboard** tab (the trophy) in the header. During the hunt it was a **Live** leaderboard, "The race so far", updating every minute. Now that the **Ends** time has passed, it's the **Hunt recap** with **Final standings** and awards:
+
+| Award           | For                                                |
+| --------------- | -------------------------------------------------- |
+| 🏆 MVP          | Most puzzles helped solve, counted by **I helped** |
+| 👑 Meta Maestro | Most metas helped                                  |
+| 🦉 Night Owl    | Most puzzle time between midnight and 6am          |
+| 🌅 Early Bird   | Most puzzle time between 6 and 10am                |
+| 🏃 Marathoner   | Most active puzzle time                            |
+| 📋 Board Keeper | Most board updates                                 |
+
+Each award shows the top three, plus your own place if you're further down. The time awards need at least 10 minutes. Puzzle time only counts while a puzzle's tab is in front of you, so leaving tabs open overnight won't win you Night Owl.
+
+### Share the card
+
+The recap includes a shareable card: team, event, puzzles and metas solved, solvers, hours, the top awards and the team's busiest hour. Choose **Save as image** to download it as a PNG and post it to your team's chat. Below it, **Your hunt** shows your own numbers, awards and where your time went.
+
+### Look back at the activity log
+
+The **Activity log** tab has everything that happened, day by day. The **Solves** chart at the top shows cumulative solves across the hunt dates, with ★ for metas. **Filter** narrows the timeline to solves, status changes, answers, puzzles and rounds, or members joining, and to particular people. On a wide screen, the **Jump to a day** strip on the right edge takes you straight to any day.
+
+### Check your stats
+
+Finally, open your account menu (your avatar, top right) and choose **My stats**. It adds up every hunt you've played in WOW: puzzles and metas you helped solve, time on puzzles, when you puzzle, your favourite puzzle types by tag, and who you solve with most.
+
+That's a whole hunt. Next year, The Red Herrings will create `red-herrings-2028` and do it all again.
+
+## Next
+
+- [The blackboard](/docs/blackboard): everything you can do on the board.
+- [Working on a puzzle](/docs/guides/puzzle-page): the puzzle page in detail.
+- [Spreadsheet formulas](/docs/reference/formulas): every puzzle formula, with examples.
+- [Working together live](/docs/concepts/live-collaboration): presence, live edits and going offline.

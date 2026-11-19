@@ -1,6 +1,7 @@
 import {Command} from "@heroui-pro/react";
 import {useNavigate} from "@tanstack/react-router";
 import {
+  BookOpenIcon,
   HistoryIcon,
   HomeIcon,
   InfoIcon,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {DOC_PAGES} from "@/docs/registry";
 import {useWorkspace} from "@/hooks/use-workspace";
 
 export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string}) {
@@ -74,12 +76,30 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                 <Command.Item
                   textValue="Help"
                   onAction={() => {
-                    void navigate({to: "/$workspaceSlug/help-page", params: {workspaceSlug}});
+                    void navigate({to: "/$workspaceSlug/help", params: {workspaceSlug}});
                     setOpen(false);
                   }}>
                   <InfoIcon />
                   <span>Help</span>
                 </Command.Item>
+              </Command.Group>
+              {/* Every docs page, opened in the workspace's Help tab. */}
+              <Command.Group heading="Help and docs">
+                {DOC_PAGES.filter(page => page.slug).map(page => (
+                  <Command.Item
+                    key={page.slug}
+                    textValue={`${page.title} ${page.section}`}
+                    onAction={() => {
+                      void navigate({
+                        to: "/$workspaceSlug/help/$",
+                        params: {workspaceSlug, _splat: page.slug},
+                      });
+                      setOpen(false);
+                    }}>
+                    <BookOpenIcon />
+                    <span>{page.title}</span>
+                  </Command.Item>
+                ))}
               </Command.Group>
               <Command.Group heading="Puzzles">
                 {workspace.rounds

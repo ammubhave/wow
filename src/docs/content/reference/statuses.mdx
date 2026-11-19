@@ -1,0 +1,82 @@
+Every puzzle has a **status** (where solving stands) and an **importance** (how much it matters right now). Anyone on the team can change either, from the row on the blackboard or the info panel on the puzzle page. WOW doesn't enforce any meaning beyond the few rules below, so treat the "use it when" column as a starting point and agree on your own conventions as a team.
+
+## Puzzle statuses
+
+<StatusTable
+  meanings={{
+    none: "Nobody has started it yet. New puzzles start here.",
+    active: "Someone is working on it and it's moving along.",
+    solved: "The hunt confirmed the answer.",
+    backsolved:
+      "You worked the answer out backwards, usually from a meta, rather than by solving the puzzle itself. Counts as solved everywhere.",
+    needs_eyes: "Whoever was on it has left, or would like fresh people to take a look.",
+    extraction:
+      "The puzzle is filled in and you're on the last step: turning what you have into an answer.",
+    stuck: "Progress has stalled and the people on it are out of ideas.",
+    pending:
+      "You're waiting on the hunt rather than on solving: an answer called in, a hint requested, or a live event or task to finish. A common convention, not a rule.",
+    very_stuck: "Stuck for a long time. A sign the puzzle needs a big rethink, a hint, or a break.",
+  }}
+/>
+
+### Colours on the board
+
+Statuses come in four groups, and the group sets the row's colour on the blackboard and the square's colour in the sidebar's progress grid:
+
+| Group   | Statuses                   | On the board                                                                  |
+| ------- | -------------------------- | ----------------------------------------------------------------------------- |
+| Active  | None, Active               | No fill                                                                       |
+| Solved  | Solved, Backsolved         | Text greyed out, with a check next to the name, so unsolved puzzles stand out |
+| Warning | Needs Eyes, Extraction     | Yellow                                                                        |
+| Stuck   | Stuck, Pending, Very Stuck | Red                                                                           |
+
+Scan for yellow and red to see where help is needed.
+
+### What changes the status for you
+
+- Typing an answer in the **Answer** box on a puzzle page marks it **Solved**. On a puzzle with several answers, it's solved once all of them are in.
+- Marking a guess **Correct** in the [guess queue](/docs/guides/guess-queue) writes the answer and marks the puzzle **Solved**.
+- Typing an answer in the **Solution** cell on the blackboard doesn't change the status. Set it yourself.
+
+Moving a puzzle to **Solved** or **Backsolved** sends the solve notification (with confetti) to the whole team, and every status change appears in the [activity log](/docs/guides/activity-log).
+
+## Importance
+
+<ImportanceTable
+  meanings={{
+    important:
+      "It's a priority: a meta, a puzzle that unlocks more, or one the team should get to first. Highlighted so it stands out.",
+    normal:
+      "An ordinary puzzle. Leaving importance unset looks the same: the board shows a faint Normal icon.",
+    obsolete:
+      "No longer worth solving, for example because the meta is already solved or the hunt replaced it. Faded on the board.",
+  }}
+/>
+
+Importance only styles unsolved puzzles. Once a puzzle is solved, its row goes quiet whatever its importance.
+
+## Round status
+
+Rounds have a simpler status of their own: **None** or **Solved**. Mark a round solved once you're done with it (typically when its metas are solved). A solved round shows a check by its name. WOW doesn't set it for you, and it's separate from the round's progress bar, which counts solved puzzles.
+
+## Filters that use them
+
+The blackboard's toolbar has toggles built on status and importance. They're saved in your browser, so they only change your view.
+
+| Toggle                | Hides                                                      |
+| --------------------- | ---------------------------------------------------------- |
+| **Hide solved**       | Puzzles that are Solved or Backsolved                      |
+| **Hide solved metas** | Metas marked Solved, along with the puzzles that feed them |
+| **Hide obsolete**     | Puzzles with importance Obsolete                           |
+
+The **Importance** dropdown shows only the levels you pick.
+
+## Discord channels
+
+If your team has [connected Discord](/docs/discord), the status also keeps your server tidy. When a puzzle becomes **Solved** or **Backsolved**, or its importance is set to **Obsolete**, its voice channel is renamed "✅ …" and deleted 10 minutes later. Change it back and the channel returns. A round's category goes once none of its puzzles are left.
+
+## Related
+
+- [The blackboard](/docs/blackboard)
+- [Calling in answers](/docs/guides/guess-queue)
+- [Connect Discord](/docs/discord)

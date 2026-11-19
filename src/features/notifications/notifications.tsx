@@ -18,6 +18,7 @@ import {useLocalStorage} from "usehooks-ts";
 import {RelativeTime} from "@/components/activity-log";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
+import {formatAnswers} from "@/lib/answers";
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
@@ -73,7 +74,7 @@ function describe(notification: WorkspaceNotification) {
       return {
         // A team effort: who marked it solved isn't who solved it, so no "by".
         title: `${notification.isMeta ? "Meta solved" : "Solved"}: ${notification.puzzleName}`,
-        body: notification.answer ?? "",
+        body: formatAnswers(notification.answer),
       };
     case "announcement":
       return {title: `Announcement from ${notification.from}`, body: notification.message};

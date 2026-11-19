@@ -32,7 +32,12 @@ export class DiscordClient extends DurableObject {
     discordGuildId: string;
     rounds: {
       name: string;
-      puzzles: {name: string; status: string | null; isMetaPuzzle: boolean}[];
+      puzzles: {
+        name: string;
+        status: string | null;
+        importance: string | null;
+        isMetaPuzzle: boolean;
+      }[];
     }[];
   }) {
     await this.ctx.blockConcurrencyWhile(async () => {
@@ -45,9 +50,10 @@ export class DiscordClient extends DurableObject {
           puzzles: round.puzzles
             .filter(
               puzzle =>
+                // Done with: solved, or marked Obsolete (an importance, not a status).
                 puzzle.status !== "solved" &&
                 puzzle.status !== "backsolved" &&
-                puzzle.status !== "obsolete"
+                puzzle.importance !== "obsolete"
             )
             .map(puzzle => ({
               name: `${puzzle.isMetaPuzzle ? "[META] " : ""}${puzzle.name}`,

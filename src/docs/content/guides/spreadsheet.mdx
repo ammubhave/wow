@@ -1,0 +1,200 @@
+import puzzlePageImage from "../../images/puzzle-page.webp";
+import puzzleToolsImage from "../../images/puzzle-tools.webp";
+
+When a workspace doesn't use Google Drive, every puzzle gets WOW's built-in spreadsheet. It works much like Google Sheets, updates live for everyone on the puzzle, and adds formulas and tools made for puzzle hunts. You'll find it in the **Sheet** tab of the [puzzle page](/docs/guides/puzzle-page).
+
+If your workspace has [Google Drive connected](/docs/google-drive), new puzzles get a Google Sheet instead, and this page doesn't apply to them.
+
+## Working together live
+
+Everyone with the puzzle open edits the same sheet at the same time.
+
+<Screenshot
+  src={puzzlePageImage}
+  alt="The built-in spreadsheet with puzzle formulas"
+  caption="NTH extracting letters, and MATCHES listing words that fit ?ERN."
+/>
+
+- **Cursors**: each teammate's selection is outlined in their own colour, with their name.
+- **Who's here**: the avatars at the top right of the toolbar are the people with this sheet open.
+- **Save status**: next to the avatars, an icon tells you where your edits stand.
+
+| Status                                          | Meaning                                                                                 |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Connecting…**                                 | Opening the connection to the sheet.                                                    |
+| **Saving…**                                     | Your latest edits are on their way.                                                     |
+| **Saved**                                       | Everything you've typed is saved and shared.                                            |
+| **Offline: edits will sync when you reconnect** | You've lost your connection. Keep working; your edits are sent when you're back online. |
+
+<Callout type="note">
+  Rarely, edits you made while offline clash with what teammates did and can't be merged. WOW tells
+  you if they were dropped. If your sheet ever gets out of step with the team's, it reloads itself
+  and tells you.
+</Callout>
+
+### Follow a teammate
+
+Want to see what someone's looking at, say while they explain something on a call?
+
+<Steps>
+
+1. Click their avatar at the top right of the sheet. You jump to where they are.
+2. As they move around the sheet, your view follows them. A **Following** chip with their name shows while you're following.
+3. To stop, click their avatar again, or click the **Following …** chip.
+
+</Steps>
+
+For more on presence and offline work across WOW, see [Working together live](/docs/concepts/live-collaboration).
+
+## Puzzle tools
+
+**Puzzle tools** lists WOW's puzzle formulas, each with a short description and a worked example.
+
+<Screenshot
+  src={puzzleToolsImage}
+  alt="The Puzzle tools dialog"
+  caption="Puzzle tools: each formula with an example to insert."
+/>
+
+<Steps>
+
+1. Select the cell where you want the formula.
+2. Click **Puzzle tools** at the top right of the sheet, or right-click a cell and choose **Puzzle tools…**.
+3. Find the formula you need. They're grouped into **Words**, **Ciphers** and **Extraction**.
+4. Click **Insert**. The example goes into your selected cell.
+5. Change the example's text to a cell reference, like `A1`, to run it on your own data.
+
+</Steps>
+
+The dialog also reminds you about two right-click actions: **Make crossword grid** and **Highlight in my color** (both below).
+
+<Callout type="phone">
+  On narrow screens the toolbar is more compact, and the **Puzzle tools** button shows only its
+  icon.
+</Callout>
+
+## Puzzle formulas
+
+These work in any built-in sheet, alongside the usual spreadsheet functions.
+
+| Formula     | What it does                                                   | Example                                             |
+| ----------- | -------------------------------------------------------------- | --------------------------------------------------- |
+| `MATCHES`   | Words and phrases that fit a pattern, best first.              | `=MATCHES("C?OSS?ORD")` gives CROSSWORD             |
+| `ANAGRAMS`  | Words and phrases using exactly these letters. `?` is a blank. | `=ANAGRAMS("SILENT")` gives ENLIST, INLETS, LISTEN… |
+| `ISWORD`    | TRUE if the text is in the word list (spaces ignored).         | `=ISWORD("ICE CREAM")` gives TRUE                   |
+| `CAESAR`    | Shifts each letter by a number of places.                      | `=CAESAR("HAL", 1)` gives IBM                       |
+| `CAESARALL` | All 25 shifts, one per row.                                    | `=CAESARALL("URYYB")` includes HELLO at shift 13    |
+| `A1Z26`     | Numbers to letters (1 = A), or letters to numbers.             | `=A1Z26("8 9")` gives HI                            |
+| `MORSE`     | Decodes Morse, or encodes text.                                | `=MORSE("... --- ...")` gives SOS                   |
+| `NTH`       | The nth letter, skipping spaces, digits and punctuation.       | `=NTH("Puzzle hunt", 7)` gives h                    |
+
+Formulas that list results (`MATCHES`, `ANAGRAMS`, `CAESARALL`) fill the cells below, so leave room under them.
+
+For every argument and edge case, see [Spreadsheet formulas](/docs/reference/formulas).
+
+### Patterns for MATCHES
+
+| Character           | Matches                            |
+| ------------------- | ---------------------------------- |
+| `?` (or `.` or `_`) | Any one letter                     |
+| `*`                 | Any run of letters, including none |
+| `@`                 | A vowel                            |
+| `#`                 | A consonant                        |
+| `[ABC]`             | One of those letters               |
+| Any letter          | That letter                        |
+
+Spaces and hyphens in a pattern are ignored. `MATCHES` lists 50 results unless you give a second argument (up to 1000), like `=MATCHES("*ING", 200)`.
+
+### The word list
+
+`MATCHES`, `ANAGRAMS` and `ISWORD` use the [Collaborative Word List](https://github.com/Crossword-Nexus/collaborative-word-list), about 566,000 words and phrases. Phrases are written without spaces, as crosswords do (ICECREAM, NEWYORK). Results come most common first.
+
+The list downloads (about 2.4 MB) the first time anyone uses a word formula on your device, then your browser keeps it.
+
+## Crossword grids
+
+Turn a block of cells into a crossword grid with square cells, borders and automatic clue numbers.
+
+<Steps>
+
+1. Select the cells for the grid, for example 15 rows by 15 columns. Grids can be from 2 × 2 up to 50 × 50.
+2. Right-click the selection and choose **Make crossword grid**.
+3. Type `#` or `.` in a cell to make it a black square.
+4. Type letters into the white squares as you solve.
+
+</Steps>
+
+Clue numbers fill in by themselves, in the usual crossword order, and update as you add or remove black squares. The grid moves with its cells if you insert rows or columns around it, and syncs to teammates like any other edit.
+
+To take the numbers off, select a cell in the grid, right-click and choose **Remove crossword numbering**.
+
+## Highlight in my color
+
+Select some cells, then click **Highlight in my color** in the toolbar (or right-click and choose it). The cells are tinted in your cursor colour, so teammates can see which part you're working on. It's a quick way to split up a big grid: "I'll take the blue rows".
+
+## Filters
+
+You can filter rows as in other spreadsheets. Filters here are personal: they hide rows only for you, not for your teammates, and WOW remembers them in your browser. Filter freely without disturbing anyone.
+
+## Images
+
+Paste an image into the sheet, or insert one from the toolbar. Images can be up to 5 MB. It's handy for keeping a puzzle's picture next to your working.
+
+## Google Sheets formulas
+
+Most Google Sheets formulas work as they are, so formulas you know (and sheets you copy from) behave as expected. WOW adds the Google-only ones that spreadsheets usually lack, like `JOIN`, `SPLIT`, `COUNTUNIQUE`, `SORTN` and `ARRAYFORMULA`. The full list is in [Spreadsheet formulas](/docs/reference/formulas).
+
+## Tips for common puzzle tasks
+
+### Brute-force a Caesar shift
+
+Put the ciphertext in `A1`, then in another cell:
+
+```
+=CAESARALL(A1)
+```
+
+You get two columns: the shift (1 to 25) and the shifted text. Scan down for the line that reads as English.
+
+### Extract letters with NTH
+
+A classic extraction: you have answers in column A and index numbers in column B, and you need the indexed letter of each.
+
+```
+=NTH(A1:A10, B1:B10)
+```
+
+`NTH` works row by row through ranges, giving one letter per row. Letters are counted ignoring spaces and punctuation, as puzzles usually do. A negative number counts from the end.
+
+If that formula is in `C1`, the letters fill `C1:C10`. To read them as one word, join them in another cell: `=JOIN("", C1:C10)`.
+
+If your indices are numbers to convert to letters instead, use `A1Z26`: `=A1Z26("3 1 20")` gives CAT.
+
+### Find words that fit a pattern
+
+You have a partial answer, like `S?R?NG`, from crossing letters:
+
+```
+=MATCHES("S?R?NG")
+```
+
+Combine pattern characters to narrow it down: `=MATCHES("#@#@#")` lists five-letter words alternating consonant and vowel; `=MATCHES("[AEIOU]*ION")` lists words starting with a vowel and ending in ION.
+
+### Anagram letters
+
+```
+=ANAGRAMS("ELBOW")
+```
+
+gives BELOW and BOWEL among others. Got a blank or an unknown letter? Use `?`: `=ANAGRAMS("CR?SS")`. Check whether a phrase is real with `=ISWORD("TOP HAT")`.
+
+### Decode Morse
+
+`=MORSE(A1)` decodes dots and dashes (`.` or `·` for dit, `-` or `_` for dah, `/` between words). Give it plain text and it encodes instead.
+
+## Related
+
+- [Spreadsheet formulas](/docs/reference/formulas)
+- [Working on a puzzle](/docs/guides/puzzle-page)
+- [The whiteboard](/docs/guides/whiteboard)
+- [Solving metas](/docs/guides/metas)

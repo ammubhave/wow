@@ -1,0 +1,109 @@
+If your team already lives on a Discord server, WOW can keep it organised for you. Once connected, WOW creates a voice channel for every open puzzle, grouped by round, and tidies them away as puzzles are solved. Only owners can connect Discord. <OwnerOnly />
+
+## What it does
+
+WOW keeps the server in step with the blackboard. Whenever puzzles or rounds change, it updates the channels it manages:
+
+| On the board                                                      | On Discord                                                             |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| A round with at least one open puzzle                             | A category named after the round, starting with 🧩                     |
+| An open puzzle                                                    | A voice channel in its round's category, named "🧩 Puzzle name"        |
+| An open meta                                                      | A voice channel named "🧩 [META] Meta name"                            |
+| A puzzle marked Solved or Backsolved, marked Obsolete, or deleted | Its channel is renamed "✅ Puzzle name", then deleted 10 minutes later |
+| A round with no open puzzles left                                 | Its category is removed                                                |
+| A puzzle moved to another round                                   | Its channel moves to that round's category                             |
+
+The 10-minute delay gives anyone still talking in a solved puzzle's channel time to wrap up, or to move to the next puzzle.
+
+<Callout type="note">
+  WOW only touches channels whose names start with 🧩, which are the ones it made. Your server's
+  other channels and categories are left alone. Don't rename WOW's channels by hand: a channel
+  without the 🧩 is no longer WOW's, and WOW will make a fresh one for the puzzle.
+</Callout>
+
+<Callout type="tip">
+  Channels are matched by name. If you rename a puzzle on the board, WOW makes a new channel with
+  the new name, and the old one gets the ✅ treatment and is deleted 10 minutes later. Anyone in the
+  old channel will need to hop across.
+</Callout>
+
+### Announcements on Discord
+
+When anyone makes an announcement from the blackboard's megaphone button, the **Make an announcement** dialog has a **Discord Channel** choice, listing your server's text channels. Pick one, and the announcement is also posted there as "**Announcement from** _your name_" followed by the message. Leave it on **None** to send the announcement only inside WOW. See [Chat and announcements](/docs/guides/chat).
+
+## Connect Discord <OwnerOnly />
+
+You need permission to add bots to the Discord server, which in Discord means the **Manage Server** permission.
+
+<Steps>
+
+1. Open <UiPath path="Settings > Administration" />, or use the **Set up your workspace** page right after creating the workspace.
+2. On the **Discord** card, click **Connect with Discord**.
+3. Discord asks you to pick a server and approve the bot. Choose your team's server and click **Authorize**.
+4. You come back to WOW. The card says "You're successfully connected to Discord" and shows the server's name, which links to the server.
+
+</Steps>
+
+WOW creates channels for the board's open puzzles straight away, then keeps them in step as the board changes.
+
+The bot asks Discord for only what it needs to manage its channels: to see channels and to manage channels.
+
+## Reconnect or disconnect
+
+Once connected, the Discord card has two buttons:
+
+- **Reconnect** runs the connection again. Use it to move WOW to a different server, or to fix a broken connection.
+- **Disconnect** removes Discord from the workspace. WOW asks you to confirm, because it **deletes every channel it made** on the server, the 🧩 voice channels and categories. This can't be undone, though if you connect again later, WOW makes fresh channels for the open puzzles.
+
+Members who aren't owners can see the card and which server is connected, but its buttons are disabled for them.
+
+<Callout type="warning">
+  Disconnecting deletes WOW's channels straight away, even if people are talking in them. Do it
+  after the hunt, or warn your team first.
+</Callout>
+
+## Discord or WOW's built-in voice?
+
+WOW has its own [voice and screen sharing](/docs/guides/voice), with a lobby and a call on every puzzle, so you don't need Discord to talk. Some teams use both.
+
+|                                        | WOW's built-in voice                                                | Discord                                              |
+| -------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------- |
+| Setup                                  | None                                                                | An owner connects a server                           |
+| Where you talk                         | In the browser, beside the sheet and chat                           | In the Discord app, or Discord in another tab        |
+| Seeing who's on a puzzle               | Voice badges on the board, and the call strip on each puzzle        | Discord's channel list                               |
+| Moving between puzzles                 | Your call follows you round the workspace, with a floating call bar | Switch channels in Discord                           |
+| Screen sharing                         | Yes, as tiles that can go full screen                               | Yes                                                  |
+| Text chat                              | WOW's team and puzzle chats                                         | Discord's text channels, plus announcements from WOW |
+| Remote teammates who don't use Discord | Nothing to install                                                  | They need a Discord account and to join your server  |
+
+<Callout type="tip">
+  If your team is already on Discord year round, connect it and keep doing what you're used to. If
+  you're putting together a team for one hunt, WOW's built-in voice saves everyone an extra sign-up.
+</Callout>
+
+## Troubleshooting
+
+### The card says there's a problem with the connection
+
+If the bot was removed from the server, or the server was deleted, the card shows "There is a problem with your Discord connection" with Discord's error. Click **Reconnect** and add the bot to the server again.
+
+### Channels aren't appearing
+
+- Check the card shows the right server.
+- Check the bot's role on the server can view and manage channels. A server setting or a role change may have taken that away.
+- WOW creates channels one at a time, because Discord limits how fast bots can make them. When you add a whole round at once, give it a minute.
+
+### An announcement didn't reach Discord
+
+The bot needs to be able to send messages in the channel you picked. Check the channel's permissions for the bot's role.
+
+### Discord voice doesn't work on MIT's Wi-Fi
+
+MIT's guest Wi-Fi blocks Discord voice. Use another network, such as a phone hotspot, or use WOW's [built-in voice](/docs/guides/voice) instead. More on the [Troubleshooting](/docs/help/troubleshooting) page.
+
+## Related
+
+- [Voice and screen sharing](/docs/guides/voice)
+- [Chat and announcements](/docs/guides/chat)
+- [Create a workspace](/docs/guides/create-a-workspace)
+- [Troubleshooting](/docs/help/troubleshooting)

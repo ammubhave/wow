@@ -2,11 +2,14 @@ import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 
 import {cloudflare} from "@cloudflare/vite-plugin";
+import mdx from "@mdx-js/rollup";
 import posthogSourcemaps from "@posthog/rollup-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import {devtools} from "@tanstack/devtools-vite";
 import {tanstackStart} from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
+import rehypeSlug from "rehype-slug";
+import remarkGfm from "remark-gfm";
 import {defineConfig} from "vite-plus";
 
 // Production builds (Workers Builds) upload the browser bundle's source maps to PostHog, so error
@@ -67,6 +70,21 @@ const stubBrowserOnlyInWorker = {
   resolveId: (source: string) => (BROWSER_ONLY_IMPORT.test(source) ? BROWSER_ONLY_STUB : null),
   load: (id: string) =>
     id === BROWSER_ONLY_STUB ? "export default function BrowserOnly() { return null; }" : null,
+};
+
+// The docs' MDX pages, compiled to React components; but not their raw text (`?raw`, for docs
+// search), which wow:raw-mdx serves as is.
+const mdxPlugin = mdx({remarkPlugins: [remarkGfm], rehypePlugins: [rehypeSlug]});
+const docsMdx = {
+  ...mdxPlugin,
+  transform(
+    this: ThisParameterType<NonNullable<typeof mdxPlugin.transform>>,
+    code: string,
+    id: string
+  ) {
+    if (id.endsWith("?raw")) return null;
+    return mdxPlugin.transform?.call(this, code, id);
+  },
 };
 
 const config = defineConfig({
@@ -230,7 +248,19 @@ const config = defineConfig({
     cloudflare({viteEnvironment: {name: "ssr"}}),
     tailwindcss(),
     tanstackStart({spa: {enabled: true, prerender: {outputPath: "/index"}}}),
-    viteReact({compiler: true}),
+    // The docs are MDX (src/docs/content): before React's plugin, so it sees plain JSX. Headings get
+    // ids (for links and the table of contents); GitHub-flavoured Markdown for tables.
+    // A page's raw text (docs search reads headings from it), not compiled by MDX.
+    {
+      name: "wow:raw-mdx",
+      enforce: "pre" as const,
+      load: (id: string) =>
+        id.endsWith(".mdx?raw")
+          ? `export default ${JSON.stringify(readFileSync(id.slice(0, -"?raw".length), "utf8"))};`
+          : null,
+    },
+    {...docsMdx, enforce: "pre" as const},
+    viteReact({compiler: true, include: /\.(mdx|js|jsx|ts|tsx)$/}),
     slimClientSourceMaps,
     posthogSourcemapsPlugin,
   ],

@@ -1,0 +1,130 @@
+import createWorkspaceImage from "../../images/create-workspace.webp";
+
+A workspace is your team's home for one hunt: the board, sheets, chats and calls all live in it. Most teams make a new workspace for each hunt. Whoever creates it becomes its first owner, and everyone who joins afterwards is a member. See [Workspaces, owners and members](/docs/concepts/workspaces) for how that works.
+
+## Create the workspace
+
+<Steps>
+
+1. Go to **My workspaces** and click **Create workspace** at the top right. Or start from a hunt: click **Set up workspace** on the [Puzzle hunts page](/docs/guides/find-a-hunt) or under **Hunts coming up**.
+2. Type your **Team name**.
+3. Start typing the **Event name**. If the hunt is listed, pick it from the suggestions to fill in its dates, location and website.
+4. Check **Starts**, **Ends**, **Location** and **Hunt website**, and fill in any that are empty.
+5. Choose a **Workspace ID** and a **Workspace password**.
+6. Click **Create**.
+
+</Steps>
+
+WOW checks the ID is free and creates the workspace. You land on **Set up your workspace**, described [below](#after-you-create-it).
+
+## Every field
+
+Fields marked \* are required.
+
+<Screenshot
+  src={createWorkspaceImage}
+  alt="The create workspace form"
+  caption="The create form, filled in from a hunt suggestion."
+/>
+
+| Field                    | What it's for                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **Team name\***          | Your team's name, as it appears on My workspaces, the join page, and the leaderboard's shareable card.                   |
+| **Event name\***         | The hunt you're playing, for example "MIT Mystery Hunt 2027". Type anything, or pick a listed hunt from the suggestions. |
+| **Starts**               | When the hunt starts, as a date and time in your time zone.                                                              |
+| **Ends**                 | When the hunt ends. It has to be after **Starts**.                                                                       |
+| **Location**             | Where it's played: "Online", or a city.                                                                                  |
+| **Hunt website**         | The hunt's own site. It's added to the workspace's header links as "Hunt website", so it's one click away for everyone.  |
+| **Workspace ID\***       | Your workspace's address, `wafflehaus.io/<id>`, and what teammates type to join. It must not be in use already.          |
+| **Workspace password\*** | What teammates enter to join. Use the eye button to show or hide it while you type.                                      |
+
+### Why the dates matter
+
+The dates are optional, but several things depend on them:
+
+- The **hunt clock** in the header counts down to the start ("Starts in 2d 4h"), then shows the time left, then "Hunt over".
+- The **Leaderboard** tab is a live leaderboard while the hunt is running, and turns into the final **Hunt recap** once the end time passes. See [Leaderboard and recap](/docs/guides/leaderboard).
+- The **Solves** chart in the activity log covers the hunt from its start.
+- **My workspaces** shows the workspace as **Live**, **Starts …** or **Hunt over**, and lists live hunts first.
+
+If you don't know the exact times yet, leave them blank. An owner can add them later in <UiPath path="Settings > General > Details" />.
+
+## Use a hunt suggestion
+
+When you type in **Event name**, WOW suggests hunts that are running now, coming up, or ended in the past few days. Picking one fills in:
+
+- **Starts** and **Ends**. For a hunt listed as whole days, Starts is set to midnight on the first day and Ends to 23:59 on the last.
+- **Location**.
+- **Hunt website**.
+
+All of them stay editable, so you can adjust the times once the hunt announces them. If your hunt isn't suggested, just type its name and fill in the rest yourself.
+
+<Callout type="tip">
+  Pick the hunt from the suggestions when you can. WOW matches workspaces to listings by event name,
+  so it can then show "Your workspace" on the Puzzle hunts page, count your team in "N on WOW", and
+  suggest next year's edition to you.
+</Callout>
+
+## Choose a good ID and password
+
+The **Workspace ID** is part of the workspace's address, and every teammate will type it or see it in links.
+
+- Keep it short and easy to say aloud: `waffles2027`, not `team-waffle-mystery-hunt-january-2027`.
+- Stick to lowercase letters, numbers and hyphens, so it reads cleanly in a URL.
+- Include the year or event if your team plays several hunts, so this year's workspace doesn't clash with last year's.
+- You can't change it after creating the workspace, so check it before you click **Create**.
+- If WOW says "Workspace ID is already taken", choose another. A few IDs are reserved and can't be used.
+
+The **Workspace password** is how teammates prove they're on your team.
+
+- It isn't your account password. Don't reuse one.
+- It gets shared around your team, so pick something you're happy to paste into a team chat.
+- Use at least 8 characters. WOW doesn't insist on this when you create the workspace, but it does when an owner changes the password later.
+- Every member can see the password in <UiPath path="Settings > Administration" />, so they can pass it on. Only owners can change it.
+
+## After you create it
+
+You land on **Set up your workspace**, with two optional cards:
+
+| Card                        | What it does                                                                                          | Read more                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| **Google Drive Connection** | Gives every puzzle a Google Sheet in your team's Drive folder, instead of WOW's built-in spreadsheet. | [Connect Google Drive](/docs/google-drive) |
+| **Discord**                 | Keeps a Discord server in step with the board, with a voice channel for each puzzle.                  | [Connect Discord](/docs/discord)           |
+
+You can skip both and set them up later from <UiPath path="Settings > Administration" />. Many teams use neither: WOW has its own spreadsheet, chat and voice built in.
+
+When you're ready, click **Go to blackboard**.
+
+<Callout type="warning">
+  Made a mistake, like a typo in the workspace ID? The ID can't be changed, and deleting a workspace
+  isn't available yet, so create a new workspace with the right ID and [tell us](/docs/help/faq)
+  which one to remove.
+</Callout>
+
+<Callout type="note">
+  Connecting Google Drive is easiest to decide before the hunt. Puzzles only get a Google Sheet if
+  Drive is connected when they're added. Puzzles added before that keep the built-in spreadsheet.
+</Callout>
+
+## What to do next
+
+<Steps>
+
+1. **Invite your team.** Copy the invitation link from <UiPath path="Settings > General > Details" /> and send it round. See [Invite your team](/docs/guides/invite-your-team).
+2. **Make other captains owners.** If someone else will help run the workspace, promote them in <UiPath path="Settings > Members" />. See [Members and roles](/docs/guides/members-and-roles).
+3. **Make it yours.** Pick an accent colour and team emoji, and add tags and header links. See [Make it yours](/docs/guides/customize).
+4. **Build the board** as the hunt releases puzzles. See [The blackboard](/docs/blackboard).
+
+</Steps>
+
+<Callout type="phone">
+  You can create a workspace from your phone; the form is the same. The fields stack in a single
+  column, with **Starts** and **Ends** one above the other.
+</Callout>
+
+## Related
+
+- [Find a hunt](/docs/guides/find-a-hunt)
+- [Invite your team](/docs/guides/invite-your-team)
+- [Quick start for captains](/docs/start/captain)
+- [Workspaces, owners and members](/docs/concepts/workspaces)
