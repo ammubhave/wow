@@ -121,7 +121,7 @@ export function WorkspaceHeader() {
             current one, which also shows its label; the current puzzle always shows its name. */}
         <Tabs selectedKey={selectedKey} className="hidden md:flex">
           <Tabs.ListContainer>
-            <Tabs.List aria-label="Workspace sections" className="w-fit">
+            <Tabs.List data-tour="sections" aria-label="Workspace sections" className="w-fit">
               {SECTIONS.map(({routeId, path, label, Icon}) => (
                 <Tabs.Tab
                   key={routeId}

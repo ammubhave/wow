@@ -1,0 +1,1 @@
+ALTER TABLE `member` ADD `tour` text;

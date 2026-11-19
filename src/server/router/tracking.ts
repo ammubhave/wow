@@ -50,6 +50,13 @@ export const TRACKED_PROCEDURES: Record<string, [event: string, describe: Descri
     "favorites_updated",
     input => ({count: Array.isArray(input.favoritePuzzleIds) ? input.favoritePuzzleIds.length : 0}),
   ],
+  "workspaces.members.setTour": [
+    "tour_progress",
+    input => {
+      const tour = (input.tour ?? {}) as {kind?: string; step?: string | null; status?: string};
+      return {kind: tour.kind, step: tour.step ?? undefined, status: tour.status};
+    },
+  ],
   "workspaces.announce": ["announcement_sent", input => ({toDiscord: Boolean(input.channelId)})],
   "workspaces.discord.disconnect": ["discord_disconnected", none],
 };

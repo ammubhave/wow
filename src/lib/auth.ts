@@ -4,13 +4,14 @@ import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
 import {captcha, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
-import {eq} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {z} from "zod";
 
 import {sendActionEmail} from "../server/email";
 import {trackServerEvent} from "../server/posthog";
 import {db} from "./db";
 import * as schema from "./db/schema";
+import {newTourState} from "./tour-state";
 
 // Owns the activity of accounts that have been deleted (see `user.deleteUser` below).
 const DELETED_USER_ID = "deleted-user";
@@ -142,6 +143,13 @@ export const auth = betterAuth({
               ],
             })
             .where(eq(schema.organization.id, org.id));
+          // The creator gets the full guided tour the first time they open the workspace.
+          await db
+            .update(schema.member)
+            .set({tour: newTourState("captain")})
+            .where(
+              and(eq(schema.member.organizationId, org.id), eq(schema.member.userId, user.id))
+            );
         },
       },
       schema: {
@@ -174,7 +182,12 @@ export const auth = betterAuth({
             theme: {type: "json", required: false},
           },
         },
-        member: {additionalFields: {favoritePuzzleIds: {type: "string[]", required: false}}},
+        member: {
+          additionalFields: {
+            favoritePuzzleIds: {type: "string[]", required: false},
+            tour: {type: "json", required: false, input: false},
+          },
+        },
       },
     }),
     tanstackStartCookies(),

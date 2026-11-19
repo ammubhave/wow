@@ -31,7 +31,10 @@ export function AppSidebar({
       <div className="absolute inset-0 flex">
         <Resizable orientation="vertical">
           <Resizable.Panel defaultSize={40} className="flex flex-col overflow-y-auto">
-            <SidebarContents workspaceSlug={workspaceSlug} rounds={rounds} />
+            {/* The onboarding tour points at this. */}
+            <div data-tour="sidebar" className="flex flex-1 flex-col">
+              <SidebarContents workspaceSlug={workspaceSlug} rounds={rounds} />
+            </div>
           </Resizable.Panel>
           <Resizable.Handle type="drag" />
           <Resizable.Panel defaultSize={60} className="flex flex-col">
@@ -46,7 +49,7 @@ export function AppSidebar({
 /** The team chat, under its heading. */
 function TeamChat() {
   return (
-    <section aria-label="Team chat" className="flex min-h-0 flex-1 flex-col">
+    <section data-tour="team-chat" aria-label="Team chat" className="flex min-h-0 flex-1 flex-col">
       <h2 className="text-muted flex items-center gap-1.5 px-3 pt-2 text-xs font-medium">
         <MessagesSquareIcon className="size-3.5" />
         Team chat
@@ -60,7 +63,12 @@ function TeamChat() {
 export function TeamChatDrawerButton() {
   return (
     <Drawer>
-      <Button variant="outline" isIconOnly aria-label="Team chat" className="md:hidden">
+      <Button
+        data-tour="team-chat-button"
+        variant="outline"
+        isIconOnly
+        aria-label="Team chat"
+        className="md:hidden">
         <MessagesSquareIcon />
       </Button>
       <Drawer.Backdrop>
@@ -90,7 +98,12 @@ export function SidebarDrawerButton({
 }) {
   return (
     <Drawer>
-      <Button variant="outline" isIconOnly aria-label="Notes and progress" className="md:hidden">
+      <Button
+        data-tour="sidebar-button"
+        variant="outline"
+        isIconOnly
+        aria-label="Notes and progress"
+        className="md:hidden">
         <NotebookPenIcon />
       </Button>
       <Drawer.Backdrop>

@@ -1,6 +1,7 @@
 import {Command} from "@heroui-pro/react";
 import {useNavigate} from "@tanstack/react-router";
 import {
+  CompassIcon,
   BookOpenIcon,
   HistoryIcon,
   HomeIcon,
@@ -13,6 +14,7 @@ import {
 import {useEffect, useState} from "react";
 
 import {DOC_PAGES} from "@/docs/registry";
+import {useTour} from "@/features/tour/tour-provider";
 import {useWorkspace} from "@/hooks/use-workspace";
 
 export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string}) {
@@ -29,6 +31,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
   }, []);
   const workspace = useWorkspace();
   const navigate = useNavigate();
+  const tour = useTour();
   // Keyboard-only, like Spotlight: ⌘K / Ctrl+K opens it; there's deliberately no visible trigger.
   return (
     <Command>
@@ -82,6 +85,17 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   <InfoIcon />
                   <span>Help</span>
                 </Command.Item>
+                {tour && (
+                  <Command.Item
+                    textValue="Take the tour"
+                    onAction={() => {
+                      tour.start();
+                      setOpen(false);
+                    }}>
+                    <CompassIcon />
+                    <span>Take the tour</span>
+                  </Command.Item>
+                )}
               </Command.Group>
               {/* Every docs page, opened in the workspace's Help tab. */}
               <Command.Group heading="Help and docs">

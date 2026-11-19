@@ -6,6 +6,7 @@ import {z} from "zod";
 import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {newTourState, tourStateSchema} from "@/lib/tour-state";
 import {parseTheme, workspaceThemeSchema} from "@/lib/workspace-theme";
 
 import {fetchDiscord} from "../do/discord-client";
@@ -80,6 +81,16 @@ export const workspacesRouter = {
         // Joining with the password makes you a member; owners can promote people after.
         body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},
       });
+      // New members get the shorter solver tour the first time they open the workspace.
+      await db
+        .update(schema.member)
+        .set({tour: newTourState("solver")})
+        .where(
+          and(
+            eq(schema.member.organizationId, workspace.id),
+            eq(schema.member.userId, context.session.user.id)
+          )
+        );
 
       const shareFolder = async () => {
         if (!workspace.googleFolderId) return;
@@ -689,6 +700,21 @@ export const workspacesRouter = {
         await db
           .update(schema.member)
           .set({favoritePuzzleIds: [...new Set(input.favoritePuzzleIds)]})
+          .where(
+            and(
+              eq(schema.member.organizationId, context.workspace.id),
+              eq(schema.member.userId, context.session.user.id)
+            )
+          );
+      }),
+    /** Saves where the member is in the onboarding tour (or that they finished or closed it). */
+    setTour: procedure
+      .input(z.object({workspaceSlug: z.string(), tour: tourStateSchema}))
+      .use(preauthorize)
+      .handler(async ({context, input}) => {
+        await db
+          .update(schema.member)
+          .set({tour: input.tour})
           .where(
             and(
               eq(schema.member.organizationId, context.workspace.id),

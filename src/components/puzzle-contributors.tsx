@@ -53,6 +53,7 @@ export function HelpedToggle({
     <Tooltip delay={300}>
       <Tooltip.Trigger>
         <ToggleButton
+          data-tour="i-helped"
           size="sm"
           isSelected={helped}
           onChange={contributed => mutate({workspaceSlug, puzzleId, userId: me, contributed})}>

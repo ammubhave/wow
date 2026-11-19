@@ -179,7 +179,7 @@ export function PuzzleVoiceStrip({room, viewers}: {room: string; viewers: VoiceU
   const isSpeaking = (call: VoiceParticipant | undefined) =>
     call !== undefined && voice.speaking.has(call.connectionId);
   return (
-    <div className="flex items-start gap-2 px-2 py-2">
+    <div data-tour="voice-strip" className="flex items-start gap-2 px-2 py-2">
       <div className="flex max-h-25 min-w-0 flex-1 flex-row flex-wrap gap-0.5 overflow-y-auto">
         {viewers.map(user => {
           const call = callByUser.get(user.id);
@@ -225,6 +225,7 @@ export function LobbyButton() {
       <Tooltip delay={300}>
         <Tooltip.Trigger>
           <Button
+            data-tour="lobby"
             size="sm"
             isIconOnly
             variant={isHere ? "secondary" : "ghost"}

@@ -223,7 +223,9 @@ function PuzzleInfoPanel({
       <PuzzleContext workspaceSlug={workspaceSlug} puzzle={puzzle} />
       <form.AppForm>
         {/* A property list: muted labels on the left, full-width controls on the right. */}
-        <form.Form className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-3">
+        <form.Form
+          data-tour="puzzle-info"
+          className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-3">
           <span className="text-muted self-start pt-2 text-xs">
             {puzzle.answerCount > 1 ? "Answers" : "Answer"}
           </span>
@@ -618,7 +620,7 @@ function PuzzleTimer({puzzleId}: {puzzleId: string}) {
   const {seconds, isCounting} = usePuzzleTimeTracker(workspaceSlug, puzzleId);
   return (
     // At the end of the bar (the tooltip trigger doesn't pass layout classes through).
-    <div className="ms-auto flex shrink-0">
+    <div data-tour="timer" className="ms-auto flex shrink-0">
       <Tooltip delay={300}>
         <Tooltip.Trigger>
           <Chip
@@ -703,7 +705,10 @@ function WorksheetPane({
             void navigate({search: prev => ({...prev, view: next}), replace: true});
           }}>
           <Tabs.ListContainer>
-            <Tabs.List aria-label="Puzzle views" className={cn(phone ? "w-full" : "w-fit")}>
+            <Tabs.List
+              data-tour="puzzle-views"
+              aria-label="Puzzle views"
+              className={cn(phone ? "w-full" : "w-fit")}>
               <Tabs.Tab id="sheet" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
                 {/* Phones: words only, so all four tabs fit next to the timer. */}
                 {!phone && <SheetIcon className="me-1.5 size-3.5" />}

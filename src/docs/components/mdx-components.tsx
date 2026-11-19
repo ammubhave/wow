@@ -1,8 +1,9 @@
-import {Chip, Kbd as HeroKbd} from "@heroui/react";
+import {Button, Chip, Kbd as HeroKbd} from "@heroui/react";
 import {Link} from "@tanstack/react-router";
 import {
   ArrowRightIcon,
   ArrowUpRightIcon,
+  CompassIcon,
   CrownIcon,
   InfoIcon,
   LightbulbIcon,
@@ -13,6 +14,7 @@ import {
 import {Children, isValidElement} from "react";
 import {cn} from "tailwind-variants";
 
+import {useTour} from "@/features/tour/tour-provider";
 import {GOOGLE_FORMULAS, PUZZLE_FORMULA_GROUPS} from "@/lib/formula-docs";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {getPuzzleStatusGroups} from "@/lib/puzzleStatuses";
@@ -184,6 +186,29 @@ export function Screenshot({
       />
       {caption && <figcaption className="text-muted text-center text-xs">{caption}</figcaption>}
     </figure>
+  );
+}
+
+/**
+ * Starts the guided tour of the workspace. In a workspace's Help tab only (the public docs have no
+ * workspace to tour).
+ */
+export function TakeTheTour() {
+  const tour = useTour();
+  if (!tour) return null;
+  return (
+    <aside className="not-prose border-accent/30 bg-accent/5 flex flex-wrap items-center gap-3 rounded-xl border p-4 text-sm">
+      <CompassIcon className="text-accent size-5 shrink-0" aria-hidden="true" />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="font-semibold">New here?</span>
+        <span className="text-muted">
+          A few minutes' guided tour of this workspace, pointing at the real thing.
+        </span>
+      </div>
+      <Button size="sm" onPress={() => tour.start()}>
+        {tour.isRunning ? "Restart the tour" : "Take the tour"}
+      </Button>
+    </aside>
   );
 }
 
@@ -360,6 +385,7 @@ export const MDX_COMPONENTS = {
   Screenshot,
   Cards,
   Card,
+  TakeTheTour,
   PuzzleFormulas,
   GoogleFormulas,
   StatusTable,

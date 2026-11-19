@@ -856,7 +856,9 @@ function RouteComponent() {
             {/* Search on the left; the filters people use most are one click, each showing at a
                 glance whether it's on. They take the room left beside the search and scroll
                 sideways rather than wrap; on phones they get their own scrolling row. */}
-            <div className="flex shrink-0 flex-wrap items-center gap-2 p-2">
+            <div
+              data-tour="board-toolbar"
+              className="flex shrink-0 flex-wrap items-center gap-2 p-2">
               <SearchField
                 aria-label="Search puzzles"
                 className="min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-64"
@@ -1014,6 +1016,7 @@ function RouteComponent() {
                 )}
               </div>
               <ToggleButton
+                data-tour="arrange"
                 size="sm"
                 className={cn(FILTER_TOGGLE, "max-sm:hidden")}
                 isSelected={isArranging}
@@ -1035,7 +1038,7 @@ function RouteComponent() {
                 <ArrangingContext.Provider value={isArranging}>
                   {/* overflow-visible: HeroUI clips the table sideways, which on phones hid
                     the status and row menu; the board's scroll box scrolls it instead. */}
-                  <Table variant="secondary" className="overflow-visible">
+                  <Table data-tour="board" variant="secondary" className="overflow-visible">
                     {/* The board's scroll box is the scroll container; an inner overflow box would
                       stop the sticky header from sticking. */}
                     <Table.ScrollContainer className="overflow-visible">
@@ -1067,13 +1070,14 @@ function RouteComponent() {
                             <SignalIcon className="size-4" aria-hidden />
                           </Table.Column>
                           <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>Tags</Table.Column>
-                          <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>
+                          <Table.Column data-tour="working-on" className={cn(COLUMN, DESKTOP_ONLY)}>
                             Working on this
                           </Table.Column>
                           <Table.Column className={cn(COLUMN, "w-0")} aria-label="Actions">
                             <div className="-my-1 flex items-center justify-end">
                               <Dropdown>
                                 <Button
+                                  data-tour="board-menu"
                                   variant="ghost"
                                   isIconOnly
                                   size="sm"
@@ -1140,7 +1144,9 @@ function RouteComponent() {
                       </EmptyState.Description>
                     </EmptyState.Header>
                     <EmptyState.Content>
-                      <Button onPress={() => setIsAddNewRoundDialogOpen(true)}>
+                      <Button
+                        data-tour="add-first-round"
+                        onPress={() => setIsAddNewRoundDialogOpen(true)}>
                         <PlusIcon />
                         Add a round
                       </Button>
@@ -1289,7 +1295,12 @@ const BlackboardRound = memo(function BlackboardRound({
       <Table.Cell className={CELL}>
         <div className="-my-3 flex items-center justify-end">
           <Dropdown>
-            <Button isDisabled={isBeingCreated} variant="ghost" isIconOnly>
+            <Button
+              data-tour="round-menu"
+              data-tour-id={round.id}
+              isDisabled={isBeingCreated}
+              variant="ghost"
+              isIconOnly>
               <EllipsisIcon />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -1545,6 +1556,8 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
               {/* Target of the sidebar's puzzle links. */}
               <span id={metaPuzzle.id} className="scroll-mt-20" />
               <Link
+                data-tour="puzzle-link"
+                data-tour-id={metaPuzzle.id}
                 to="/$workspaceSlug/puzzles/$puzzleId"
                 params={{workspaceSlug, puzzleId: metaPuzzle.id}}
                 title={metaPuzzle.name}
@@ -1608,7 +1621,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
           </ToggleButton>
           <Dropdown>
-            <Button variant="ghost" isIconOnly>
+            <Button data-tour="meta-menu" data-tour-id={metaPuzzle.id} variant="ghost" isIconOnly>
               <EllipsisIcon />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -1747,6 +1760,8 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           {/* Target of the sidebar's puzzle links. */}
           <span id={puzzle.id} className="scroll-mt-20" />
           <Link
+            data-tour="puzzle-link"
+            data-tour-id={puzzle.id}
             to="/$workspaceSlug/puzzles/$puzzleId"
             params={{workspaceSlug, puzzleId: puzzle.id}}
             title={puzzle.name}

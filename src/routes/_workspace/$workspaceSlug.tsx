@@ -10,6 +10,7 @@ import {preloadSheet} from "@/components/sheet/sheet";
 import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
 import {AwaySummary, NotificationsWebSocket} from "@/features/notifications/notifications";
+import {TourProvider} from "@/features/tour/tour-provider";
 import {VoiceProvider} from "@/features/voice/voice-provider";
 import {CallBar} from "@/features/voice/voice-ui";
 import {useWorkspace, WorkspaceProvider} from "@/hooks/use-workspace";
@@ -81,20 +82,22 @@ function RouteComponent() {
       <NotificationsWebSocket workspaceSlug={workspaceSlug}>
         <PresencesWebSocket workspaceSlug={workspaceSlug}>
           <VoiceProvider workspaceSlug={workspaceSlug}>
-            <div className="flex flex-1 flex-col">
-              <WorkspaceHeader />
-              <div className="relative flex flex-1">
-                <div className="absolute inset-0 flex overflow-auto">
-                  <Outlet />
+            <TourProvider workspaceSlug={workspaceSlug}>
+              <div className="flex flex-1 flex-col">
+                <WorkspaceHeader />
+                <div className="relative flex flex-1">
+                  <div className="absolute inset-0 flex overflow-auto">
+                    <Outlet />
+                  </div>
                 </div>
+                <WorkspaceFooter />
               </div>
-              <WorkspaceFooter />
-            </div>
-            <CallBar />
-            <AwaySummary workspaceSlug={workspaceSlug} />
-            <WorkspaceAccent />
-            <SheetPreloader />
-            <WorkspaceAnalyticsGroup />
+              <CallBar />
+              <AwaySummary workspaceSlug={workspaceSlug} />
+              <WorkspaceAccent />
+              <SheetPreloader />
+              <WorkspaceAnalyticsGroup />
+            </TourProvider>
           </VoiceProvider>
         </PresencesWebSocket>
       </NotificationsWebSocket>
