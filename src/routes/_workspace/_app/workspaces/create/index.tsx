@@ -208,12 +208,14 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="password"
+                  // The same rule as changing it later (Settings › Administration).
+                  validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}
                   children={field => (
                     <field.PasswordField
                       variant="secondary"
                       label="Workspace password"
                       isRequired
-                      description="Teammates enter it to join."
+                      description="At least 8 characters. Teammates enter it to join."
                     />
                   )}
                 />

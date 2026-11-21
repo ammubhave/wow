@@ -278,11 +278,9 @@ function PuzzleInfoPanel({
           <form.AppField
             name="status"
             listeners={{
-              onChange: async ({fieldApi}) => {
-                if (fieldApi.state.value !== "solved" && fieldApi.state.value !== "backsolved") {
-                  form.setFieldValue("answer", "");
-                }
-
+              // The answer stays whatever the status (as on the board): moving a puzzle back to,
+              // say, Extraction shouldn't throw away an answer someone typed. Clear it by hand.
+              onChange: async () => {
                 if (form.state.isValid) {
                   await form.handleSubmit();
                 }

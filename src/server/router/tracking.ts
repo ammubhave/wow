@@ -45,6 +45,7 @@ export const TRACKED_PROCEDURES: Record<string, [event: string, describe: Descri
   "workspaces.shareGoogleDriveFolderWithMembers": ["google_drive_folder_shared", none],
   "workspaces.customEmoji.add": ["custom_emoji_added", none],
   "workspaces.customEmoji.remove": ["custom_emoji_removed", none],
+  "workspaces.members.remove": ["member_removed", none],
   "workspaces.members.updateRole": ["member_role_changed", input => ({role: input.role})],
   "workspaces.members.set": [
     "favorites_updated",

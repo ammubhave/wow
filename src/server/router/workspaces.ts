@@ -640,6 +640,31 @@ export const workspacesRouter = {
         };
       }),
 
+    /// Owners can remove someone from the workspace (not themselves: that's Leave). They can join
+    /// again with the password, so changing it may be wise.
+    remove: procedure
+      .input(z.object({workspaceSlug: z.string(), userId: z.string()}))
+      .use(preauthorize)
+      .use(requireOwner)
+      .handler(async ({context, input}) => {
+        if (input.userId === context.session.user.id) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "To remove yourself, leave the workspace instead.",
+          });
+        }
+        const removed = await db
+          .delete(schema.member)
+          .where(
+            and(
+              eq(schema.member.organizationId, context.workspace.id),
+              eq(schema.member.userId, input.userId)
+            )
+          )
+          .returning({id: schema.member.id});
+        if (removed.length === 0) throw new ORPCError("NOT_FOUND");
+        await invalidateWorkspace(context.workspace.id);
+      }),
+
     /// Owners can make others owners (or members again). The last owner can't be demoted, so a
     /// workspace always has someone who can manage it.
     updateRole: procedure

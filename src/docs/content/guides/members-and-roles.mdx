@@ -91,14 +91,16 @@ To come back, join again with the workspace ID and password, or the invitation l
 Members can open every settings tab, but some things are read-only for them:
 
 - **General**: a note at the top says "Only owners can change the details and look". The **Details** fields and the **Look** card are greyed out. The custom **Team emoji**, **Links** and **Tags** cards below still work for everyone, and so does the invitation link's copy button.
-- **Members**: names and owner chips, without emails or role menus.
+- **Members**: names and owner chips, without emails, role menus or remove buttons.
 - **Administration**: a note says "Only owners can change these settings". Members can still see the **Workspace Password**, so they can tell teammates how to join, and which Google Drive folder and Discord server are connected. The buttons are disabled.
 
 If something needs changing, ask one of the people with the **Owner** chip.
 
 ## Removing people and deleting workspaces
 
-There's no way to remove another member from a workspace. If a password has leaked, an owner can change it in <UiPath path="Settings > Administration" />, so nobody new can join with the old one. People who already joined stay.
+Owners can remove someone in <UiPath path="Settings > Members" />: click the remove button next to their role and confirm. They lose access right away; the puzzles, answers and messages they added stay. You can't remove yourself this way (use **Leave**).
+
+Someone who's been removed can join again with the workspace password. If they shouldn't, an owner can change it in <UiPath path="Settings > Administration" />, so nobody new can join with the old one.
 
 Archiving and deleting workspaces aren't available yet: the **Delete Workspace** card in Administration says to contact support.
 

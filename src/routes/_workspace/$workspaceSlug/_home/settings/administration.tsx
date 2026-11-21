@@ -103,7 +103,9 @@ function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
       <form.AppForm>
         <Card.Content>
           <form.Form>
-            <form.AppField name="password" validators={{onSubmit: z.string().min(8)}}>
+            <form.AppField
+              name="password"
+              validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}>
               {field => (
                 <field.PasswordField
                   variant="secondary"

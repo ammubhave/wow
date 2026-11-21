@@ -1,5 +1,6 @@
 import {drizzleAdapter} from "@better-auth/drizzle-adapter/relations-v2";
 import {passkey} from "@better-auth/passkey";
+import {APIError} from "better-auth/api";
 import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
 import {captcha, lastLoginMethod} from "better-auth/plugins";
@@ -124,7 +125,15 @@ export const auth = betterAuth({
         beforeCreateOrganization: async ({organization: org}) => {
           const reservedSlugs = ["exchange"];
           if (reservedSlugs.includes(org.slug?.toLowerCase() ?? "")) {
-            throw new Error(`Workspace ID cannot be ${org.slug?.toLowerCase()}.`);
+            throw new APIError("BAD_REQUEST", {
+              message: `Workspace ID cannot be ${org.slug?.toLowerCase()}.`,
+            });
+          }
+          // The same rule as changing it later (workspaces.update).
+          if (typeof org.password !== "string" || org.password.length < 8) {
+            throw new APIError("BAD_REQUEST", {
+              message: "The workspace password needs at least 8 characters.",
+            });
           }
         },
         afterCreateOrganization: async ({organization: org, user}) => {
