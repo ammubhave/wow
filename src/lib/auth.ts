@@ -25,6 +25,9 @@ const givenLinks = (links: unknown) =>
     .catch([])
     .parse(links);
 
+/** How long an emailed invitation works. */
+export const INVITATION_DAYS = 7;
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
   advanced: {database: {joins: true}},
@@ -121,7 +124,52 @@ export const auth = betterAuth({
       : []),
     organization({
       membershipLimit: 500,
+      // Inviting by email (Settings › Members). The link only works for the invited address.
+      invitationExpiresIn: INVITATION_DAYS * 24 * 60 * 60,
+      invitationLimit: 50,
+      sendInvitationEmail: async ({id, email, organization: org, inviter}) => {
+        // Our extra columns are on the row, just not in the plugin's type.
+        const fields: Record<string, unknown> = org;
+        const teamName = typeof fields.teamName === "string" ? fields.teamName : "";
+        const eventName = typeof fields.eventName === "string" ? fields.eventName : "";
+        const team = teamName || org.name;
+        sendActionEmail({
+          to: email,
+          subject: `${inviter.user.name} invited you to ${team} on WOW`,
+          intro: [
+            `${inviter.user.name} invited you to join ${team}${eventName ? ` for ${eventName}` : ""} on WOW, the team's workspace for the hunt: the puzzles, sheets, chat and calls.`,
+          ],
+          action: {
+            label: "Join the team",
+            url: `${process.env.BETTER_AUTH_URL ?? "https://www.wafflehaus.io"}/workspaces/invite/${id}`,
+          },
+          outro: [
+            `Sign in (or sign up) with ${email} to accept. The invitation expires in ${INVITATION_DAYS} days.`,
+            "Not expecting this? You can ignore this email.",
+          ],
+        });
+      },
       organizationHooks: {
+        // Only owners invite. (Old "admin" members count as members in WOW, but the plugin's own
+        // rules would let them.)
+        beforeCreateInvitation: async ({invitation, inviter}) => {
+          const member = await db
+            .select({role: schema.member.role})
+            .from(schema.member)
+            .where(
+              and(
+                eq(schema.member.organizationId, invitation.organizationId),
+                eq(schema.member.userId, inviter.id)
+              )
+            )
+            .get();
+          if (member?.role !== "owner") {
+            throw new APIError("FORBIDDEN", {message: "Only owners can invite people."});
+          }
+          if (invitation.role !== "member") {
+            throw new APIError("BAD_REQUEST", {message: "Invite people as members."});
+          }
+        },
         beforeCreateOrganization: async ({organization: org}) => {
           const reservedSlugs = ["exchange"];
           if (reservedSlugs.includes(org.slug?.toLowerCase() ?? "")) {

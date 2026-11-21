@@ -16,6 +16,15 @@ export type Session = typeof auth.$Infer.Session;
 
 export const base = os.$context<Context>();
 
+/** What a signed-in procedure's handler gets (see `procedure`). */
+export type AuthedContext = {
+  session: Session;
+  google: GoogleService;
+  activityLog: ActivityLogService;
+  discord: DiscordService;
+  notification: NotificationService;
+};
+
 export const procedure = base.use(async ({context, next}) => {
   const session = await auth.api.getSession({headers: context.headers});
   if (!session) {

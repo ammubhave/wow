@@ -19,7 +19,7 @@ import {
 import {DRIVE_DISCONNECTED_DETAIL, type FolderShareResult, shareDriveFolder} from "../drive-share";
 import {captureServerException, trackServerEvent} from "../posthog";
 import {toWorkspaceRole} from "../workspace-access";
-import {preauthorize, procedure, requireOwner} from "./base";
+import {type AuthedContext, preauthorize, procedure, requireOwner} from "./base";
 
 const ACTIVITY_LOG_PAGE_SIZE = 50;
 
@@ -81,63 +81,7 @@ export const workspacesRouter = {
         // Joining with the password makes you a member; owners can promote people after.
         body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},
       });
-      // New members get the shorter solver tour the first time they open the workspace.
-      await db
-        .update(schema.member)
-        .set({tour: newTourState("solver")})
-        .where(
-          and(
-            eq(schema.member.organizationId, workspace.id),
-            eq(schema.member.userId, context.session.user.id)
-          )
-        );
-
-      const shareFolder = async () => {
-        if (!workspace.googleFolderId) return;
-        const googleAccessToken = await context.google.getAccessToken(workspace.id);
-        const result: FolderShareResult = googleAccessToken
-          ? await shareDriveFolder(
-              googleAccessToken,
-              workspace.googleFolderId,
-              context.session.user.email
-            )
-          : {ok: false, detail: DRIVE_DISCONNECTED_DETAIL};
-        if (result.ok) return;
-        // Tell the owners, who can fix it (or share the folder by hand).
-        const owners = await db
-          .select({id: schema.member.userId})
-          .from(schema.member)
-          .where(
-            and(eq(schema.member.organizationId, workspace.id), eq(schema.member.role, "owner"))
-          )
-          .all();
-        if (owners.length === 0) return;
-        const {id, name, email} = context.session.user;
-        await context.notification.broadcast(workspace.id, {
-          type: "driveShareFailed",
-          toUserIds: owners.map(o => o.id),
-          member: {id, name, email},
-          folderId: workspace.googleFolderId,
-          detail: result.detail,
-          blockingFileId: result.blockingFileId,
-        });
-      };
-      waitUntil(
-        shareFolder().catch(error => {
-          console.error("Sharing the Drive folder with a new member failed", error);
-          captureServerException(error, {
-            distinctId: context.session.user.id,
-            properties: {workspaceId: workspace.id},
-          });
-        })
-      );
-      // Awaited before invalidating so the broadcast state includes the "join" entry.
-      await context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"});
-      await invalidateWorkspace(workspace.id);
-      trackServerEvent("workspace_joined", {
-        distinctId: context.session.user.id,
-        workspaceId: workspace.id,
-      });
+      await welcomeNewMember(context, workspace, "password");
       // Never return the full row: it holds the Google OAuth tokens and the join password.
       return {id: workspace.id, name: workspace.name, slug: workspace.slug};
     }),
@@ -616,6 +560,221 @@ export const workspacesRouter = {
       }),
   },
 
+  /**
+   * Inviting people by email, with better-auth's organization invitations: owners send them from
+   * Settings › Members; the emailed link (/workspaces/invite/<id>) works for the invited address.
+   */
+  invitations: {
+    /** Pending invitations (not yet accepted, cancelled or expired). */
+    list: procedure
+      .input(z.object({workspaceSlug: z.string()}))
+      .use(preauthorize)
+      .use(requireOwner)
+      .handler(async ({context}) => {
+        const rows = await db
+          .select({
+            id: schema.invitation.id,
+            email: schema.invitation.email,
+            createdAt: schema.invitation.createdAt,
+            expiresAt: schema.invitation.expiresAt,
+            inviterName: schema.user.name,
+          })
+          .from(schema.invitation)
+          .innerJoin(schema.user, eq(schema.invitation.inviterId, schema.user.id))
+          .where(
+            and(
+              eq(schema.invitation.organizationId, context.workspace.id),
+              eq(schema.invitation.status, "pending")
+            )
+          );
+        const now = Date.now();
+        return rows
+          .filter(row => row.expiresAt.getTime() > now)
+          .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }),
+
+    /** Emails an invitation to each address; says, per address, whether it went. */
+    send: procedure
+      .input(z.object({workspaceSlug: z.string(), emails: z.array(z.email()).min(1).max(50)}))
+      .use(preauthorize)
+      .use(requireOwner)
+      .handler(async ({context, input}) => {
+        const emails = [...new Set(input.emails.map(email => email.trim().toLowerCase()))];
+        const results: {email: string; ok: boolean; message?: string}[] = [];
+        // One at a time: the plugin checks the pending-invitation limit as it goes.
+        for (const email of emails) {
+          try {
+            // oxlint-disable-next-line no-await-in-loop -- sequential on purpose (see above).
+            await auth.api.createInvitation({
+              headers: context.headers,
+              body: {email, role: "member", organizationId: context.workspace.id},
+            });
+            results.push({email, ok: true});
+          } catch (error) {
+            const message = authErrorMessage(error);
+            results.push({
+              email,
+              ok: false,
+              // The plugin's wording, made friendlier for the two common cases.
+              message: /already invited/i.test(message)
+                ? "Already invited (resend it from the list below)."
+                : /already a member/i.test(message)
+                  ? "Already on the team."
+                  : message,
+            });
+          }
+        }
+        return results;
+      }),
+
+    /** Sends a pending invitation's email again (and gives it a fresh expiry). */
+    resend: procedure
+      .input(z.object({workspaceSlug: z.string(), invitationId: z.string()}))
+      .use(preauthorize)
+      .use(requireOwner)
+      .handler(async ({context, input}) => {
+        const invitation = await db
+          .select({email: schema.invitation.email})
+          .from(schema.invitation)
+          .where(
+            and(
+              eq(schema.invitation.id, input.invitationId),
+              eq(schema.invitation.organizationId, context.workspace.id),
+              eq(schema.invitation.status, "pending")
+            )
+          )
+          .get();
+        if (!invitation) throw new ORPCError("NOT_FOUND");
+        try {
+          await auth.api.createInvitation({
+            headers: context.headers,
+            body: {
+              email: invitation.email,
+              role: "member",
+              organizationId: context.workspace.id,
+              resend: true,
+            },
+          });
+        } catch (error) {
+          throw new ORPCError("BAD_REQUEST", {message: authErrorMessage(error)});
+        }
+      }),
+
+    cancel: procedure
+      .input(z.object({workspaceSlug: z.string(), invitationId: z.string()}))
+      .use(preauthorize)
+      .use(requireOwner)
+      .handler(async ({context, input}) => {
+        const invitation = await db
+          .select({id: schema.invitation.id})
+          .from(schema.invitation)
+          .where(
+            and(
+              eq(schema.invitation.id, input.invitationId),
+              eq(schema.invitation.organizationId, context.workspace.id)
+            )
+          )
+          .get();
+        if (!invitation) throw new ORPCError("NOT_FOUND");
+        try {
+          await auth.api.cancelInvitation({
+            headers: context.headers,
+            body: {invitationId: input.invitationId},
+          });
+        } catch (error) {
+          throw new ORPCError("BAD_REQUEST", {message: authErrorMessage(error)});
+        }
+      }),
+
+    /**
+     * What the invitation page shows: whose team, who invited you, and whether you can accept it
+     * (signed in with the invited address, still pending). Anyone with the link can see this much;
+     * the address is masked unless it's yours.
+     */
+    preview: procedure
+      .input(z.object({invitationId: z.string()}))
+      .handler(async ({context, input}) => {
+        const row = await db
+          .select({
+            email: schema.invitation.email,
+            status: schema.invitation.status,
+            expiresAt: schema.invitation.expiresAt,
+            organizationId: schema.invitation.organizationId,
+            slug: schema.organization.slug,
+            teamName: schema.organization.teamName,
+            eventName: schema.organization.eventName,
+            inviterName: schema.user.name,
+          })
+          .from(schema.invitation)
+          .innerJoin(
+            schema.organization,
+            eq(schema.invitation.organizationId, schema.organization.id)
+          )
+          .innerJoin(schema.user, eq(schema.invitation.inviterId, schema.user.id))
+          .where(eq(schema.invitation.id, input.invitationId))
+          .get();
+        if (!row) throw new ORPCError("NOT_FOUND");
+        const member = await db
+          .select({id: schema.member.id})
+          .from(schema.member)
+          .where(
+            and(
+              eq(schema.member.organizationId, row.organizationId),
+              eq(schema.member.userId, context.session.user.id)
+            )
+          )
+          .get();
+        const forYou = row.email.toLowerCase() === context.session.user.email.toLowerCase();
+        const status =
+          row.status === "pending" && row.expiresAt.getTime() < Date.now()
+            ? "expired"
+            : row.status === "pending" || row.status === "accepted"
+              ? row.status
+              : "canceled";
+        return {
+          slug: row.slug,
+          teamName: row.teamName,
+          eventName: row.eventName,
+          inviterName: row.inviterName,
+          email: forYou ? row.email : maskEmail(row.email),
+          signedInAs: context.session.user.email,
+          forYou,
+          isMember: Boolean(member),
+          status,
+        } as const;
+      }),
+
+    /** Accepts an invitation: you join the workspace as a member. */
+    accept: procedure
+      .input(z.object({invitationId: z.string()}))
+      .handler(async ({context, input}) => {
+        const workspace = await db
+          .select({
+            id: schema.organization.id,
+            slug: schema.organization.slug,
+            googleFolderId: schema.organization.googleFolderId,
+          })
+          .from(schema.invitation)
+          .innerJoin(
+            schema.organization,
+            eq(schema.invitation.organizationId, schema.organization.id)
+          )
+          .where(eq(schema.invitation.id, input.invitationId))
+          .get();
+        if (!workspace) throw new ORPCError("NOT_FOUND");
+        try {
+          await auth.api.acceptInvitation({
+            headers: context.headers,
+            body: {invitationId: input.invitationId},
+          });
+        } catch (error) {
+          throw new ORPCError("BAD_REQUEST", {message: authErrorMessage(error)});
+        }
+        await welcomeNewMember(context, workspace, "invitation");
+        return {slug: workspace.slug};
+      }),
+  },
+
   members: {
     list: procedure
       .input(z.object({workspaceSlug: z.string()}))
@@ -802,4 +961,82 @@ export const workspacesRouter = {
         await invalidateWorkspace(context.workspace.id);
       }),
   },
+};
+
+/**
+ * Everything that happens when someone joins a workspace (with the password, or by accepting an
+ * emailed invitation): the solver tour, the Drive folder shared with them, the activity log entry,
+ * and everyone's board updated.
+ */
+async function welcomeNewMember(
+  context: AuthedContext,
+  workspace: {id: string; googleFolderId: string | null},
+  via: "password" | "invitation"
+) {
+  // New members get the shorter solver tour the first time they open the workspace.
+  await db
+    .update(schema.member)
+    .set({tour: newTourState("solver")})
+    .where(
+      and(
+        eq(schema.member.organizationId, workspace.id),
+        eq(schema.member.userId, context.session.user.id)
+      )
+    );
+
+  const shareFolder = async () => {
+    if (!workspace.googleFolderId) return;
+    const googleAccessToken = await context.google.getAccessToken(workspace.id);
+    const result: FolderShareResult = googleAccessToken
+      ? await shareDriveFolder(
+          googleAccessToken,
+          workspace.googleFolderId,
+          context.session.user.email
+        )
+      : {ok: false, detail: DRIVE_DISCONNECTED_DETAIL};
+    if (result.ok) return;
+    // Tell the owners, who can fix it (or share the folder by hand).
+    const owners = await db
+      .select({id: schema.member.userId})
+      .from(schema.member)
+      .where(and(eq(schema.member.organizationId, workspace.id), eq(schema.member.role, "owner")))
+      .all();
+    if (owners.length === 0) return;
+    const {id, name, email} = context.session.user;
+    await context.notification.broadcast(workspace.id, {
+      type: "driveShareFailed",
+      toUserIds: owners.map(o => o.id),
+      member: {id, name, email},
+      folderId: workspace.googleFolderId,
+      detail: result.detail,
+      blockingFileId: result.blockingFileId,
+    });
+  };
+  waitUntil(
+    shareFolder().catch(error => {
+      console.error("Sharing the Drive folder with a new member failed", error);
+      captureServerException(error, {
+        distinctId: context.session.user.id,
+        properties: {workspaceId: workspace.id},
+      });
+    })
+  );
+  // Awaited before invalidating so the broadcast state includes the "join" entry.
+  await context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"});
+  await invalidateWorkspace(workspace.id);
+  trackServerEvent("workspace_joined", {
+    distinctId: context.session.user.id,
+    workspaceId: workspace.id,
+    properties: {via},
+  });
+}
+
+/** A better-auth error's message, for showing to the person (it's written for that). */
+const authErrorMessage = (error: unknown) =>
+  error instanceof Error && error.message ? error.message : "Something went wrong.";
+
+/** "a•••@example.com": enough to recognise your own address, not to read someone else's. */
+const maskEmail = (email: string) => {
+  const [name = "", domain = ""] = email.split("@");
+  return `${name.slice(0, 1)}•••@${domain}`;
 };
