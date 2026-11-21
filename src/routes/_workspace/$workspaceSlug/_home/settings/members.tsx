@@ -13,7 +13,7 @@ import {
 } from "@heroui/react";
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
-import {MailIcon, RotateCwIcon, UserMinusIcon, XIcon} from "lucide-react";
+import {CopyIcon, LinkIcon, MailIcon, RotateCwIcon, UserMinusIcon, XIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
@@ -21,6 +21,7 @@ import {z} from "zod";
 import {ControlledAlertDialog} from "@/components/controlled-dialog";
 import {PeopleCardSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 
@@ -262,8 +263,7 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
         <Card.Title>Invite people</Card.Title>
         <Card.Description>
           Each person gets an email with a link to join; it works when they sign in (or sign up)
-          with that address, and expires after 7 days. No password needed. To invite a group chat
-          instead, share the invitation link in General.
+          with that address, and expires after 7 days. No password needed.
         </Card.Description>
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">
@@ -282,6 +282,7 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
             {valid.length > 1 ? `Send ${valid.length} invitations` : "Send invitation"}
           </Button>
         </div>
+        <ShareLinkAndPassword workspaceSlug={workspaceSlug} />
         {pending.data && pending.data.length > 0 && (
           <section aria-label="Pending invitations" className="flex flex-col gap-2">
             <h3 className="text-muted text-xs font-medium tracking-wide uppercase">
@@ -340,5 +341,66 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
         )}
       </Card.Content>
     </Card>
+  );
+}
+
+const copy = (text: string, what: string) =>
+  navigator.clipboard.writeText(text).then(
+    () => toast.success(`${what} copied.`),
+    () => toast.error("Couldn't copy. Select it and copy it yourself.")
+  );
+
+/**
+ * The other way in: the invitation link and the workspace password, e.g. for the team's group chat
+ * (anyone who has both can join).
+ */
+function ShareLinkAndPassword({workspaceSlug}: {workspaceSlug: string}) {
+  const workspace = useWorkspace();
+  const link = `https://join.wafflehaus.io/${workspaceSlug}`;
+  const password = workspace.password ?? "";
+  const message = `Join ${workspace.teamName ?? "the team"} on WOW: ${link}\nPassword: ${password}`;
+  return (
+    <section
+      aria-label="Share the link and password"
+      className="border-separator flex flex-col gap-2 border-t pt-4">
+      <h3 className="text-muted text-xs font-medium tracking-wide uppercase">
+        Or share the link and password
+      </h3>
+      <p className="text-muted text-sm">
+        For a group chat: anyone with both can join, with whatever account they sign in with.
+      </p>
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm">
+        <dt className="text-muted text-xs">Link</dt>
+        <dd className="truncate font-mono text-xs">{link}</dd>
+        <dd>
+          <Button
+            size="sm"
+            variant="ghost"
+            isIconOnly
+            aria-label="Copy invitation link"
+            onPress={() => void copy(link, "Invitation link")}>
+            <CopyIcon />
+          </Button>
+        </dd>
+        <dt className="text-muted text-xs">Password</dt>
+        <dd className="truncate font-mono text-xs">{password}</dd>
+        <dd>
+          <Button
+            size="sm"
+            variant="ghost"
+            isIconOnly
+            aria-label="Copy workspace password"
+            onPress={() => void copy(password, "Password")}>
+            <CopyIcon />
+          </Button>
+        </dd>
+      </dl>
+      <div>
+        <Button size="sm" variant="secondary" onPress={() => void copy(message, "Invitation")}>
+          <LinkIcon />
+          Copy both, ready to paste
+        </Button>
+      </div>
+    </section>
   );
 }
