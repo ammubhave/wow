@@ -18,6 +18,7 @@ import type {
 import {useEffect, useRef, useState} from "react";
 
 import {useResolvedTheme} from "@/components/theme-provider";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {useWebSocket} from "@/lib/use-websocket";
 import type {WhiteboardReceivedMessage, WhiteboardSentMessage} from "@/server/do/whiteboard";
 
@@ -64,6 +65,8 @@ async function blobToDataUrl(blob: Blob) {
 /** The puzzle's shared Excalidraw whiteboard, synced through its WhiteboardRoom. */
 export default function WhiteboardCanvas({puzzleId}: {puzzleId: string}) {
   const theme = useResolvedTheme();
+  // An archived workspace's whiteboard can be looked at, not changed (the room refuses edits too).
+  const isArchived = useWorkspace().archivedAt !== null;
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const [initialElements, setInitialElements] = useState<ReturnType<typeof restoreElements> | null>(
     null
@@ -230,6 +233,7 @@ export default function WhiteboardCanvas({puzzleId}: {puzzleId: string}) {
         excalidrawAPI={setApi}
         initialData={{elements: initialElements, scrollToContent: true}}
         theme={theme}
+        viewModeEnabled={isArchived}
         isCollaborating
         aiEnabled={false}
         UIOptions={{

@@ -4,6 +4,7 @@ import {redirect} from "@tanstack/react-router";
 import {posthog} from "posthog-js";
 import {useEffect} from "react";
 
+import {ArchivedBanner} from "@/components/archived-banner";
 import {WorkspaceSkeleton} from "@/components/page-skeletons";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {preloadSheet} from "@/components/sheet/sheet";
@@ -87,6 +88,7 @@ function RouteComponent() {
               <TourProvider workspaceSlug={workspaceSlug}>
                 <div className="flex flex-1 flex-col">
                   <WorkspaceHeader />
+                  <ArchivedBanner />
                   <div className="relative flex flex-1">
                     <div className="absolute inset-0 flex overflow-auto">
                       <Outlet />

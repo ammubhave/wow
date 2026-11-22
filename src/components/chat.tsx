@@ -21,6 +21,7 @@ import {cn} from "tailwind-variants";
 import {AwardBadges} from "@/features/awards/awards-provider";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
+import {useWorkspace} from "@/hooks/use-workspace";
 import {describeChatMessage, track} from "@/lib/analytics";
 import {ARRIVE_FROM_BOTTOM, useMountedAt} from "@/lib/arrivals";
 import {authClient} from "@/lib/auth-client";
@@ -146,6 +147,7 @@ function useStayAtNewest(rootRef: React.RefObject<HTMLDivElement | null>) {
 
 export function Chat({puzzleId}: {puzzleId?: string}) {
   const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
+  const isArchived = useWorkspace().archivedAt !== null;
   const chatPath = puzzleId ? `/api/chat/${puzzleId}` : `/api/workspaces/${workspaceSlug}/chat`;
   const imageUrl = (id: string) => `${chatPath}/images/${id}`;
   // null until the room's snapshot arrives.
@@ -459,88 +461,93 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
         <ChatConversation.ScrollButton aria-label="Scroll to newest" tooltip="Scroll to newest" />
       </ChatConversation>
       <TypingIndicator names={Object.values(typists).map(typist => typist.name)} />
-      <div className="px-3">
-        <PromptInput
-          layout="compact"
-          size="sm"
-          status={isUploading ? "submitted" : "ready"}
-          onSubmit={() => void handleSend()}>
-          <ChatAttachmentInput accept="image/*" onFilesSelected={addImages}>
-            <ChatAttachmentInput.Dropzone
-              render={dropzoneProps => (
-                <PromptInput.Shell {...dropzoneProps}>
-                  {/* Tokens wraps only the field and its suggestions (a menu in the toolbar would
+      {/* An archived workspace's chat can be read, not added to (the room refuses messages too). */}
+      {isArchived ? (
+        <p className="text-muted px-3 pb-3 text-center text-xs">This workspace is archived.</p>
+      ) : (
+        <div className="px-3">
+          <PromptInput
+            layout="compact"
+            size="sm"
+            status={isUploading ? "submitted" : "ready"}
+            onSubmit={() => void handleSend()}>
+            <ChatAttachmentInput accept="image/*" onFilesSelected={addImages}>
+              <ChatAttachmentInput.Dropzone
+                render={dropzoneProps => (
+                  <PromptInput.Shell {...dropzoneProps}>
+                    {/* Tokens wraps only the field and its suggestions (a menu in the toolbar would
                       join the suggestion list). */}
-                  <PromptInput.Tokens>
-                    {/* TokenInput's React Aria wrapper must let the editable field occupy
+                    <PromptInput.Tokens>
+                      {/* TokenInput's React Aria wrapper must let the editable field occupy
                         the compact shell's textarea grid area. */}
-                    <PromptInput.Content className="[&_.react-aria-TokenField]:contents">
-                      {images.length > 0 && (
-                        <PromptInput.Attachments>
-                          <ChatAttachmentGroup>
-                            {images.map(image => (
-                              <ChatAttachment
-                                key={image.key}
-                                mimeType={image.file.type}
-                                name={image.file.name}
-                                size={image.file.size}
-                                src={image.src}>
-                                <ChatAttachment.Preview />
-                                <ChatAttachment.Remove
-                                  aria-label="Remove image"
-                                  onPress={() => removeImage(image.key)}
-                                />
-                              </ChatAttachment>
-                            ))}
-                          </ChatAttachmentGroup>
-                        </PromptInput.Attachments>
-                      )}
-                      {/* Enter or Tab with suggestions showing (and none highlighted yet) picks
-                          the top one, like other chat apps, instead of sending "@Pri". */}
-                      <div className="contents" onKeyDownCapture={pickTopSuggestion}>
-                        <PromptInput.TokenInput
-                          tokens={tokens}
-                          aria-label="Chat message"
-                          // One line even in the puzzle page's narrow chat column; the empty chat explains !help.
-                          placeholder="Message… (@ to mention)"
-                        />
-                      </div>
-                    </PromptInput.Content>
-                    <PromptInput.TokenSuggestions
-                      isOpen={tokens.isOpen && mentionable.length > 0}
-                      placement="top start"
-                      tokens={tokens}>
-                      <Menu aria-label="Mention someone" items={mentionable}>
-                        {user => (
-                          <Menu.Item
-                            id={user.id}
-                            textValue={user.name}
-                            onAction={() => tokens.insertToken(`@${user.name}`, {value: user})}>
-                            <Avatar size="sm" className="size-6">
-                              <Avatar.Image src={userAvatarSrc(user)} alt="" />
-                              <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
-                            </Avatar>
-                            <span className="truncate">{user.name}</span>
-                          </Menu.Item>
+                      <PromptInput.Content className="[&_.react-aria-TokenField]:contents">
+                        {images.length > 0 && (
+                          <PromptInput.Attachments>
+                            <ChatAttachmentGroup>
+                              {images.map(image => (
+                                <ChatAttachment
+                                  key={image.key}
+                                  mimeType={image.file.type}
+                                  name={image.file.name}
+                                  size={image.file.size}
+                                  src={image.src}>
+                                  <ChatAttachment.Preview />
+                                  <ChatAttachment.Remove
+                                    aria-label="Remove image"
+                                    onPress={() => removeImage(image.key)}
+                                  />
+                                </ChatAttachment>
+                              ))}
+                            </ChatAttachmentGroup>
+                          </PromptInput.Attachments>
                         )}
-                      </Menu>
-                    </PromptInput.TokenSuggestions>
-                  </PromptInput.Tokens>
-                  <PromptInput.Toolbar>
-                    <PromptInput.ToolbarEnd>
-                      <PromptInput.Send
-                        aria-label="Send message"
-                        // The composer only enables Send for text; an image on its own is a message too.
-                        isDisabled={isUploading || (!input.trim() && images.length === 0)}
-                      />
-                    </PromptInput.ToolbarEnd>
-                  </PromptInput.Toolbar>
-                </PromptInput.Shell>
-              )}
-            />
-          </ChatAttachmentInput>
-        </PromptInput>
-      </div>
+                        {/* Enter or Tab with suggestions showing (and none highlighted yet) picks
+                          the top one, like other chat apps, instead of sending "@Pri". */}
+                        <div className="contents" onKeyDownCapture={pickTopSuggestion}>
+                          <PromptInput.TokenInput
+                            tokens={tokens}
+                            aria-label="Chat message"
+                            // One line even in the puzzle page's narrow chat column; the empty chat explains !help.
+                            placeholder="Message… (@ to mention)"
+                          />
+                        </div>
+                      </PromptInput.Content>
+                      <PromptInput.TokenSuggestions
+                        isOpen={tokens.isOpen && mentionable.length > 0}
+                        placement="top start"
+                        tokens={tokens}>
+                        <Menu aria-label="Mention someone" items={mentionable}>
+                          {user => (
+                            <Menu.Item
+                              id={user.id}
+                              textValue={user.name}
+                              onAction={() => tokens.insertToken(`@${user.name}`, {value: user})}>
+                              <Avatar size="sm" className="size-6">
+                                <Avatar.Image src={userAvatarSrc(user)} alt="" />
+                                <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
+                              </Avatar>
+                              <span className="truncate">{user.name}</span>
+                            </Menu.Item>
+                          )}
+                        </Menu>
+                      </PromptInput.TokenSuggestions>
+                    </PromptInput.Tokens>
+                    <PromptInput.Toolbar>
+                      <PromptInput.ToolbarEnd>
+                        <PromptInput.Send
+                          aria-label="Send message"
+                          // The composer only enables Send for text; an image on its own is a message too.
+                          isDisabled={isUploading || (!input.trim() && images.length === 0)}
+                        />
+                      </PromptInput.ToolbarEnd>
+                    </PromptInput.Toolbar>
+                  </PromptInput.Shell>
+                )}
+              />
+            </ChatAttachmentInput>
+          </PromptInput>
+        </div>
+      )}
     </div>
   );
 }

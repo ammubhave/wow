@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useEffect, useState} from "react";
 
+import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
 /** How often (in counted seconds) the page saves your time while you're on it. */
@@ -54,12 +55,14 @@ export function usePuzzleTimeTracker(workspaceSlug: string, puzzleId: string) {
   const {mutate} = useMutation(
     orpc.puzzles.recordTime.mutationOptions({meta: {invalidates: false}})
   );
+  // Nothing is recorded in an archived workspace (it's read-only).
+  const isArchived = useWorkspace().archivedAt !== null;
 
   useEffect(() => {
     let pending = 0;
     /** Saves the uncounted seconds. `beacon`: the page may be going away, so the browser sends it. */
     const flush = ({beacon = false} = {}) => {
-      if (pending === 0) return;
+      if (pending === 0 || isArchived) return;
       const input = {
         workspaceSlug,
         puzzleId,
@@ -139,7 +142,7 @@ export function usePuzzleTimeTracker(workspaceSlug: string, puzzleId: string) {
       window.removeEventListener("pagehide", onPageHide);
       flush();
     };
-  }, [workspaceSlug, puzzleId, queryClient, mutate]);
+  }, [workspaceSlug, puzzleId, queryClient, mutate, isArchived]);
 
   if (saved === undefined) return {seconds: undefined, isCounting: false};
   const savedSeconds = saved.find(t => t.puzzleId === puzzleId)?.seconds ?? 0;

@@ -6,6 +6,7 @@ import {z} from "zod";
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
+import {isReadOnlyRequest} from "@/server/workspace-access";
 
 /**
  * A puzzle's shared whiteboard (Excalidraw scene). Each element is stored under its own key, so a
@@ -49,7 +50,8 @@ export type WhiteboardReceivedMessage =
     }
   | {type: "leave"; id: string};
 
-type Attachment = {id: string; name: string};
+/** `readOnly`: in an archived workspace, where the whiteboard can't change. */
+type Attachment = {id: string; name: string; readOnly?: boolean};
 
 const ELEMENT_PREFIX = "el:";
 // Whiteboards are kept for good (for write-ups and old hunts), until their puzzle is deleted.
@@ -85,7 +87,11 @@ export class WhiteboardRoom extends DurableObject {
     app.get("/api/whiteboard/:puzzleId", async c => {
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
-      const attachment: Attachment = {id: uuidv7(), name: c.var.session?.user.name || "User"};
+      const attachment: Attachment = {
+        id: uuidv7(),
+        name: c.var.session?.user.name || "User",
+        readOnly: isReadOnlyRequest(c.req.raw),
+      };
       server.serializeAttachment(attachment);
       const elements = [
         ...(await this.storage.list<StoredElement>({prefix: ELEMENT_PREFIX})).values(),
@@ -121,6 +127,8 @@ export class WhiteboardRoom extends DurableObject {
       );
       return;
     }
+
+    if (sender.readOnly) return;
 
     // Keep only the elements that are newer than what's stored, then share just those. Storage
     // reads and writes take at most 128 keys at a time.

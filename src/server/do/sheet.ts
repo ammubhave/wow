@@ -6,6 +6,7 @@ import {z} from "zod";
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
+import {isReadOnlyRequest} from "@/server/workspace-access";
 
 /**
  * A puzzle's built-in spreadsheet (a Univer workbook), used when the workspace has no Google
@@ -128,7 +129,8 @@ export type SheetReceivedMessage =
   /** A snapshot at `seq` was stored (no need for another until well after it). */
   | {type: "snapshot-saved"; seq: number};
 
-type Attachment = SheetPeer;
+/** A connection: who it is, and whether it may edit (not in an archived workspace). */
+type Attachment = SheetPeer & {readOnly?: boolean};
 
 const SEQ_KEY = "meta:seq";
 const SNAPSHOT_SEQ_KEY = "meta:snapshotSeq";
@@ -185,6 +187,7 @@ export class SheetRoom extends DurableObject {
         userId: user?.id ?? "",
         name: user?.name || "Teammate",
         presence: null,
+        readOnly: isReadOnlyRequest(c.req.raw),
       };
       server.serializeAttachment(attachment);
       return new Response(null, {status: 101, webSocket: client});
@@ -223,12 +226,13 @@ export class SheetRoom extends DurableObject {
         return;
       }
       case "presence": {
-        const peer: Attachment = {...this.attachment(ws), presence: m.presence};
-        ws.serializeAttachment(peer);
+        const {readOnly, ...peer}: Attachment = {...this.attachment(ws), presence: m.presence};
+        ws.serializeAttachment({...peer, readOnly});
         this.broadcast({type: "presence", ...peer}, ws);
         return;
       }
       case "snapshot":
+        if (this.attachment(ws).readOnly) return;
         if (m.hash === undefined || this.ctx.getWebSockets().length === 1) {
           // Nobody to compare with.
           await this.writeSnapshot({seq: m.seq, data: m.data, encoding: m.encoding});
@@ -249,6 +253,12 @@ export class SheetRoom extends DurableObject {
         await this.report(ws, m.seq, m.hash);
         return;
       case "mutations": {
+        // An archived workspace's sheet can't change.
+        // (A rejected batch is retried; a resync drops it and reloads the sheet as stored.)
+        if (this.attachment(ws).readOnly) {
+          this.send(ws, {type: "resync"});
+          return;
+        }
         const seq = (await this.storage.get<number>(SEQ_KEY)) ?? 0;
         if (m.baseSeq !== seq) {
           // Made before entries this client hasn't seen yet (they're already on their way to it).

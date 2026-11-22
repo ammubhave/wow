@@ -49,11 +49,39 @@ export const procedure = base.use(async ({context, next}) => {
  *
  * Once the procedure succeeds, it also records its product event (see `TRACKED_PROCEDURES`).
  */
+/**
+ * What still works in an archived workspace, which is read-only: looking at it, managing who's in
+ * it, and unarchiving it. Everything else is refused (an allowlist, so new procedures are covered).
+ */
+const ALLOWED_WHEN_ARCHIVED = new Set([
+  "workspaces.getGoogleTokenState",
+  "workspaces.state",
+  "workspaces.activityLog",
+  "workspaces.solves",
+  "workspaces.recap",
+  "workspaces.getDiscordInfo",
+  "workspaces.leave",
+  "workspaces.setArchived",
+  "workspaces.discord.listTextChannels",
+  "puzzles.get",
+  "puzzles.myTimes",
+  "rounds.list",
+]);
+const ALLOWED_PREFIXES_WHEN_ARCHIVED = ["workspaces.members.", "workspaces.invitations."];
+const allowedWhenArchived = (path: string) =>
+  ALLOWED_WHEN_ARCHIVED.has(path) ||
+  ALLOWED_PREFIXES_WHEN_ARCHIVED.some(prefix => path.startsWith(prefix));
+
 export const preauthorize = os
   .$context<{session: Session}>()
   .middleware(async ({context, next, path}, input: {workspaceSlug: string}) => {
     const result = await getMemberWorkspace(input.workspaceSlug, context.session.user.id);
     if (result.status !== "OK") throw new ORPCError(result.status);
+    if (result.workspace.archivedAt !== null && !allowedWhenArchived(path.join("."))) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "This workspace is archived, so it's read-only. An owner can unarchive it.",
+      });
+    }
     trackUsage("usage_request", {
       workspaceId: result.workspace.id,
       userId: context.session.user.id,

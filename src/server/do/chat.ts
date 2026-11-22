@@ -10,6 +10,7 @@ import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
 import {MENTION_PATTERN, plainMentions} from "@/server/notifications";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
+import {isReadOnlyRequest} from "@/server/workspace-access";
 
 // Image ids are the SHA-256 (hex) of the uploaded bytes, stored in R2 by the images route.
 const imageIdSchema = z.string().regex(/^[0-9a-f]{64}$/);
@@ -81,6 +82,8 @@ type Attachment = {
   userId: string;
   puzzleId: string | null;
   workspaceId: string | null;
+  /** In an archived workspace: can read, but not post, react, edit or pin. */
+  readOnly?: boolean;
 };
 function putAttachment(ws: WebSocket, data: Attachment) {
   ws.serializeAttachment({...ws.deserializeAttachment(), ...data});
@@ -125,7 +128,8 @@ export class ChatRoom extends DurableObject {
     app.use(authMiddleware);
     const join = async (
       session: HonoEnv["Variables"]["session"],
-      room: {puzzleId: string | null; workspaceId: string | null}
+      room: {puzzleId: string | null; workspaceId: string | null},
+      readOnly: boolean
     ) => {
       const {"0": client, "1": server} = new WebSocketPair();
       this.ctx.acceptWebSocket(server);
@@ -133,6 +137,7 @@ export class ChatRoom extends DurableObject {
         name: session?.user.name || "User",
         userId: session?.user.id ?? "",
         ...room,
+        readOnly,
       });
       const newest = await this.storage.list<ChatMessage | string>({
         reverse: true,
@@ -149,13 +154,17 @@ export class ChatRoom extends DurableObject {
       return new Response(null, {status: 101, webSocket: client});
     };
     app.get("/api/chat/:puzzleId", c =>
-      join(c.var.session, {puzzleId: c.req.param("puzzleId"), workspaceId: null})
+      join(
+        c.var.session,
+        {puzzleId: c.req.param("puzzleId"), workspaceId: null},
+        isReadOnlyRequest(c.req.raw)
+      )
     );
     app.get("/api/workspaces/:workspaceSlug/chat", async c => {
       // Set by the route after checking membership (never taken from the browser).
       const workspaceId = c.req.header(TEAM_CHAT_WORKSPACE_HEADER);
       if (!workspaceId) return new Response(null, {status: 400});
-      return await join(c.var.session, {puzzleId: null, workspaceId});
+      return await join(c.var.session, {puzzleId: null, workspaceId}, isReadOnlyRequest(c.req.raw));
     });
     return await app.fetch(request, this.env);
   }
@@ -168,6 +177,7 @@ export class ChatRoom extends DurableObject {
     } catch {
       return; // Ignore malformed messages instead of throwing in the DO.
     }
+    if (attachment.readOnly) return;
 
     if (m.type === "typing") {
       // A client can't make the room spam everyone: one ping per socket per interval.

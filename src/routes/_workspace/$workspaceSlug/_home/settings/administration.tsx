@@ -86,8 +86,8 @@ function ArchiveWorkspaceCard({isOwner}: {isOwner: boolean}) {
         </Card.Title>
         <Card.Description>
           {isArchived
-            ? "Hidden from everyone's workspace list. Unarchive it to bring it back."
-            : "Hides the workspace from everyone's workspace list once the hunt is done. Nothing is deleted, and you can unarchive it any time."}
+            ? "Read-only and hidden from everyone's workspace list. Unarchive it to bring it back."
+            : "Once the hunt is done: makes the workspace read-only and hides it from everyone's workspace list. Nothing is deleted, and you can unarchive it any time."}
         </Card.Description>
       </Card.Header>
       <Card.Footer>

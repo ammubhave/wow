@@ -126,6 +126,10 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const myPresence = useRef<SheetPresence | null>(null);
   /** The signed-in user's id, for toolbar actions (Univer's menus are set up once). */
   const myUserId = useRef<string | undefined>(undefined);
+  // An archived workspace's sheet is read-only (the room refuses edits too).
+  const isArchived = useWorkspace().archivedAt !== null;
+  const readOnly = useRef(isArchived);
+  readOnly.current = isArchived;
   const presenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {sendJsonMessage, readyState} = useWebSocket(`/api/sheet/${puzzleId}`, {
@@ -245,6 +249,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
       onPendingChange: setPending,
       onWorkbookLoaded: entries => {
         restoreFilters(univerAPI, unitId, puzzleId, entries);
+        if (readOnly.current) univerAPI.getActiveWorkbook()?.setEditable(false);
         // Univer doesn't announce the selection a sheet opens with: share it, so teammates see
         // where this person is before they click anything.
         later(() => {

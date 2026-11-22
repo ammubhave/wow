@@ -52,6 +52,44 @@ export type MemberWorkspace = Extract<
 >["workspace"];
 
 /**
+ * Set on a request forwarded to a puzzle's or team's room (sheet, whiteboard, chat) when its
+ * workspace is archived: the room then lets you look but not change anything. Always set or
+ * removed by our routes, never taken from the browser.
+ */
+export const READ_ONLY_HEADER = "x-wow-read-only";
+
+/** `request` to forward to a room, marked read-only when the workspace is archived. */
+export function roomRequest(request: Request, {archived}: {archived: boolean}) {
+  const headers = new Headers(request.headers);
+  if (archived) headers.set(READ_ONLY_HEADER, "1");
+  else headers.delete(READ_ONLY_HEADER);
+  return new Request(request, {headers});
+}
+
+/** Whether a room's connection is read-only (see `READ_ONLY_HEADER`). */
+export const isReadOnlyRequest = (request: Request) =>
+  request.headers.get(READ_ONLY_HEADER) === "1";
+
+/** Like `isPuzzleMember`, for a puzzle's rooms: also whether its workspace is archived. */
+export async function puzzleRoomAccess(puzzleId: string, userId: string) {
+  const row = await db
+    .select({workspaceId: schema.round.workspaceId, archivedAt: schema.organization.archivedAt})
+    .from(schema.puzzle)
+    .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.round.workspaceId))
+    .innerJoin(
+      schema.member,
+      and(
+        eq(schema.member.organizationId, schema.round.workspaceId),
+        eq(schema.member.userId, userId)
+      )
+    )
+    .where(eq(schema.puzzle.id, puzzleId))
+    .get();
+  return row && {workspaceId: row.workspaceId, archived: row.archivedAt !== null};
+}
+
+/**
  * Whether `userId` is a member of the workspace that owns `puzzleId` (puzzle -> round -> workspace):
  * that workspace's id if so (for usage attribution), undefined if not.
  */
