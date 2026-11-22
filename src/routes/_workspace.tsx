@@ -1,8 +1,5 @@
 import {createFileRoute, Outlet, redirect} from "@tanstack/react-router";
-import {posthog} from "posthog-js";
-import {useEffect} from "react";
 
-import {authClient} from "@/lib/auth-client";
 import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_workspace")({
@@ -13,21 +10,8 @@ export const Route = createFileRoute("/_workspace")({
   },
 });
 
+// PostHog learns who is signed in from PostHogIdentity, on every page (src/routes/__root.tsx).
 function RouteComponent() {
-  const user = authClient.useSession().data?.user;
-  useEffect(() => {
-    if (!user) return;
-    posthog.identify(
-      user.id,
-      {
-        email: user.email,
-        emailVerified: user.emailVerified,
-        name: user.name,
-        updatedAt: user.updatedAt,
-      },
-      {createdAt: user.createdAt}
-    );
-  }, [user]);
   return (
     <div className="flex min-h-dvh flex-col">
       <Outlet />

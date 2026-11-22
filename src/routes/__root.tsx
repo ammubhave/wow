@@ -17,6 +17,7 @@ import {Provider as ReactReduxProvider} from "react-redux";
 import {Toaster} from "sonner";
 import {IntlProvider} from "use-intl";
 
+import {PostHogIdentity} from "@/components/posthog-identity";
 import {ThemeProvider, useTheme} from "@/components/theme-provider";
 import {store} from "@/store";
 
@@ -80,8 +81,14 @@ function RootDocument({children}: {children: React.ReactNode}) {
             <PostHogProvider
               apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
               options={{
-                api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+                // PostHog's managed reverse proxy: a CNAME on our domain, past ad blockers, without
+                // running the Worker for every event. (The server still sends to PostHog directly.)
+                api_host: "https://e.wafflehaus.io",
+                ui_host: "https://us.posthog.com",
                 defaults: "2025-05-24",
+                // Dev would otherwise send to the production project (the server skips dev too). To
+                // watch events while developing, run posthog.opt_in_capturing() in the console.
+                opt_out_capturing_by_default: import.meta.env.MODE === "development",
                 capture_exceptions: import.meta.env.MODE !== "development",
                 // Session replay (on in the PostHog project). Nothing is masked except passwords, which
                 // are always masked. Dev sessions aren't recorded.
@@ -89,6 +96,7 @@ function RootDocument({children}: {children: React.ReactNode}) {
                 disable_session_recording: import.meta.env.MODE === "development",
                 debug: import.meta.env.MODE === "development",
               }}>
+              <PostHogIdentity />
               <ReactReduxProvider store={store}>
                 <RouterProvider navigate={(to, options) => router.navigate({...options, to})}>
                   <IntlProvider locale="en">{children}</IntlProvider>
