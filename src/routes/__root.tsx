@@ -37,7 +37,10 @@ export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
       {title: "WOW"},
       // Link previews (Slack, Discord, iMessage…). They read the static app shell, which only has
       // the root route's tags, so these are site-wide. The image is brand/social/og-image.png.
+      // No og:url on purpose: in a shared shell it would have to be the homepage, and Facebook and
+      // LinkedIn would then open the homepage for every shared link, invitations included.
       {property: "og:site_name", content: "WOW"},
+      {property: "og:logo", content: "https://www.wafflehaus.io/icon-512.png"},
       {property: "og:title", content: "WOW · Wafflehaüs Organized Workspaces"},
       {property: "og:description", content: "The live workspace for puzzle hunt teams."},
       {property: "og:type", content: "website"},
