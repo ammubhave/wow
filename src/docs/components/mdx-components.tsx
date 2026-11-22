@@ -4,6 +4,7 @@ import {
   ArrowRightIcon,
   ArrowUpRightIcon,
   CompassIcon,
+  HeartIcon,
   CrownIcon,
   InfoIcon,
   LightbulbIcon,
@@ -18,6 +19,7 @@ import {useTour} from "@/features/tour/tour-provider";
 import {GOOGLE_FORMULAS, PUZZLE_FORMULA_GROUPS} from "@/lib/formula-docs";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {getPuzzleStatusGroups} from "@/lib/puzzleStatuses";
+import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
 import {useDocHref} from "./docs-base";
 
@@ -212,6 +214,21 @@ export function TakeTheTour() {
   );
 }
 
+/** The "chip in" button (Buy Me a Coffee), inline in a sentence. */
+export function ChipIn() {
+  return (
+    <a
+      href={SUPPORT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => trackSupportClick("docs")}
+      className="not-prose bg-accent text-accent-foreground ms-1 inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 align-middle text-sm font-medium no-underline transition-opacity hover:opacity-90">
+      <HeartIcon className="size-3.5" aria-hidden="true" />
+      Chip in
+    </a>
+  );
+}
+
 /** Cards linking to other pages ("pick your path"). */
 export function Cards({children}: {children: React.ReactNode}) {
   return <div className="not-prose grid gap-3 sm:grid-cols-2">{children}</div>;
@@ -386,6 +403,7 @@ export const MDX_COMPONENTS = {
   Cards,
   Card,
   TakeTheTour,
+  ChipIn,
   PuzzleFormulas,
   GoogleFormulas,
   StatusTable,
