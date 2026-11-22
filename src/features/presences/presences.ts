@@ -16,7 +16,7 @@ export const presencesSlice = createSlice({
   initialState,
   reducers: {
     set: (state, action: PayloadAction<Record<string, Presence[]>>) => {
-      // Each message carries the full map; only replace entries whose users changed so unchanged
+      // A snapshot carries the full map; only replace entries whose users changed so unchanged
       // puzzles keep the same array reference and their rows don't re-render.
       for (const id of Object.keys(state.value)) {
         if (!(id in action.payload)) delete state.value[id];
@@ -37,9 +37,25 @@ export const presencesSlice = createSlice({
         }
       }
     },
+    /** Someone showed up somewhere (a puzzle, or the workspace itself). */
+    join: (state, action: PayloadAction<{location: string; user: Presence}>) => {
+      const {location, user} = action.payload;
+      const people = state.value[location] ?? [];
+      if (people.some(u => u.id === user.id)) return;
+      state.value[location] = [...people, user];
+    },
+    /** Someone left a place (their last tab there closed). */
+    leave: (state, action: PayloadAction<{location: string; userId: string}>) => {
+      const {location, userId} = action.payload;
+      const people = state.value[location];
+      if (!people?.some(u => u.id === userId)) return;
+      const rest = people.filter(u => u.id !== userId);
+      if (rest.length > 0) state.value[location] = rest;
+      else delete state.value[location];
+    },
   },
 });
 
-export const {set: setPresences} = presencesSlice.actions;
+export const {set: setPresences, join: joinPresence, leave: leavePresence} = presencesSlice.actions;
 
 export default presencesSlice.reducer;

@@ -447,104 +447,28 @@ export const workspacesRouter = {
     .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
-      const rows = await db
-        .select({
-          at: schema.activityLogEntry.createdAt,
-          userId: schema.activityLogEntry.userId,
-          subType: schema.puzzleActivityLogEntry.subType,
-          puzzleId: schema.puzzleActivityLogEntry.puzzleId,
-          puzzleName: schema.puzzleActivityLogEntry.puzzleName,
-          field: schema.puzzleActivityLogEntry.field,
-        })
-        .from(schema.puzzleActivityLogEntry)
-        .innerJoin(
-          schema.activityLogEntry,
-          eq(schema.activityLogEntry.id, schema.puzzleActivityLogEntry.activityLogEntryId)
-        )
-        .where(
-          and(
-            eq(schema.activityLogEntry.workspaceId, context.workspace.id),
-            inArray(schema.puzzleActivityLogEntry.subType, [
-              "create",
-              "updateStatus",
-              "updateAnswer",
-              "updateImportance",
-            ])
+      // Every open tab refetches this every couple of minutes, and the answer is the same for
+      // everyone in the workspace, so it's computed at most once a minute per workspace (per
+      // Cloudflare location). Membership was checked above, before the cache is read.
+      const cache = hasDefaultCache(caches) ? caches.default : undefined;
+      const cacheKey = new Request(`https://recap.internal/${context.workspace.id}`);
+      const cached = await cache?.match(cacheKey);
+      if (cached) {
+        const recap: Recap = await cached.json();
+        return recap;
+      }
+      const recap = await computeRecap(context.workspace.id);
+      if (cache) {
+        waitUntil(
+          cache.put(
+            cacheKey,
+            new Response(JSON.stringify(recap), {
+              headers: {"cache-control": `max-age=${RECAP_CACHE_SECONDS}`},
+            })
           )
-        )
-        .orderBy(schema.activityLogEntry.createdAt);
-      const workspaceId = context.workspace.id;
-      const [roundsCreated, activeTime, contributions] = await Promise.all([
-        // Rounds added, per person (keeping the board up to date).
-        db
-          .select({userId: schema.activityLogEntry.userId, count: count()})
-          .from(schema.roundActivityLogEntry)
-          .innerJoin(
-            schema.activityLogEntry,
-            eq(schema.activityLogEntry.id, schema.roundActivityLogEntry.activityLogEntryId)
-          )
-          .where(
-            and(
-              eq(schema.activityLogEntry.workspaceId, workspaceId),
-              eq(schema.roundActivityLogEntry.subType, "create")
-            )
-          )
-          .groupBy(schema.activityLogEntry.userId),
-        // Active time on puzzles, per person and hour of day where they were.
-        db
-          .select({
-            userId: schema.puzzleTime.userId,
-            localHour: schema.puzzleTime.localHour,
-            seconds: sql<number>`cast(sum(${schema.puzzleTime.seconds}) as integer)`,
-          })
-          .from(schema.puzzleTime)
-          .where(eq(schema.puzzleTime.workspaceId, workspaceId))
-          .groupBy(schema.puzzleTime.userId, schema.puzzleTime.localHour),
-        // Who says they helped solve what.
-        db
-          .select({
-            puzzleId: schema.puzzleContributor.puzzleId,
-            userId: schema.puzzleContributor.userId,
-          })
-          .from(schema.puzzleContributor)
-          .innerJoin(schema.puzzle, eq(schema.puzzle.id, schema.puzzleContributor.puzzleId))
-          .innerJoin(schema.round, eq(schema.round.id, schema.puzzle.roundId))
-          .where(eq(schema.round.workspaceId, workspaceId)),
-      ]);
-      const userIds = [
-        ...new Set([
-          ...rows.map(row => row.userId),
-          ...roundsCreated.map(row => row.userId),
-          ...activeTime.map(row => row.userId),
-          ...contributions.map(row => row.userId),
-        ]),
-      ];
-      const users =
-        userIds.length === 0
-          ? []
-          : await db
-              .select({
-                id: schema.user.id,
-                name: schema.user.name,
-                email: schema.user.email,
-                image: schema.user.image,
-              })
-              .from(schema.user)
-              .where(inArray(schema.user.id, userIds));
-      return {
-        users,
-        events: rows.map(row => ({
-          at: row.at.getTime(),
-          userId: row.userId,
-          type: row.subType,
-          puzzleId: row.puzzleId,
-          puzzleName: row.puzzleName,
-          field: row.field,
-        })),
-        roundsCreated,
-        activeTime,
-        contributions,
-      };
+        );
+      }
+      return recap;
     }),
 
   getDiscordInfo: procedure
@@ -1141,3 +1065,124 @@ const maskEmail = (email: string) => {
   const [name = "", domain = ""] = email.split("@");
   return `${name.slice(0, 1)}•••@${domain}`;
 };
+
+/** How long a workspace's recap is cached (it backs the awards and the leaderboard). */
+const RECAP_CACHE_SECONDS = 60;
+
+function hasDefaultCache(c: CacheStorage): c is CacheStorage & {default: Cache} {
+  return "default" in c;
+}
+
+function chunks<T>(items: T[], size: number) {
+  return Array.from({length: Math.ceil(items.length / size)}, (_, i) =>
+    items.slice(i * size, (i + 1) * size)
+  );
+}
+
+type Recap = Awaited<ReturnType<typeof computeRecap>>;
+
+/** Everything the hunt recap needs, for one workspace. */
+async function computeRecap(workspaceId: string) {
+  const rows = await db
+    .select({
+      at: schema.activityLogEntry.createdAt,
+
+      userId: schema.activityLogEntry.userId,
+      subType: schema.puzzleActivityLogEntry.subType,
+      puzzleId: schema.puzzleActivityLogEntry.puzzleId,
+      puzzleName: schema.puzzleActivityLogEntry.puzzleName,
+      field: schema.puzzleActivityLogEntry.field,
+    })
+    .from(schema.puzzleActivityLogEntry)
+    .innerJoin(
+      schema.activityLogEntry,
+      eq(schema.activityLogEntry.id, schema.puzzleActivityLogEntry.activityLogEntryId)
+    )
+    .where(
+      and(
+        eq(schema.activityLogEntry.workspaceId, workspaceId),
+        inArray(schema.puzzleActivityLogEntry.subType, [
+          "create",
+          "updateStatus",
+          "updateAnswer",
+          "updateImportance",
+        ])
+      )
+    )
+    .orderBy(schema.activityLogEntry.createdAt);
+  const [roundsCreated, activeTime, contributions] = await Promise.all([
+    // Rounds added, per person (keeping the board up to date).
+    db
+      .select({userId: schema.activityLogEntry.userId, count: count()})
+      .from(schema.roundActivityLogEntry)
+      .innerJoin(
+        schema.activityLogEntry,
+        eq(schema.activityLogEntry.id, schema.roundActivityLogEntry.activityLogEntryId)
+      )
+      .where(
+        and(
+          eq(schema.activityLogEntry.workspaceId, workspaceId),
+          eq(schema.roundActivityLogEntry.subType, "create")
+        )
+      )
+      .groupBy(schema.activityLogEntry.userId),
+    // Active time on puzzles, per person and hour of day where they were.
+    db
+      .select({
+        userId: schema.puzzleTime.userId,
+        localHour: schema.puzzleTime.localHour,
+        seconds: sql<number>`cast(sum(${schema.puzzleTime.seconds}) as integer)`,
+      })
+      .from(schema.puzzleTime)
+      .where(eq(schema.puzzleTime.workspaceId, workspaceId))
+      .groupBy(schema.puzzleTime.userId, schema.puzzleTime.localHour),
+    // Who says they helped solve what.
+    db
+      .select({
+        puzzleId: schema.puzzleContributor.puzzleId,
+        userId: schema.puzzleContributor.userId,
+      })
+      .from(schema.puzzleContributor)
+      .innerJoin(schema.puzzle, eq(schema.puzzle.id, schema.puzzleContributor.puzzleId))
+      .innerJoin(schema.round, eq(schema.round.id, schema.puzzle.roundId))
+      .where(eq(schema.round.workspaceId, workspaceId)),
+  ]);
+  const userIds = [
+    ...new Set([
+      ...rows.map(row => row.userId),
+      ...roundsCreated.map(row => row.userId),
+      ...activeTime.map(row => row.userId),
+      ...contributions.map(row => row.userId),
+    ]),
+  ];
+  // D1 allows only 100 bound parameters per query, and a big team has more people than that.
+  const users = (
+    await Promise.all(
+      chunks(userIds, 90).map(batch =>
+        db
+          .select({
+            id: schema.user.id,
+            name: schema.user.name,
+            email: schema.user.email,
+            image: schema.user.image,
+          })
+          .from(schema.user)
+          .where(inArray(schema.user.id, batch))
+      )
+    )
+  ).flat();
+  return {
+    users,
+    events: rows.map(row => ({
+      at: row.at.getTime(),
+      userId: row.userId,
+      type: row.subType,
+      puzzleId: row.puzzleId,
+      puzzleName: row.puzzleName,
+      field: row.field,
+    })),
+    roundsCreated,
+    activeTime,
+    contributions,
+  };
+}

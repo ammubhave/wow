@@ -1,15 +1,22 @@
 import {z} from "zod";
 
-import {setPresences} from "@/features/presences/presences";
+import {joinPresence, leavePresence, setPresences} from "@/features/presences/presences";
 import {useWebSocket} from "@/lib/use-websocket";
 import {useAppDispatch} from "@/store";
 
-const presencesMessageSchema = z.record(
-  z.string(),
-  z
-    .object({id: z.string(), name: z.string(), email: z.string(), image: z.string().nullable()})
-    .array()
-);
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  image: z.string().nullable(),
+});
+
+/** The room sends everything once on connect, then only who joined or left where. */
+const presenceMessageSchema = z.discriminatedUnion("type", [
+  z.object({type: z.literal("snapshot"), presences: z.record(z.string(), userSchema.array())}),
+  z.object({type: z.literal("join"), location: z.string(), user: userSchema}),
+  z.object({type: z.literal("leave"), location: z.string(), userId: z.string()}),
+]);
 
 export function PresencesWebSocket({
   workspaceSlug,
@@ -36,8 +43,12 @@ export function PresencesWebSocket({
       } catch {
         return;
       }
-      const payload = presencesMessageSchema.safeParse(data);
-      if (payload.success) dispatch(setPresences(payload.data));
+      const payload = presenceMessageSchema.safeParse(data);
+      if (!payload.success) return;
+      const message = payload.data;
+      if (message.type === "snapshot") dispatch(setPresences(message.presences));
+      else if (message.type === "join") dispatch(joinPresence(message));
+      else dispatch(leavePresence(message));
     },
     // Nothing reads `lastMessage`; skip storing it so messages don't re-render this component.
     filter: () => false,

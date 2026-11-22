@@ -88,7 +88,9 @@ const timeAgo = (at: Date | string, now: number) => {
 /** Recording a verdict, and for a correct one, putting the answer on the puzzle too. */
 function useGuessActions(workspaceSlug: string) {
   const workspace = useWorkspace();
-  const {mutate: updateGuess} = useMutation(orpc.guesses.update.mutationOptions());
+  const {mutate: updateGuess} = useMutation(
+    orpc.guesses.update.mutationOptions({meta: {invalidates: false}})
+  );
   const {mutate: updatePuzzle} = useMutation(workspaceMutations.puzzles.update());
   const set = (guess: Guess, change: {status?: Status; retryAt?: number | null}) =>
     updateGuess(
@@ -287,7 +289,9 @@ export function PuzzleGuesses({
   const [opened, setOpened] = useState<boolean | null>(null);
   const isOpen = opened ?? guesses.length > 0;
   const waiting = guesses.filter(isPending).length;
-  const {mutate: add, isPending: isAdding} = useMutation(orpc.guesses.add.mutationOptions());
+  const {mutate: add, isPending: isAdding} = useMutation(
+    orpc.guesses.add.mutationOptions({meta: {invalidates: false}})
+  );
   const typed = normalizeAnswer(answer);
   const tried = typed ? guesses.find(g => normalizeAnswer(g.answer) === typed) : undefined;
   const submit = () => {

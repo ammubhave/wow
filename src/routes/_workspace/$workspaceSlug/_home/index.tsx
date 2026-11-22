@@ -15,7 +15,6 @@ import {
   Separator,
   Table,
   ToggleButton,
-  Tooltip,
   type Key,
   type Selection,
 } from "@heroui/react";
@@ -32,7 +31,6 @@ import {
   EllipsisIcon,
   GripVerticalIcon,
   MoveIcon,
-  InfoIcon,
   ListPlusIcon,
   PlusIcon,
   PuzzleIcon,
@@ -1393,33 +1391,12 @@ const BlackboardRound = memo(function BlackboardRound({
                     onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
                     <Label>Add meta</Label>
                   </Dropdown.Item>
-                  {round.metaPuzzles.length > 0 ? (
-                    <Dropdown.Item
-                      id="add-unassigned-disabled"
-                      textValue="Add unassigned puzzle"
-                      isDisabled
-                      // Disabled menu items get `pointer-events: none`; re-enable them so the
-                      // explanatory tooltip can still be hovered.
-                      className="pointer-events-auto!">
-                      <Label>Add unassigned puzzle</Label>
-                      <Tooltip>
-                        <Tooltip.Trigger>
-                          <InfoIcon className="ms-auto" />
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="left">
-                          You can only add unassigned puzzles when there are no meta puzzles in the
-                          round.
-                        </Tooltip.Content>
-                      </Tooltip>
-                    </Dropdown.Item>
-                  ) : (
-                    <Dropdown.Item
-                      id="add-unassigned"
-                      textValue="Add unassigned puzzle"
-                      onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
-                      <Label>Add unassigned puzzle</Label>
-                    </Dropdown.Item>
-                  )}
+                  <Dropdown.Item
+                    id="add-unassigned"
+                    textValue="Add unassigned puzzle"
+                    onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                    <Label>Add unassigned puzzle</Label>
+                  </Dropdown.Item>
                   <Dropdown.Item
                     id="edit-round"
                     textValue="Edit round"

@@ -97,19 +97,10 @@ export function EditPuzzleDialog({
                     const items = [
                       ...(workspace.rounds
                         .flatMap(r => [
-                          {
-                            id: r.id,
-                            name:
-                              r.metaPuzzles.length > 0 ? r.name : `${r.name} (Unassigned Puzzles)`,
-                            disabled: r.metaPuzzles.length > 0,
-                          },
+                          {id: r.id, name: `${r.name} (Unassigned Puzzles)`},
                           ...r.metaPuzzles,
                         ])
-                        .map(p => ({
-                          value: p.id,
-                          label: p.name,
-                          disabled: "disabled" in p ? p.disabled : false,
-                        })) ?? []),
+                        .map(p => ({value: p.id, label: p.name})) ?? []),
                     ];
                     return (
                       <field.SelectField variant="secondary" label="Feeds Into" items={items}>
@@ -117,8 +108,7 @@ export function EditPuzzleDialog({
                           <ListBox.Item
                             key={item.value}
                             id={item.value ?? ""}
-                            textValue={item.label}
-                            isDisabled={item.disabled}>
+                            textValue={item.label}>
                             {item.label}
                             <ListBox.ItemIndicator />
                           </ListBox.Item>

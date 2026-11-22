@@ -283,6 +283,9 @@ export class WorkspaceRoom extends DurableObject<Env> {
   async initialize(workspaceId: string) {
     this.#workspaceId = workspaceId;
     if (this.workspace) return;
+    // A load already under way (another connection, right after a deploy or a wake) is enough:
+    // queueing a second one would re-read D1 and re-broadcast the same board to everyone.
+    if (this.#running) return await this.#running;
     await this.#reload(workspaceId);
   }
 

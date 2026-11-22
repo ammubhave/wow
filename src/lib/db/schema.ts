@@ -109,7 +109,8 @@ export const puzzleGuess = sqliteTable(
     updatedBy: text(),
   },
   t => [
-    index("puzzle_guess_workspaceId_idx").on(t.workspaceId),
+    // The board loads a workspace's newest guesses on every change.
+    index("puzzle_guess_workspaceId_createdAt_idx").on(t.workspaceId, t.createdAt),
     index("puzzle_guess_puzzleId_idx").on(t.puzzleId),
   ]
 );
