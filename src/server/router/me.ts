@@ -28,6 +28,7 @@ export const meRouter = {
           huntEndsAt: schema.organization.huntEndsAt,
           huntLocation: schema.organization.huntLocation,
           createdAt: schema.organization.createdAt,
+          archivedAt: schema.organization.archivedAt,
           role: schema.member.role,
         })
         .from(schema.member)
@@ -60,6 +61,7 @@ export const meRouter = {
       huntEndsAt: w.huntEndsAt?.getTime() ?? null,
       huntLocation: w.huntLocation,
       createdAt: w.createdAt.getTime(),
+      archived: w.archivedAt !== null,
       members: membersBy.get(w.id) ?? 0,
       puzzles: puzzlesBy.get(w.id)?.total ?? 0,
       solved: puzzlesBy.get(w.id)?.solved ?? 0,

@@ -33,13 +33,14 @@ A workspace has two roles: **owners** and **members**. Whoever creates a workspa
 | Connect, change or disconnect Google Drive            |   ✓   |   —    |
 | Re-share the Drive folder (**Share with everyone**)   |   ✓   |   —    |
 | Connect, reconnect or disconnect Discord              |   ✓   |   —    |
-| Delete or archive the workspace                       |   —   |   —    |
+| Archive or unarchive the workspace                    |   ✓   |   —    |
+| Delete the workspace                                  |   —   |   —    |
 
 ## Notes
 
 - **Members can see the password.** Anyone in the workspace can look up the password in <UiPath path="Settings > Administration" /> to invite a friend, but only owners can change it.
 - **There's always an owner.** The last owner can't be made a member. To hand over, make someone else an owner first.
-- **Deleting or archiving a workspace isn't available yet.** In <UiPath path="Settings > Administration" />, **Delete Workspace** says "Contact support to delete your workspace" and **Archive Workspace** says "Coming Soon"; see the [FAQ](/docs/help/faq).
+- **Deleting a workspace isn't available yet.** In <UiPath path="Settings > Administration" />, **Delete Workspace** says "Contact support to delete your workspace"; see the [FAQ](/docs/help/faq). Owners can [archive](/docs/concepts/workspaces#archiving) it instead.
 - **Only owners hear about Drive problems.** If WOW can't share the Drive folder with someone who joins, the owners get a notification so one of them can fix it.
 - Non-owners see "Only owners can change the details and look" in Settings, and the owner-only fields are greyed out.
 

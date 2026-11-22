@@ -304,6 +304,20 @@ export const workspacesRouter = {
       if (input.voiceTool === "discord") waitUntil(context.discord.sync(context.workspace.id));
     }),
 
+  /// Archives the workspace (or brings it back): it's hidden from everyone's workspace list until
+  /// unarchived. Nothing else changes, and nothing is deleted.
+  setArchived: procedure
+    .input(z.object({workspaceSlug: z.string(), archived: z.boolean()}))
+    .use(preauthorize)
+    .use(requireOwner)
+    .handler(async ({context, input}) => {
+      await db
+        .update(schema.organization)
+        .set({archivedAt: input.archived ? new Date() : null})
+        .where(eq(schema.organization.id, context.workspace.id));
+      await invalidateWorkspace(context.workspace.id);
+    }),
+
   /// Shares the Drive folder with every member again: for people who joined while sharing
   /// failed (a file added to the folder outside WOW, or an expired Google connection), or before
   /// the folder was chosen. Sharing with someone who already has access changes nothing.

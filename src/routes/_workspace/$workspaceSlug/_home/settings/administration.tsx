@@ -1,6 +1,7 @@
-import {Alert, Button, Card} from "@heroui/react";
+import {Alert, Button, Card, Chip} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
+import {ArchiveIcon, ArchiveRestoreIcon} from "lucide-react";
 import {toast} from "sonner";
 import {z} from "zod";
 
@@ -8,6 +9,7 @@ import {useAppForm} from "@/components/form";
 import {SpreadsheetChoice, VoiceChoice} from "@/components/workspace-tools";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
+import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
@@ -33,7 +35,7 @@ function RouteComponent() {
       <WorkspacePasswordCard isOwner={isOwner} />
       <SpreadsheetCard isOwner={isOwner} />
       <VoiceCard isOwner={isOwner} />
-      <ArchiveWorkspaceCard />
+      <ArchiveWorkspaceCard isOwner={isOwner} />
       <DeleteWorkspaceCard />
     </div>
   );
@@ -57,20 +59,45 @@ function DeleteWorkspaceCard() {
   );
 }
 
-function ArchiveWorkspaceCard() {
+function ArchiveWorkspaceCard({isOwner}: {isOwner: boolean}) {
+  const {workspaceSlug} = Route.useParams();
+  const {archivedAt} = useWorkspace();
+  const mutation = useMutation(orpc.workspaces.setArchived.mutationOptions());
+  const isArchived = archivedAt !== null;
+  const setArchived = (archived: boolean) =>
+    mutation.mutate(
+      {workspaceSlug, archived},
+      {
+        onSuccess: () =>
+          toast.success(archived ? "The workspace is archived." : "The workspace is back."),
+        onError: () => toast.error("Couldn't change that. Please try again."),
+      }
+    );
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Archive Workspace</Card.Title>
+        <Card.Title className="flex items-center gap-2">
+          Archive Workspace
+          {isArchived && (
+            <Chip size="sm" variant="soft">
+              <Chip.Label>Archived</Chip.Label>
+            </Chip>
+          )}
+        </Card.Title>
         <Card.Description>
-          This will archive the workspace and all its data. It will not show up in the list of
-          active workspace and its contents will become read-only. You can unarchive the workspace
-          at any time.
+          {isArchived
+            ? "Hidden from everyone's workspace list. Unarchive it to bring it back."
+            : "Hides the workspace from everyone's workspace list once the hunt is done. Nothing is deleted, and you can unarchive it any time."}
         </Card.Description>
       </Card.Header>
       <Card.Footer>
-        <Button variant="secondary" isDisabled>
-          Coming Soon
+        <Button
+          variant="secondary"
+          isDisabled={!isOwner}
+          isPending={mutation.isPending}
+          onPress={() => setArchived(!isArchived)}>
+          {isArchived ? <ArchiveRestoreIcon /> : <ArchiveIcon />}
+          {isArchived ? "Unarchive" : "Archive"}
         </Button>
       </Card.Footer>
     </Card>

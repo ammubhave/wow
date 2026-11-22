@@ -135,7 +135,13 @@ function WorkspaceCard({workspace, now}: {workspace: WorkspaceSummary; now: numb
       <ItemCard.Content className="min-w-0 gap-1.5">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <ItemCard.Title className="truncate">{workspace.teamName}</ItemCard.Title>
-          <HuntStateChip workspace={workspace} now={now} />
+          {workspace.archived ? (
+            <Chip size="sm" variant="soft">
+              <Chip.Label>Archived</Chip.Label>
+            </Chip>
+          ) : (
+            <HuntStateChip workspace={workspace} now={now} />
+          )}
           {workspace.role === "owner" && (
             <Chip size="sm" variant="tertiary">
               <Chip.Label>Owner</Chip.Label>
@@ -201,9 +207,18 @@ function RouteComponent() {
   const [now] = useState(() => Date.now());
   const workspaces = myWorkspaces.data
     ?.map(workspace => ({workspace, rank: STATE_ORDER[huntState(workspace, now) ?? "none"]}))
-    .toSorted((a, b) => a.rank - b.rank || b.workspace.createdAt - a.workspace.createdAt)
+    .toSorted(
+      (a, b) =>
+        Number(a.workspace.archived) - Number(b.workspace.archived) ||
+        a.rank - b.rank ||
+        b.workspace.createdAt - a.workspace.createdAt
+    )
     .map(({workspace}) => workspace);
   const hasWorkspaces = (workspaces?.length ?? 0) > 0;
+  // Archived workspaces (an owner archived them) stay out of the way unless you ask for them.
+  const [showArchived, setShowArchived] = useState(false);
+  const archivedCount = workspaces?.filter(w => w.archived).length ?? 0;
+  const shown = showArchived ? workspaces : workspaces?.filter(w => !w.archived);
 
   return (
     <Page
@@ -250,14 +265,23 @@ function RouteComponent() {
             </Link>
           </EmptyState>
         ) : (
-          <ItemCardGroup className="overflow-hidden">
-            {workspaces.map((workspace, i) => (
-              <Fragment key={workspace.slug}>
-                {i > 0 && <Separator />}
-                <WorkspaceCard workspace={workspace} now={now} />
-              </Fragment>
-            ))}
-          </ItemCardGroup>
+          <div className="flex flex-col items-start gap-2">
+            {shown && shown.length > 0 && (
+              <ItemCardGroup className="w-full overflow-hidden">
+                {shown.map((workspace, i) => (
+                  <Fragment key={workspace.slug}>
+                    {i > 0 && <Separator />}
+                    <WorkspaceCard workspace={workspace} now={now} />
+                  </Fragment>
+                ))}
+              </ItemCardGroup>
+            )}
+            {archivedCount > 0 && (
+              <Button size="sm" variant="ghost" onPress={() => setShowArchived(show => !show)}>
+                {showArchived ? "Hide archived" : `View all (${workspaces.length})`}
+              </Button>
+            )}
+          </div>
         )}
         <Card className="lg:sticky lg:top-4">
           <Card.Header>
