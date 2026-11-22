@@ -164,7 +164,7 @@ def og():
     l1, _ = text("Solve the hunt,", 76, 318, 84, CREAM, wght=800, tracking=-0.025)
     l2, _ = text("not the logistics.", 76, 412, 84, SYRUP, wght=800, tracking=-0.025)
     sub, _ = text("The live workspace for puzzle hunt teams", 80, 486, 28, "#F0C9B8", wght=500)
-    url, _ = text("wafflehaus.io", 80, 552, 24, "#E3A98F", wght=600, tracking=0.02)
+    url, _ = text("www.wafflehaus.io", 80, 552, 24, "#E3A98F", wght=600, tracking=0.02)
     return svg(W, H, b + l1 + l2 + sub + url, "WOW: Solve the hunt, not the logistics.", bg=MAROON)
 
 

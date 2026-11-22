@@ -233,7 +233,7 @@ function RouteComponent() {
                       autoComplete="off"
                       autoCapitalize="off"
                       autoCorrect="off"
-                      description="Its web address (wafflehaus.io/…) and how teammates find it. Suggested from your team's name; change it if you like."
+                      description="Its web address (www.wafflehaus.io/…) and how teammates find it. Suggested from your team's name; change it if you like."
                     />
                   )}
                 />

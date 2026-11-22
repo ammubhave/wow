@@ -421,7 +421,7 @@ function RouteComponent() {
           </p>
         )}
         <p className="absolute right-6 bottom-4 text-xs font-semibold text-white/60">
-          wafflehaus.io
+          www.wafflehaus.io
         </p>
       </div>
     </>

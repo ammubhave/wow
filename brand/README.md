@@ -137,7 +137,7 @@ do next.
 - Say plainly what WOW doesn't do: "WOW doesn't assign puzzles."
 - Keep the play at the edges (Eggö, celebrations, award names); errors and settings stay straight.
 - Sentence case. "WOW" is always capitals. "Wafflehaüs" keeps its umlaut in prose and is
-  `wafflehaus` in URLs and addresses (wafflehaus.io, noreply@wafflehaus.io).
+  `wafflehaus` in URLs and addresses (www.wafflehaus.io, noreply@wafflehaus.io).
 
 | Do (from WOW)                                                                 | Don't (also from WOW)                                       | Better                                                                 |
 | ----------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- |

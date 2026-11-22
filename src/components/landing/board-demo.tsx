@@ -70,7 +70,7 @@ export function BoardDemo() {
   const solved = rows.filter(isSolved).length;
 
   return (
-    <DemoFrame address="wafflehaus.io/your-team">
+    <DemoFrame address="www.wafflehaus.io/your-team">
       <div className="flex flex-col p-3 text-sm">
         <div className="bg-surface-secondary flex items-center gap-3 rounded-lg px-3 py-2">
           <span className="font-semibold">Act I · The Heist</span>

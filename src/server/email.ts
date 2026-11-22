@@ -44,7 +44,7 @@ export function sendActionEmail({
       </p>
       <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#71717a">Or open this link: <a href="${escapeHtml(action.url)}" style="color:#7c3aed;word-break:break-all">${escapeHtml(action.url)}</a></p>
       ${(outro ?? []).map(paragraph).join("\n      ")}
-      <p style="margin:24px 0 0;font-size:12px;color:#a1a1aa">Wafflehaüs Organized Workspaces · wafflehaus.io</p>
+      <p style="margin:24px 0 0;font-size:12px;color:#a1a1aa">Wafflehaüs Organized Workspaces · www.wafflehaus.io</p>
     </div>
   </body>
 </html>`;

@@ -41,7 +41,7 @@ export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
       {property: "og:title", content: "WOW · Wafflehaüs Organized Workspaces"},
       {property: "og:description", content: "The live workspace for puzzle hunt teams."},
       {property: "og:type", content: "website"},
-      {property: "og:image", content: "https://wafflehaus.io/og-image.png"},
+      {property: "og:image", content: "https://www.wafflehaus.io/og-image.png"},
       {property: "og:image:width", content: "1200"},
       {property: "og:image:height", content: "630"},
       {property: "og:image:alt", content: "WOW: Solve the hunt, not the logistics."},
