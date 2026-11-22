@@ -1,0 +1,43 @@
+/*
+ * WOW brand tokens. The logo colours are for the mark, marketing, social images and email; the app
+ * keeps its HeroUI tokens in src/styles.css, mirrored here so everything lives in one place.
+ */
+:root {
+  /* The mark: Wafflehaüs's own four colours */
+  --wow-maroon: #7e0f0f; /* the mark's ground; brand surfaces */
+  --wow-batter: #f2d55e; /* the waffle's ridges */
+  --wow-golden: #d99630; /* the wells */
+  --wow-crisp: #d5763c; /* the shading in the wells */
+
+  /* Orange */
+  --wow-syrup: #f49f1e; /* highlight: PixelBlast field, social headline on maroon (5.0:1) */
+  --wow-accent: #dc7701; /* the app accent, oklch(66.98% 0.1605 57.71) */
+  --wow-crust: #a35200; /* orange text on white (5.6:1) */
+  --wow-cream: #fff4dc; /* text on maroon (9.8:1) */
+
+  /* App neutrals (src/styles.css) */
+  --wow-light-bg: #f5f5f5;
+  --wow-light-fg: #18181b;
+  --wow-light-muted: #727272;
+  --wow-light-border: #dedede;
+  --wow-dark-bg: #060606;
+  --wow-dark-surface: #181818;
+  --wow-dark-fg: #fcfcfc;
+  --wow-dark-muted: #a0a0a0;
+  --wow-dark-border: #292929;
+
+  /* Board statuses (Tailwind v4, as src/lib/puzzleStatuses.tsx uses them) */
+  --wow-solved-light: #dcfce7; /* green-100: Solved, Backsolved */
+  --wow-solved-dark: #032e15; /* green-950 */
+  --wow-warning-light: #fef9c2; /* yellow-100: Needs Eyes, Extraction */
+  --wow-warning-dark: #432004; /* yellow-950 */
+  --wow-stuck-light: #ffe2e2; /* red-100: Stuck, Pending, Very Stuck */
+  --wow-stuck-dark: #460809; /* red-950 */
+
+  /* Type */
+  --wow-font-sans: "Noto Sans Variable", "Noto Sans", system-ui, sans-serif;
+  --wow-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; /* Tailwind's font-mono */
+
+  /* Shape: the app is square-cornered */
+  --wow-radius: 0;
+}

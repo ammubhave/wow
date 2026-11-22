@@ -35,9 +35,25 @@ export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
       {charSet: "utf-8"},
       {name: "viewport", content: "width=device-width, initial-scale=1"},
       {title: "WOW"},
+      // Link previews (Slack, Discord, iMessage…). They read the static app shell, which only has
+      // the root route's tags, so these are site-wide. The image is brand/social/og-image.png.
+      {property: "og:site_name", content: "WOW"},
+      {property: "og:title", content: "WOW · Wafflehaüs Organized Workspaces"},
+      {property: "og:description", content: "The live workspace for puzzle hunt teams."},
+      {property: "og:type", content: "website"},
+      {property: "og:image", content: "https://wafflehaus.io/og-image.png"},
+      {property: "og:image:width", content: "1200"},
+      {property: "og:image:height", content: "630"},
+      {property: "og:image:alt", content: "WOW: Solve the hunt, not the logistics."},
+      {name: "twitter:card", content: "summary_large_image"},
     ],
     links: [
       {rel: "stylesheet", href: appCss},
+      // Icons from brand/icons. /favicon.ico stays as the fallback (the headers also show it as the logo).
+      {rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png"},
+      {rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png"},
+      {rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png"},
+      {rel: "manifest", href: "/site.webmanifest"},
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css?family=Cookie|Inconsolata|Noto+Sans:400,700&amp;subset=cyrillic,cyrillic-ext,devanagari,greek,greek-ext,latin-ext,vietnamese",
