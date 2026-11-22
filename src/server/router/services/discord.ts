@@ -6,11 +6,12 @@ export class DiscordService {
   async sync(workspaceId: string) {
     const workspace = await db.query.organization.findFirst({
       where: {id: workspaceId},
-      columns: {discordGuildId: true},
+      columns: {discordGuildId: true, voiceTool: true},
     });
     if (!workspace) throw new Error("Workspace not found");
     // Skip if discord wasn't setup for this workspace (before reading every round and puzzle).
-    if (!workspace.discordGuildId) {
+    // Or the team chose WOW calls: the channels stay as they were, untouched until they switch back.
+    if (!workspace.discordGuildId || workspace.voiceTool !== "discord") {
       return;
     }
     const rounds = await db.query.round.findMany({

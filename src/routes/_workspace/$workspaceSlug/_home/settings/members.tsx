@@ -280,11 +280,11 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
         <TextField variant="secondary" value={text} onChange={setText}>
           <Label>Email addresses</Label>
           <TextArea rows={3} placeholder="sam@example.com, kit@example.com" />
-          <Description>
-            {invalid.length > 0
-              ? `Not an email address: ${invalid.join(", ")}`
-              : "Paste several at once, separated by commas or new lines."}
-          </Description>
+          {invalid.length > 0 && (
+            <Description className="text-danger">
+              Not an email address: {invalid.join(", ")}
+            </Description>
+          )}
         </TextField>
         <div>
           <Button isDisabled={valid.length === 0} isPending={send.isPending} onPress={onSend}>

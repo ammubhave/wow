@@ -4,9 +4,8 @@ import {createFileRoute} from "@tanstack/react-router";
 import {toast} from "sonner";
 import {z} from "zod";
 
-import {DiscordCardContents} from "@/components/discord-card-contents";
 import {useAppForm} from "@/components/form";
-import {GoogleDriveCardContents} from "@/components/google-drive-contents";
+import {SpreadsheetChoice, VoiceChoice} from "@/components/workspace-tools";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {workspaceMutations} from "@/lib/workspace-mutations";
@@ -32,8 +31,8 @@ function RouteComponent() {
         </Alert>
       )}
       <WorkspacePasswordCard isOwner={isOwner} />
-      <GoogleDriveCard isOwner={isOwner} />
-      <DiscordCard isOwner={isOwner} />
+      <SpreadsheetCard isOwner={isOwner} />
+      <VoiceCard isOwner={isOwner} />
       <ArchiveWorkspaceCard />
       <DeleteWorkspaceCard />
     </div>
@@ -127,11 +126,11 @@ function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
   );
 }
 
-function GoogleDriveCard({isOwner}: {isOwner: boolean}) {
+function SpreadsheetCard({isOwner}: {isOwner: boolean}) {
   const {workspaceSlug} = Route.useParams();
   return (
     <Card>
-      <GoogleDriveCardContents
+      <SpreadsheetChoice
         isDisabled={!isOwner}
         workspaceSlug={workspaceSlug}
         redirectUrl={`/${workspaceSlug}/settings/administration`}
@@ -140,11 +139,11 @@ function GoogleDriveCard({isOwner}: {isOwner: boolean}) {
   );
 }
 
-function DiscordCard({isOwner}: {isOwner: boolean}) {
+function VoiceCard({isOwner}: {isOwner: boolean}) {
   const {workspaceSlug} = Route.useParams();
   return (
     <Card>
-      <DiscordCardContents
+      <VoiceChoice
         isDisabled={!isOwner}
         workspaceSlug={workspaceSlug}
         redirectUrl={`/${workspaceSlug}/settings/administration`}

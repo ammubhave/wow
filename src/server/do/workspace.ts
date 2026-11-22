@@ -172,7 +172,8 @@ async function getWorkspace(workspaceId: string, previousActivityLog?: ActivityL
   } = workspace;
   return {
     ...publicWorkspace,
-    googleConnected: googleAccessToken !== null,
+    /** New puzzles get a Google file: Drive is connected and the team chose Google Sheets. */
+    googleConnected: googleAccessToken !== null && publicWorkspace.sheetsTool === "google",
     activityLogEntries,
     guesses,
     // Flat: each puzzle is sent once; clients derive children/metas (see expandWorkspaceState).

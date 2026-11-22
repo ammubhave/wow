@@ -105,7 +105,7 @@ export const Route = createFileRoute("/api/oauth/discord")({
 
         await db
           .update(schema.organization)
-          .set({discordGuildId: guildId})
+          .set({discordGuildId: guildId, voiceTool: "discord"})
           .where(eq(schema.organization.id, authz.workspace.id));
 
         await invalidateWorkspace(authz.workspace.id);

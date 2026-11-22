@@ -1,11 +1,10 @@
-import {buttonVariants, Card, Separator} from "@heroui/react";
+import {buttonVariants, Card} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ArrowRightIcon, MailIcon, PartyPopperIcon} from "lucide-react";
 import {cn} from "tailwind-variants";
 
-import {DiscordCardContents} from "@/components/discord-card-contents";
-import {GoogleDriveCardContents} from "@/components/google-drive-contents";
 import {Page, READING_WIDTH} from "@/components/page";
+import {SpreadsheetChoice, VoiceChoice} from "@/components/workspace-tools";
 import {WorkspaceProvider} from "@/hooks/use-workspace";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/$workspaceSlug")({
@@ -57,19 +56,20 @@ function RouteComponentInner() {
           </Card.Footer>
         </Card>
         <h2 className="text-muted mt-4 text-xs font-medium tracking-wide uppercase">
-          Optional: connect your team's tools
+          Your team's tools
         </h2>
+        {/* No "Delete workspace" here: deleting workspaces isn't available yet (the server refuses). */}
         <Card>
-          <GoogleDriveCardContents
+          <SpreadsheetChoice
             workspaceSlug={workspaceSlug}
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
-          <Separator />
-          <DiscordCardContents
+        </Card>
+        <Card>
+          <VoiceChoice
             workspaceSlug={workspaceSlug}
             redirectUrl={`/workspaces/create/${workspaceSlug}`}
           />
-          {/* No "Delete workspace" here: deleting workspaces isn't available yet (the server refuses). */}
         </Card>
       </div>
     </Page>

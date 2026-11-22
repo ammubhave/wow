@@ -1,17 +1,17 @@
 import {DrivePicker, DrivePickerDocsView} from "@googleworkspace/drive-picker-react";
 import {Stepper} from "@heroui-pro/react";
-import {Button, Card, Link, Skeleton} from "@heroui/react";
+import {Button, Link, Skeleton} from "@heroui/react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
 import {UsersIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
-import {HelpLink} from "@/docs/components/help-link";
 import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
-export function GoogleDriveCardContents({
+/** The Google Drive setup: connect, then pick the folder and the template sheet. */
+export function GoogleDriveSetup({
   workspaceSlug,
   redirectUrl,
   isDisabled = false,
@@ -76,15 +76,7 @@ export function GoogleDriveCardContents({
           )}
         </DrivePicker>
       )}
-      <Card.Header>
-        <Card.Title>Google Drive</Card.Title>
-        <Card.Description>
-          Optional. Without Google Drive, every puzzle gets a built-in spreadsheet. Connect your
-          Google Drive account to use Google Sheets instead: a new sheet is created for each new
-          puzzle. <HelpLink slug="google-drive">Google Sheets or the built-in sheet?</HelpLink>
-        </Card.Description>
-      </Card.Header>
-      <Card.Content>
+      <div>
         {state.data ? (
           // The steps are done in order: state 0 = not connected, 1 = connected, 2 = folder chosen,
           // 3 = template chosen (all done).
@@ -170,7 +162,7 @@ export function GoogleDriveCardContents({
         {state.data && state.data.state >= 2 && !isDisabled && (
           <ShareWithMembers workspaceSlug={workspaceSlug} />
         )}
-      </Card.Content>
+      </div>
     </>
   );
 }

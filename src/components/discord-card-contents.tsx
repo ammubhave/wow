@@ -1,10 +1,9 @@
 import {Stepper} from "@heroui-pro/react";
-import {Button, Card, Link, Skeleton} from "@heroui/react";
+import {Button, Link, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {useHydrated} from "@tanstack/react-router";
 import {XIcon} from "lucide-react";
 
-import {HelpLink} from "@/docs/components/help-link";
 import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
@@ -56,7 +55,8 @@ function DiscordForm({
   );
 }
 
-export function DiscordCardContents({
+/** The Discord setup: add the WOW bot to your server. */
+export function DiscordSetup({
   workspaceSlug,
   redirectUrl,
   isDisabled = false,
@@ -70,81 +70,71 @@ export function DiscordCardContents({
     orpc.workspaces.getDiscordInfo.queryOptions({input: {workspaceSlug}})
   );
   return (
-    <>
-      <Card.Header>
-        <Card.Title>Discord</Card.Title>
-        <Card.Description>
-          Optional. WOW has its own voice calls; connect Discord if your team would rather talk
-          there. Each new puzzle then gets a Discord voice channel, closed when it's solved.{" "}
-          <HelpLink slug="discord">How the Discord sync works</HelpLink>
-        </Card.Description>
-      </Card.Header>
-      <Card.Content>
-        {!discordInfo.isLoading ? (
-          <Stepper
-            currentStep={discordInfo.data?.ok ? 1 : 0}
-            orientation="vertical"
-            // A broken connection shows its step in the danger color.
-            className={
-              discordInfo.data?.ok === false ? "[--stepper-active-color:var(--color-danger)]" : ""
-            }>
-            <Stepper.Step>
-              {discordInfo.data?.ok === false ? (
-                <Stepper.Indicator>
-                  <Stepper.Icon>
-                    <XIcon />
-                  </Stepper.Icon>
-                </Stepper.Indicator>
-              ) : (
-                <Stepper.Indicator />
-              )}
-              <Stepper.Content className="flex-1">
-                <Stepper.Title>Connect with Discord</Stepper.Title>
-                <Stepper.Description>
-                  {discordInfo.data?.ok === true ? (
-                    <>
-                      You're successfully connected to Discord. Server Name:{" "}
-                      <Link
-                        href={`https://discord.com/channels/${discordInfo.data.data?.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer">
-                        {discordInfo.data.data?.name}
-                        <Link.Icon />
-                      </Link>
-                    </>
-                  ) : discordInfo.data?.ok === false ? (
-                    <span className="text-danger">
-                      There is a problem with your Discord connection: {discordInfo.data.error}
-                    </span>
-                  ) : (
-                    "You need to connect your Discord account."
-                  )}
-                </Stepper.Description>
-              </Stepper.Content>
-              {discordInfo.data?.ok !== undefined ? (
-                <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                  <Button type="submit" variant="secondary" isDisabled={isDisabled}>
-                    Reconnect
+    <div>
+      {!discordInfo.isLoading ? (
+        <Stepper
+          currentStep={discordInfo.data?.ok ? 1 : 0}
+          orientation="vertical"
+          // A broken connection shows its step in the danger color.
+          className={
+            discordInfo.data?.ok === false ? "[--stepper-active-color:var(--color-danger)]" : ""
+          }>
+          <Stepper.Step>
+            {discordInfo.data?.ok === false ? (
+              <Stepper.Indicator>
+                <Stepper.Icon>
+                  <XIcon />
+                </Stepper.Icon>
+              </Stepper.Indicator>
+            ) : (
+              <Stepper.Indicator />
+            )}
+            <Stepper.Content className="flex-1">
+              <Stepper.Title>Connect with Discord</Stepper.Title>
+              <Stepper.Description>
+                {discordInfo.data?.ok === true ? (
+                  <>
+                    You're successfully connected to Discord. Server Name:{" "}
+                    <Link
+                      href={`https://discord.com/channels/${discordInfo.data.data?.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer">
+                      {discordInfo.data.data?.name}
+                      <Link.Icon />
+                    </Link>
+                  </>
+                ) : discordInfo.data?.ok === false ? (
+                  <span className="text-danger">
+                    There is a problem with your Discord connection: {discordInfo.data.error}
+                  </span>
+                ) : (
+                  "You need to connect your Discord account."
+                )}
+              </Stepper.Description>
+            </Stepper.Content>
+            {discordInfo.data?.ok !== undefined ? (
+              <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
+                <Button type="submit" variant="secondary" isDisabled={isDisabled}>
+                  Reconnect
+                </Button>
+                <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
+                  <Button variant="danger" isDisabled={isDisabled}>
+                    Disconnect
                   </Button>
-                  <DisconnectDiscordDialog workspaceSlug={workspaceSlug}>
-                    <Button variant="danger" isDisabled={isDisabled}>
-                      Disconnect
-                    </Button>
-                  </DisconnectDiscordDialog>
-                </DiscordForm>
-              ) : (
-                <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
-                  <Button type="submit" isDisabled={isDisabled}>
-                    Connect with Discord
-                  </Button>
-                </DiscordForm>
-              )}
-            </Stepper.Step>
-          </Stepper>
-        ) : (
-          <Skeleton className="h-8 w-full" />
-        )}
-      </Card.Content>
-    </>
+                </DisconnectDiscordDialog>
+              </DiscordForm>
+            ) : (
+              <DiscordForm redirectUrl={redirectUrl} workspaceSlug={workspaceSlug}>
+                <Button type="submit" isDisabled={isDisabled}>
+                  Connect with Discord
+                </Button>
+              </DiscordForm>
+            )}
+          </Stepper.Step>
+        </Stepper>
+      ) : (
+        <Skeleton className="h-8 w-full" />
+      )}
+    </div>
   );
 }

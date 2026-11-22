@@ -16,10 +16,17 @@ import {preauthorize, procedure} from "./base";
 /** Creates the puzzle's Google Drive worksheet (if Drive is connected) and records its id. */
 async function createPuzzleWorksheet(
   context: {google: {getAccessToken: (workspaceId: string) => Promise<string | null | undefined>}},
-  workspace: {id: string; googleFolderId: string | null; googleTemplateFileId: string | null},
+  workspace: {
+    id: string;
+    googleFolderId: string | null;
+    googleTemplateFileId: string | null;
+    sheetsTool: string;
+  },
   puzzle: {id: string},
   input: {name: string; worksheetType: "google_spreadsheet" | "google_drawing"}
 ) {
+  // The team chose built-in sheets (Drive may still be connected, for older puzzles' sheets).
+  if (workspace.sheetsTool !== "google") return;
   const googleAccessToken = await context.google.getAccessToken(workspace.id);
   if (!googleAccessToken) return;
   let resp;

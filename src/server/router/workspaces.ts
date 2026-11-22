@@ -281,6 +281,29 @@ export const workspacesRouter = {
       await invalidateWorkspace(context.workspace.id);
     }),
 
+  /// The team's choice of tools: built-in or Google sheets for new puzzles, WOW or Discord calls.
+  /// Only a preference: switching never disconnects anything, so existing Google Sheets and
+  /// Discord channels keep working, and switching back picks up where it left off.
+  setTools: procedure
+    .input(
+      z.object({
+        workspaceSlug: z.string(),
+        sheetsTool: z.enum(["builtin", "google"]).optional(),
+        voiceTool: z.enum(["builtin", "discord"]).optional(),
+      })
+    )
+    .use(preauthorize)
+    .use(requireOwner)
+    .handler(async ({context, input}) => {
+      await db
+        .update(schema.organization)
+        .set({sheetsTool: input.sheetsTool, voiceTool: input.voiceTool})
+        .where(eq(schema.organization.id, context.workspace.id));
+      await invalidateWorkspace(context.workspace.id);
+      // Back on Discord: catch its channels up with the board.
+      if (input.voiceTool === "discord") waitUntil(context.discord.sync(context.workspace.id));
+    }),
+
   /// Shares the Drive folder with every member again: for people who joined while sharing
   /// failed (a file added to the folder outside WOW, or an expired Google connection), or before
   /// the folder was chosen. Sharing with someone who already has access changes nothing.

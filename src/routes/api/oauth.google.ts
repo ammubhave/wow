@@ -72,6 +72,7 @@ export const Route = createFileRoute("/api/oauth/google")({
             googleAccessToken: tokens.access_token,
             googleTokenExpiresAt: new Date(Date.now() + (tokens.expires_in - 60) * 1000),
             googleRefreshToken: tokens.refresh_token,
+            sheetsTool: "google",
           })
           .where(eq(schema.organization.id, authz.workspace.id));
         // `googleConnected` is part of the broadcast workspace state.

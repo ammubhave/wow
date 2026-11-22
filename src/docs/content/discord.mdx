@@ -38,9 +38,9 @@ You need permission to add bots to the Discord server, which in Discord means th
 <Steps>
 
 1. Open <UiPath path="Settings > Administration" />, or use the **Set up your workspace** page right after creating the workspace.
-2. On the **Discord** card, click **Connect with Discord**.
+2. Under **Voice calls**, choose **Discord** instead of **WOW calls**, then click **Connect with Discord**.
 3. Discord asks you to pick a server and approve the bot. Choose your team's server and click **Authorize**.
-4. You come back to WOW. The card says "You're successfully connected to Discord" and shows the server's name, which links to the server.
+4. You come back to WOW. The step says "You're successfully connected to Discord" and shows the server's name, which links to the server.
 
 </Steps>
 
@@ -50,12 +50,14 @@ The bot asks Discord for only what it needs to manage its channels: to see chann
 
 ## Reconnect or disconnect
 
-Once connected, the Discord card has two buttons:
+Once connected:
 
 - **Reconnect** runs the connection again. Use it to move WOW to a different server, or to fix a broken connection.
 - **Disconnect** removes Discord from the workspace. WOW asks you to confirm, because it **deletes every channel it made** on the server, the 🧩 voice channels and categories. This can't be undone, though if you connect again later, WOW makes fresh channels for the open puzzles.
 
-Members who aren't owners can see the card and which server is connected, but its buttons are disabled for them.
+Choosing **WOW calls** under **Voice calls** doesn't disconnect anything. WOW just stops updating the Discord channels, which stay as they are, and picks up again if you choose **Discord** later.
+
+Members who aren't owners can see which option is chosen and which server is connected, but can't change them.
 
 <Callout type="warning">
   Disconnecting deletes WOW's channels straight away, even if people are talking in them. Do it

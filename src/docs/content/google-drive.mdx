@@ -24,7 +24,7 @@ Both work well for hunting. The choice is mostly about what your team is used to
 
 ## Connect Google Drive <OwnerOnly />
 
-You can do this on the **Set up your workspace** page right after creating the workspace, or any time in <UiPath path="Settings > Administration" />. The **Google Drive Connection** card walks you through three steps.
+You can do this on the **Set up your workspace** page right after creating the workspace, or any time in <UiPath path="Settings > Administration" />. Under **Puzzle spreadsheets**, choose **Google Sheets** instead of **Built-in sheets**, and three steps appear below.
 
 <Steps>
 
@@ -81,17 +81,19 @@ WOW shares the Drive folder with each member, so the sheets inside open for them
 Sharing again with someone who already has access does nothing, so it's always safe to click.
 
 <Callout type="note">
-  Members who aren't owners see the Google Drive card in <UiPath path="Settings > Administration" />
-  , with its steps and the folder and template names, but the buttons are disabled for them and
-  **Share with everyone** is hidden.
+  Members who aren't owners see the **Puzzle spreadsheets** card in{" "}
+  <UiPath path="Settings > Administration" />, with its steps and the folder and template names, but
+  the buttons are disabled for them and **Share with everyone** is hidden.
 </Callout>
 
 ## Disconnecting and reconnecting
 
-There's no button to disconnect Drive from a workspace. You can:
+To change the connection:
 
 - **Reconnect** with a different Google account, or with the same one if WOW's access expired. New puzzles' files then go through that account.
 - **Reselect Folder** to send new puzzles' files to a different folder.
+
+- **Built-in sheets**, under **Puzzle spreadsheets**, gives new puzzles the built-in spreadsheet. It doesn't disconnect Drive, so puzzles that already have a Google Sheet keep working, and choosing **Google Sheets** again picks up where you left off.
 
 Puzzles that already have a Google file keep it whatever you change. Their files stay wherever they were created.
 
@@ -123,7 +125,7 @@ The Google connection needs renewing. An owner should click **Reconnect** on the
 
 ### New puzzles aren't getting Google Sheets
 
-Check the Google Drive card in <UiPath path="Settings > Administration" />. If the first step isn't marked as connected, the connection has lapsed: click **Reconnect**.
+Check the **Puzzle spreadsheets** card in <UiPath path="Settings > Administration" />. If the first step isn't marked as connected, the connection has lapsed: click **Reconnect**.
 
 More fixes are on the [Troubleshooting](/docs/help/troubleshooting) page.
 

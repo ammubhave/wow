@@ -66,4 +66,8 @@ export const TRACKED_PROCEDURES: Record<string, [event: string, describe: Descri
   ],
   "workspaces.announce": ["announcement_sent", input => ({toDiscord: Boolean(input.channelId)})],
   "workspaces.discord.disconnect": ["discord_disconnected", none],
+  "workspaces.setTools": [
+    "tools_chosen",
+    input => ({sheets: input.sheetsTool, voice: input.voiceTool}),
+  ],
 };

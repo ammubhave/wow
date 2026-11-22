@@ -229,6 +229,11 @@ export const auth = betterAuth({
             googleFolderId: {type: "string", required: false, input: false},
             googleTemplateFileId: {type: "string", required: false, input: false},
             discordGuildId: {type: "string", required: false, input: false},
+            // Which tools the team chose (see workspace-tools.tsx): "builtin" or "google" sheets,
+            // "builtin" or "discord" calls. A choice, kept apart from the connections, so switching
+            // back to built-in leaves existing Google Sheets and Discord channels working.
+            sheetsTool: {type: "string", required: false, defaultValue: "builtin", input: false},
+            voiceTool: {type: "string", required: false, defaultValue: "builtin", input: false},
             tags: {type: "string[]", required: false},
             links: {type: "json", required: false},
             // Optional hunt clock (the header shows elapsed/remaining time when set).
