@@ -49,7 +49,10 @@ export function HuntClock() {
   return (
     <Tooltip delay={300}>
       <Tooltip.Trigger>
-        <Chip size="sm" variant="secondary" className="hidden gap-1 tabular-nums sm:inline-flex">
+        <Chip
+          size="sm"
+          variant="secondary"
+          className="hidden shrink-0 gap-1 whitespace-nowrap tabular-nums sm:inline-flex">
           <TimerIcon className="size-3.5" />
           <Chip.Label>{label}</Chip.Label>
         </Chip>

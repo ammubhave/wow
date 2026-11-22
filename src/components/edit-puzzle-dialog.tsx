@@ -194,6 +194,11 @@ export function EditPuzzleDialog({
                 />
                 <form.AppField
                   name="link"
+                  validators={{
+                    onSubmit: z
+                      .url("Enter a web address, like https://hunt.example/puzzles/name")
+                      .or(z.literal("")),
+                  }}
                   children={field => (
                     <field.TextField
                       variant="secondary"

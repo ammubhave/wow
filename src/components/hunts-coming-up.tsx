@@ -122,6 +122,7 @@ function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
         <Link
           to="/workspaces/create"
           search={{hunt: hunt.id, event: hunt.name}}
+          aria-label={`Set up a workspace for ${hunt.name}`}
           onClick={() => track("hunt_shortcut_clicked", {hunt: hunt.name, live: isLive})}
           className={buttonVariants({size: "sm", variant: isLive ? "primary" : "secondary"})}>
           <SparklesIcon />
@@ -187,6 +188,7 @@ function FeaturedHuntCard({hunt, now}: {hunt: Hunt; now: number}) {
           <Link
             to="/workspaces/create"
             search={{hunt: hunt.id, event: hunt.name}}
+            aria-label={`Set up a workspace for ${hunt.name}`}
             onClick={() =>
               track("hunt_shortcut_clicked", {hunt: hunt.name, live: isLive, featured: true})
             }

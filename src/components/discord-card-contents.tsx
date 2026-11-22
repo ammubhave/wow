@@ -74,8 +74,8 @@ export function DiscordCardContents({
       <Card.Header>
         <Card.Title>Discord</Card.Title>
         <Card.Description>
-          You can connect your Discord account to this workspace. This allows the workspace to
-          automatically create voice channels whenever you create a new puzzle.{" "}
+          Optional. WOW has its own voice calls; connect Discord if your team would rather talk
+          there. Each new puzzle then gets a Discord voice channel, closed when it's solved.{" "}
           <HelpLink slug="discord">How the Discord sync works</HelpLink>
         </Card.Description>
       </Card.Header>

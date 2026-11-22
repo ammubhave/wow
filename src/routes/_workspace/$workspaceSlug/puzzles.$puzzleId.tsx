@@ -43,7 +43,7 @@ import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
 import {formatPuzzleTime, usePuzzleTimeTracker} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
-import {formatAnswers, joinAnswers, splitAnswers} from "@/lib/answers";
+import {formatAnswers, joinAnswers, solvedByAnswer, splitAnswers} from "@/lib/answers";
 import {client} from "@/lib/orpc";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {
@@ -568,14 +568,7 @@ function MultiAnswers({
     const answer = joinAnswers(values);
     setDrafts(null);
     if (answer === (puzzle.answer || null)) return;
-    const filled = splitAnswers(answer).length;
-    const isSolved = puzzle.status === "solved" || puzzle.status === "backsolved";
-    mutate({
-      workspaceSlug,
-      id: puzzle.id,
-      answer: answer ?? "",
-      ...(filled >= puzzle.answerCount && !isSolved ? {status: "solved"} : {}),
-    });
+    mutate({workspaceSlug, id: puzzle.id, answer: answer ?? "", ...solvedByAnswer(answer, puzzle)});
   };
   return (
     <div className="flex min-w-0 flex-col gap-1.5">

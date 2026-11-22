@@ -504,7 +504,7 @@ export function ActivityFeed() {
   return (
     <div className={cn(READING_WIDTH, "flex flex-col gap-6")}>
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
-        <PageTitle>Activity</PageTitle>
+        <PageTitle>Activity log</PageTitle>
         <div className="flex items-center gap-2">
           <Link
             to="/$workspaceSlug/recap"

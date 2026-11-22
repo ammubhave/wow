@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "One live board for every round and puzzle, with a spreadsheet and Discord voice channel for each puzzle, chat, and who's working on what.",
+          "One live board for every round and puzzle, with a shared spreadsheet, voice call and chat for each puzzle, and who's working on what.",
       },
     ],
   }),
@@ -52,7 +52,7 @@ function Hero() {
           </h1>
           <p className="text-muted max-w-lg text-lg text-pretty">
             A live board for every round and puzzle. Each puzzle gets its own spreadsheet, voice
-            channel and chat as soon as you add it.
+            call and chat as soon as you add it.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link to="/workspaces/create" className={buttonVariants({size: "lg"})}>

@@ -60,6 +60,10 @@ export function AddNewPuzzleDialog({
   parentPuzzleId?: string;
 }) {
   const workspace = useWorkspace();
+  const round = workspace.rounds.find(r => r.id === roundId);
+  const destination = parentPuzzleId
+    ? (round?.puzzles.find(p => p.id === parentPuzzleId)?.name ?? "the meta")
+    : (round?.name ?? "the round");
   const mutation = useMutation({
     ...workspaceMutations.puzzles.create(),
     // On the mutation (not the `mutate` call) so it fires for every puzzle added, even if the
@@ -92,7 +96,12 @@ export function AddNewPuzzleDialog({
         <Modal.Dialog>
           <Modal.CloseTrigger />
           <Modal.Header>
-            <Modal.Heading>Add new puzzle</Modal.Heading>
+            <Modal.Heading>Add a puzzle</Modal.Heading>
+            {/* Where it goes, so it's clear which menu this was opened from. */}
+            <p className="text-muted text-sm">
+              {parentPuzzleId ? "Feeds " : "In "}
+              <span className="text-foreground font-medium">{destination}</span>
+            </p>
           </Modal.Header>
           <form.AppForm>
             <Modal.Body>
@@ -121,7 +130,11 @@ export function AddNewPuzzleDialog({
                 />
                 <form.AppField
                   name="link"
-                  validators={{onSubmit: z.url().or(z.string().length(0))}}
+                  validators={{
+                    onSubmit: z
+                      .url("Enter a web address, like https://hunt.example/puzzles/name")
+                      .or(z.literal("")),
+                  }}
                   children={field => (
                     <field.TextField
                       variant="secondary"
@@ -166,7 +179,7 @@ export function AddNewPuzzleDialog({
               </form.Form>
             </Modal.Body>
             <Modal.Footer>
-              <form.SubmitButton>Save</form.SubmitButton>
+              <form.SubmitButton>Add puzzle</form.SubmitButton>
             </Modal.Footer>
           </form.AppForm>
         </Modal.Dialog>

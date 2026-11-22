@@ -24,7 +24,11 @@ import {UserHoverCard} from "./user-hover-card";
 export function RelativeTime({date}: {date: Date | string | number}) {
   const now = useNow({updateInterval: 10_000});
   const format = useFormatter();
-  return format.relativeTime(new Date(date), now);
+  const at = new Date(date);
+  // The server's clock can run a little ahead of this computer's: never say "in 4 seconds" for
+  // something that already happened.
+  if (at.getTime() > now.getTime() - 5_000) return "just now";
+  return format.relativeTime(at, now);
 }
 
 export const ActivityLogItem = memo(function ActivityLogItem({

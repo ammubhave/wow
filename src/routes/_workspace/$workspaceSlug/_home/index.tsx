@@ -65,7 +65,7 @@ import {UserPresenceAvatars} from "@/components/user-hover-card";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {VoiceRoomBadge} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
-import {formatAnswers, parseTypedAnswers, splitAnswers} from "@/lib/answers";
+import {formatAnswers, parseTypedAnswers, solvedByAnswer, splitAnswers} from "@/lib/answers";
 import {orpc} from "@/lib/orpc";
 import {
   getColorClassNamesForPuzzleImportances,
@@ -1574,7 +1574,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
           puzzleName={metaPuzzle.name}
           value={metaPuzzle.answer}
           count={metaPuzzle.answerCount}
-          onCommit={answer => update({answer})}
+          onCommit={answer => update({answer, ...solvedByAnswer(answer, metaPuzzle)})}
         />
       </Table.Cell>
       <Table.Cell className={CELL}>
@@ -1777,7 +1777,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           puzzleName={puzzle.name}
           value={puzzle.answer}
           count={puzzle.answerCount}
-          onCommit={answer => update({answer})}
+          onCommit={answer => update({answer, ...solvedByAnswer(answer, puzzle)})}
         />
       </Table.Cell>
       <Table.Cell className={CELL}>

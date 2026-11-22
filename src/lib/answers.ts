@@ -29,3 +29,17 @@ export const parseTypedAnswers = (typed: string) => joinAnswers(typed.split(/[;\
 /** For comparing guesses: case, spaces and punctuation don't matter ("Ice-cream" = "ICECREAM"). */
 export const normalizeAnswer = (answer: string) =>
   answer.toUpperCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+/**
+ * Entering a puzzle's answer marks it solved (on the board and the puzzle page alike), once all of
+ * its answers are in. Returns the status change to send along with the answer, if any.
+ */
+export function solvedByAnswer(
+  answer: string | null,
+  puzzle: {answerCount: number; status: string | null}
+): {status: "solved"} | Record<string, never> {
+  const isSolved = puzzle.status === "solved" || puzzle.status === "backsolved";
+  return !isSolved && splitAnswers(answer).length >= Math.max(1, puzzle.answerCount)
+    ? {status: "solved"}
+    : {};
+}

@@ -94,6 +94,7 @@ function HuntActions({hunt}: {hunt: Hunt}) {
         <Link
           to="/workspaces/create"
           search={{hunt: hunt.id, event: hunt.name}}
+          aria-label={`Set up a workspace for ${hunt.name}`}
           className={buttonVariants({size: "sm", variant: "secondary"})}>
           <SparklesIcon />
           Set up workspace
@@ -246,7 +247,7 @@ function CalendarView({month, hunts, now}: {month: Date; hunts: Hunt[] | undefin
     <div className="flex flex-col gap-4">
       {longRunning.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted">Also running:</span>
+          <span className="text-muted">Also this month:</span>
           {longRunning.map(hunt => (
             <button
               key={hunt.id}

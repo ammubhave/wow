@@ -10,6 +10,7 @@ import {
   PuzzleIcon,
   UserCogIcon,
   SettingsIcon,
+  TrophyIcon,
 } from "lucide-react";
 import {useEffect, useState} from "react";
 
@@ -50,13 +51,22 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
               )}>
               <Command.Group heading="Workspace">
                 <Command.Item
-                  textValue="Home"
+                  textValue="Blackboard home board"
                   onAction={() => {
                     void navigate({to: "/$workspaceSlug", params: {workspaceSlug}});
                     setOpen(false);
                   }}>
                   <HomeIcon />
-                  <span>Home</span>
+                  <span>Blackboard</span>
+                </Command.Item>
+                <Command.Item
+                  textValue="Leaderboard recap standings awards"
+                  onAction={() => {
+                    void navigate({to: "/$workspaceSlug/recap", params: {workspaceSlug}});
+                    setOpen(false);
+                  }}>
+                  <TrophyIcon />
+                  <span>Leaderboard</span>
                 </Command.Item>
                 <Command.Item
                   textValue="Settings"
@@ -68,13 +78,13 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   <span>Settings</span>
                 </Command.Item>
                 <Command.Item
-                  textValue="Activity Log"
+                  textValue="Activity log"
                   onAction={() => {
                     void navigate({to: "/$workspaceSlug/activity-log", params: {workspaceSlug}});
                     setOpen(false);
                   }}>
                   <HistoryIcon />
-                  <span>Activity Log</span>
+                  <span>Activity log</span>
                 </Command.Item>
                 <Command.Item
                   textValue="Help"

@@ -97,6 +97,20 @@ function PasswordField({
   );
 }
 
+/** "ecph.site/x" → "https://ecph.site/x"; anything with a scheme, or empty, is left alone. */
+export function withHttps(value: string) {
+  const trimmed = value.trim();
+  if (
+    !trimmed ||
+    /^[a-z][a-z\d+.-]*:/i.test(trimmed) ||
+    !trimmed.includes(".") ||
+    /\s/.test(trimmed)
+  ) {
+    return value;
+  }
+  return `https://${trimmed}`;
+}
+
 function FormTextField({
   label,
   description,
@@ -115,6 +129,13 @@ function FormTextField({
 } & React.ComponentProps<typeof Input>) {
   const field = useFieldContext<string>();
   const isInvalid = field.state.meta.errors.length > 0;
+  // Web addresses: people paste "ecph.site/puzzles/x" without the https://. Add it (on leaving the
+  // field, or Enter) rather than letting the browser's own URL check silently block the form.
+  const isUrl = props.type === "url";
+  const addScheme = () => {
+    const fixed = withHttps(field.state.value);
+    if (fixed !== field.state.value) field.handleChange(fixed);
+  };
   return (
     <TextField
       variant={variant}
@@ -124,9 +145,23 @@ function FormTextField({
       isInvalid={isInvalid}
       value={field.state.value}
       onChange={value => field.handleChange(value)}
-      onBlur={() => field.handleBlur()}>
+      onBlur={() => {
+        if (isUrl) addScheme();
+        field.handleBlur();
+      }}>
       {label && <Label>{label}</Label>}
-      <Input fullWidth={fullWidth} {...props} />
+      <Input
+        fullWidth={fullWidth}
+        {...props}
+        {...(isUrl && {
+          type: "text",
+          inputMode: "url",
+          onKeyDown: event => {
+            if (event.key === "Enter") addScheme();
+            props.onKeyDown?.(event);
+          },
+        })}
+      />
       {description && <Description>{description}</Description>}
       <FieldError>{field.state.meta.errors.map(error => error?.message).join(", ")}</FieldError>
     </TextField>

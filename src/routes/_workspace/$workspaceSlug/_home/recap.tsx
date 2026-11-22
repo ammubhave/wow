@@ -43,6 +43,13 @@ function formatSpan(ms: number) {
   return hours === 1 ? "1 hour" : `${hours} hours`;
 }
 
+/** The card's "how long" figure: the number big, its unit in the label ("3" "hours of hunting"). */
+function spanStat(span: number | null | undefined): [string, string] {
+  if (!span) return ["—", "hours of hunting"];
+  const [value = "—", unit = "hours"] = formatSpan(span).split(" ");
+  return [value, `${unit} of hunting`];
+}
+
 const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
 
 /** Time awards need at least this much (seconds), so a few stray minutes don't win one. */
@@ -252,15 +259,20 @@ function Standings({
   standings,
   me,
   isLive,
+  isOver,
 }: {
   standings: Standing[];
   me: string | undefined;
   isLive: boolean;
+  /** The hunt has ended (before it starts, the standings are only "so far"). */
+  isOver: boolean;
 }) {
   return (
     <section aria-label="Standings" className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold">{isLive ? "The race so far" : "Final standings"}</h2>
+        <h2 className="text-lg font-semibold">
+          {isLive ? "The race so far" : isOver ? "Final standings" : "Standings so far"}
+        </h2>
         <span className="flex items-center gap-3">
           {isLive && <span className="text-muted text-xs">Updates every minute</span>}
           <HelpLink slug="guides/leaderboard">How awards work</HelpLink>
@@ -317,9 +329,11 @@ function RouteComponent() {
   const cardRef = useRef<HTMLDivElement>(null);
   // During the hunt (not before it starts, nor after it ends) this is a live leaderboard.
   const [now] = useState(() => Date.now());
+  const isOver = Boolean(workspace.huntEndsAt && now >= new Date(workspace.huntEndsAt).getTime());
   const isLive =
-    !(workspace.huntEndsAt && now >= new Date(workspace.huntEndsAt).getTime()) &&
-    !(workspace.huntStartsAt && now < new Date(workspace.huntStartsAt).getTime());
+    !isOver && !(workspace.huntStartsAt && now < new Date(workspace.huntStartsAt).getTime());
+  // "Hunt recap" once it's over; until then (before it starts, too) it's the leaderboard.
+  const pageTitle = isOver ? "Hunt recap" : "Leaderboard";
   const {data} = useQuery({
     ...orpc.workspaces.recap.queryOptions({input: {workspaceSlug}}),
     refetchInterval: isLive ? LIVE_REFRESH_MS : false,
@@ -331,7 +345,7 @@ function RouteComponent() {
 
   if (!data) {
     return (
-      <Page title={isLive ? "Leaderboard" : "Hunt recap"}>
+      <Page title={pageTitle}>
         <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
           <Skeleton className="h-72 w-full rounded-3xl" />
           <Skeleton className="h-40 w-full rounded-2xl" />
@@ -381,7 +395,7 @@ function RouteComponent() {
             [String(recap.solves), recap.solves === 1 ? "puzzle solved" : "puzzles solved"],
             [String(recap.metas), recap.metas === 1 ? "meta" : "metas"],
             [String(recap.solvers), recap.solvers === 1 ? "solver" : "solvers"],
-            [recap.span ? formatSpan(recap.span).split(" ")[0]! : "—", "hours of hunting"],
+            spanStat(recap.span),
           ].map(([value, label]) => (
             <div key={label} className="flex flex-col">
               <dt className="order-2 text-xs text-white/75">{label}</dt>
@@ -402,7 +416,8 @@ function RouteComponent() {
         )}
         {recap.busiest && (
           <p className="mt-4 text-xs text-white/70">
-            Busiest hour: {busiestFormat.format(recap.busiest.at)} ({recap.busiest.count} solves)
+            Busiest hour: {busiestFormat.format(recap.busiest.at)} ({recap.busiest.count}{" "}
+            {recap.busiest.count === 1 ? "solve" : "solves"})
           </p>
         )}
         <p className="absolute right-6 bottom-4 text-xs font-semibold text-white/60">
@@ -450,11 +465,13 @@ function RouteComponent() {
       )}
     </>
   );
-  const standings = <Standings standings={recap.standings} me={me} isLive={isLive} />;
+  const standings = (
+    <Standings standings={recap.standings} me={me} isLive={isLive} isOver={isOver} />
+  );
 
   return (
     <Page
-      title={isLive ? "Leaderboard" : "Hunt recap"}
+      title={pageTitle}
       actions={
         <>
           {isLive && (

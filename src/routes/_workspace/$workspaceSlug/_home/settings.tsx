@@ -6,7 +6,7 @@ import {Page} from "@/components/page";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings")({
   component: RouteComponent,
-  head: () => ({meta: [{title: "Workspace Settings | WOW"}]}),
+  head: () => ({meta: [{title: "Workspace settings | WOW"}]}),
 });
 
 function RouteComponent() {

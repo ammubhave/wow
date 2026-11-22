@@ -196,7 +196,12 @@ export function TourCard({
           </p>
         )}
         <div className="flex items-center gap-2">
-          {!isFirst && (
+          {isFirst ? (
+            // A plain way out (not just the ✕), so the tour never feels like a trap.
+            <Button size="sm" variant="ghost" className="-ms-2" onPress={onClose}>
+              Skip the tour
+            </Button>
+          ) : (
             <Button size="sm" variant="ghost" className="-ms-2" onPress={onBack}>
               <ArrowLeftIcon />
               Back

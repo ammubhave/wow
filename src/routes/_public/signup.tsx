@@ -3,6 +3,7 @@ import type {TurnstileInstance} from "@marsidev/react-turnstile";
 import {createFileRoute, Link, redirect, useRouter} from "@tanstack/react-router";
 import {useRef, useState} from "react";
 import {toast} from "sonner";
+import {z} from "zod";
 
 import {AuthLayout, FormError, GoogleButton, OrDivider} from "@/components/auth-layout";
 import {Captcha, captchaHeaders} from "@/components/captcha";
@@ -68,7 +69,9 @@ function RouteComponent() {
           <OrDivider>or with email</OrDivider>
           <form.AppForm>
             <form.Form onChange={() => setError(null)}>
-              <form.AppField name="name">
+              <form.AppField
+                name="name"
+                validators={{onSubmit: z.string().trim().min(1, "Enter your name.")}}>
                 {field => (
                   <field.TextField
                     variant="secondary"
@@ -79,7 +82,9 @@ function RouteComponent() {
                   />
                 )}
               </form.AppField>
-              <form.AppField name="email">
+              <form.AppField
+                name="email"
+                validators={{onSubmit: z.email("Enter your email address, like sam@example.com.")}}>
                 {field => (
                   <field.TextField
                     variant="secondary"
@@ -90,11 +95,14 @@ function RouteComponent() {
                   />
                 )}
               </form.AppField>
-              <form.AppField name="password">
+              <form.AppField
+                name="password"
+                validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}>
                 {field => (
                   <field.PasswordField
                     variant="secondary"
                     label="Password"
+                    description="At least 8 characters."
                     autoComplete="new-password"
                   />
                 )}

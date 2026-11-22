@@ -5,6 +5,7 @@ import {useRouter} from "@tanstack/react-router";
 import {LaptopIcon, LockKeyholeIcon, SmartphoneIcon} from "lucide-react";
 import {Fragment, useRef, useState} from "react";
 import {toast} from "sonner";
+import {z} from "zod";
 
 import {authClient} from "@/lib/auth-client";
 import {authErrorMessage} from "@/lib/auth-helpers";
@@ -196,11 +197,14 @@ function ChangePasswordDialog({
                     />
                   )}
                 </form.AppField>
-                <form.AppField name="newPassword">
+                <form.AppField
+                  name="newPassword"
+                  validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}>
                   {field => (
                     <field.PasswordField
                       variant="secondary"
                       label="New password"
+                      description="At least 8 characters."
                       autoComplete="new-password"
                     />
                   )}

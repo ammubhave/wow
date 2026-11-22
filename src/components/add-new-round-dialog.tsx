@@ -34,7 +34,7 @@ export function AddNewRoundDialog({
         <Modal.Dialog aria-describedby={undefined}>
           <Modal.CloseTrigger />
           <Modal.Header>
-            <Modal.Heading>Add new round</Modal.Heading>
+            <Modal.Heading>Add a round</Modal.Heading>
           </Modal.Header>
           <form.AppForm>
             <Modal.Body>
@@ -54,7 +54,7 @@ export function AddNewRoundDialog({
               </form.Form>
             </Modal.Body>
             <Modal.Footer>
-              <form.SubmitButton>Save</form.SubmitButton>
+              <form.SubmitButton>Add round</form.SubmitButton>
             </Modal.Footer>
           </form.AppForm>
         </Modal.Dialog>

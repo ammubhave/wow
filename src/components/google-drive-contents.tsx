@@ -77,7 +77,7 @@ export function GoogleDriveCardContents({
         </DrivePicker>
       )}
       <Card.Header>
-        <Card.Title>Google Drive Connection</Card.Title>
+        <Card.Title>Google Drive</Card.Title>
         <Card.Description>
           Optional. Without Google Drive, every puzzle gets a built-in spreadsheet. Connect your
           Google Drive account to use Google Sheets instead: a new sheet is created for each new

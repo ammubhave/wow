@@ -184,13 +184,13 @@ function GuessRow({
             variant="secondary"
             onPress={() => set(guess, {status: "submitted", retryAt: null})}>
             <SendIcon />
-            Submitted
+            Mark submitted
           </Button>
         )}
         {status === "submitted" && (
           <Button size="sm" variant="secondary" onPress={() => markCorrect(guess)}>
             <CheckIcon />
-            Correct
+            Mark correct
           </Button>
         )}
         <Dropdown>

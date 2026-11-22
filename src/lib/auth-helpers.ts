@@ -43,5 +43,8 @@ export function authErrorMessage(
   fallback: string
 ) {
   if (error?.status === 429) return "Too many attempts. Wait a minute, then try again.";
+  // The API's own input checks ("[body.email] Invalid email address; …") aren't for people.
+  if (error?.message?.includes("[body.")) return "Check the fields above, then try again.";
+  if (error?.message === "Password too short") return "Use a password of at least 8 characters.";
   return error?.message || fallback;
 }

@@ -172,8 +172,9 @@ export function WorkspaceHeader() {
               key={`${link.name}\n${link.url}`}
               href={link.url}
               // Phones: in the menu instead (they'd crowd out everything else).
-              className="text-foreground hidden md:flex">
-              <Navbar.Label>{link.name}</Navbar.Label>
+              className="text-foreground hidden min-w-0 md:flex">
+              {/* Long or many links give way (truncate) before the clock and buttons do. */}
+              <Navbar.Label className="max-w-32 truncate">{link.name}</Navbar.Label>
               <ExternalLinkIcon data-slot="icon" />
             </Navbar.Item>
           ))}

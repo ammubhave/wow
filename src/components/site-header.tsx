@@ -1,7 +1,7 @@
 import {Navbar} from "@heroui-pro/react";
 import {buttonVariants} from "@heroui/react";
 import {Link} from "@tanstack/react-router";
-import {CalendarDaysIcon} from "lucide-react";
+import {BookOpenIcon, CalendarDaysIcon} from "lucide-react";
 
 import {BrandTitle} from "./decrypted-text";
 import {NavUser} from "./nav-user";
@@ -18,6 +18,14 @@ export function SiteHeader() {
           </Link>
         </Navbar.Brand>
         <Navbar.Spacer />
+        <Link
+          to="/docs"
+          className={buttonVariants({size: "sm", variant: "ghost"})}
+          aria-label="Docs"
+          activeProps={{className: "text-accent"}}>
+          <BookOpenIcon />
+          <span className="hidden sm:inline">Docs</span>
+        </Link>
         <Link
           to="/hunts"
           className={buttonVariants({size: "sm", variant: "ghost", className: "me-2"})}

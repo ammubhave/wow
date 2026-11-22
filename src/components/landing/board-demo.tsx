@@ -11,7 +11,7 @@ type Status = "solved" | "in-progress" | "needs-eyes" | "stuck";
 const STATUS: Record<Status, {label: string; color: "success" | "accent" | "warning" | "danger"}> =
   {
     solved: {label: "Solved", color: "success"},
-    "in-progress": {label: "In progress", color: "accent"},
+    "in-progress": {label: "Active", color: "accent"},
     "needs-eyes": {label: "Needs eyes", color: "warning"},
     stuck: {label: "Stuck", color: "danger"},
   };

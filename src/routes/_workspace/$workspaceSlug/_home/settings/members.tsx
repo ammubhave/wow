@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/
     ),
   pendingComponent: () => <PeopleCardSkeleton />,
   component: RouteComponent,
-  head: () => ({meta: [{title: "Members | Workspace Settings | WOW"}]}),
+  head: () => ({meta: [{title: "Members | Workspace settings | WOW"}]}),
 });
 
 const ROLES = [

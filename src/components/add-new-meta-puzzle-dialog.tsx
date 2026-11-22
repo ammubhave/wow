@@ -45,7 +45,7 @@ export function AddNewMetaPuzzleDialog({
         <Modal.Dialog aria-describedby={undefined}>
           <Modal.CloseTrigger />
           <Modal.Header>
-            <Modal.Heading>Add new meta puzzle</Modal.Heading>
+            <Modal.Heading>Add a meta puzzle</Modal.Heading>
           </Modal.Header>
           <form.AppForm>
             <Modal.Body>
@@ -74,7 +74,11 @@ export function AddNewMetaPuzzleDialog({
                 />
                 <form.AppField
                   name="link"
-                  validators={{onSubmit: z.url().or(z.string().length(0))}}
+                  validators={{
+                    onSubmit: z
+                      .url("Enter a web address, like https://hunt.example/puzzles/name")
+                      .or(z.literal("")),
+                  }}
                   children={field => (
                     <field.TextField
                       variant="secondary"
@@ -94,7 +98,7 @@ export function AddNewMetaPuzzleDialog({
               </form.Form>
             </Modal.Body>
             <Modal.Footer>
-              <form.SubmitButton>Save</form.SubmitButton>
+              <form.SubmitButton>Add meta</form.SubmitButton>
             </Modal.Footer>
           </form.AppForm>
         </Modal.Dialog>

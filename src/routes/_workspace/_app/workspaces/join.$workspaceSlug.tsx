@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspac
     queryClient.ensureQueryData(orpc.workspaces.getPublic.queryOptions({input: workspaceSlug})),
   pendingComponent: CardFormSkeleton,
   component: RouteComponent,
-  head: () => ({meta: [{title: "Join Workspace | WOW"}]}),
+  head: () => ({meta: [{title: "Join workspace | WOW"}]}),
 });
 
 function RouteComponent() {

@@ -13,7 +13,7 @@ import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
   component: RouteComponent,
-  head: () => ({meta: [{title: "Administration | Workspace Settings | WOW"}]}),
+  head: () => ({meta: [{title: "Administration | Workspace settings | WOW"}]}),
 });
 
 function RouteComponent() {

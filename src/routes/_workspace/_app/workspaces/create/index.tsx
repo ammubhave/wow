@@ -1,7 +1,7 @@
 import {Card} from "@heroui/react";
 import {useQueryClient} from "@tanstack/react-query";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {z} from "zod";
@@ -22,10 +22,19 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   component: RouteComponent,
   // From a hunt shortcut (My workspaces): the hunt listing, and its name to start the form with.
   validateSearch: z.object({hunt: z.string().optional(), event: z.string().optional()}),
-  head: () => ({meta: [{title: "Create Workspace | WOW"}]}),
+  head: () => ({meta: [{title: "Create workspace | WOW"}]}),
 });
 
 const reservedSlugs = new Set(["exchange"]);
+
+/** "The Night Owls" → "the-night-owls": the shape of a workspace ID. */
+const slugify = (text: string) =>
+  text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 function RouteComponent() {
   const {suggestions: huntSuggestions, byId: huntsById} = useHuntSuggestions();
@@ -120,6 +129,14 @@ function RouteComponent() {
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [shortcutHunt?.id]);
 
+  // A workspace ID suggested from the team name, until someone types their own.
+  const idEdited = useRef(false);
+  function suggestId() {
+    if (idEdited.current) return;
+    const id = slugify(form.getFieldValue("teamName")).slice(0, 40).replace(/-$/, "");
+    form.setFieldValue("workspaceSlug", id);
+  }
+
   return (
     <Page title="Create workspace">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
@@ -127,8 +144,8 @@ function RouteComponent() {
           <Card>
             <Card.Header>
               <Card.Description>
-                Your team, and the hunt you're playing. Teammates join with the workspace ID and
-                password (or the invitation link).
+                Your team, and the hunt you're playing. Once it's made, invite teammates by email,
+                or share the invitation link and password.
               </Card.Description>
             </Card.Header>
             <Card.Content>
@@ -136,6 +153,7 @@ function RouteComponent() {
                 <form.AppField
                   name="teamName"
                   validators={{onBlur: z.string().min(1)}}
+                  listeners={{onChange: suggestId}}
                   children={field => (
                     <field.TextField variant="secondary" label="Team name" isRequired />
                   )}
@@ -180,7 +198,15 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="huntWebsite"
-                  validators={{onBlur: z.union([z.literal(""), z.url({protocol: /^https?$/})])}}
+                  validators={{
+                    onBlur: z.union([
+                      z.literal(""),
+                      z.url({
+                        protocol: /^https?$/,
+                        error: "Enter a web address, like https://hunt.example",
+                      }),
+                    ]),
+                  }}
                   children={field => (
                     <field.TextField
                       variant="secondary"
@@ -193,6 +219,11 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="workspaceSlug"
+                  listeners={{
+                    onChange: () => {
+                      idEdited.current = true;
+                    },
+                  }}
                   children={field => (
                     <field.TextField
                       variant="secondary"
@@ -202,7 +233,7 @@ function RouteComponent() {
                       autoComplete="off"
                       autoCapitalize="off"
                       autoCorrect="off"
-                      description="Identifies the workspace; teammates use it to join."
+                      description="Its web address (wafflehaus.io/…) and how teammates find it. Suggested from your team's name; change it if you like."
                     />
                   )}
                 />

@@ -52,11 +52,14 @@ function RouteComponent() {
         <Card.Content>
           <form.AppForm>
             <form.Form onChange={() => setError(null)}>
-              <form.AppField name="password">
+              <form.AppField
+                name="password"
+                validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}>
                 {field => (
                   <field.PasswordField
                     variant="secondary"
                     label="New password"
+                    description="At least 8 characters."
                     autoComplete="new-password"
                     autoFocus
                   />

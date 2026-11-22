@@ -31,7 +31,7 @@ import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/")({
   component: RouteComponent,
-  head: () => ({meta: [{title: "My Workspaces | WOW"}]}),
+  head: () => ({meta: [{title: "My workspaces | WOW"}]}),
 });
 
 type WorkspaceSummary = Awaited<ReturnType<typeof orpc.me.workspaces.call>>[number];
@@ -235,9 +235,19 @@ function RouteComponent() {
         {!workspaces ? (
           <Skeleton className="h-36 rounded-2xl" />
         ) : !hasWorkspaces ? (
-          <EmptyState className="border-separator rounded-2xl border border-dashed py-12">
-            You're not in any workspaces yet. Join your team's (open the invitation link a teammate
-            sent you, or enter its ID and password), or create one.
+          <EmptyState className="border-separator flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
+            <UsersIcon className="text-muted size-8" aria-hidden="true" />
+            <div className="flex flex-col gap-1">
+              <p className="text-foreground font-semibold">No workspaces yet</p>
+              <p className="text-muted max-w-sm text-sm">
+                Captain? Create one for your team's next hunt. Joining a team? Open the invitation
+                link or email you were sent, or use <strong>Join a workspace</strong>.
+              </p>
+            </div>
+            <Link className={buttonVariants({variant: "primary"})} to="/workspaces/create">
+              <PlusIcon />
+              Create a workspace
+            </Link>
           </EmptyState>
         ) : (
           <ItemCardGroup className="overflow-hidden">

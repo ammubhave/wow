@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/activity-
     </Page>
   ),
   component: RouteComponent,
-  head: () => ({meta: [{title: "Activity Log | WOW"}]}),
+  head: () => ({meta: [{title: "Activity log | WOW"}]}),
 });
 
 function RouteComponent() {
