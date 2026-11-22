@@ -7,6 +7,7 @@ import {toast} from "sonner";
 import {voiceMeQueryKey, voiceRoomsQueryKey, voiceSpeakingQueryKey} from "@/hooks/use-workspace";
 import {track as trackEvent} from "@/lib/analytics";
 import {useWebSocket} from "@/lib/use-websocket";
+import {workspaceSocketUrl} from "@/lib/workspace-socket";
 import {
   VOICE_LOBBY,
   type VoiceParticipant,
@@ -97,7 +98,7 @@ export function VoiceProvider({
   const speakingIds = usePushed(voiceSpeakingQueryKey(workspaceSlug), NO_SPEAKERS);
   const me = usePushed<string | undefined>(voiceMeQueryKey(workspaceSlug), undefined);
   const speaking = useMemo(() => new Set(speakingIds), [speakingIds]);
-  const {sendJsonMessage, readyState} = useWebSocket(`/api/workspaces/${workspaceSlug}`, {
+  const {sendJsonMessage, readyState} = useWebSocket(workspaceSocketUrl(workspaceSlug), {
     share: true,
     shouldReconnect: () => true,
     filter: () => false,

@@ -28,6 +28,7 @@ import {v7 as uuid7} from "uuid";
 
 import {placeAmong} from "@/lib/board-order";
 import {client as rpcClient, orpc} from "@/lib/orpc";
+import {socketStates} from "@/lib/workspace-socket";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
 import type {RouterInputs} from "@/server/router";
 
@@ -54,7 +55,10 @@ declare module "@tanstack/react-query" {
 export function workspaceQueryOptions(workspaceSlug: string) {
   return queryOptions<Wire>({
     queryKey: ["workspace", workspaceSlug],
-    queryFn: () => rpcClient.workspaces.state({workspaceSlug}),
+    // Once the socket is delivering, its state is the truth: a refetch (say, after another
+    // mutation invalidates every query) returns it rather than racing it with an older copy.
+    queryFn: async () =>
+      socketStates.get(workspaceSlug)?.state ?? (await rpcClient.workspaces.state({workspaceSlug})),
     staleTime: Infinity,
   });
 }

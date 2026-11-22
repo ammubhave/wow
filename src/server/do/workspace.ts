@@ -5,12 +5,13 @@
  * to re-broadcast the updated data.
  */
 
-import {DurableObject, env} from "cloudflare:workers";
+import {DurableObject, env, waitUntil} from "cloudflare:workers";
 import {and, desc, eq, gte, lt, or} from "drizzle-orm";
 import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {diffState, type Json, type Patch, stateChecksum} from "@/lib/state-patch";
 import {parseTheme} from "@/lib/workspace-theme";
 import {
   type VoiceParticipant,
@@ -29,7 +30,37 @@ import {trackUsage} from "../posthog";
 
 /// Who's on each websocket, and their call state (kept as the socket's attachment, so it survives
 /// the room hibernating).
-type SocketAttachment = {connectionId: string; user: VoiceUser; voice?: VoiceUpdate};
+type SocketAttachment = {
+  connectionId: string;
+  user: VoiceUser;
+  voice?: VoiceUpdate;
+  /** Takes patches (`WorkspacePatchMessage`); older clients only understand the bare full state. */
+  patches?: boolean;
+  /** For reloading after the room hibernated (its in-memory workspace id is gone by then). */
+  workspaceId?: string;
+};
+
+/// Query parameter a client adds to the socket URL to receive patches instead of full states.
+export const WORKSPACE_PATCHES_PARAM = "patches";
+
+/// The full state, for clients that take patches: on connect, after a reload from cold, when a
+/// patch would be bigger, and when the client asks (`WorkspaceResyncRequest`).
+export type WorkspaceFullMessage = {
+  type: "workspace";
+  version: string;
+  state: WorkspaceRoomWireState;
+};
+/// What changed since `base`. The client applies it only to the state it has as `base`, and keeps
+/// the result only if its checksum matches (see src/lib/state-patch.ts); otherwise it resyncs.
+export type WorkspacePatchMessage = {
+  type: "workspacePatch";
+  base: string;
+  version: string;
+  checksum: string;
+  patch: Patch;
+};
+/// A client that couldn't apply a patch asks for the full state again.
+export type WorkspaceResyncRequest = {type: "workspaceResync"};
 
 /// Header the API route uses to tell the room who is connecting (set server-side only).
 export const WORKSPACE_USER_HEADER = "x-wow-user";
@@ -205,14 +236,28 @@ export type WorkspaceRoomWireState = Awaited<ReturnType<typeof getWorkspace>>;
 /// The expanded state clients work with.
 export type {WorkspaceRoomState} from "@/lib/workspace-state";
 
+const resyncRequestSchema = z.object({type: z.literal("workspaceResync")});
+
 /// Fetches the Durable Object stub for the given workspace ID.
 export function getWorkspaceRoom(workspaceId: string) {
   return env.WORKSPACE_ROOMS.getByName(workspaceId);
 }
 
 /// Re-broadcasts the workspace's data to its connected clients. Call after modifying workspace data.
+///
+/// Runs after the response rather than delaying it: the room re-reads the board from D1 and sends
+/// the change to everyone, which the caller doesn't need to wait for. The edit is already
+/// committed, so the reload sees it (reloads requested during one run once more afterwards). The
+/// editor's own browser keeps showing its change until the broadcast arrives (see
+/// workspace-mutations.ts), so nothing flickers.
 export async function invalidateWorkspace(workspaceId: string) {
-  await getWorkspaceRoom(workspaceId).invalidate(workspaceId);
+  waitUntil(
+    getWorkspaceRoom(workspaceId)
+      .invalidate(workspaceId)
+      .catch((error: unknown) => {
+        console.error("Couldn't refresh the workspace room", error);
+      })
+  );
 }
 
 export class WorkspaceRoom extends DurableObject<Env> {
@@ -230,6 +275,10 @@ export class WorkspaceRoom extends DurableObject<Env> {
   #workspaceId: string | undefined;
   /// `workspace` as sent to clients (recent activity only), serialized once per reload.
   #message: string | undefined;
+  /// The same, parsed back (what clients hold), to diff the next reload against.
+  #parsed: Json | undefined;
+  /// Identifies the current state; each patch names the version it applies to.
+  #version: string | undefined;
   /// Who has been in each call room since when, for `usage_voice` (also in storage, so a long call
   /// is still counted when the room hibernates mid-call).
   #voiceUsage: VoiceUsageSample | undefined;
@@ -249,12 +298,45 @@ export class WorkspaceRoom extends DurableObject<Env> {
 
   /// Loads the workspace data and broadcasts it to all connected clients.
   async #load(workspaceId: string) {
-    this.workspace = await getWorkspace(workspaceId, this.activityLog);
-    this.activityLog = this.workspace.activityLogEntries;
-    this.#message = JSON.stringify(this.workspace);
-    for (const ws of this.ctx.getWebSockets()) {
-      ws.send(this.#message);
+    const workspace = await getWorkspace(workspaceId, this.activityLog);
+    const message = JSON.stringify(workspace);
+    // Exactly what a client holds after JSON.parse (dates as strings, its key order).
+    const parsed: Json = JSON.parse(message);
+    const previous = this.#parsed;
+    const base = this.#version;
+    const patch = previous === undefined ? undefined : diffState(previous, parsed);
+    this.workspace = workspace;
+    this.activityLog = workspace.activityLogEntries;
+    // Nothing changed (say, a no-op edit): everyone already has this state.
+    if (previous !== undefined && patch === undefined && this.#message !== undefined) return;
+    const version = crypto.randomUUID();
+    this.#message = message;
+    this.#parsed = parsed;
+    this.#version = version;
+
+    const full = this.#fullMessage();
+    let patchMessage: string | undefined;
+    if (patch && base) {
+      patchMessage = JSON.stringify({
+        type: "workspacePatch",
+        base,
+        version,
+        checksum: stateChecksum(JSON.stringify(parsed)),
+        patch,
+      } satisfies WorkspacePatchMessage);
+      // A patch only helps when it's smaller (a bulk change can touch nearly everything).
+      if (patchMessage.length >= full.length) patchMessage = undefined;
     }
+    for (const ws of this.ctx.getWebSockets()) {
+      if (this.#attachment(ws)?.patches) ws.send(patchMessage ?? full);
+      else ws.send(message);
+    }
+  }
+
+  /// The current state for a client that takes patches.
+  #fullMessage() {
+    // `#message` is already serialized: splice it in rather than serializing the state again.
+    return `{"type":"workspace","version":${JSON.stringify(this.#version)},"state":${this.#message}}`;
   }
 
   /// Coalesces reloads: a reload requested while one is in flight waits for it and then runs once
@@ -297,6 +379,8 @@ export class WorkspaceRoom extends DurableObject<Env> {
       // (`initialize`) reloads it.
       this.workspace = undefined;
       this.#message = undefined;
+      this.#parsed = undefined;
+      this.#version = undefined;
       return;
     }
     await this.#reload(workspaceId);
@@ -323,8 +407,14 @@ export class WorkspaceRoom extends DurableObject<Env> {
     const {"0": client, "1": server} = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
     const connectionId = crypto.randomUUID();
-    server.serializeAttachment({connectionId, user} satisfies SocketAttachment);
-    server.send(this.#message);
+    const patches = new URL(request.url).searchParams.has(WORKSPACE_PATCHES_PARAM);
+    server.serializeAttachment({
+      connectionId,
+      user,
+      patches,
+      workspaceId: this.#workspaceId,
+    } satisfies SocketAttachment);
+    server.send(patches ? this.#fullMessage() : this.#message);
     server.send(JSON.stringify({type: "voiceHello", connectionId} satisfies VoiceHello));
     server.send(JSON.stringify(this.#voiceState()));
     return new Response(null, {status: 101, webSocket: client});
@@ -333,14 +423,21 @@ export class WorkspaceRoom extends DurableObject<Env> {
   /// Clients only ever send their own call state.
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
     if (typeof message !== "string") return;
-    let update;
+    let data: unknown;
     try {
-      update = voiceClientMessageSchema.parse(JSON.parse(message));
+      data = JSON.parse(message);
     } catch {
       return; // Ignore malformed messages instead of throwing in the DO.
     }
     const attachment = this.#attachment(ws);
     if (!attachment) return;
+    if (resyncRequestSchema.safeParse(data).success) {
+      await this.#resync(ws, attachment);
+      return;
+    }
+    const parsedUpdate = voiceClientMessageSchema.safeParse(data);
+    if (!parsedUpdate.success) return;
+    const update = parsedUpdate.data;
     if (update.type === "speaking") {
       // Ephemeral: relayed to everyone (the speaker included, so all their tabs agree), never
       // stored. Only someone unmuted in a call can start speaking; stopping always goes through
@@ -380,6 +477,19 @@ export class WorkspaceRoom extends DurableObject<Env> {
       }
     }
     this.#broadcastVoice();
+  }
+
+  /// Sends the full state to a client whose copy no longer matches (it couldn't apply a patch).
+  async #resync(ws: WebSocket, attachment: SocketAttachment) {
+    const workspaceId = this.#workspaceId ?? attachment.workspaceId;
+    // After hibernation the state isn't in memory: reloading sends it to every socket, this one
+    // included.
+    if (!this.#message) {
+      if (workspaceId) await this.#reload(workspaceId);
+      return;
+    }
+    if (attachment.patches) ws.send(this.#fullMessage());
+    else ws.send(this.#message);
   }
 
   webSocketClose(ws: WebSocket, code: number, reason: string) {
