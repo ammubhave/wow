@@ -58,7 +58,7 @@ export function workspaceQueryOptions(workspaceSlug: string) {
     // Once the socket is delivering, its state is the truth: a refetch (say, after another
     // mutation invalidates every query) returns it rather than racing it with an older copy.
     queryFn: async () =>
-      socketStates.get(workspaceSlug)?.state ?? (await rpcClient.workspaces.state({workspaceSlug})),
+      socketStates.get(workspaceSlug) ?? (await rpcClient.workspaces.state({workspaceSlug})),
     staleTime: Infinity,
   });
 }

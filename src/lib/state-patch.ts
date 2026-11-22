@@ -2,13 +2,10 @@
  * Patches between two versions of a JSON value (the workspace room state), so a change to one
  * puzzle sends that puzzle instead of the whole board.
  *
- * Guarantees, which the tests check on random states:
- *  - `applyPatch(a, diffState(a, b))` serializes to exactly `JSON.stringify(b)`: same values, same
- *    key order, same array order. So `stateChecksum` of the result equals the server's checksum of
- *    `b`, and a client can verify every patch it applies.
- *  - Anything left unchanged keeps its object identity, so React re-renders only what changed.
- *  - Applying a patch to the wrong base throws (or fails the checksum); it never silently produces
- *    a different state. Clients then ask for the full state again.
+ * `applyPatch(a, diffState(a, b))` is exactly `b`: same values, same key order, same array order
+ * (the tests check this on random states). Both sides compute everything about `a` (its keys, its
+ * items' ids) from the same `a`, so the patch only has to carry what's different. Anything left
+ * unchanged keeps its object identity, so React re-renders only what changed.
  *
  * Values must be plain JSON (what `JSON.parse` returns).
  */
@@ -25,14 +22,6 @@ export type Patch =
   | {t: "a"; ids?: string[]; u: [string, Patch][]}
   /** An object: the new key order (`keys`, omitted when unchanged) and a patch per changed key. */
   | {t: "o"; keys?: string[]; c: [string, Patch][]};
-
-/** Thrown when a patch doesn't fit the state it's applied to (the client is out of sync). */
-export class PatchMismatchError extends Error {
-  constructor(message: string) {
-    super(`Patch doesn't fit the state: ${message}`);
-    this.name = "PatchMismatchError";
-  }
-}
 
 const isObject = (value: Json): value is {[key: string]: Json} =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -124,69 +113,31 @@ export function diffState(a: Json, b: Json): Patch | undefined {
   return {t: "v", v: b};
 }
 
-/**
- * `state` with `patch` applied. Doesn't modify `state`; unchanged parts are shared with it. Throws
- * `PatchMismatchError` when the patch was made from a different state.
- */
-export function applyPatch(state: Json, patch: Patch): Json {
-  switch (patch.t) {
-    case "v":
-      return patch.v;
-    case "a": {
-      if (!Array.isArray(state)) throw new PatchMismatchError("expected a list");
-      const currentIds = itemIds(state);
-      if (!currentIds) throw new PatchMismatchError("expected a list of items with ids");
-      const current = new Map(currentIds.map((id, i) => [id, state[i]!]));
-      const changes = new Map(patch.u);
-      const ids = patch.ids ?? currentIds;
-      return ids.map(id => {
-        const change = changes.get(id);
-        const item = current.get(id);
-        if (change) {
-          if (item === undefined && change.t !== "v") throw new PatchMismatchError(`no item ${id}`);
-          return applyPatch(item ?? null, change);
-        }
-        if (item === undefined) throw new PatchMismatchError(`no item ${id}`);
-        return item;
-      });
-    }
-    case "o": {
-      if (!isObject(state)) throw new PatchMismatchError("expected an object");
-      const changes = new Map(patch.c);
-      const keys = patch.keys ?? Object.keys(state);
-      // fromEntries defines own properties, so a key like "__proto__" stays plain data.
-      return Object.fromEntries(
-        keys.map(key => {
-          const change = changes.get(key);
-          const has = Object.hasOwn(state, key);
-          if (change) {
-            if (!has && change.t !== "v") throw new PatchMismatchError(`no key ${key}`);
-            return [key, applyPatch(has ? state[key]! : null, change)];
-          }
-          if (!has) throw new PatchMismatchError(`no key ${key}`);
-          return [key, state[key]!];
-        })
-      );
-    }
-    default:
-      throw new PatchMismatchError("unknown patch");
+/** `a` with `diffState(a, b)` applied: `b`. Doesn't modify `a`; unchanged parts are shared with it. */
+export function applyPatch(a: Json, patch: Patch): Json {
+  if (patch.t === "v") return patch.v;
+  if (patch.t === "a") {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- diffState made an "a" patch from this list.
+    const items = a as Json[];
+    const ids = itemIds(items)!;
+    const before = new Map(ids.map((id, i) => [id, items[i]!]));
+    const changes = new Map(patch.u);
+    return (patch.ids ?? ids).map(id => {
+      const change = changes.get(id);
+      const item = before.get(id);
+      // A new item's patch is a "v" (its whole value).
+      return change ? applyPatch(item ?? null, change) : item!;
+    });
   }
-}
-
-/**
- * A checksum of a serialized state (cyrb53, plus the length), to check a patched state matches the
- * server's exactly. Not cryptographic: it only has to catch bugs and missed messages.
- */
-export function stateChecksum(serialized: string): string {
-  let h1 = 0xdeadbeef;
-  let h2 = 0x41c6ce57;
-  for (let i = 0; i < serialized.length; i++) {
-    const ch = serialized.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  const hash = 4294967296 * (2097151 & h2) + (h1 >>> 0);
-  return `${serialized.length.toString(36)}-${hash.toString(36)}`;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- diffState made an "o" patch from this object.
+  const object = a as {[key: string]: Json};
+  const changes = new Map(patch.c);
+  // fromEntries defines own properties, so a key like "__proto__" stays plain data.
+  return Object.fromEntries(
+    (patch.keys ?? Object.keys(object)).map(key => {
+      const change = changes.get(key);
+      // A new key's patch is a "v" (its whole value).
+      return [key, change ? applyPatch(object[key] ?? null, change) : object[key]!];
+    })
+  );
 }

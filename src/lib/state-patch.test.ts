@@ -1,14 +1,6 @@
 import {describe, expect, it} from "vite-plus/test";
 
-import {
-  applyPatch,
-  diffState,
-  type Json,
-  jsonEqual,
-  type Patch,
-  PatchMismatchError,
-  stateChecksum,
-} from "./state-patch";
+import {applyPatch, diffState, type Json, jsonEqual} from "./state-patch";
 
 /** Round-trips through JSON, like the websocket does. */
 const wire = <T>(value: T): T => JSON.parse(JSON.stringify(value));
@@ -18,7 +10,6 @@ function roundTrip(a: Json, b: Json) {
   const patch = diffState(a, b);
   const result = patch ? applyPatch(wire(a), wire(patch)) : wire(a);
   expect(JSON.stringify(result)).toBe(JSON.stringify(b));
-  expect(stateChecksum(JSON.stringify(result))).toBe(stateChecksum(JSON.stringify(b)));
   return {patch, result};
 }
 
@@ -256,57 +247,5 @@ describe("diffState / applyPatch", () => {
         current = result;
       }
     }
-  });
-
-  it("refuses or fails the checksum when applied to the wrong state", () => {
-    let caught = 0;
-    for (let seed = 0; seed < 2000; seed++) {
-      const r = rng(seed + 10_000);
-      const a = board(r, 3, 4);
-      const b = wire(mutate(r, a));
-      const patch = diffState(a, b);
-      if (!patch) continue;
-      // A client that missed an edit: its state differs from the patch's base.
-      const stale = wire(mutate(r, a));
-      if (jsonEqual(stale, a)) continue;
-      const expected = stateChecksum(JSON.stringify(b));
-      let ok = false;
-      try {
-        const result = applyPatch(stale, wire(patch));
-        ok = stateChecksum(JSON.stringify(result)) === expected;
-        // Only acceptable when the stale edit was overwritten by the patch anyway.
-        if (ok) expect(JSON.stringify(result)).toBe(JSON.stringify(b));
-      } catch (error) {
-        expect(error).toBeInstanceOf(PatchMismatchError);
-      }
-      if (!ok) caught++;
-    }
-    expect(caught).toBeGreaterThan(1000);
-  });
-
-  it("throws on patches that don't fit", () => {
-    const bad: [Json, Patch][] = [
-      [{a: 1}, {t: "a", u: []}],
-      [[1], {t: "a", u: []}],
-      [[{id: "a"}], {t: "a", ids: ["b"], u: []}],
-      [[{id: "a"}], {t: "a", ids: ["a", "b"], u: [["b", {t: "o", c: []}]]}],
-      [[], {t: "o", c: []}],
-      [{a: 1}, {t: "o", keys: ["a", "b"], c: []}],
-      [{a: 1}, {t: "o", keys: ["b"], c: [["b", {t: "o", c: []}]]}],
-      [{a: 1}, {t: "nope"} as unknown as Patch],
-    ];
-    for (const [state, patch] of bad) {
-      expect(() => applyPatch(state, patch)).toThrow(PatchMismatchError);
-    }
-  });
-});
-
-describe("stateChecksum", () => {
-  it("differs for different states, including same-length ones", () => {
-    const seen = new Set<string>();
-    for (let i = 0; i < 5000; i++) seen.add(stateChecksum(JSON.stringify({n: i})));
-    expect(seen.size).toBe(5000);
-    expect(stateChecksum('{"a":1}')).not.toBe(stateChecksum('{"a":2}'));
-    expect(stateChecksum('{"a":1}')).toBe(stateChecksum('{"a":1}'));
   });
 });
