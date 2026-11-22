@@ -78,11 +78,12 @@ export function WorkspaceHeader() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
   const childMatches = useChildMatches();
-  const match = childMatches[childMatches.length - 1]!;
+  // None on a mistyped URL inside the workspace (the not-found page).
+  const match = childMatches.at(-1);
   const currentSection = childMatches[1]?.fullPath ?? childMatches[0]?.fullPath;
 
   const newPuzzleId =
-    match.routeId === "/_workspace/$workspaceSlug/puzzles/$puzzleId"
+    match?.routeId === "/_workspace/$workspaceSlug/puzzles/$puzzleId"
       ? match.params.puzzleId
       : undefined;
   const dispatch = useAppDispatch();
