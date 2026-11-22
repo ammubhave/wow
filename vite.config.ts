@@ -1,4 +1,4 @@
-import {existsSync, readFileSync, writeFileSync} from "node:fs";
+import {existsSync, readdirSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 
 import {cloudflare} from "@cloudflare/vite-plugin";
@@ -32,6 +32,39 @@ const posthogSourcemapsPlugin = process.env.POSTHOG_PERSONAL_API_KEY
       applyToEnvironment: (environment: {name: string}) => environment.name === "client",
     }
   : undefined;
+
+// sitemap.xml for search engines (Google Search Console): the public pages only, since everything
+// else needs signing in. Docs pages come from the docs registry, so new pages are listed by
+// themselves.
+const SITE = "https://www.wafflehaus.io";
+const sitemap = {
+  name: "wow:sitemap",
+  applyToEnvironment: (environment: {name: string}) => environment.name === "client",
+  generateBundle(this: {
+    emitFile: (file: {type: "asset"; fileName: string; source: string}) => void;
+  }) {
+    const docSlugs = [
+      ...readFileSync("src/docs/registry.ts", "utf8").matchAll(/^\s*slug: "([^"]*)",$/gm),
+    ].map(match => match[1]!);
+    const exchange = readdirSync("src/routes/_public/exchange")
+      .filter(file => file.endsWith(".tsx") && file !== "index.tsx")
+      .map(file => `/exchange/${file.slice(0, -".tsx".length)}`);
+    const paths = [
+      "/",
+      ...docSlugs.map(slug => (slug ? `/docs/${slug}` : "/docs")),
+      "/exchange",
+      ...exchange,
+      "/tos",
+      "/privacy-policy",
+    ];
+    const urls = [...new Set(paths)].map(path => `  <url><loc>${SITE}${path}</loc></url>`);
+    this.emitFile({
+      type: "asset",
+      fileName: "sitemap.xml",
+      source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`,
+    });
+  },
+};
 
 // Univer's source map (the sheet chunk's) had outgrown Cloudflare's 25 MiB per-file asset limit,
 // which breaks the build's page shell and the deploy. Drop the embedded source text of
@@ -262,6 +295,7 @@ const config = defineConfig({
     {...docsMdx, enforce: "pre" as const},
     viteReact({compiler: true, include: /\.(mdx|js|jsx|ts|tsx)$/}),
     slimClientSourceMaps,
+    sitemap,
     posthogSourcemapsPlugin,
   ],
   build: {sourcemap: true},
