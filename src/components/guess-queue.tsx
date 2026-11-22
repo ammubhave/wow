@@ -25,6 +25,7 @@ import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
 import {HelpLink} from "@/docs/components/help-link";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {joinAnswers, normalizeAnswer, splitAnswers} from "@/lib/answers";
 import {orpc} from "@/lib/orpc";
@@ -132,6 +133,7 @@ function GuessRow({
   puzzleName?: string;
 }) {
   const {set, markCorrect} = useGuessActions(workspaceSlug);
+  const isReadOnly = useIsReadOnly();
   const status = statusOf(guess);
   const retryAt = ms(guess.retryAt);
   const waitLeft = isPending(guess) && retryAt !== null ? retryAt - now : 0;
@@ -178,7 +180,8 @@ function GuessRow({
           )}
           {guess.createdByName} · {timeAgo(guess.createdAt, now)}
         </span>
-        {status === "queued" && waitLeft <= 0 && (
+        {/* Archived: the guesses stay as they were, so no verdicts to record. */}
+        {!isReadOnly && status === "queued" && waitLeft <= 0 && (
           <Button
             size="sm"
             variant="secondary"
@@ -187,75 +190,77 @@ function GuessRow({
             Mark submitted
           </Button>
         )}
-        {status === "submitted" && (
+        {!isReadOnly && status === "submitted" && (
           <Button size="sm" variant="secondary" onPress={() => markCorrect(guess)}>
             <CheckIcon />
             Mark correct
           </Button>
         )}
-        <Dropdown>
-          <Button size="sm" isIconOnly variant="ghost" aria-label={`More for ${guess.answer}`}>
-            <EllipsisIcon />
-          </Button>
-          <Dropdown.Popover placement="bottom end">
-            <Dropdown.Menu
-              aria-label={`Update ${guess.answer}`}
-              onAction={key => {
-                const action = String(key);
-                if (action === "correct") markCorrect(guess);
-                else if (isStatus(action)) set(guess, {status: action, retryAt: null});
-              }}>
-              <Dropdown.Item id="submitted" textValue="Submitted">
-                <Label>Submitted</Label>
-              </Dropdown.Item>
-              <Dropdown.Item id="correct" textValue="Correct">
-                <Label>Correct</Label>
-              </Dropdown.Item>
-              <Dropdown.Item id="incorrect" textValue="Wrong">
-                <Label>Wrong</Label>
-              </Dropdown.Item>
-              <Dropdown.Item id="partial" textValue="Keep going">
-                <Label>Keep going (partial)</Label>
-              </Dropdown.Item>
-              <Separator />
-              <Dropdown.SubmenuTrigger>
-                <Dropdown.Item id="wait" textValue="Back off">
-                  <Label>Back off…</Label>
-                  <Dropdown.SubmenuIndicator />
+        {!isReadOnly && (
+          <Dropdown>
+            <Button size="sm" isIconOnly variant="ghost" aria-label={`More for ${guess.answer}`}>
+              <EllipsisIcon />
+            </Button>
+            <Dropdown.Popover placement="bottom end">
+              <Dropdown.Menu
+                aria-label={`Update ${guess.answer}`}
+                onAction={key => {
+                  const action = String(key);
+                  if (action === "correct") markCorrect(guess);
+                  else if (isStatus(action)) set(guess, {status: action, retryAt: null});
+                }}>
+                <Dropdown.Item id="submitted" textValue="Submitted">
+                  <Label>Submitted</Label>
                 </Dropdown.Item>
-                <Dropdown.Popover>
-                  <Dropdown.Menu
-                    aria-label="Wait before resubmitting"
-                    onAction={key =>
-                      set(guess, {
-                        status: "queued",
-                        retryAt: Date.now() + Number(String(key).slice(5)) * 60_000,
-                      })
-                    }>
-                    {WAITS.map(minutes => (
-                      <Dropdown.Item
-                        key={minutes}
-                        id={`wait-${minutes}`}
-                        textValue={`${minutes} minutes`}>
-                        <Label>
-                          {minutes === 60
-                            ? "1 hour"
-                            : `${minutes} minute${minutes === 1 ? "" : "s"}`}
-                        </Label>
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown.SubmenuTrigger>
-              <Dropdown.Item id="queued" textValue="Back to the queue">
-                <Label>Back to the queue</Label>
-              </Dropdown.Item>
-              <Dropdown.Item id="withdrawn" textValue="Withdraw">
-                <Label>Withdraw</Label>
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
+                <Dropdown.Item id="correct" textValue="Correct">
+                  <Label>Correct</Label>
+                </Dropdown.Item>
+                <Dropdown.Item id="incorrect" textValue="Wrong">
+                  <Label>Wrong</Label>
+                </Dropdown.Item>
+                <Dropdown.Item id="partial" textValue="Keep going">
+                  <Label>Keep going (partial)</Label>
+                </Dropdown.Item>
+                <Separator />
+                <Dropdown.SubmenuTrigger>
+                  <Dropdown.Item id="wait" textValue="Back off">
+                    <Label>Back off…</Label>
+                    <Dropdown.SubmenuIndicator />
+                  </Dropdown.Item>
+                  <Dropdown.Popover>
+                    <Dropdown.Menu
+                      aria-label="Wait before resubmitting"
+                      onAction={key =>
+                        set(guess, {
+                          status: "queued",
+                          retryAt: Date.now() + Number(String(key).slice(5)) * 60_000,
+                        })
+                      }>
+                      {WAITS.map(minutes => (
+                        <Dropdown.Item
+                          key={minutes}
+                          id={`wait-${minutes}`}
+                          textValue={`${minutes} minutes`}>
+                          <Label>
+                            {minutes === 60
+                              ? "1 hour"
+                              : `${minutes} minute${minutes === 1 ? "" : "s"}`}
+                          </Label>
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown.Popover>
+                </Dropdown.SubmenuTrigger>
+                <Dropdown.Item id="queued" textValue="Back to the queue">
+                  <Label>Back to the queue</Label>
+                </Dropdown.Item>
+                <Dropdown.Item id="withdrawn" textValue="Withdraw">
+                  <Label>Withdraw</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        )}
       </div>
     </li>
   );
@@ -273,6 +278,7 @@ export function PuzzleGuesses({
   puzzleId: string;
 }) {
   const workspace = useWorkspace();
+  const isReadOnly = useIsReadOnly();
   const guesses = workspace.guesses.filter(g => g.puzzleId === puzzleId);
   const now = useNow(guesses);
   const [answer, setAnswer] = useState("");
@@ -291,6 +297,8 @@ export function PuzzleGuesses({
       {onSuccess: () => setAnswer(""), onError: () => toast.error("Couldn't queue that guess.")}
     );
   };
+  // Archived with no guesses: nothing to show, and none can be queued.
+  if (isReadOnly && guesses.length === 0) return null;
   return (
     <section className="border-separator flex flex-col gap-1.5 border-t p-3" aria-label="Guesses">
       <h3 className="m-0">
@@ -314,28 +322,31 @@ export function PuzzleGuesses({
       </h3>
       {isOpen && (
         <>
-          <form
-            className="flex items-start gap-2"
-            onSubmit={event => {
-              event.preventDefault();
-              submit();
-            }}>
-            <TextField
-              aria-label="Queue a guess"
-              value={answer}
-              onChange={setAnswer}
-              variant="secondary"
-              className="min-w-0 flex-1">
-              <Input
-                placeholder="Queue a guess"
-                className="font-mono uppercase placeholder:font-sans placeholder:normal-case"
-              />
-            </TextField>
-            <Button type="submit" variant="secondary" isDisabled={!answer.trim() || isAdding}>
-              Queue
-            </Button>
-          </form>
-          {tried && (
+          {/* Archived: the guesses so far, but no new ones. */}
+          {!isReadOnly && (
+            <form
+              className="flex items-start gap-2"
+              onSubmit={event => {
+                event.preventDefault();
+                submit();
+              }}>
+              <TextField
+                aria-label="Queue a guess"
+                value={answer}
+                onChange={setAnswer}
+                variant="secondary"
+                className="min-w-0 flex-1">
+                <Input
+                  placeholder="Queue a guess"
+                  className="font-mono uppercase placeholder:font-sans placeholder:normal-case"
+                />
+              </TextField>
+              <Button type="submit" variant="secondary" isDisabled={!answer.trim() || isAdding}>
+                Queue
+              </Button>
+            </form>
+          )}
+          {!isReadOnly && tried && (
             <p className="text-warning flex items-center gap-1.5 text-xs">
               <TriangleAlertIcon className="size-3.5 shrink-0" aria-hidden="true" />
               Already guessed: {STATUS[statusOf(tried)].label.toLowerCase()}

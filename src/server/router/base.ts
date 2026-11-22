@@ -1,5 +1,6 @@
 import {ORPCError, os} from "@orpc/server";
 
+import {ARCHIVED_MESSAGE_START} from "@/lib/archived";
 import {auth} from "@/lib/auth";
 
 import {trackServerEvent, trackUsage} from "../posthog";
@@ -66,8 +67,11 @@ const ALLOWED_WHEN_ARCHIVED = new Set([
   "puzzles.get",
   "puzzles.myTimes",
   "rounds.list",
+  // Nobody can join an archived workspace, so no new invitations; old ones can be cancelled.
+  "workspaces.invitations.list",
+  "workspaces.invitations.cancel",
 ]);
-const ALLOWED_PREFIXES_WHEN_ARCHIVED = ["workspaces.members.", "workspaces.invitations."];
+const ALLOWED_PREFIXES_WHEN_ARCHIVED = ["workspaces.members."];
 const allowedWhenArchived = (path: string) =>
   ALLOWED_WHEN_ARCHIVED.has(path) ||
   ALLOWED_PREFIXES_WHEN_ARCHIVED.some(prefix => path.startsWith(prefix));
@@ -79,7 +83,7 @@ export const preauthorize = os
     if (result.status !== "OK") throw new ORPCError(result.status);
     if (result.workspace.archivedAt !== null && !allowedWhenArchived(path.join("."))) {
       throw new ORPCError("FORBIDDEN", {
-        message: "This workspace is archived, so it's read-only. An owner can unarchive it.",
+        message: `${ARCHIVED_MESSAGE_START}, so it's read-only. An owner can unarchive it.`,
       });
     }
     trackUsage("usage_request", {

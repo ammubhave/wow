@@ -24,6 +24,7 @@ import {MakeAccouncementDialog} from "@/components/make-announcement-dialog";
 import {DOC_PAGES} from "@/docs/registry";
 import {useTour} from "@/features/tour/tour-provider";
 import {useVoice} from "@/features/voice/voice-provider";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {VOICE_LOBBY} from "@/server/voice";
 
@@ -49,6 +50,8 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
     return () => document.removeEventListener("keydown", down);
   }, []);
   const workspace = useWorkspace();
+  // A read-only (archived) workspace only offers the actions that change nothing.
+  const isReadOnly = useIsReadOnly();
   const navigate = useNavigate();
   const tour = useTour();
   const voice = useVoice();
@@ -83,18 +86,22 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
               )}>
               {/* Things to do, not just places to go. Searchable: "add tide", "feeder keeper". */}
               <Command.Group heading="Actions">
-                <Command.Item
-                  textValue="Add round new"
-                  onAction={() => run(() => setDialog({type: "round"}))}>
-                  <PlusIcon />
-                  <span>Add round</span>
-                </Command.Item>
-                <Command.Item
-                  textValue="Make an announcement announce megaphone"
-                  onAction={() => run(() => setDialog({type: "announce"}))}>
-                  <MegaphoneIcon />
-                  <span>Make an announcement</span>
-                </Command.Item>
+                {!isReadOnly && (
+                  <Command.Item
+                    textValue="Add round new"
+                    onAction={() => run(() => setDialog({type: "round"}))}>
+                    <PlusIcon />
+                    <span>Add round</span>
+                  </Command.Item>
+                )}
+                {!isReadOnly && (
+                  <Command.Item
+                    textValue="Make an announcement announce megaphone"
+                    onAction={() => run(() => setDialog({type: "announce"}))}>
+                    <MegaphoneIcon />
+                    <span>Make an announcement</span>
+                  </Command.Item>
+                )}
                 <Command.Item
                   textValue={
                     inLobby ? "Leave the lobby call voice" : "Join the lobby call voice listen"
@@ -105,45 +112,48 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   <HeadphonesIcon />
                   <span>{inLobby ? "Leave the lobby call" : "Join the lobby call"}</span>
                 </Command.Item>
-                {workspace.rounds.map(round => (
-                  <Command.Item
-                    key={`meta-${round.id}`}
-                    textValue={`Add meta in ${round.name}`}
-                    onAction={() => run(() => setDialog({type: "meta", roundId: round.id}))}>
-                    <PlusIcon />
-                    <span>
-                      Add meta in <strong>{round.name}</strong>
-                    </span>
-                  </Command.Item>
-                ))}
-                {workspace.rounds.map(round => (
-                  <Command.Item
-                    key={`puzzle-${round.id}`}
-                    textValue={`Add unassigned puzzle in ${round.name}`}
-                    onAction={() => run(() => setDialog({type: "puzzle", roundId: round.id}))}>
-                    <PlusIcon />
-                    <span>
-                      Add unassigned puzzle in <strong>{round.name}</strong>
-                    </span>
-                  </Command.Item>
-                ))}
-                {workspace.rounds.flatMap(round =>
-                  round.metaPuzzles.map(meta => (
+                {!isReadOnly &&
+                  workspace.rounds.map(round => (
                     <Command.Item
-                      key={`feeder-${meta.id}`}
-                      textValue={`Add feeder puzzle to ${meta.name}`}
-                      onAction={() =>
-                        run(() =>
-                          setDialog({type: "puzzle", roundId: round.id, parentPuzzleId: meta.id})
-                        )
-                      }>
+                      key={`meta-${round.id}`}
+                      textValue={`Add meta in ${round.name}`}
+                      onAction={() => run(() => setDialog({type: "meta", roundId: round.id}))}>
                       <PlusIcon />
                       <span>
-                        Add feeder puzzle to <strong>{meta.name}</strong>
+                        Add meta in <strong>{round.name}</strong>
                       </span>
                     </Command.Item>
-                  ))
-                )}
+                  ))}
+                {!isReadOnly &&
+                  workspace.rounds.map(round => (
+                    <Command.Item
+                      key={`puzzle-${round.id}`}
+                      textValue={`Add unassigned puzzle in ${round.name}`}
+                      onAction={() => run(() => setDialog({type: "puzzle", roundId: round.id}))}>
+                      <PlusIcon />
+                      <span>
+                        Add unassigned puzzle in <strong>{round.name}</strong>
+                      </span>
+                    </Command.Item>
+                  ))}
+                {!isReadOnly &&
+                  workspace.rounds.flatMap(round =>
+                    round.metaPuzzles.map(meta => (
+                      <Command.Item
+                        key={`feeder-${meta.id}`}
+                        textValue={`Add feeder puzzle to ${meta.name}`}
+                        onAction={() =>
+                          run(() =>
+                            setDialog({type: "puzzle", roundId: round.id, parentPuzzleId: meta.id})
+                          )
+                        }>
+                        <PlusIcon />
+                        <span>
+                          Add feeder puzzle to <strong>{meta.name}</strong>
+                        </span>
+                      </Command.Item>
+                    ))
+                  )}
               </Command.Group>
               <Command.Group heading="Workspace">
                 <Command.Item

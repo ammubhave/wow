@@ -4,6 +4,7 @@ import {PencilIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -14,6 +15,11 @@ import {UserHoverCard} from "./user-hover-card";
 
 // Placeholders older versions saved as the comment itself when it was cleared; show them as empty.
 const LEGACY_EMPTY_COMMENTS = new Set(["No pinned comment.", "No comment set."]);
+
+/** The notes to show, or null when there are none (blank, or an old placeholder). */
+export function visibleComment(comment: string | null) {
+  return comment && !LEGACY_EMPTY_COMMENTS.has(comment.trim()) ? comment : null;
+}
 
 /**
  * Who last edited the notes, with their name card (as in the activity feed). Only their name is
@@ -47,7 +53,8 @@ export function CommentBox({
   puzzleId?: string;
   title?: string;
 }) {
-  const comment = rawComment && !LEGACY_EMPTY_COMMENTS.has(rawComment.trim()) ? rawComment : null;
+  const comment = visibleComment(rawComment);
+  const isReadOnly = useIsReadOnly();
   const [isEditing, setIsEditing] = useState(false);
 
   const workspaceUpdateMutation = useMutation(workspaceMutations.workspaces.update());
@@ -84,11 +91,14 @@ export function CommentBox({
     setIsEditing(true);
   };
 
+  // A read-only workspace can't change its notes, so there's nothing to show without any.
+  if (isReadOnly && !comment) return null;
+
   return (
     <section className="flex flex-col gap-1.5" aria-label={title}>
       <div className="flex min-h-8 items-center gap-2">
         <h3 className="text-muted flex-1 text-xs font-medium">{title}</h3>
-        {!isEditing && comment && (
+        {!isReadOnly && !isEditing && comment && (
           <Tooltip>
             <Tooltip.Trigger>
               <Button
@@ -104,7 +114,7 @@ export function CommentBox({
           </Tooltip>
         )}
       </div>
-      {isEditing ? (
+      {isEditing && !isReadOnly ? (
         <form.AppForm>
           <form.Form className="gap-2">
             <InputGroup fullWidth variant="secondary" className="h-auto">

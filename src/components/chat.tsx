@@ -222,46 +222,54 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
       return current.filter(image => image.key !== key);
     });
 
-  const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(chatPath, {
-    share: false,
-    shouldReconnect: () => true,
-    // Nothing reads `lastMessage`; skip storing it (messages are kept in `messages` above).
-    filter: () => false,
-    onMessage: event => {
-      const message: ChatRoomReceivedMessage = JSON.parse(event.data);
-      if (message.type === "typing") {
-        const {userId, name} = message;
-        setTypists(current => ({...current, [userId]: {name, until: Date.now() + TYPING_TTL_MS}}));
-        return;
-      }
-      if (message.type === "message" && message.isNew && message.message.userId) {
-        // Their new message is here: they're done typing it. (Reactions, edits and pins to their
-        // older messages also arrive as "message", but say nothing about typing.)
-        const {userId} = message.message;
-        setTypists(current =>
-          Object.fromEntries(Object.entries(current).filter(([id]) => id !== userId))
-        );
-      }
-      if (message.type === "snapshot") {
-        setMessages(message.messages);
-        setPinned(message.pinned ?? []);
-      } else if (message.type === "message") {
-        const updated = message.message;
-        setPinned(prev =>
-          updated.pinned
-            ? [...prev.filter(m => m.id !== updated.id), updated]
-            : prev.filter(m => m.id !== updated.id)
-        );
-        setMessages(prev => {
-          if (!prev) return [message.message];
-          if (!prev.some(m => m.id === message.message.id)) {
-            return [...prev, message.message];
-          }
-          return prev.map(m => (m.id === message.message.id ? message.message : m));
-        });
-      }
-    },
-  });
+  // Reconnects when the workspace is archived or unarchived: the room decides on connecting
+  // whether this connection may post.
+  const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(
+    isArchived ? `${chatPath}?archived` : chatPath,
+    {
+      share: false,
+      shouldReconnect: () => true,
+      // Nothing reads `lastMessage`; skip storing it (messages are kept in `messages` above).
+      filter: () => false,
+      onMessage: event => {
+        const message: ChatRoomReceivedMessage = JSON.parse(event.data);
+        if (message.type === "typing") {
+          const {userId, name} = message;
+          setTypists(current => ({
+            ...current,
+            [userId]: {name, until: Date.now() + TYPING_TTL_MS},
+          }));
+          return;
+        }
+        if (message.type === "message" && message.isNew && message.message.userId) {
+          // Their new message is here: they're done typing it. (Reactions, edits and pins to their
+          // older messages also arrive as "message", but say nothing about typing.)
+          const {userId} = message.message;
+          setTypists(current =>
+            Object.fromEntries(Object.entries(current).filter(([id]) => id !== userId))
+          );
+        }
+        if (message.type === "snapshot") {
+          setMessages(message.messages);
+          setPinned(message.pinned ?? []);
+        } else if (message.type === "message") {
+          const updated = message.message;
+          setPinned(prev =>
+            updated.pinned
+              ? [...prev.filter(m => m.id !== updated.id), updated]
+              : prev.filter(m => m.id !== updated.id)
+          );
+          setMessages(prev => {
+            if (!prev) return [message.message];
+            if (!prev.some(m => m.id === message.message.id)) {
+              return [...prev, message.message];
+            }
+            return prev.map(m => (m.id === message.message.id ? message.message : m));
+          });
+        }
+      },
+    }
+  );
 
   const send = (message: ChatRoomSentMessage) => {
     sendJsonMessage(message);

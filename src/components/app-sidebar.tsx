@@ -6,12 +6,13 @@ import {memo} from "react";
 import {cn} from "tailwind-variants";
 import {useMediaQuery} from "usehooks-ts";
 
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {getBgColorClassNamesForPuzzleStatus} from "@/lib/puzzleStatuses";
 import {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {Chat} from "./chat";
-import {CommentBox} from "./comment-box";
+import {CommentBox, visibleComment} from "./comment-box";
 import {MakeAccouncementDialog} from "./make-announcement-dialog";
 
 /**
@@ -131,16 +132,20 @@ function SidebarContents({
   rounds: WorkspaceRoomState["rounds"];
 }) {
   const workspace = useWorkspace();
+  const isReadOnly = useIsReadOnly();
   return (
     <>
-      <div className="min-h-50 overflow-y-auto p-2">
-        <CommentBox
-          workspaceSlug={workspaceSlug}
-          comment={workspace.comment}
-          commentUpdatedAt={workspace.commentUpdatedAt}
-          commentUpdatedBy={workspace.commentUpdatedBy}
-        />
-      </div>
+      {/* A read-only workspace's notes can't be added to, so without any there's no notes area. */}
+      {(!isReadOnly || visibleComment(workspace.comment)) && (
+        <div className="min-h-50 overflow-y-auto p-2">
+          <CommentBox
+            workspaceSlug={workspaceSlug}
+            comment={workspace.comment}
+            commentUpdatedAt={workspace.commentUpdatedAt}
+            commentUpdatedBy={workspace.commentUpdatedBy}
+          />
+        </div>
+      )}
       <div className="flex flex-1 flex-col gap-2 p-2 text-xs">
         {rounds.toReversed().map(round => (
           <SidebarRound
@@ -150,19 +155,21 @@ function SidebarContents({
           />
         ))}
       </div>
-      <div className="p-2">
-        <Tooltip delay={0}>
-          <MakeAccouncementDialog
-            workspaceSlug={workspaceSlug}
-            children={
-              <Button variant="outline" isIconOnly aria-label="Make an announcement">
-                <MegaphoneIcon />
-              </Button>
-            }
-          />
-          <Tooltip.Content>Make an announcement</Tooltip.Content>
-        </Tooltip>
-      </div>
+      {!isReadOnly && (
+        <div className="p-2">
+          <Tooltip delay={0}>
+            <MakeAccouncementDialog
+              workspaceSlug={workspaceSlug}
+              children={
+                <Button variant="outline" isIconOnly aria-label="Make an announcement">
+                  <MegaphoneIcon />
+                </Button>
+              }
+            />
+            <Tooltip.Content>Make an announcement</Tooltip.Content>
+          </Tooltip>
+        </div>
+      )}
     </>
   );
 }

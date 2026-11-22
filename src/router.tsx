@@ -2,9 +2,11 @@ import {MutationCache, QueryClient} from "@tanstack/react-query";
 import {createRouter} from "@tanstack/react-router";
 import {setupRouterSsrQueryIntegration} from "@tanstack/react-router-ssr-query";
 import {posthog} from "posthog-js";
+import {toast} from "sonner";
 
 import {NotFoundPage} from "./components/not-found-page";
 import {PageSkeleton} from "./components/page-skeletons";
+import {ARCHIVED_MESSAGE_START} from "./lib/archived";
 // Import the generated route tree
 import {routeTree} from "./routeTree.gen";
 
@@ -18,6 +20,13 @@ export const getRouter = () => {
     mutationCache: new MutationCache({
       onSuccess: (_data, _variables, _onMutateResult, mutation) => {
         if (mutation.meta?.invalidates !== false) void queryClient.invalidateQueries();
+      },
+      // A change refused because the workspace is archived (read-only) says so, once, even where
+      // the control forgot to handle it.
+      onError: error => {
+        if (error.message.startsWith(ARCHIVED_MESSAGE_START)) {
+          toast.error(error.message, {id: "workspace-archived"});
+        }
       },
     }),
   });

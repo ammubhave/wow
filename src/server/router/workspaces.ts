@@ -38,6 +38,9 @@ const toDate = (ms: number | null | undefined) =>
 const themeColumn = schema.organization.theme;
 const themeJson = sql`(case when json_valid(${themeColumn}) then ${themeColumn} else '{}' end)`;
 
+/** Archived workspaces are read-only, and that includes who's in them. */
+const ARCHIVED_JOIN_MESSAGE = "This workspace is archived, so it isn't taking new members.";
+
 export const workspacesRouter = {
   /** What the join page shows before you're in: the team, its look, and how many are already in. */
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
@@ -47,6 +50,7 @@ export const workspacesRouter = {
         teamName: schema.organization.teamName,
         eventName: schema.organization.eventName,
         theme: schema.organization.theme,
+        archivedAt: schema.organization.archivedAt,
       })
       .from(schema.organization)
       .where(eq(schema.organization.slug, input))
@@ -57,7 +61,15 @@ export const workspacesRouter = {
       .from(schema.member)
       .where(eq(schema.member.organizationId, workspace.id));
     const {accent, emoji} = parseTheme(workspace.theme);
-    return {teamName: workspace.teamName, eventName: workspace.eventName, accent, emoji, members};
+    return {
+      teamName: workspace.teamName,
+      eventName: workspace.eventName,
+      accent,
+      emoji,
+      members,
+      // Archived workspaces take no new members (see `join`).
+      archived: workspace.archivedAt !== null,
+    };
   }),
   join: procedure
     .input(z.object({workspaceSlug: z.string(), password: z.string()}))
@@ -68,6 +80,7 @@ export const workspacesRouter = {
           name: schema.organization.name,
           slug: schema.organization.slug,
           googleFolderId: schema.organization.googleFolderId,
+          archivedAt: schema.organization.archivedAt,
         })
         .from(schema.organization)
         .where(
@@ -93,6 +106,7 @@ export const workspacesRouter = {
         )
         .get();
       if (existing) return {id: workspace.id, name: workspace.name, slug: workspace.slug};
+      if (workspace.archivedAt) throw new ORPCError("CONFLICT", {message: ARCHIVED_JOIN_MESSAGE});
       await auth.api.addMember({
         // Joining with the password makes you a member; owners can promote people after.
         body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},
@@ -806,6 +820,7 @@ export const workspacesRouter = {
             id: schema.organization.id,
             slug: schema.organization.slug,
             googleFolderId: schema.organization.googleFolderId,
+            archivedAt: schema.organization.archivedAt,
           })
           .from(schema.invitation)
           .innerJoin(
@@ -815,6 +830,9 @@ export const workspacesRouter = {
           .where(eq(schema.invitation.id, input.invitationId))
           .get();
         if (!workspace) throw new ORPCError("NOT_FOUND");
+        if (workspace.archivedAt) {
+          throw new ORPCError("CONFLICT", {message: ARCHIVED_JOIN_MESSAGE});
+        }
         try {
           await auth.api.acceptInvitation({
             headers: context.headers,
@@ -996,7 +1014,12 @@ export const workspacesRouter = {
         message: input.message,
         from: context.session.user.name,
       });
-      if (process.env.DISCORD_BOT_TOKEN && context.workspace.discordGuildId && input.channelId) {
+      if (
+        process.env.DISCORD_BOT_TOKEN &&
+        context.workspace.discordGuildId &&
+        context.workspace.voiceTool === "discord" &&
+        input.channelId
+      ) {
         const channel: {guild_id?: string} = await (
           await fetchDiscord(`/channels/${input.channelId}`)
         ).json();

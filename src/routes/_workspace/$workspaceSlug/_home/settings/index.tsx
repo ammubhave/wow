@@ -8,6 +8,7 @@ import {z} from "zod";
 import {useAppForm} from "@/components/form";
 import {LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
 import {huntDetails, huntWebsiteLink, useHuntSuggestions} from "@/hooks/use-hunt-suggestions";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {fromLocalInput, toLocalInput} from "@/lib/datetime-local";
@@ -27,9 +28,11 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
   const isOwner = useIsWorkspaceOwner();
+  const isReadOnly = useIsReadOnly();
   return (
     <>
-      {!isOwner && (
+      {/* Archived: nobody can change anything, so there's no owners-only split to explain. */}
+      {!isOwner && !isReadOnly && (
         <Alert>
           <Alert.Indicator />
           <Alert.Content>
@@ -54,6 +57,8 @@ function RouteComponent() {
 function UpdateLinksCard() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
+  // Archived: the links are shown as they are, with nothing to add, remove or save.
+  const isReadOnly = useIsReadOnly();
   const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
     defaultValues: {links: workspace.links.map(({name, url}) => ({name, url})) ?? []},
@@ -92,6 +97,7 @@ function UpdateLinksCard() {
                             value={nameField.state.value}
                             onChange={e => nameField.handleChange(e.target.value)}
                             onBlur={nameField.handleBlur}
+                            readOnly={isReadOnly}
                             aria-label={`Link ${i + 1} name`}
                             placeholder="Name"
                             // Both inputs shrink to fit a phone: the name narrower, the URL the rest.
@@ -107,40 +113,51 @@ function UpdateLinksCard() {
                             value={urlField.state.value}
                             onChange={e => urlField.handleChange(e.target.value)}
                             onBlur={urlField.handleBlur}
+                            readOnly={isReadOnly}
                             aria-label={`Link ${i + 1} URL`}
                             placeholder="URL"
                             className="min-w-0 flex-1"
                           />
                         )}
                       />
-                      <InputGroup.Suffix className="pe-0">
-                        <Button
-                          isIconOnly
-                          variant="secondary"
-                          size="sm"
-                          aria-label="Remove link"
-                          onPress={() => field.removeValue(i)}>
-                          <TrashIcon />
-                        </Button>
-                      </InputGroup.Suffix>
+                      {!isReadOnly && (
+                        <InputGroup.Suffix className="pe-0">
+                          <Button
+                            isIconOnly
+                            variant="secondary"
+                            size="sm"
+                            aria-label="Remove link"
+                            onPress={() => field.removeValue(i)}>
+                            <TrashIcon />
+                          </Button>
+                        </InputGroup.Suffix>
+                      )}
                     </InputGroup>
                   ))}
-                  <Button
-                    className="w-fit"
-                    type="button"
-                    variant="ghost"
-                    onPress={() => field.pushValue({name: "", url: ""})}>
-                    <PlusIcon />
-                    Add link
-                  </Button>
+                  {isReadOnly ? (
+                    field.state.value.length === 0 && (
+                      <p className="text-muted text-sm">No links.</p>
+                    )
+                  ) : (
+                    <Button
+                      className="w-fit"
+                      type="button"
+                      variant="ghost"
+                      onPress={() => field.pushValue({name: "", url: ""})}>
+                      <PlusIcon />
+                      Add link
+                    </Button>
+                  )}
                 </div>
               )}
             </form.Field>
           </form.Form>
         </Card.Content>
-        <Card.Footer>
-          <form.SubmitButton savesChanges>Save</form.SubmitButton>
-        </Card.Footer>
+        {!isReadOnly && (
+          <Card.Footer>
+            <form.SubmitButton savesChanges>Save</form.SubmitButton>
+          </Card.Footer>
+        )}
       </form.AppForm>
     </Card>
   );
@@ -191,6 +208,9 @@ function DetailsCard() {
   const {suggestions: huntSuggestions, byId: huntsById} = useHuntSuggestions();
   const {workspaceSlug} = Route.useParams();
   const isOwner = useIsWorkspaceOwner();
+  const isReadOnly = useIsReadOnly();
+  // Owners can change the details, unless the workspace is archived.
+  const canEdit = isOwner && !isReadOnly;
   const workspace = useWorkspace();
   const mutation = useMutation(workspaceMutations.workspaces.update());
   const currentHuntWebsite = workspace.links.find(link => link.name === HUNT_WEBSITE)?.url ?? "";
@@ -245,7 +265,7 @@ function DetailsCard() {
             <form.AppField
               name="teamName"
               children={field => (
-                <field.TextField variant="secondary" label="Team name" isDisabled={!isOwner} />
+                <field.TextField variant="secondary" label="Team name" isDisabled={!canEdit} />
               )}
             />
             <form.AppField
@@ -254,7 +274,7 @@ function DetailsCard() {
                 <field.SuggestField
                   variant="secondary"
                   label="Event name"
-                  isDisabled={!isOwner}
+                  isDisabled={!canEdit}
                   suggestions={huntSuggestions}
                   onPick={id => {
                     const listing = id ? huntsById.get(id) : undefined;
@@ -279,7 +299,7 @@ function DetailsCard() {
                     variant="secondary"
                     label="Starts"
                     type="datetime-local"
-                    isDisabled={!isOwner}
+                    isDisabled={!canEdit}
                   />
                 )}
               />
@@ -290,7 +310,7 @@ function DetailsCard() {
                     variant="secondary"
                     label="Ends"
                     type="datetime-local"
-                    isDisabled={!isOwner}
+                    isDisabled={!canEdit}
                   />
                 )}
               />
@@ -302,7 +322,7 @@ function DetailsCard() {
                   variant="secondary"
                   label="Location"
                   placeholder="Online, or a city"
-                  isDisabled={!isOwner}
+                  isDisabled={!canEdit}
                 />
               )}
             />
@@ -316,7 +336,7 @@ function DetailsCard() {
                   type="url"
                   placeholder="https://"
                   description="The first link in the workspace's header."
-                  isDisabled={!isOwner}
+                  isDisabled={!canEdit}
                 />
               )}
             />
@@ -345,7 +365,7 @@ function DetailsCard() {
             </div>
           </form.Form>
         </Card.Content>
-        {isOwner && (
+        {canEdit && (
           <Card.Footer>
             <form.SubmitButton savesChanges>Save</form.SubmitButton>
           </Card.Footer>
@@ -358,6 +378,8 @@ function DetailsCard() {
 function UpdateTagsCard() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
+  // Archived: the tags are shown as they are, with nothing to add, remove or save.
+  const isReadOnly = useIsReadOnly();
   const mutation = useMutation(workspaceMutations.workspaces.update());
   const form = useAppForm({
     defaultValues: {tags: workspace.tags},
@@ -395,38 +417,47 @@ function UpdateTagsCard() {
                             value={tagField.state.value}
                             onChange={e => tagField.handleChange(e.target.value)}
                             onBlur={tagField.handleBlur}
+                            readOnly={isReadOnly}
                             aria-label={`Tag ${i + 1}`}
                           />
                         )}
                       />
-                      <InputGroup.Suffix className="pe-0">
-                        <Button
-                          isIconOnly
-                          variant="secondary"
-                          size="sm"
-                          aria-label="Remove tag"
-                          onPress={() => field.removeValue(i)}>
-                          <TrashIcon />
-                        </Button>
-                      </InputGroup.Suffix>
+                      {!isReadOnly && (
+                        <InputGroup.Suffix className="pe-0">
+                          <Button
+                            isIconOnly
+                            variant="secondary"
+                            size="sm"
+                            aria-label="Remove tag"
+                            onPress={() => field.removeValue(i)}>
+                            <TrashIcon />
+                          </Button>
+                        </InputGroup.Suffix>
+                      )}
                     </InputGroup>
                   ))}
-                  <Button
-                    className="w-fit"
-                    type="button"
-                    variant="ghost"
-                    onPress={() => field.pushValue("")}>
-                    <PlusIcon />
-                    Add tag
-                  </Button>
+                  {isReadOnly ? (
+                    field.state.value.length === 0 && <p className="text-muted text-sm">No tags.</p>
+                  ) : (
+                    <Button
+                      className="w-fit"
+                      type="button"
+                      variant="ghost"
+                      onPress={() => field.pushValue("")}>
+                      <PlusIcon />
+                      Add tag
+                    </Button>
+                  )}
                 </div>
               )}
             </form.Field>
           </form.Form>
         </Card.Content>
-        <Card.Footer>
-          <form.SubmitButton savesChanges>Save</form.SubmitButton>
-        </Card.Footer>
+        {!isReadOnly && (
+          <Card.Footer>
+            <form.SubmitButton savesChanges>Save</form.SubmitButton>
+          </Card.Footer>
+        )}
       </form.AppForm>
     </Card>
   );

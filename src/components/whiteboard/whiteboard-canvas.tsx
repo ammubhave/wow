@@ -86,12 +86,17 @@ export default function WhiteboardCanvas({puzzleId}: {puzzleId: string}) {
     apiRef.current = api;
   }, [api]);
 
-  const {sendJsonMessage} = useWebSocket(`/api/whiteboard/${puzzleId}`, {
-    shouldReconnect: () => true,
-    // Nothing reads `lastMessage`; don't keep every message in React state.
-    filter: () => false,
-    onMessage: event => onServerMessage(JSON.parse(event.data)),
-  });
+  // Reconnects when the workspace is archived or unarchived: the room decides on connecting
+  // whether this connection may make changes.
+  const {sendJsonMessage} = useWebSocket(
+    `/api/whiteboard/${puzzleId}${isArchived ? "?archived" : ""}`,
+    {
+      shouldReconnect: () => true,
+      // Nothing reads `lastMessage`; don't keep every message in React state.
+      filter: () => false,
+      onMessage: event => onServerMessage(JSON.parse(event.data)),
+    }
+  );
   const send = (message: WhiteboardSentMessage) => sendJsonMessage(message);
 
   const remember = (elements: readonly {id: string; version: number}[]) => {

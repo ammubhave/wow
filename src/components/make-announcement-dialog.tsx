@@ -4,6 +4,7 @@ import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
 import {ControlledModal} from "./controlled-dialog";
@@ -24,8 +25,13 @@ export function MakeAccouncementDialog({
   const [ownOpen, setOwnOpen] = useState(false);
   const open = openProp ?? ownOpen;
   const setOpen = onOpenChange ?? setOwnOpen;
+  // Discord is offered only when the team chose it (Settings > Administration > Voice calls).
+  const usesDiscord = useWorkspace().voiceTool === "discord";
   const discordTextChannels = useQuery(
-    orpc.workspaces.discord.listTextChannels.queryOptions({input: {workspaceSlug}, enabled: open})
+    orpc.workspaces.discord.listTextChannels.queryOptions({
+      input: {workspaceSlug},
+      enabled: open && usesDiscord,
+    })
   );
   const mutation = useMutation(orpc.workspaces.announce.mutationOptions());
   const form = useAppForm({
@@ -73,7 +79,7 @@ export function MakeAccouncementDialog({
                     />
                   )}
                 />
-                {discordTextChannels.data && (
+                {usesDiscord && discordTextChannels.data && (
                   <form.AppField
                     name="channelId"
                     children={field => {

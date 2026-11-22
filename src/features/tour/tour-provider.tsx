@@ -6,6 +6,7 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useRef} from
 import {toast} from "sonner";
 import {useMediaQuery} from "usehooks-ts";
 
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {orpc} from "@/lib/orpc";
@@ -119,7 +120,9 @@ export function TourProvider({
         planned.findLastIndex(s => steps.indexOf(s) <= index)
       )
     : 0;
-  const isActive = state?.status === "active" && step !== undefined && ctx !== null;
+  // Paused in an archived workspace: its hands-on steps can't change anything there.
+  const isReadOnly = useIsReadOnly();
+  const isActive = state?.status === "active" && step !== undefined && ctx !== null && !isReadOnly;
 
   const isOnPage = (target: TourStep): boolean =>
     ({

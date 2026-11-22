@@ -5,6 +5,7 @@ import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {orpc} from "@/lib/orpc";
@@ -19,6 +20,9 @@ export const customEmojiUrl = (workspaceSlug: string, fileId: string) =>
 export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
   const workspace = useWorkspace();
   const isOwner = useIsWorkspaceOwner();
+  const isReadOnly = useIsReadOnly();
+  // Owners can change the look, unless the workspace is archived.
+  const canEdit = isOwner && !isReadOnly;
   const update = useMutation(workspaceMutations.workspaces.update());
   const [emoji, setEmoji] = useState(workspace.theme.emoji ?? "");
   const current = workspace.theme.accent ?? "default";
@@ -42,7 +46,7 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
                     type="button"
                     aria-pressed={current === accent.id}
                     aria-label={accent.label}
-                    disabled={!isOwner}
+                    disabled={!canEdit}
                     onClick={() => update.mutate({workspaceSlug, accent: accent.id})}
                     className={cn(
                       "ring-offset-surface flex size-8 items-center justify-center rounded-full ring-offset-2 transition disabled:cursor-not-allowed disabled:opacity-50",
@@ -70,12 +74,12 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
             variant="secondary"
             value={emoji}
             onChange={setEmoji}
-            isDisabled={!isOwner}
+            isDisabled={!canEdit}
             className="w-32">
             <Label>Team emoji</Label>
             <Input placeholder="🧇" maxLength={16} />
           </TextField>
-          {isOwner && (
+          {canEdit && (
             <Button type="submit" variant="secondary">
               Save
             </Button>
@@ -91,6 +95,8 @@ const EMOJI_LIMITS = {maxBytes: 256 * 1024, maxSide: 128};
 /** The team's custom reaction emoji (anyone can add): small images used as :name:. */
 export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
   const {theme} = useWorkspace();
+  // Archived: the emoji are shown, with nothing to add or remove.
+  const isReadOnly = useIsReadOnly();
   const add = useMutation(orpc.workspaces.customEmoji.add.mutationOptions());
   const remove = useMutation(orpc.workspaces.customEmoji.remove.mutationOptions());
   const [name, setName] = useState("");
@@ -131,60 +137,69 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
                 className="bg-surface-secondary flex items-center gap-2 rounded-lg py-1 ps-2 pe-1">
                 <img src={customEmojiUrl(workspaceSlug, e.fileId)} alt="" className="size-5" />
                 <span className="text-sm">:{e.name}:</span>
-                <Button
-                  size="sm"
-                  isIconOnly
-                  variant="ghost"
-                  aria-label={`Remove :${e.name}:`}
-                  onPress={() => remove.mutate({workspaceSlug, name: e.name})}>
-                  <TrashIcon />
-                </Button>
+                {!isReadOnly && (
+                  <Button
+                    size="sm"
+                    isIconOnly
+                    variant="ghost"
+                    aria-label={`Remove :${e.name}:`}
+                    onPress={() => remove.mutate({workspaceSlug, name: e.name})}>
+                    <TrashIcon />
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
         )}
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={async event => {
-            event.preventDefault();
-            if (!file || !cleanName) return;
-            setIsUploading(true);
-            try {
-              const fileId = await uploadImage(
-                file,
-                id => customEmojiUrl(workspaceSlug, id),
-                EMOJI_LIMITS
-              );
-              await add.mutateAsync({workspaceSlug, name: cleanName, fileId});
-              toast.success(`:${cleanName}: added.`);
-              setName("");
-              choose(null);
-              if (fileRef.current) fileRef.current.value = "";
-            } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Couldn't add the emoji.");
-            } finally {
-              setIsUploading(false);
-            }
-          }}>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={event => choose(event.target.files?.[0] ?? null)}
-          />
-          <Button variant="secondary" onPress={() => fileRef.current?.click()}>
-            {file && preview ? <img src={preview} alt="" className="size-5" /> : <ImagePlusIcon />}
-            {file ? "Change image" : "Choose image"}
-          </Button>
-          <TextField variant="secondary" value={name} onChange={setName} className="w-40">
-            <Label>Name</Label>
-            <Input placeholder="partyparrot" maxLength={32} />
-          </TextField>
-          <Button type="submit" isDisabled={!file || !cleanName || isUploading}>
-            Add
-          </Button>
-        </form>
+        {isReadOnly && emoji.length === 0 && <p className="text-muted text-sm">No team emoji.</p>}
+        {!isReadOnly && (
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={async event => {
+              event.preventDefault();
+              if (!file || !cleanName) return;
+              setIsUploading(true);
+              try {
+                const fileId = await uploadImage(
+                  file,
+                  id => customEmojiUrl(workspaceSlug, id),
+                  EMOJI_LIMITS
+                );
+                await add.mutateAsync({workspaceSlug, name: cleanName, fileId});
+                toast.success(`:${cleanName}: added.`);
+                setName("");
+                choose(null);
+                if (fileRef.current) fileRef.current.value = "";
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Couldn't add the emoji.");
+              } finally {
+                setIsUploading(false);
+              }
+            }}>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={event => choose(event.target.files?.[0] ?? null)}
+            />
+            <Button variant="secondary" onPress={() => fileRef.current?.click()}>
+              {file && preview ? (
+                <img src={preview} alt="" className="size-5" />
+              ) : (
+                <ImagePlusIcon />
+              )}
+              {file ? "Change image" : "Choose image"}
+            </Button>
+            <TextField variant="secondary" value={name} onChange={setName} className="w-40">
+              <Label>Name</Label>
+              <Input placeholder="partyparrot" maxLength={32} />
+            </TextField>
+            <Button type="submit" isDisabled={!file || !cleanName || isUploading}>
+              Add
+            </Button>
+          </form>
+        )}
       </Card.Content>
     </Card>
   );

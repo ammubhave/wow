@@ -109,6 +109,20 @@ const toRanges = (ranges: SheetPresence["ranges"]): SheetPresence["ranges"] =>
  * The puzzle's spreadsheet (Univer), kept in sync with its SheetRoom by SheetSync, with teammates
  * on top: their selections, the cells they're typing in, and a bar to jump to and follow them.
  */
+/**
+ * Makes the workbook read-only (an archived workspace) or editable again. Through Univer's
+ * permissions: `FWorkbook.setEditable` alone doesn't stop typing, since every WOW user is a
+ * workbook owner here (see the comment on members below).
+ */
+function lockWorkbook(
+  workbook: ReturnType<FUniver["getActiveWorkbook"]> | undefined,
+  locked: boolean
+) {
+  const permission = workbook?.getWorkbookPermission();
+  if (!permission) return;
+  void (locked ? permission.setReadOnly() : permission.setEditable());
+}
+
 export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const theme = useResolvedTheme();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,15 +144,35 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const isArchived = useWorkspace().archivedAt !== null;
   const readOnly = useRef(isArchived);
   readOnly.current = isArchived;
+  /** Whether this workbook was locked, so unarchiving knows to unlock it. */
+  const locked = useRef(false);
   const presenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const {sendJsonMessage, readyState} = useWebSocket(`/api/sheet/${puzzleId}`, {
-    shouldReconnect: () => true,
-    // Nothing reads `lastMessage`; don't keep every message in React state.
-    filter: () => false,
-    onMessage: event => onServerMessage(JSON.parse(event.data)),
-  });
+  // Reconnects when the workspace is archived or unarchived: the room decides on connecting
+  // whether this connection may make changes.
+  const {sendJsonMessage, readyState} = useWebSocket(
+    `/api/sheet/${puzzleId}${isArchived ? "?archived" : ""}`,
+    {
+      shouldReconnect: () => true,
+      // Nothing reads `lastMessage`; don't keep every message in React state.
+      filter: () => false,
+      onMessage: event => onServerMessage(JSON.parse(event.data)),
+    }
+  );
   const send = (message: SheetSentMessage) => sendJsonMessage(message);
+
+  // Archived or unarchived while the sheet is open: lock or unlock it without a reload.
+  useEffect(() => {
+    const workbook = engine?.api.getActiveWorkbook();
+    if (!workbook) return;
+    if (isArchived) {
+      lockWorkbook(workbook, true);
+      locked.current = true;
+    } else if (locked.current) {
+      lockWorkbook(workbook, false);
+      locked.current = false;
+    }
+  }, [engine, isArchived]);
 
   /** Merges into this person's presence and shares it (throttled). */
   const updatePresence = (patch: Partial<SheetPresence>) => {
@@ -249,7 +283,10 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
       onPendingChange: setPending,
       onWorkbookLoaded: entries => {
         restoreFilters(univerAPI, unitId, puzzleId, entries);
-        if (readOnly.current) univerAPI.getActiveWorkbook()?.setEditable(false);
+        if (readOnly.current) {
+          lockWorkbook(univerAPI.getActiveWorkbook(), true);
+          locked.current = true;
+        }
         // Univer doesn't announce the selection a sheet opens with: share it, so teammates see
         // where this person is before they click anything.
         later(() => {
@@ -319,6 +356,19 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     let viewTimer: ReturnType<typeof setTimeout> | null = null;
     let filterTimer: ReturnType<typeof setTimeout> | null = null;
     const disposables = [
+      // Archived (read-only): no cell editor, and none of this person's edits run. The same
+      // mutations the room would be sent (see CommandExecuted below); teammates' entries, formula
+      // results and personal filters still apply.
+      univerAPI.addEvent(univerAPI.Event.BeforeSheetEditStart, event => {
+        if (readOnly.current) event.cancel = true;
+      }),
+      univerAPI.addEvent(univerAPI.Event.BeforeCommandExecute, event => {
+        if (!readOnly.current || event.type !== CommandType.MUTATION) return;
+        const options = event.options;
+        if (options?.fromCollab || options?.onlyLocal || options?.fromChangeset) return;
+        if (isPersonalMutation(event.id) || !isForUnit(event.params, unitId)) return;
+        event.cancel = true;
+      }),
       univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, ({stage}) => {
         if (functionsRegistered || stage < LifecycleStages.Rendered) return;
         functionsRegistered = true;

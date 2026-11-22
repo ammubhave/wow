@@ -7,6 +7,7 @@ import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
 import {SpreadsheetChoice, VoiceChoice} from "@/components/workspace-tools";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {orpc} from "@/lib/orpc";
@@ -19,6 +20,10 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/
 
 function RouteComponent() {
   const isOwner = useIsWorkspaceOwner();
+  const isReadOnly = useIsReadOnly();
+  // Owners can change these, unless the workspace is archived (then only the Archive card works,
+  // so an owner can unarchive it).
+  const canEdit = isOwner && !isReadOnly;
   return (
     <div className="flex flex-col gap-8">
       {!isOwner && (
@@ -32,9 +37,9 @@ function RouteComponent() {
           </Alert.Content>
         </Alert>
       )}
-      <WorkspacePasswordCard isOwner={isOwner} />
-      <SpreadsheetCard isOwner={isOwner} />
-      <VoiceCard isOwner={isOwner} />
+      <WorkspacePasswordCard canEdit={canEdit} />
+      <SpreadsheetCard canEdit={canEdit} />
+      <VoiceCard canEdit={canEdit} />
       <ArchiveWorkspaceCard isOwner={isOwner} />
       <DeleteWorkspaceCard />
     </div>
@@ -104,7 +109,7 @@ function ArchiveWorkspaceCard({isOwner}: {isOwner: boolean}) {
   );
 }
 
-function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
+function WorkspacePasswordCard({canEdit}: {canEdit: boolean}) {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
   const mutation = useMutation(workspaceMutations.workspaces.update());
@@ -137,13 +142,13 @@ function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
                   variant="secondary"
                   aria-label="Workspace password"
                   // Members can still see it, to tell teammates how to join.
-                  readOnly={!isOwner}
+                  readOnly={!canEdit}
                 />
               )}
             </form.AppField>
           </form.Form>
         </Card.Content>
-        {isOwner && (
+        {canEdit && (
           <Card.Footer>
             <form.SubmitButton savesChanges>Save</form.SubmitButton>
           </Card.Footer>
@@ -153,12 +158,12 @@ function WorkspacePasswordCard({isOwner}: {isOwner: boolean}) {
   );
 }
 
-function SpreadsheetCard({isOwner}: {isOwner: boolean}) {
+function SpreadsheetCard({canEdit}: {canEdit: boolean}) {
   const {workspaceSlug} = Route.useParams();
   return (
     <Card>
       <SpreadsheetChoice
-        isDisabled={!isOwner}
+        isDisabled={!canEdit}
         workspaceSlug={workspaceSlug}
         redirectUrl={`/${workspaceSlug}/settings/administration`}
       />
@@ -166,12 +171,12 @@ function SpreadsheetCard({isOwner}: {isOwner: boolean}) {
   );
 }
 
-function VoiceCard({isOwner}: {isOwner: boolean}) {
+function VoiceCard({canEdit}: {canEdit: boolean}) {
   const {workspaceSlug} = Route.useParams();
   return (
     <Card>
       <VoiceChoice
-        isDisabled={!isOwner}
+        isDisabled={!canEdit}
         workspaceSlug={workspaceSlug}
         redirectUrl={`/${workspaceSlug}/settings/administration`}
       />

@@ -40,6 +40,7 @@ import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contri
 import {PuzzleSheet} from "@/components/sheet/sheet";
 import {SolveSpark} from "@/components/solve-spark";
 import {PuzzleWhiteboard} from "@/components/whiteboard/whiteboard";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {formatPuzzleTime, usePuzzleTimeTracker} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
@@ -67,6 +68,15 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzle
     return {meta: [{title: `${puzzle.name} | WOW`}]};
   },
 });
+
+/** The puzzle's Google file (its sheet, or else its drawing), without the editor or preview part. */
+const googleFileUrl = (puzzle: {
+  googleSpreadsheetId: string | null;
+  googleDrawingId: string | null;
+}) =>
+  puzzle.googleSpreadsheetId
+    ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}`
+    : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}`;
 
 function RouteComponent() {
   const {workspaceSlug, puzzleId} = Route.useParams();
@@ -153,6 +163,8 @@ function PuzzleInfoPanel({
   };
 }) {
   const workspace = useWorkspace();
+  // Archived: the fields show the puzzle as it was left, and can't be changed.
+  const isReadOnly = useIsReadOnly();
   const puzzleUpdateMutation = useMutation(workspaceMutations.puzzles.update());
   // Each field commits as soon as it's edited. In between, the form is reset (untouched) so it
   // keeps following `puzzle` — this change's overlay, then the server and other solvers' edits —
@@ -198,27 +210,29 @@ function PuzzleInfoPanel({
         )}
         {puzzle.googleSpreadsheetId && (
           <PanelLink
-            href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit`}
+            href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/${isReadOnly ? "preview" : "edit"}`}
             label="Open spreadsheet in a new tab"
             icon={<TableIcon />}
           />
         )}
         {puzzle.googleDrawingId && (
           <PanelLink
-            href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit`}
+            href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/${isReadOnly ? "preview" : "edit"}`}
             label="Open drawing in a new tab"
             icon={<BrushIcon />}
           />
         )}
-        <EditPuzzleDialog
-          workspaceSlug={workspaceSlug}
-          puzzle={puzzle}
-          open={isEditPuzzleDialogOpen}
-          setOpen={setIsEditPuzzleDialogOpen}>
-          <Button size="sm" isIconOnly variant="ghost" aria-label="Edit puzzle">
-            <EditIcon />
-          </Button>
-        </EditPuzzleDialog>
+        {!isReadOnly && (
+          <EditPuzzleDialog
+            workspaceSlug={workspaceSlug}
+            puzzle={puzzle}
+            open={isEditPuzzleDialogOpen}
+            setOpen={setIsEditPuzzleDialogOpen}>
+            <Button size="sm" isIconOnly variant="ghost" aria-label="Edit puzzle">
+              <EditIcon />
+            </Button>
+          </EditPuzzleDialog>
+        )}
       </div>
       <PuzzleContext workspaceSlug={workspaceSlug} puzzle={puzzle} />
       <form.AppForm>
@@ -230,7 +244,7 @@ function PuzzleInfoPanel({
             {puzzle.answerCount > 1 ? "Answers" : "Answer"}
           </span>
           {puzzle.answerCount > 1 ? (
-            <MultiAnswers workspaceSlug={workspaceSlug} puzzle={puzzle} />
+            <MultiAnswers workspaceSlug={workspaceSlug} puzzle={puzzle} isReadOnly={isReadOnly} />
           ) : (
             <form.AppField
               name="answer"
@@ -264,6 +278,7 @@ function PuzzleInfoPanel({
                     <field.InputGroupInputField
                       aria-label="Answer"
                       placeholder="Not solved yet"
+                      readOnly={isReadOnly}
                       className="font-mono whitespace-pre uppercase placeholder:font-sans placeholder:normal-case"
                       onKeyDown={e => {
                         if (e.key === "Enter") e.currentTarget.blur();
@@ -291,6 +306,7 @@ function PuzzleInfoPanel({
                 isSolved={field.state.value === "solved" || field.state.value === "backsolved"}>
                 <field.SelectField
                   aria-label="Status"
+                  isDisabled={isReadOnly}
                   variant="secondary"
                   fullWidth
                   placeholder="None"
@@ -328,6 +344,7 @@ function PuzzleInfoPanel({
               <div className="min-w-0">
                 <field.SelectField
                   aria-label="Importance"
+                  isDisabled={isReadOnly}
                   variant="secondary"
                   fullWidth
                   placeholder="Not set"
@@ -350,25 +367,39 @@ function PuzzleInfoPanel({
             )}
           />
           <span className="text-muted self-start pt-2 text-xs">Tags</span>
-          <form.AppField
-            name="tags"
-            listeners={{
-              onChange: async () => {
-                if (form.state.isValid) {
-                  await form.handleSubmit();
-                }
-              },
-            }}
-            children={field => (
-              <div className="min-w-0">
-                <field.ComboboxMultipleField
-                  variant="secondary"
-                  className="w-full"
-                  items={workspace.tags}
-                />
-              </div>
-            )}
-          />
+          {isReadOnly ? (
+            <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-1">
+              {puzzle.tags.length > 0 ? (
+                puzzle.tags.map(tag => (
+                  <Chip key={tag} size="sm" variant="secondary">
+                    {tag}
+                  </Chip>
+                ))
+              ) : (
+                <span className="text-muted text-sm">None</span>
+              )}
+            </div>
+          ) : (
+            <form.AppField
+              name="tags"
+              listeners={{
+                onChange: async () => {
+                  if (form.state.isValid) {
+                    await form.handleSubmit();
+                  }
+                },
+              }}
+              children={field => (
+                <div className="min-w-0">
+                  <field.ComboboxMultipleField
+                    variant="secondary"
+                    className="w-full"
+                    items={workspace.tags}
+                  />
+                </div>
+              )}
+            />
+          )}
           <span className="text-muted text-xs">Solvers</span>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <PuzzleContributorAvatars
@@ -554,9 +585,11 @@ function PuzzleList({
 function MultiAnswers({
   workspaceSlug,
   puzzle,
+  isReadOnly,
 }: {
   workspaceSlug: string;
   puzzle: {id: string; answer: string | null; answerCount: number; status: string | null};
+  isReadOnly: boolean;
 }) {
   const {mutate} = useMutation(workspaceMutations.puzzles.update());
   const found = splitAnswers(puzzle.answer);
@@ -581,6 +614,7 @@ function MultiAnswers({
           <InputGroup.Input
             aria-label={`Answer ${i + 1}`}
             placeholder="Not found yet"
+            readOnly={isReadOnly}
             value={value}
             onChange={e => {
               const next = [...values];
@@ -671,6 +705,7 @@ function WorksheetPane({
   phone?: {chat: ReactNode; info: ReactNode};
 }) {
   const navigate = useNavigate({from: Route.fullPath});
+  const isReadOnly = useIsReadOnly();
   // A Google sheet (or drawing) made for this puzzle is shown even if the workspace has since
   // disconnected Drive (it still opens for anyone with access); other puzzles get the built-in one.
   const googleWorksheet = Boolean(puzzle.googleSpreadsheetId || puzzle.googleDrawingId);
@@ -731,19 +766,17 @@ function WorksheetPane({
       <div className={cn("flex min-h-0 flex-1 flex-col", view !== "sheet" && "hidden")}>
         {googleWorksheet ? (
           <WorksheetFrame
-            // A new puzzle gets a fresh frame (and loading state).
-            key={puzzle.id}
+            // A new puzzle gets a fresh frame (and loading state), and so does archiving.
+            key={`${puzzle.id}${isReadOnly ? ":read-only" : ""}`}
             title={`${puzzle.name} ${puzzle.googleSpreadsheetId ? "spreadsheet" : "drawing"}`}
             src={
-              puzzle.googleSpreadsheetId
-                ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit?widget=true&chrome=false&rm=embedded`
-                : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit?widget=true&chrome=false&rm=embedded`
+              // Archived: Google's read-only preview, since WOW can't stop edits inside Google's own
+              // editor (anyone with access to the file could still change it there).
+              isReadOnly
+                ? `${googleFileUrl(puzzle)}/preview`
+                : `${googleFileUrl(puzzle)}/edit?widget=true&chrome=false&rm=embedded`
             }
-            openHref={
-              puzzle.googleSpreadsheetId
-                ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/edit`
-                : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/edit`
-            }
+            openHref={`${googleFileUrl(puzzle)}/${isReadOnly ? "preview" : "edit"}`}
           />
         ) : (
           <PuzzleSheet key={puzzle.id} puzzleId={puzzle.id} />

@@ -42,7 +42,9 @@ function RouteComponent() {
         error: (error: unknown) =>
           error instanceof ORPCError && error.code === "FORBIDDEN"
             ? "That password isn't right."
-            : "Oops! Something went wrong.",
+            : error instanceof ORPCError && error.code === "CONFLICT"
+              ? error.message
+              : "Oops! Something went wrong.",
       });
       await join.catch((error: unknown) => {
         // The link's password is out of date (or mistyped): forget it and ask for the real one.
@@ -96,29 +98,39 @@ function RouteComponent() {
               </Chip>
             )}
           </Card.Header>
-          {/* A link with the password needs nothing but the button. */}
-          {!linkPassword && (
+          {workspace.archived ? (
             <Card.Content>
-              <form.AppForm>
-                <form.Form>
-                  <form.AppField name="password">
-                    {field => (
-                      <field.TextField
-                        variant="secondary"
-                        label="Workspace password"
-                        type="password"
-                      />
-                    )}
-                  </form.AppField>
-                </form.Form>
-              </form.AppForm>
+              <p className="text-muted text-center text-sm">
+                This workspace is archived, so it isn&apos;t taking new members.
+              </p>
             </Card.Content>
+          ) : (
+            <>
+              {/* A link with the password needs nothing but the button. */}
+              {!linkPassword && (
+                <Card.Content>
+                  <form.AppForm>
+                    <form.Form>
+                      <form.AppField name="password">
+                        {field => (
+                          <field.TextField
+                            variant="secondary"
+                            label="Workspace password"
+                            type="password"
+                          />
+                        )}
+                      </form.AppField>
+                    </form.Form>
+                  </form.AppForm>
+                </Card.Content>
+              )}
+              <Card.Footer className="mt-4">
+                <form.AppForm>
+                  <form.SubmitButton fullWidth>Join {teamName}</form.SubmitButton>
+                </form.AppForm>
+              </Card.Footer>
+            </>
           )}
-          <Card.Footer className="mt-4">
-            <form.AppForm>
-              <form.SubmitButton fullWidth>Join {teamName}</form.SubmitButton>
-            </form.AppForm>
-          </Card.Footer>
         </Card>
       </div>
     </div>

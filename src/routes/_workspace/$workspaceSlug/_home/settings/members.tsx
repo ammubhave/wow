@@ -21,6 +21,7 @@ import {z} from "zod";
 import {ControlledAlertDialog} from "@/components/controlled-dialog";
 import {PeopleCardSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
 import {joinLinkWithPassword} from "@/lib/join-password";
@@ -48,6 +49,7 @@ function RouteComponent() {
     orpc.workspaces.members.list.queryOptions({input: {workspaceSlug}})
   ).data;
   const updateRole = useMutation(orpc.workspaces.members.updateRole.mutationOptions());
+  const isReadOnly = useIsReadOnly();
   // Owners first, then by name.
   const sorted = members.toSorted(
     (a, b) =>
@@ -57,7 +59,8 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-8">
-      {myRole === "owner" && <InviteCard workspaceSlug={workspaceSlug} />}
+      {/* An archived workspace takes no new members. */}
+      {myRole === "owner" && !isReadOnly && <InviteCard workspaceSlug={workspaceSlug} />}
       <Card>
         <Card.Header>
           <Card.Title>Members ({members.length})</Card.Title>

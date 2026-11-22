@@ -64,6 +64,7 @@ import {TeammateChangeFlash} from "@/components/teammate-change-flash";
 import {UserPresenceAvatars} from "@/components/user-hover-card";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {VoiceRoomBadge} from "@/features/voice/voice-ui";
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {formatAnswers, parseTypedAnswers, solvedByAnswer, splitAnswers} from "@/lib/answers";
 import {orpc} from "@/lib/orpc";
@@ -170,6 +171,13 @@ function metaColor(id: string) {
 
 /** True while the board is in Arrange mode (rows can be dragged). */
 const ArrangingContext = createContext(false);
+
+/**
+ * True when the workspace is read-only (archived): cells show their values without editors and the
+ * menus leave out what would change things. A context (not each row reading the workspace) so rows
+ * stay memoized.
+ */
+const ReadOnlyContext = createContext(false);
 
 /** The drag handle shown in Arrange mode (React Aria starts a drag from `slot="drag"`). */
 function DragHandle({label}: {label: string}) {
@@ -293,6 +301,7 @@ function AnswerInput({
   count: number;
   onCommit: (answer: string) => void;
 }) {
+  const isReadOnly = useContext(ReadOnlyContext);
   const [draft, setDraft] = useState<string | null>(null);
   const isMulti = count > 1;
   const commit = () => {
@@ -302,6 +311,13 @@ function AnswerInput({
     if (answer !== (value ?? "")) onCommit(answer);
   };
   const found = splitAnswers(value).length;
+  if (isReadOnly) {
+    return (
+      <span className="absolute inset-0 flex items-center px-2 font-mono break-all whitespace-normal uppercase">
+        {isMulti ? formatAnswers(value) : value}
+      </span>
+    );
+  }
   return (
     <input
       aria-label={`Answer for ${puzzleName}`}
@@ -334,8 +350,20 @@ function TagsCell({
   tags: string[];
   onCommit: (tags: string[]) => void;
 }) {
+  const isReadOnly = useContext(ReadOnlyContext);
   const [isEditing, setIsEditing] = useState(false);
   const form = useAppForm({defaultValues: {tags: value}});
+  if (isReadOnly) {
+    return (
+      <div className="flex h-full w-full flex-wrap items-center gap-1 p-1">
+        {value.map(tag => (
+          <Chip key={tag} size="sm" className={getTagColor(tag)}>
+            {tag}
+          </Chip>
+        ))}
+      </div>
+    );
+  }
   if (!isEditing) {
     return (
       <button
@@ -407,8 +435,27 @@ function DeferredSelect({
   showIndicator?: boolean;
   children: (props: DeferredSelectProps) => React.ReactNode;
 }) {
+  const isReadOnly = useContext(ReadOnlyContext);
   const [activation, setActivation] = useState<{autoFocus: boolean} | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const slots = selectVariants();
+  if (isReadOnly) {
+    // Just the value, looking as it does in the Select, with nothing to press.
+    return (
+      <div data-slot="select" className={slots.base()}>
+        <div
+          data-slot="select-trigger"
+          className={cn(slots.trigger(), triggerClassName, "pointer-events-none")}>
+          <span data-slot="select-value" className={slots.value()}>
+            {value}
+          </span>
+          {typeof value !== "string" && (
+            <span className="sr-only">{`${ariaLabel}: ${valueText}`}</span>
+          )}
+        </div>
+      </div>
+    );
+  }
   if (activation) {
     return children({autoFocus: activation.autoFocus, isOpen, onOpenChange: setIsOpen});
   }
@@ -418,7 +465,6 @@ function DeferredSelect({
     // records it as the element to return focus to on close.
     requestAnimationFrame(() => setIsOpen(true));
   };
-  const slots = selectVariants();
   return (
     <div data-slot="select" className={slots.base()}>
       <button
@@ -615,8 +661,12 @@ const FILTER_TOGGLE =
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
   const workspace = useWorkspace();
+  const isReadOnly = useIsReadOnly();
   const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
-  const [isArranging, setIsArranging] = useState(false);
+  const [isArrangeOn, setIsArranging] = useState(false);
+  // Arranging moves rows, so a read-only workspace can't be arranged (even if it was archived while
+  // you were arranging).
+  const isArranging = isArrangeOn && !isReadOnly;
   // Rows you've collapsed (rounds, metas, unassigned groups), remembered per workspace; everything
   // else is expanded.
   const [collapsed, setCollapsed] = useLocalStorage<string[]>(
@@ -1026,15 +1076,17 @@ function RouteComponent() {
                   </Button>
                 )}
               </div>
-              <ToggleButton
-                data-tour="arrange"
-                size="sm"
-                className={cn(FILTER_TOGGLE, "max-sm:hidden")}
-                isSelected={isArranging}
-                onChange={setIsArranging}>
-                <MoveIcon />
-                Arrange
-              </ToggleButton>
+              {!isReadOnly && (
+                <ToggleButton
+                  data-tour="arrange"
+                  size="sm"
+                  className={cn(FILTER_TOGGLE, "max-sm:hidden")}
+                  isSelected={isArranging}
+                  onChange={setIsArranging}>
+                  <MoveIcon />
+                  Arrange
+                </ToggleButton>
+              )}
               <SidebarDrawerButton workspaceSlug={workspaceSlug} rounds={rounds} />
               <TeamChatDrawerButton />
             </div>
@@ -1046,95 +1098,103 @@ function RouteComponent() {
                     feeder, or on a round to move it there. Filters are paused while arranging.
                   </p>
                 )}
-                <ArrangingContext.Provider value={isArranging}>
-                  {/* overflow-visible: HeroUI clips the table sideways, which on phones hid
+                <ReadOnlyContext.Provider value={isReadOnly}>
+                  <ArrangingContext.Provider value={isArranging}>
+                    {/* overflow-visible: HeroUI clips the table sideways, which on phones hid
                     the status and row menu; the board's scroll box scrolls it instead. */}
-                  <Table data-tour="board" variant="secondary" className="overflow-visible">
-                    {/* The board's scroll box is the scroll container; an inner overflow box would
+                    <Table data-tour="board" variant="secondary" className="overflow-visible">
+                      {/* The board's scroll box is the scroll container; an inner overflow box would
                       stop the sticky header from sticking. */}
-                    <Table.ScrollContainer className="overflow-visible">
-                      <Table.Content
-                        aria-label="Blackboard"
-                        className="h-fit text-xs"
-                        treeColumn="tree"
-                        expandedKeys={expandedKeys}
-                        onExpandedChange={onExpandedChange}
-                        // Always passed (React Aria can't add or drop them later); off outside Arrange.
-                        dragAndDropHooks={dragAndDropHooks}>
-                        <Table.Header className="bg-background sticky top-0 z-10">
-                          <Table.Column className="w-8 p-0" aria-label="Hunt link">
-                            <span className="sr-only">Hunt link</span>
-                          </Table.Column>
-                          <Table.Column id="tree" className="w-8 p-0" aria-label="Expand">
-                            <span className="sr-only">Expand</span>
-                          </Table.Column>
-                          <Table.Column id="name" isRowHeader className={COLUMN}>
-                            Name
-                          </Table.Column>
-                          <Table.Column className={cn(COLUMN, "min-w-28 md:min-w-[150px]")}>
-                            Solution
-                          </Table.Column>
-                          <Table.Column className={COLUMN}>Status</Table.Column>
-                          <Table.Column
-                            className={cn(COLUMN, "w-0", DESKTOP_ONLY)}
-                            aria-label="Importance">
-                            <SignalIcon className="size-4" aria-hidden />
-                          </Table.Column>
-                          <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>Tags</Table.Column>
-                          <Table.Column data-tour="working-on" className={cn(COLUMN, DESKTOP_ONLY)}>
-                            Working on this
-                          </Table.Column>
-                          <Table.Column
-                            className={cn(COLUMN, "w-0", STICKY_ACTIONS)}
-                            aria-label="Actions">
-                            <div className="-my-1 flex items-center justify-end">
-                              <Dropdown>
-                                <Button
-                                  data-tour="board-menu"
-                                  variant="ghost"
-                                  isIconOnly
-                                  size="sm"
-                                  aria-label="Board menu">
-                                  <EllipsisIcon />
-                                </Button>
-                                <Dropdown.Popover className="w-fit" placement="bottom end">
-                                  <Dropdown.Menu>
-                                    <Dropdown.Item
-                                      id="add-new-round"
-                                      textValue="Add round"
-                                      onAction={() => setIsAddNewRoundDialogOpen(true)}>
-                                      <Label>Add round</Label>
-                                    </Dropdown.Item>
-                                  </Dropdown.Menu>
-                                </Dropdown.Popover>
-                              </Dropdown>
-                            </div>
-                          </Table.Column>
-                        </Table.Header>
-                        <Table.Body
-                          items={boardRounds}
-                          dependencies={[
-                            workspace.tags,
-                            favoriteSet,
-                            roundProgress,
-                            expandedKeys,
-                            isArranging,
-                          ]}>
-                          {round => (
-                            <BlackboardRound
-                              workspaceSlug={workspaceSlug}
-                              round={round}
-                              solvedCount={roundProgress.get(round.id)?.solved ?? 0}
-                              puzzleCount={roundProgress.get(round.id)?.total ?? 0}
-                              tags={workspace.tags}
-                              favoritePuzzleIds={favoriteSet}
-                            />
-                          )}
-                        </Table.Body>
-                      </Table.Content>
-                    </Table.ScrollContainer>
-                  </Table>
-                </ArrangingContext.Provider>
+                      <Table.ScrollContainer className="overflow-visible">
+                        <Table.Content
+                          aria-label="Blackboard"
+                          className="h-fit text-xs"
+                          treeColumn="tree"
+                          expandedKeys={expandedKeys}
+                          onExpandedChange={onExpandedChange}
+                          // Always passed (React Aria can't add or drop them later); off outside Arrange.
+                          dragAndDropHooks={dragAndDropHooks}>
+                          <Table.Header className="bg-background sticky top-0 z-10">
+                            <Table.Column className="w-8 p-0" aria-label="Hunt link">
+                              <span className="sr-only">Hunt link</span>
+                            </Table.Column>
+                            <Table.Column id="tree" className="w-8 p-0" aria-label="Expand">
+                              <span className="sr-only">Expand</span>
+                            </Table.Column>
+                            <Table.Column id="name" isRowHeader className={COLUMN}>
+                              Name
+                            </Table.Column>
+                            <Table.Column className={cn(COLUMN, "min-w-28 md:min-w-[150px]")}>
+                              Solution
+                            </Table.Column>
+                            <Table.Column className={COLUMN}>Status</Table.Column>
+                            <Table.Column
+                              className={cn(COLUMN, "w-0", DESKTOP_ONLY)}
+                              aria-label="Importance">
+                              <SignalIcon className="size-4" aria-hidden />
+                            </Table.Column>
+                            <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>Tags</Table.Column>
+                            <Table.Column
+                              data-tour="working-on"
+                              className={cn(COLUMN, DESKTOP_ONLY)}>
+                              Working on this
+                            </Table.Column>
+                            <Table.Column
+                              className={cn(COLUMN, "w-0", STICKY_ACTIONS)}
+                              aria-label="Actions">
+                              <div className="-my-1 flex items-center justify-end">
+                                {/* Its only item adds a round. */}
+                                {!isReadOnly && (
+                                  <Dropdown>
+                                    <Button
+                                      data-tour="board-menu"
+                                      variant="ghost"
+                                      isIconOnly
+                                      size="sm"
+                                      aria-label="Board menu">
+                                      <EllipsisIcon />
+                                    </Button>
+                                    <Dropdown.Popover className="w-fit" placement="bottom end">
+                                      <Dropdown.Menu>
+                                        <Dropdown.Item
+                                          id="add-new-round"
+                                          textValue="Add round"
+                                          onAction={() => setIsAddNewRoundDialogOpen(true)}>
+                                          <Label>Add round</Label>
+                                        </Dropdown.Item>
+                                      </Dropdown.Menu>
+                                    </Dropdown.Popover>
+                                  </Dropdown>
+                                )}
+                              </div>
+                            </Table.Column>
+                          </Table.Header>
+                          <Table.Body
+                            items={boardRounds}
+                            dependencies={[
+                              workspace.tags,
+                              favoriteSet,
+                              roundProgress,
+                              expandedKeys,
+                              isArranging,
+                              isReadOnly,
+                            ]}>
+                            {round => (
+                              <BlackboardRound
+                                workspaceSlug={workspaceSlug}
+                                round={round}
+                                solvedCount={roundProgress.get(round.id)?.solved ?? 0}
+                                puzzleCount={roundProgress.get(round.id)?.total ?? 0}
+                                tags={workspace.tags}
+                                favoritePuzzleIds={favoriteSet}
+                              />
+                            )}
+                          </Table.Body>
+                        </Table.Content>
+                      </Table.ScrollContainer>
+                    </Table>
+                  </ArrangingContext.Provider>
+                </ReadOnlyContext.Provider>
                 {/* Mounted only while open. */}
                 {isAddNewRoundDialogOpen && (
                   <AddNewRoundDialog
@@ -1151,19 +1211,24 @@ function RouteComponent() {
                         <ListPlusIcon />
                       </EmptyState.Media>
                       <EmptyState.Title>No rounds yet</EmptyState.Title>
-                      <EmptyState.Description>
-                        Add a round, then add its puzzles as they unlock. Everyone in the workspace
-                        sees them here as they're added.
-                      </EmptyState.Description>
+                      {/* How to add rounds, unless none can be added. */}
+                      {!isReadOnly && (
+                        <EmptyState.Description>
+                          Add a round, then add its puzzles as they unlock. Everyone in the
+                          workspace sees them here as they're added.
+                        </EmptyState.Description>
+                      )}
                     </EmptyState.Header>
-                    <EmptyState.Content>
-                      <Button
-                        data-tour="add-first-round"
-                        onPress={() => setIsAddNewRoundDialogOpen(true)}>
-                        <PlusIcon />
-                        Add a round
-                      </Button>
-                    </EmptyState.Content>
+                    {!isReadOnly && (
+                      <EmptyState.Content>
+                        <Button
+                          data-tour="add-first-round"
+                          onPress={() => setIsAddNewRoundDialogOpen(true)}>
+                          <PlusIcon />
+                          Add a round
+                        </Button>
+                      </EmptyState.Content>
+                    )}
                   </EmptyState>
                 )}
               </div>
@@ -1202,6 +1267,7 @@ const BlackboardRound = memo(function BlackboardRound({
   const [isEditRoundDialogOpen, setIsEditRoundDialogOpen] = useState(false);
   const [isDeleteRoundDialogOpen, setIsDeleteRoundDialogOpen] = useState(false);
   const isArranging = useContext(ArrangingContext);
+  const isReadOnly = useContext(ReadOnlyContext);
 
   // Metas, then the unassigned puzzles as one group (kept stable so rows aren't rebuilt).
   const children = useMemo<RoundChild[]>(
@@ -1307,66 +1373,69 @@ const BlackboardRound = memo(function BlackboardRound({
       </Table.Cell>
       <Table.Cell className={cn(CELL, STICKY_ACTIONS, "max-md:bg-surface-secondary")}>
         <div className="-my-3 flex items-center justify-end">
-          <Dropdown>
-            <Button
-              data-tour="round-menu"
-              data-tour-id={round.id}
-              isDisabled={isBeingCreated}
-              variant="ghost"
-              isIconOnly>
-              <EllipsisIcon />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-            <Dropdown.Popover className="w-fit" placement="bottom end">
-              <Dropdown.Menu>
-                <Dropdown.Item
-                  id="add-meta"
-                  textValue="Add meta"
-                  onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
-                  <Label>Add meta</Label>
-                </Dropdown.Item>
-                {round.metaPuzzles.length > 0 ? (
+          {/* Everything in it changes the round. */}
+          {!isReadOnly && (
+            <Dropdown>
+              <Button
+                data-tour="round-menu"
+                data-tour-id={round.id}
+                isDisabled={isBeingCreated}
+                variant="ghost"
+                isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
                   <Dropdown.Item
-                    id="add-unassigned-disabled"
-                    textValue="Add unassigned puzzle"
-                    isDisabled
-                    // Disabled menu items get `pointer-events: none`; re-enable them so the
-                    // explanatory tooltip can still be hovered.
-                    className="pointer-events-auto!">
-                    <Label>Add unassigned puzzle</Label>
-                    <Tooltip>
-                      <Tooltip.Trigger>
-                        <InfoIcon className="ms-auto" />
-                      </Tooltip.Trigger>
-                      <Tooltip.Content placement="left">
-                        You can only add unassigned puzzles when there are no meta puzzles in the
-                        round.
-                      </Tooltip.Content>
-                    </Tooltip>
+                    id="add-meta"
+                    textValue="Add meta"
+                    onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
+                    <Label>Add meta</Label>
                   </Dropdown.Item>
-                ) : (
+                  {round.metaPuzzles.length > 0 ? (
+                    <Dropdown.Item
+                      id="add-unassigned-disabled"
+                      textValue="Add unassigned puzzle"
+                      isDisabled
+                      // Disabled menu items get `pointer-events: none`; re-enable them so the
+                      // explanatory tooltip can still be hovered.
+                      className="pointer-events-auto!">
+                      <Label>Add unassigned puzzle</Label>
+                      <Tooltip>
+                        <Tooltip.Trigger>
+                          <InfoIcon className="ms-auto" />
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="left">
+                          You can only add unassigned puzzles when there are no meta puzzles in the
+                          round.
+                        </Tooltip.Content>
+                      </Tooltip>
+                    </Dropdown.Item>
+                  ) : (
+                    <Dropdown.Item
+                      id="add-unassigned"
+                      textValue="Add unassigned puzzle"
+                      onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                      <Label>Add unassigned puzzle</Label>
+                    </Dropdown.Item>
+                  )}
                   <Dropdown.Item
-                    id="add-unassigned"
-                    textValue="Add unassigned puzzle"
-                    onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
-                    <Label>Add unassigned puzzle</Label>
+                    id="edit-round"
+                    textValue="Edit round"
+                    onAction={() => setIsEditRoundDialogOpen(true)}>
+                    <Label>Edit round</Label>
                   </Dropdown.Item>
-                )}
-                <Dropdown.Item
-                  id="edit-round"
-                  textValue="Edit round"
-                  onAction={() => setIsEditRoundDialogOpen(true)}>
-                  <Label>Edit round</Label>
-                </Dropdown.Item>
-                <Dropdown.Item
-                  id="delete-round"
-                  textValue="Delete round"
-                  onAction={() => setIsDeleteRoundDialogOpen(true)}>
-                  <Label>Delete round</Label>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
+                  <Dropdown.Item
+                    id="delete-round"
+                    textValue="Delete round"
+                    onAction={() => setIsDeleteRoundDialogOpen(true)}>
+                    <Label>Delete round</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          )}
         </div>
         {isAddNewMetaPuzzleDialogOpen && (
           <AddNewMetaPuzzleDialog
@@ -1437,6 +1506,7 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
   favoritePuzzleIds: ReadonlySet<string>;
 }) {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const isReadOnly = useContext(ReadOnlyContext);
   return (
     <Table.Row id={group.id} textValue="Unassigned puzzles" className="group">
       <Table.Cell className="p-0">{null}</Table.Cell>
@@ -1452,22 +1522,25 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
       </Table.Cell>
       <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
         <div className="-my-3 flex items-center justify-end">
-          <Dropdown>
-            <Button variant="ghost" isIconOnly>
-              <EllipsisIcon />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-            <Dropdown.Popover className="w-fit" placement="bottom end">
-              <Dropdown.Menu>
-                <Dropdown.Item
-                  id="assign-all"
-                  textValue="Assign all unassigned puzzles"
-                  onAction={() => setIsAssignDialogOpen(true)}>
-                  <Label>Assign all unassigned puzzles</Label>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
+          {/* Its only item moves puzzles. */}
+          {!isReadOnly && (
+            <Dropdown>
+              <Button variant="ghost" isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
+                  <Dropdown.Item
+                    id="assign-all"
+                    textValue="Assign all unassigned puzzles"
+                    onAction={() => setIsAssignDialogOpen(true)}>
+                    <Label>Assign all unassigned puzzles</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          )}
         </div>
         {isAssignDialogOpen && (
           <AssignUnassignedPuzzlesDialog
@@ -1517,6 +1590,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   const toggleFavorite = useToggleFavorite(workspaceSlug);
   const color = metaColor(metaPuzzle.id);
   const isArranging = useContext(ArrangingContext);
+  const isReadOnly = useContext(ReadOnlyContext);
   const presences = useAppSelector(state => state.presences.value[metaPuzzle.id]) ?? NO_PRESENCES;
 
   return (
@@ -1634,44 +1708,53 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
             <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
           </ToggleButton>
-          <Dropdown>
-            <Button data-tour="meta-menu" data-tour-id={metaPuzzle.id} variant="ghost" isIconOnly>
-              <EllipsisIcon />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-            <Dropdown.Popover className="w-fit" placement="bottom end">
-              <Dropdown.Menu>
-                {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
+          {/* Read-only, only phones' favorite item is left (or nothing, so no menu). */}
+          {(!isReadOnly || isPhone) && (
+            <Dropdown>
+              <Button data-tour="meta-menu" data-tour-id={metaPuzzle.id} variant="ghost" isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
+                  {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
                     rendered at all elsewhere (hidden items would still be reachable by keyboard). */}
-                {isPhone && (
-                  <Dropdown.Item
-                    id="favorite"
-                    textValue={isFavorite ? "Remove from favorites" : "Add to favorites"}
-                    onAction={() => toggleFavorite(metaPuzzle.id, !isFavorite)}>
-                    <Label>{isFavorite ? "Remove from favorites" : "Add to favorites"}</Label>
-                  </Dropdown.Item>
-                )}
-                <Dropdown.Item
-                  id="add-feeding"
-                  textValue="Add feeder puzzle"
-                  onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
-                  <Label>Add feeder puzzle</Label>
-                </Dropdown.Item>
-                <Dropdown.Item
-                  id="edit-meta"
-                  textValue="Edit meta"
-                  onAction={() => setIsEditPuzzleDialogOpen(true)}>
-                  <Label>Edit meta</Label>
-                </Dropdown.Item>
-                <Dropdown.Item
-                  id="delete-meta"
-                  textValue="Delete meta"
-                  onAction={() => setIsDeletePuzzleDialogOpen(true)}>
-                  <Label>Delete meta</Label>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
+                  {isPhone && (
+                    <Dropdown.Item
+                      id="favorite"
+                      textValue={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                      onAction={() => toggleFavorite(metaPuzzle.id, !isFavorite)}>
+                      <Label>{isFavorite ? "Remove from favorites" : "Add to favorites"}</Label>
+                    </Dropdown.Item>
+                  )}
+                  {!isReadOnly && (
+                    <Dropdown.Item
+                      id="add-feeding"
+                      textValue="Add feeder puzzle"
+                      onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
+                      <Label>Add feeder puzzle</Label>
+                    </Dropdown.Item>
+                  )}
+                  {!isReadOnly && (
+                    <Dropdown.Item
+                      id="edit-meta"
+                      textValue="Edit meta"
+                      onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                      <Label>Edit meta</Label>
+                    </Dropdown.Item>
+                  )}
+                  {!isReadOnly && (
+                    <Dropdown.Item
+                      id="delete-meta"
+                      textValue="Delete meta"
+                      onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                      <Label>Delete meta</Label>
+                    </Dropdown.Item>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          )}
         </div>
         {isAddNewPuzzleFeedingThisMetaDialogOpen && (
           <AddNewPuzzleDialog
@@ -1748,6 +1831,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   const toggleFavorite = useToggleFavorite(workspaceSlug);
   const presences = useAppSelector(state => state.presences.value[puzzle.id]) ?? NO_PRESENCES;
   const isArranging = useContext(ArrangingContext);
+  const isReadOnly = useContext(ReadOnlyContext);
 
   return (
     <Table.Row
@@ -1848,38 +1932,45 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
             <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
           </ToggleButton>
-          <Dropdown>
-            <Button variant="ghost" isIconOnly>
-              <EllipsisIcon />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-            <Dropdown.Popover className="w-fit" placement="bottom end">
-              <Dropdown.Menu>
-                {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
+          {/* Read-only, only phones' favorite item is left (or nothing, so no menu). */}
+          {(!isReadOnly || isPhone) && (
+            <Dropdown>
+              <Button variant="ghost" isIconOnly>
+                <EllipsisIcon />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+              <Dropdown.Popover className="w-fit" placement="bottom end">
+                <Dropdown.Menu>
+                  {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
                     rendered at all elsewhere (hidden items would still be reachable by keyboard). */}
-                {isPhone && (
-                  <Dropdown.Item
-                    id="favorite"
-                    textValue={isFavorite ? "Remove from favorites" : "Add to favorites"}
-                    onAction={() => toggleFavorite(puzzle.id, !isFavorite)}>
-                    <Label>{isFavorite ? "Remove from favorites" : "Add to favorites"}</Label>
-                  </Dropdown.Item>
-                )}
-                <Dropdown.Item
-                  id="edit-puzzle"
-                  textValue="Edit puzzle"
-                  onAction={() => setIsEditPuzzleDialogOpen(true)}>
-                  <Label>Edit puzzle</Label>
-                </Dropdown.Item>
-                <Dropdown.Item
-                  id="delete-puzzle"
-                  textValue="Delete puzzle"
-                  onAction={() => setIsDeletePuzzleDialogOpen(true)}>
-                  <Label>Delete puzzle</Label>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
+                  {isPhone && (
+                    <Dropdown.Item
+                      id="favorite"
+                      textValue={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                      onAction={() => toggleFavorite(puzzle.id, !isFavorite)}>
+                      <Label>{isFavorite ? "Remove from favorites" : "Add to favorites"}</Label>
+                    </Dropdown.Item>
+                  )}
+                  {!isReadOnly && (
+                    <Dropdown.Item
+                      id="edit-puzzle"
+                      textValue="Edit puzzle"
+                      onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                      <Label>Edit puzzle</Label>
+                    </Dropdown.Item>
+                  )}
+                  {!isReadOnly && (
+                    <Dropdown.Item
+                      id="delete-puzzle"
+                      textValue="Delete puzzle"
+                      onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                      <Label>Delete puzzle</Label>
+                    </Dropdown.Item>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          )}
         </div>
         {isEditPuzzleDialogOpen && (
           <EditPuzzleDialog

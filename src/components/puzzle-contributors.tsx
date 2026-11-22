@@ -2,6 +2,7 @@ import {ToggleButton, Tooltip} from "@heroui/react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {HandIcon} from "lucide-react";
 
+import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
@@ -47,7 +48,9 @@ export function HelpedToggle({
 }) {
   const me = authClient.useSession().data?.user.id;
   const {mutate} = useMutation(workspaceMutations.puzzles.setContributor());
-  if (!me) return null;
+  // Archived: who helped is settled (the avatars still show it).
+  const isReadOnly = useIsReadOnly();
+  if (!me || isReadOnly) return null;
   const helped = contributorIds.includes(me);
   return (
     <Tooltip delay={300}>
