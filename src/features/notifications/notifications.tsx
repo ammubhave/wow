@@ -300,7 +300,9 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
   const [showSettings, setShowSettings] = useState(false);
   const [prefs, setPrefs] = usePrefs();
   const navigate = useNavigate();
-  const isUnread = (n: WorkspaceNotification) => n.timestamp > seenAt && !readIds.includes(n.id);
+  // Your own solve is news to the team, not to you: it's listed, but never unread.
+  const isUnread = (n: WorkspaceNotification) =>
+    n.timestamp > seenAt && !readIds.includes(n.id) && !(n.type === "solved" && n.by?.id === me);
   const unread = notifications.filter(isUnread).length;
   const ofTab =
     tab === "mentions" ? notifications.filter(n => n.type === "mention") : notifications;

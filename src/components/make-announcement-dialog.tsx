@@ -12,11 +12,18 @@ import {useAppForm} from "./form";
 export function MakeAccouncementDialog({
   workspaceSlug,
   children,
+  open: openProp,
+  onOpenChange,
 }: {
   workspaceSlug: string;
-  children: React.ReactElement;
+  /** Its trigger button; leave out to open it from elsewhere with `open`. */
+  children?: React.ReactElement;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   const discordTextChannels = useQuery(
     orpc.workspaces.discord.listTextChannels.queryOptions({input: {workspaceSlug}, enabled: open})
   );

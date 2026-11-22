@@ -1,5 +1,5 @@
 import {autoUpdate, flip, offset, shift, useFloating} from "@floating-ui/react";
-import {Button} from "@heroui/react";
+import {Button, ProgressBar} from "@heroui/react";
 import {ArrowLeftIcon, ArrowRightIcon, CheckIcon, SparklesIcon, XIcon} from "lucide-react";
 import {useEffect, useState} from "react";
 import {createPortal} from "react-dom";
@@ -221,12 +221,15 @@ export function TourCard({
           </div>
         </div>
         {/* How far along. */}
-        <div className="bg-default h-1 overflow-hidden rounded-full" aria-hidden>
-          <div
-            className="bg-accent h-full rounded-full motion-safe:transition-[width]"
-            style={{width: `${((position + 1) / total) * 100}%`}}
-          />
-        </div>
+        <ProgressBar
+          aria-label={`Step ${position + 1} of ${total}`}
+          size="sm"
+          value={position + 1}
+          maxValue={total}>
+          <ProgressBar.Track>
+            <ProgressBar.Fill />
+          </ProgressBar.Track>
+        </ProgressBar>
       </div>
     </div>,
     document.body

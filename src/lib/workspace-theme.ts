@@ -5,16 +5,19 @@ import {z} from "zod";
  * (beside the team name, and in solve celebrations), plus the team's custom reaction emoji.
  */
 export const ACCENTS = [
-  {id: "default", label: "Waffle (default)", color: null},
-  {id: "red", label: "Red", color: "oklch(63% 0.21 25)"},
-  {id: "pink", label: "Pink", color: "oklch(66% 0.2 350)"},
-  {id: "violet", label: "Violet", color: "oklch(62% 0.2 295)"},
-  {id: "blue", label: "Blue", color: "oklch(62% 0.18 255)"},
-  {id: "teal", label: "Teal", color: "oklch(68% 0.12 190)"},
-  {id: "green", label: "Green", color: "oklch(68% 0.17 145)"},
-  {id: "gold", label: "Gold", color: "oklch(78% 0.15 85)"},
+  {id: "default", label: "Waffle (default)", color: null, hex: "#f49f1e"},
+  {id: "red", label: "Red", color: "oklch(63% 0.21 25)", hex: "#ed4042"},
+  {id: "pink", label: "Pink", color: "oklch(66% 0.2 350)", hex: "#e652a3"},
+  {id: "violet", label: "Violet", color: "oklch(62% 0.2 295)", hex: "#9264ef"},
+  {id: "blue", label: "Blue", color: "oklch(62% 0.18 255)", hex: "#2885ef"},
+  {id: "teal", label: "Teal", color: "oklch(68% 0.12 190)", hex: "#00afa9"},
+  {id: "green", label: "Green", color: "oklch(68% 0.17 145)", hex: "#46b250"},
+  {id: "gold", label: "Gold", color: "oklch(78% 0.15 85)", hex: "#e3ae28"},
 ] as const;
 export type AccentId = (typeof ACCENTS)[number]["id"];
+/** The accent as hex, for canvas and WebGL effects that can't read oklch (same color). */
+export const accentHex = (accent: AccentId | undefined) =>
+  (ACCENTS.find(a => a.id === accent) ?? ACCENTS[0]).hex;
 
 const customEmojiSchema = z.object({
   name: z.string().regex(/^[a-z0-9_-]{1,32}$/),

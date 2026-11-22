@@ -5,6 +5,7 @@ import {MonitorIcon, MoonIcon, PaletteIcon, SunIcon} from "lucide-react";
 
 import {findDoc} from "@/docs/registry";
 import {authClient} from "@/lib/auth-client";
+import {openHelpChat} from "@/lib/help-chat";
 import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
 import {CoffeeIcon} from "./coffee-icon";
@@ -200,6 +201,12 @@ export function PublicFooter() {
               {findDoc(slug)?.title}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => openHelpChat("footer")}
+            className="text-muted hover:text-foreground w-fit cursor-pointer text-start text-sm transition-colors">
+            Support &amp; feedback
+          </button>
         </nav>
         {FOOTER_COLUMNS.slice(1).map(column => (
           <FooterColumn key={column.title} column={column} />

@@ -1,7 +1,6 @@
 import {ChartTooltip} from "@heroui-pro/react";
 import {AreaChart} from "@heroui-pro/react/area-chart";
-import {Card} from "@heroui/react";
-import NumberFlow from "@number-flow/react";
+import {KPI} from "@heroui-pro/react/kpi";
 import {useQuery} from "@tanstack/react-query";
 import {useParams} from "@tanstack/react-router";
 import {ReferenceDot} from "recharts";
@@ -78,19 +77,21 @@ export default function SolvesChart() {
   const metas = solved.filter(puzzle => puzzle.isMetaPuzzle).length;
 
   return (
-    <Card>
-      <Card.Header className="flex-row items-baseline justify-between gap-4">
-        <Card.Title className="text-base">Solves</Card.Title>
-        <p className="text-muted m-0 text-sm tabular-nums">
-          <span className="text-foreground text-lg font-semibold">
-            <NumberFlow value={solved.length} />
-          </span>{" "}
-          of {puzzles.length}
-          {metas > 0 && ` · ${metas} ${metas === 1 ? "meta" : "metas"}`}
-        </p>
-      </Card.Header>
+    <KPI>
+      <KPI.Header>
+        <KPI.Title>Solves</KPI.Title>
+      </KPI.Header>
+      <KPI.Content>
+        <div className="flex items-baseline gap-2">
+          <KPI.Value value={solved.length} />
+          <span className="text-muted text-sm tabular-nums">
+            of {puzzles.length}
+            {metas > 0 && ` · ${metas} ${metas === 1 ? "meta" : "metas"}`}
+          </span>
+        </div>
+      </KPI.Content>
       {timed.length > 0 && (
-        <Card.Content>
+        <div className="px-2 pb-2">
           <AreaChart data={points} height={160} margin={{top: 8, right: 8, bottom: 0, left: -16}}>
             <defs>
               <linearGradient id="solves-fill" x1="0" x2="0" y1="0" y2="1">
@@ -134,9 +135,9 @@ export default function SolvesChart() {
             ))}
             <AreaChart.Tooltip content={<SolveTooltip points={points} />} />
           </AreaChart>
-        </Card.Content>
+        </div>
       )}
-    </Card>
+    </KPI>
   );
 }
 

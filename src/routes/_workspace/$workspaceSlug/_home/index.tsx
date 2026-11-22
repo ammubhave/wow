@@ -47,7 +47,7 @@ import * as React from "react";
 import {createContext, memo, useContext, useEffect, useMemo, useRef, useState} from "react";
 import {DropIndicator, type DropTarget, useDragAndDrop} from "react-aria-components";
 import {cn} from "tailwind-variants";
-import {useLocalStorage} from "usehooks-ts";
+import {useLocalStorage, useMediaQuery} from "usehooks-ts";
 
 import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
 import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
@@ -92,6 +92,14 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
 
 // Columns that only fit on wider screens: on phones the board is name, answer and status.
 const DESKTOP_ONLY = "hidden md:table-cell";
+/** Narrower than the md breakpoint (the board's phone layout). */
+const useIsPhone = () => !useMediaQuery("(min-width: 768px)");
+/**
+ * On phones the board scrolls sideways; the row menus (add a puzzle, edit, delete) stay pinned to
+ * the right edge so they're always in reach.
+ */
+const STICKY_ACTIONS =
+  "max-md:sticky max-md:right-0 max-md:z-[1] max-md:bg-background max-md:shadow-[-10px_0_10px_-10px_rgb(0_0_0/0.5)]";
 // A name cell is capped (its link truncates with an ellipsis, the full name on hover) so one long
 // puzzle name doesn't push the other columns and the row menus off the board: narrow on phones,
 // enough for the board to fit beside the sidebar on a laptop, roomier on big screens.
@@ -172,7 +180,8 @@ function DragHandle({label}: {label: string}) {
       isIconOnly
       size="sm"
       aria-label={`Drag ${label}`}
-      className="text-muted cursor-grab active:cursor-grabbing">
+      // `!`: HeroUI's button sets its own cursor, which would otherwise win.
+      className="text-muted !cursor-grab active:!cursor-grabbing">
       <GripVerticalIcon className="size-4" />
     </Button>
   );
@@ -496,8 +505,10 @@ function PuzzleStatusSelect({
 
 // Unfavorited stars only show on row hover (or keyboard focus) to cut clutter; favorites always show.
 // Touch screens can't hover, so there the star always shows (faintly), or it couldn't be found.
+// On phones an unstarred star is left out, so the pinned row menu stays narrow (star from the puzzle
+// page there).
 const FAVORITE_HIDDEN_CLASS =
-  "opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-50";
+  "opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-50 max-md:hidden";
 
 const isSolvedStatus = (status: string | null) => status === "solved" || status === "backsolved";
 
@@ -1073,7 +1084,9 @@ function RouteComponent() {
                           <Table.Column data-tour="working-on" className={cn(COLUMN, DESKTOP_ONLY)}>
                             Working on this
                           </Table.Column>
-                          <Table.Column className={cn(COLUMN, "w-0")} aria-label="Actions">
+                          <Table.Column
+                            className={cn(COLUMN, "w-0", STICKY_ACTIONS)}
+                            aria-label="Actions">
                             <div className="-my-1 flex items-center justify-end">
                               <Dropdown>
                                 <Button
@@ -1088,9 +1101,9 @@ function RouteComponent() {
                                   <Dropdown.Menu>
                                     <Dropdown.Item
                                       id="add-new-round"
-                                      textValue="Add new round"
+                                      textValue="Add round"
                                       onAction={() => setIsAddNewRoundDialogOpen(true)}>
-                                      <Label>Add new round</Label>
+                                      <Label>Add round</Label>
                                     </Dropdown.Item>
                                   </Dropdown.Menu>
                                 </Dropdown.Popover>
@@ -1292,7 +1305,7 @@ const BlackboardRound = memo(function BlackboardRound({
       <Table.Cell colSpan={3} className={cn(CELL, DESKTOP_ONLY)}>
         {null}
       </Table.Cell>
-      <Table.Cell className={CELL}>
+      <Table.Cell className={cn(CELL, STICKY_ACTIONS, "max-md:bg-surface-secondary")}>
         <div className="-my-3 flex items-center justify-end">
           <Dropdown>
             <Button
@@ -1308,19 +1321,19 @@ const BlackboardRound = memo(function BlackboardRound({
               <Dropdown.Menu>
                 <Dropdown.Item
                   id="add-meta"
-                  textValue="Add new meta puzzle"
+                  textValue="Add meta"
                   onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
-                  <Label>Add new meta puzzle</Label>
+                  <Label>Add meta</Label>
                 </Dropdown.Item>
                 {round.metaPuzzles.length > 0 ? (
                   <Dropdown.Item
                     id="add-unassigned-disabled"
-                    textValue="Add new unassigned puzzle"
+                    textValue="Add unassigned puzzle"
                     isDisabled
                     // Disabled menu items get `pointer-events: none`; re-enable them so the
                     // explanatory tooltip can still be hovered.
                     className="pointer-events-auto!">
-                    <Label>Add new unassigned puzzle</Label>
+                    <Label>Add unassigned puzzle</Label>
                     <Tooltip>
                       <Tooltip.Trigger>
                         <InfoIcon className="ms-auto" />
@@ -1334,9 +1347,9 @@ const BlackboardRound = memo(function BlackboardRound({
                 ) : (
                   <Dropdown.Item
                     id="add-unassigned"
-                    textValue="Add new unassigned puzzle"
+                    textValue="Add unassigned puzzle"
                     onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
-                    <Label>Add new unassigned puzzle</Label>
+                    <Label>Add unassigned puzzle</Label>
                   </Dropdown.Item>
                 )}
                 <Dropdown.Item
@@ -1437,7 +1450,7 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
       <Table.Cell colSpan={6} className={CELL} textValue="Unassigned puzzles">
         <span className="font-semibold italic">Unassigned puzzles</span>
       </Table.Cell>
-      <Table.Cell className={CELL}>
+      <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
         <div className="-my-3 flex items-center justify-end">
           <Dropdown>
             <Button variant="ghost" isIconOnly>
@@ -1492,6 +1505,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   favoritePuzzleIds: ReadonlySet<string>;
 }) {
   const {mutate: updatePuzzle} = useMutation(workspaceMutations.puzzles.update());
+  const isPhone = useIsPhone();
   const update = (patch: Omit<RouterInputs["puzzles"]["update"], "workspaceSlug" | "id">) =>
     updatePuzzle({workspaceSlug, id: metaPuzzle.id, ...patch});
   const isBeingCreated = useIsBeingCreated(metaPuzzle.id);
@@ -1609,7 +1623,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
       <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY)}>
         <UserPresenceAvatars users={presences} />
       </Table.Cell>
-      <Table.Cell className={CELL}>
+      <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
         <div className="-my-3 flex items-center justify-end">
           <ToggleButton
             variant="ghost"
@@ -1627,23 +1641,33 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             </Button>
             <Dropdown.Popover className="w-fit" placement="bottom end">
               <Dropdown.Menu>
+                {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
+                    rendered at all elsewhere (hidden items would still be reachable by keyboard). */}
+                {isPhone && (
+                  <Dropdown.Item
+                    id="favorite"
+                    textValue={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    onAction={() => toggleFavorite(metaPuzzle.id, !isFavorite)}>
+                    <Label>{isFavorite ? "Remove from favorites" : "Add to favorites"}</Label>
+                  </Dropdown.Item>
+                )}
                 <Dropdown.Item
                   id="add-feeding"
-                  textValue="Add new puzzle feeding this meta puzzle"
+                  textValue="Add feeder puzzle"
                   onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
-                  <Label>Add new puzzle feeding this meta puzzle</Label>
+                  <Label>Add feeder puzzle</Label>
                 </Dropdown.Item>
                 <Dropdown.Item
                   id="edit-meta"
-                  textValue="Edit this meta puzzle"
+                  textValue="Edit meta"
                   onAction={() => setIsEditPuzzleDialogOpen(true)}>
-                  <Label>Edit this meta puzzle</Label>
+                  <Label>Edit meta</Label>
                 </Dropdown.Item>
                 <Dropdown.Item
                   id="delete-meta"
-                  textValue="Delete this meta puzzle"
+                  textValue="Delete meta"
                   onAction={() => setIsDeletePuzzleDialogOpen(true)}>
-                  <Label>Delete this meta puzzle</Label>
+                  <Label>Delete meta</Label>
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown.Popover>
@@ -1715,6 +1739,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   isFavorite: boolean;
 }) {
   const {mutate: updatePuzzle} = useMutation(workspaceMutations.puzzles.update());
+  const isPhone = useIsPhone();
   const update = (patch: Omit<RouterInputs["puzzles"]["update"], "workspaceSlug" | "id">) =>
     updatePuzzle({workspaceSlug, id: puzzle.id, ...patch});
   const isBeingCreated = useIsBeingCreated(puzzle.id);
@@ -1812,7 +1837,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY)}>
         <UserPresenceAvatars users={presences} />
       </Table.Cell>
-      <Table.Cell className={CELL}>
+      <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
         <div className="-my-3 flex items-center justify-end">
           <ToggleButton
             variant="ghost"
@@ -1830,17 +1855,27 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             </Button>
             <Dropdown.Popover className="w-fit" placement="bottom end">
               <Dropdown.Menu>
+                {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
+                    rendered at all elsewhere (hidden items would still be reachable by keyboard). */}
+                {isPhone && (
+                  <Dropdown.Item
+                    id="favorite"
+                    textValue={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    onAction={() => toggleFavorite(puzzle.id, !isFavorite)}>
+                    <Label>{isFavorite ? "Remove from favorites" : "Add to favorites"}</Label>
+                  </Dropdown.Item>
+                )}
                 <Dropdown.Item
                   id="edit-puzzle"
-                  textValue="Edit this puzzle"
+                  textValue="Edit puzzle"
                   onAction={() => setIsEditPuzzleDialogOpen(true)}>
-                  <Label>Edit this puzzle</Label>
+                  <Label>Edit puzzle</Label>
                 </Dropdown.Item>
                 <Dropdown.Item
                   id="delete-puzzle"
-                  textValue="Delete this puzzle"
+                  textValue="Delete puzzle"
                   onAction={() => setIsDeletePuzzleDialogOpen(true)}>
-                  <Label>Delete this puzzle</Label>
+                  <Label>Delete puzzle</Label>
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown.Popover>

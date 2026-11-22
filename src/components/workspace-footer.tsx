@@ -14,10 +14,11 @@ export function WorkspaceFooter() {
   const workspace = useWorkspace();
   return (
     <footer className="bg-background flex w-full items-center border-t">
-      <div className="flex min-w-0 shrink-0 items-center px-1">
+      {/* On a phone the hunt's name gives way (truncates) so the "online" count always fits. */}
+      <div className="flex min-w-0 shrink items-center px-1 md:shrink-0">
         <WorkspaceSwitcher workspaceSlug={workspaceSlug} />
       </div>
-      <div className="flex h-(--header-height) w-full items-center justify-end gap-2 px-2">
+      <div className="flex h-(--header-height) shrink-0 items-center justify-end gap-2 px-2 md:w-full md:shrink">
         {/* No room on phones for the latest activity (the Activity log is in the menu). */}
         <div className="hidden flex-1 items-center justify-end overflow-hidden md:flex">
           {workspace.activityLogEntries[0] && (

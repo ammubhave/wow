@@ -18,6 +18,7 @@ import {TokenFieldValue} from "react-aria-components/TokenField";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
+import {AwardBadges} from "@/features/awards/awards-provider";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
 import {describeChatMessage, track} from "@/lib/analytics";
@@ -374,7 +375,10 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                   <ChatMessage.Body className="gap-1 pe-0">
                     {isFirstInGroup && (
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-semibold">{message.name}</span>
+                        <span className="flex min-w-0 items-center gap-1 text-sm font-semibold">
+                          {message.name}
+                          <AwardBadges userId={message.userId} />
+                        </span>
                         <span className="text-muted flex items-center gap-1 text-xs">
                           {message.pinned && (
                             <PinIcon

@@ -16,7 +16,12 @@ import {
   invalidateWorkspace,
   type WorkspaceRoomWireState,
 } from "../do/workspace";
-import {DRIVE_DISCONNECTED_DETAIL, type FolderShareResult, shareDriveFolder} from "../drive-share";
+import {
+  DRIVE_DISCONNECTED_DETAIL,
+  type FolderShareResult,
+  shareDriveFolder,
+  unshareDriveFolder,
+} from "../drive-share";
 import {captureServerException, trackServerEvent} from "../posthog";
 import {toWorkspaceRole} from "../workspace-access";
 import {type AuthedContext, preauthorize, procedure, requireOwner} from "./base";
@@ -34,14 +39,25 @@ const themeColumn = schema.organization.theme;
 const themeJson = sql`(case when json_valid(${themeColumn}) then ${themeColumn} else '{}' end)`;
 
 export const workspacesRouter = {
+  /** What the join page shows before you're in: the team, its look, and how many are already in. */
   getPublic: procedure.input(z.string()).handler(async ({input}) => {
     const workspace = await db
-      .select({teamName: schema.organization.teamName, eventName: schema.organization.eventName})
+      .select({
+        id: schema.organization.id,
+        teamName: schema.organization.teamName,
+        eventName: schema.organization.eventName,
+        theme: schema.organization.theme,
+      })
       .from(schema.organization)
       .where(eq(schema.organization.slug, input))
       .get();
     if (!workspace) throw new ORPCError("NOT_FOUND");
-    return workspace;
+    const [{members} = {members: 0}] = await db
+      .select({members: count()})
+      .from(schema.member)
+      .where(eq(schema.member.organizationId, workspace.id));
+    const {accent, emoji} = parseTheme(workspace.theme);
+    return {teamName: workspace.teamName, eventName: workspace.eventName, accent, emoji, members};
   }),
   join: procedure
     .input(z.object({workspaceSlug: z.string(), password: z.string()}))
@@ -822,6 +838,31 @@ export const workspacesRouter = {
           .returning({id: schema.member.id});
         if (removed.length === 0) throw new ORPCError("NOT_FOUND");
         await invalidateWorkspace(context.workspace.id);
+        // Their access to the team's Drive folder goes too (it was shared when they joined).
+        const folderId = context.workspace.googleFolderId;
+        if (!folderId) return {drive: "none"} as const;
+        const user = await db
+          .select({email: schema.user.email})
+          .from(schema.user)
+          .where(eq(schema.user.id, input.userId))
+          .get();
+        // They're already removed: a Drive problem is reported, never thrown.
+        try {
+          const accessToken = await context.google.getAccessToken(context.workspace.id);
+          if (!user || !accessToken) {
+            return {drive: "failed", detail: DRIVE_DISCONNECTED_DETAIL} as const;
+          }
+          const result = await unshareDriveFolder(accessToken, folderId, user.email);
+          return result.ok
+            ? ({drive: result.removed ? "removed" : "none"} as const)
+            : ({drive: "failed", detail: result.detail} as const);
+        } catch (error) {
+          captureServerException(error, {
+            distinctId: context.session.user.id,
+            properties: {workspaceId: context.workspace.id},
+          });
+          return {drive: "failed", detail: "Google Drive didn't respond."} as const;
+        }
       }),
 
     /// Owners can make others owners (or members again). The last owner can't be demoted, so a

@@ -378,8 +378,11 @@ function SuggestField({
       onBlur={() => field.handleBlur()}
       items={suggestions.filter(suggestion => contains(suggestion.text, field.state.value))}>
       {label && <Label>{label}</Label>}
+      {/* HeroUI's InputGroup expects the Trigger last: without it, its internal slot prop lands
+          on the Input (a React warning, and no group styling). The chevron opens the suggestions. */}
       <ComboBox.InputGroup>
         <Input placeholder={placeholder} />
+        <ComboBox.Trigger />
       </ComboBox.InputGroup>
       {description && <Description>{description}</Description>}
       <FieldError>{field.state.meta.errors.map(error => error?.message).join(", ")}</FieldError>

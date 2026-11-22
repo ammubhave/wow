@@ -18,6 +18,12 @@ import {authClient} from "@/lib/auth-client";
 import {fromLocalInput} from "@/lib/datetime-local";
 import {orpc} from "@/lib/orpc";
 
+/** A hunt website: empty, or a web address (https:// is added for you). */
+const HUNT_WEBSITE_SCHEMA = z.union([
+  z.literal(""),
+  z.url({protocol: /^https?$/, error: "Enter a web address, like https://hunt.example"}),
+]);
+
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   component: RouteComponent,
   // From a hunt shortcut (My workspaces): the hunt listing, and its name to start the form with.
@@ -198,15 +204,7 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="huntWebsite"
-                  validators={{
-                    onBlur: z.union([
-                      z.literal(""),
-                      z.url({
-                        protocol: /^https?$/,
-                        error: "Enter a web address, like https://hunt.example",
-                      }),
-                    ]),
-                  }}
+                  validators={{onBlur: HUNT_WEBSITE_SCHEMA, onSubmit: HUNT_WEBSITE_SCHEMA}}
                   children={field => (
                     <field.TextField
                       variant="secondary"

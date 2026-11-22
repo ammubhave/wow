@@ -1,6 +1,14 @@
 import {buttonVariants, Card, Chip} from "@heroui/react";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {ArrowRightIcon} from "lucide-react";
+import {
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  HeadphonesIcon,
+  LayoutListIcon,
+  ListChecksIcon,
+  SheetIcon,
+  TrophyIcon,
+} from "lucide-react";
 
 import {DecryptedText} from "@/components/decrypted-text";
 import {BoardDemo} from "@/components/landing/board-demo";
@@ -27,6 +35,7 @@ function HomePage() {
       <PublicNavbar />
       <main className="flex-1">
         <Hero />
+        <Features />
         <ExchangeTeaser />
       </main>
       <PublicFooter />
@@ -65,6 +74,62 @@ function Hero() {
         </div>
         <BoardDemo />
       </div>
+    </section>
+  );
+}
+
+const FEATURES = [
+  {
+    Icon: LayoutListIcon,
+    title: "A live blackboard",
+    text: "Every round, meta and puzzle, with its answer, status and who's on it. Changes show up for everyone at once.",
+  },
+  {
+    Icon: SheetIcon,
+    title: "A page per puzzle",
+    text: "A shared spreadsheet with puzzle formulas, a whiteboard and a chat, ready the moment the puzzle is added.",
+  },
+  {
+    Icon: HeadphonesIcon,
+    title: "Calls built in",
+    text: "A lobby call for the team and one on every puzzle. Your call follows you around the workspace.",
+  },
+  {
+    Icon: ListChecksIcon,
+    title: "A guess queue",
+    text: "Line up answers to call in, record what the hunt said, wait out backoffs, and never repeat a wrong guess.",
+  },
+  {
+    Icon: TrophyIcon,
+    title: "A live leaderboard",
+    text: "Standings and awards while you hunt, and a recap card to share when it's over.",
+  },
+  {
+    Icon: CalendarDaysIcon,
+    title: "Every upcoming hunt",
+    text: "Puzzle hunts from the community calendar in one list. Set up a workspace for one in a click.",
+  },
+];
+
+function Features() {
+  return (
+    <section aria-labelledby="features" className="mx-auto max-w-7xl px-6 pt-4 pb-8">
+      <h2 id="features" className="text-2xl font-bold tracking-tight">
+        What's in a workspace
+      </h2>
+      <ul className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        {FEATURES.map(({Icon, title, text}) => (
+          <li key={title} className="flex gap-4">
+            <span className="bg-accent/15 text-accent flex size-10 shrink-0 items-center justify-center rounded-xl">
+              <Icon className="size-5" aria-hidden="true" />
+            </span>
+            <div className="flex flex-col gap-1">
+              <h3 className="font-semibold">{title}</h3>
+              <p className="text-muted text-sm text-pretty">{text}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

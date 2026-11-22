@@ -261,8 +261,8 @@ function FeedItem({
       <Timeline.Content>
         <div className="flex min-w-0 items-center justify-between gap-4">
           {/* Baseline-aligned, so the name, the words and a chip's text (an answer, a status) all
-              sit on one line; only the avatar is centered. */}
-          <p className="text-muted m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm">
+              sit on one line; only the avatar is centered. A div, not a p: it holds avatar groups. */}
+          <div className="text-muted m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm">
             {user && (
               <UserHoverCard user={user}>
                 <span className="text-foreground inline-flex cursor-default items-baseline gap-1.5 font-medium">
@@ -291,7 +291,7 @@ function FeedItem({
             ) : (
               <EventText workspaceSlug={workspaceSlug} entry={entry} />
             )}
-          </p>
+          </div>
           <Tooltip delay={300}>
             <Tooltip.Trigger>
               <time

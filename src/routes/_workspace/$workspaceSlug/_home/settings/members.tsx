@@ -23,6 +23,7 @@ import {PeopleCardSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
+import {joinLinkWithPassword} from "@/lib/join-password";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/members")({
@@ -178,9 +179,9 @@ function RemoveMemberButton({
           </AlertDialog.Header>
           <AlertDialog.Body>
             <p>
-              They lose access to this workspace right away. Their puzzles, answers and messages
-              stay. They can join again with the workspace password, so change it (Settings ›
-              Administration) if they shouldn't.
+              They lose access to this workspace (and its Google Drive folder, if connected) right
+              away. Their puzzles, answers and messages stay. They can join again with the workspace
+              password, so change it (Settings › Administration) if they shouldn't.
             </p>
           </AlertDialog.Body>
           <AlertDialog.Footer>
@@ -194,9 +195,18 @@ function RemoveMemberButton({
                 remove.mutate(
                   {workspaceSlug, userId},
                   {
-                    onSuccess: () => {
+                    onSuccess: result => {
                       setOpen(false);
-                      toast.success(`${name} was removed from the workspace.`);
+                      toast.success(
+                        result.drive === "removed"
+                          ? `${name} was removed from the workspace and its Google Drive folder.`
+                          : `${name} was removed from the workspace.`
+                      );
+                      if (result.drive === "failed") {
+                        toast.error(
+                          `Couldn't take ${name}'s access to the Drive folder away: ${result.detail} You can remove them from the folder's sharing settings in Google Drive.`
+                        );
+                      }
                     },
                     onError: error => toast.error(error.message),
                   }
@@ -358,7 +368,8 @@ function ShareLinkAndPassword({workspaceSlug}: {workspaceSlug: string}) {
   const workspace = useWorkspace();
   const link = `https://join.wafflehaus.io/${workspaceSlug}`;
   const password = workspace.password ?? "";
-  const message = `Join ${workspace.teamName ?? "the team"} on WOW: ${link}\nPassword: ${password}`;
+  // One link that joins in a click: the password rides along (see lib/join-password.ts).
+  const oneClickLink = joinLinkWithPassword(workspaceSlug, password);
   return (
     <section
       aria-label="Share the link and password"
@@ -367,7 +378,8 @@ function ShareLinkAndPassword({workspaceSlug}: {workspaceSlug: string}) {
         Or share the link and password
       </h3>
       <p className="text-muted text-sm">
-        For a group chat: anyone with both can join, with whatever account they sign in with.
+        For a group chat. The link with the password joins in one click; anyone who has it can join,
+        with whatever account they sign in with, so share it only with your team.
       </p>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm">
         <dt className="text-muted text-xs">Link</dt>
@@ -396,9 +408,12 @@ function ShareLinkAndPassword({workspaceSlug}: {workspaceSlug: string}) {
         </dd>
       </dl>
       <div>
-        <Button size="sm" variant="secondary" onPress={() => void copy(message, "Invitation")}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onPress={() => void copy(oneClickLink, "Link with the password")}>
           <LinkIcon />
-          Copy both, ready to paste
+          Copy link with password
         </Button>
       </div>
     </section>

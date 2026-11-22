@@ -92,3 +92,58 @@ export async function shareDriveFolder(
 /** Said when WOW has no working Google connection to share with. */
 export const DRIVE_DISCONNECTED_DETAIL =
   "WOW's connection to Google Drive has expired. Reconnect it in Settings → Administration, then share with everyone again there.";
+
+const permissionsSchema = z.object({
+  permissions: z
+    .array(z.object({id: z.string(), emailAddress: z.string().optional(), role: z.string()}))
+    .optional(),
+  nextPageToken: z.string().optional(),
+});
+
+/**
+ * Takes `email`'s access to the workspace's Drive folder away again (when they're removed from the
+ * workspace). The folder's owner is never touched. Fine if they had no access.
+ */
+export async function unshareDriveFolder(
+  accessToken: string,
+  folderId: string,
+  email: string
+): Promise<{ok: true; removed: boolean} | {ok: false; detail: string}> {
+  const headers = {Authorization: `Bearer ${accessToken}`};
+  const base = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}/permissions`;
+  let pageToken: string | undefined;
+  let removed = false;
+  do {
+    const params = new URLSearchParams({
+      fields: "permissions(id,emailAddress,role),nextPageToken",
+      supportsAllDrives: "true",
+      ...(pageToken ? {pageToken} : {}),
+    });
+    // oxlint-disable-next-line no-await-in-loop -- pages come one after another.
+    const resp = await fetch(`${base}?${params.toString()}`, {headers});
+    if (!resp.ok) {
+      // oxlint-disable-next-line no-await-in-loop -- only on the way out.
+      const error = await readError(resp);
+      return {ok: false, detail: `Google Drive refused (${resp.status}): ${error.message}`};
+    }
+    // oxlint-disable-next-line no-await-in-loop -- pages come one after another.
+    const page = permissionsSchema.parse(await resp.json());
+    for (const permission of page.permissions ?? []) {
+      if (permission.role === "owner") continue;
+      if (permission.emailAddress?.toLowerCase() !== email.toLowerCase()) continue;
+      // oxlint-disable-next-line no-await-in-loop -- usually one permission per person.
+      const deleted = await fetch(
+        `${base}/${encodeURIComponent(permission.id)}?supportsAllDrives=true`,
+        {method: "DELETE", headers}
+      );
+      if (!deleted.ok && deleted.status !== 404) {
+        // oxlint-disable-next-line no-await-in-loop -- only on the way out.
+        const error = await readError(deleted);
+        return {ok: false, detail: `Google Drive refused (${deleted.status}): ${error.message}`};
+      }
+      removed = true;
+    }
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+  return {ok: true, removed};
+}

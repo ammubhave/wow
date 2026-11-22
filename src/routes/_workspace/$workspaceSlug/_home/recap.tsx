@@ -1,3 +1,5 @@
+import {KPIGroup} from "@heroui-pro/react";
+import {KPI} from "@heroui-pro/react/kpi";
 import {Avatar, Button, buttonVariants, Card, Chip, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -9,34 +11,18 @@ import {cn} from "tailwind-variants";
 import {Page, READING_WIDTH} from "@/components/page";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {HelpLink} from "@/docs/components/help-link";
+import {computeRecap, HOUR, isSolve, type Standing, type User} from "@/features/awards/compute";
 import {formatPuzzleTime, useMyPuzzleTimes} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
 import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
-import type {RouterOutputs} from "@/server/router";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/recap")({
   component: RouteComponent,
   head: () => ({meta: [{title: "Leaderboard | WOW"}]}),
 });
-
-type Recap = RouterOutputs["workspaces"]["recap"];
-type User = Recap["users"][number];
-type Award = {emoji: string; title: string; user: User; stat: string};
-/** One award's race: everyone with any of it, most first. */
-type Standing = {
-  emoji: string;
-  title: string;
-  ranked: {user: User; value: number}[];
-  stat: (n: number) => string;
-  /** The number alone, for a standings row ("12 puzzles", "3h 20m"). */
-  short: (n: number) => string;
-};
-
-const isSolve = (field: string | null) => field === "solved" || field === "backsolved";
-const HOUR = 3_600_000;
 
 function formatSpan(ms: number) {
   const hours = Math.round(ms / HOUR);
@@ -125,167 +111,6 @@ function spanStat(span: number | null | undefined): [string, string] {
   if (!span) return ["—", "hours of hunting"];
   const [value = "—", unit = "hours"] = formatSpan(span).split(" ");
   return [value, `${unit} of hunting`];
-}
-
-const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
-
-/** Time awards need at least this much (seconds), so a few stray minutes don't win one. */
-const MIN_AWARD_SECONDS = 10 * 60;
-
-const sumBy = (map: Map<string, number>, key: string, amount: number) =>
-  map.set(key, (map.get(key) ?? 0) + amount);
-
-/**
- * The recap's numbers and awards. Solving is a team effort, so nothing here credits whoever marked
- * a puzzle solved: people are credited for what they say they helped solve (the honor code), for
- * their active time (in their own time zone), and for keeping the board up to date.
- */
-function computeRecap(recap: Recap, solvedNow: Set<string>, metaIds: Set<string>) {
-  const users = new Map(recap.users.map(user => [user.id, user]));
-
-  // The team's numbers: the latest solve of each puzzle that's still solved.
-  const solves = new Map<string, Recap["events"][number]>();
-  // Keeping the board up to date: adding puzzles and rounds, statuses, answers, importance.
-  const boardUpdates = new Map<string, number>();
-  for (const event of recap.events) {
-    bump(boardUpdates, event.userId);
-    if (event.type === "updateStatus" && event.puzzleId && isSolve(event.field)) {
-      solves.set(event.puzzleId, event);
-    }
-  }
-  for (const {userId, count} of recap.roundsCreated) sumBy(boardUpdates, userId, count);
-  const finalSolves = [...solves.values()].filter(s => s.puzzleId && solvedNow.has(s.puzzleId));
-  const byHour = new Map<number, number>();
-  for (const solve of finalSolves) {
-    const hour = Math.floor(solve.at / HOUR);
-    byHour.set(hour, (byHour.get(hour) ?? 0) + 1);
-  }
-
-  // Who helped solve what (self-reported), counting puzzles that are solved.
-  const helped = new Map<string, number>();
-  const metasHelped = new Map<string, number>();
-  for (const {puzzleId, userId} of recap.contributions) {
-    if (!solvedNow.has(puzzleId)) continue;
-    bump(helped, userId);
-    if (metaIds.has(puzzleId)) bump(metasHelped, userId);
-  }
-
-  // Active time on puzzles, by the hour of day where each person was.
-  const activeTotal = new Map<string, number>();
-  const night = new Map<string, number>();
-  const early = new Map<string, number>();
-  for (const {userId, localHour, seconds} of recap.activeTime) {
-    sumBy(activeTotal, userId, seconds);
-    if (localHour < 6) sumBy(night, userId, seconds);
-    else if (localHour < 10) sumBy(early, userId, seconds);
-  }
-
-  // The awards, each a race: the leader wins it (time ones need a real amount, so a few stray
-  // minutes don't), and the standings show everyone's place, live during the hunt.
-  const races: {
-    emoji: string;
-    title: string;
-    counts: Map<string, number>;
-    stat: (n: number) => string;
-    short: (n: number) => string;
-    min?: number;
-  }[] = [
-    {
-      emoji: "🏆",
-      title: "MVP",
-      counts: helped,
-      stat: n => `helped solve ${n} ${n === 1 ? "puzzle" : "puzzles"}`,
-      short: n => `${n} ${n === 1 ? "puzzle" : "puzzles"}`,
-    },
-    {
-      emoji: "👑",
-      title: "Meta Maestro",
-      counts: metasHelped,
-      stat: n => `helped solve ${n} ${n === 1 ? "meta" : "metas"}`,
-      short: n => `${n} ${n === 1 ? "meta" : "metas"}`,
-    },
-    {
-      emoji: "🦉",
-      title: "Night Owl",
-      counts: night,
-      stat: n => `${formatPuzzleTime(n)} puzzling between midnight and 6am`,
-      short: formatPuzzleTime,
-      min: MIN_AWARD_SECONDS,
-    },
-    {
-      emoji: "🌅",
-      title: "Early Bird",
-      counts: early,
-      stat: n => `${formatPuzzleTime(n)} puzzling between 6 and 10am`,
-      short: formatPuzzleTime,
-      min: MIN_AWARD_SECONDS,
-    },
-    {
-      emoji: "🏃",
-      title: "Marathoner",
-      counts: activeTotal,
-      stat: n => `${formatPuzzleTime(n)} actively puzzling`,
-      short: formatPuzzleTime,
-      min: MIN_AWARD_SECONDS,
-    },
-    {
-      emoji: "📋",
-      title: "Board Keeper",
-      counts: boardUpdates,
-      stat: n => `kept the board current: ${n} updates`,
-      short: n => `${n} ${n === 1 ? "update" : "updates"}`,
-    },
-  ];
-  const standings: Standing[] = races.map(race => ({
-    emoji: race.emoji,
-    title: race.title,
-    stat: race.stat,
-    short: race.short,
-    // Most first; ties keep whoever got there first (the map's order).
-    ranked: [...race.counts]
-      .flatMap(([id, value]) => {
-        const user = users.get(id);
-        return user && value > 0 ? [{user, value}] : [];
-      })
-      .toSorted((x, y) => y.value - x.value),
-  }));
-  const awards: Award[] = standings.flatMap((standing, i) => {
-    const top = standing.ranked[0];
-    const min = races[i]?.min ?? 1;
-    return top && top.value >= min
-      ? [
-          {
-            emoji: standing.emoji,
-            title: standing.title,
-            user: top.user,
-            stat: standing.stat(top.value),
-          },
-        ]
-      : [];
-  });
-
-  const firstAt = recap.events[0]?.at;
-  const lastSolveAt = finalSolves.reduce((max, s) => Math.max(max, s.at), 0);
-  const busiest = [...byHour].toSorted((a, b) => b[1] - a[1])[0];
-  return {
-    awards,
-    standings,
-    solves: finalSolves.length,
-    metas: finalSolves.filter(s => s.puzzleId && metaIds.has(s.puzzleId)).length,
-    // Everyone who helped solve something (or, without any marks yet, who was active).
-    solvers: (helped.size > 0 ? helped : activeTotal).size,
-    span: firstAt !== undefined && lastSolveAt > firstAt ? lastSolveAt - firstAt : 0,
-    busiest: busiest && {at: busiest[0] * HOUR, count: busiest[1]},
-    you: (id: string | undefined) =>
-      id
-        ? {
-            helped: helped.get(id) ?? 0,
-            activeSeconds: activeTotal.get(id) ?? 0,
-            boardUpdates: boardUpdates.get(id) ?? 0,
-            awards: awards.filter(a => a.user.id === id),
-          }
-        : undefined,
-  };
 }
 
 const busiestFormat = new Intl.DateTimeFormat(undefined, {weekday: "long", hour: "numeric"});
@@ -507,18 +332,60 @@ function RouteComponent() {
     <>
       {you && (you.helped > 0 || you.boardUpdates > 0 || you.activeSeconds > 0) && (
         <Card>
-          <Card.Header>
+          <Card.Header className="gap-3">
             <Card.Title>Your hunt</Card.Title>
-            <Card.Description>
-              {[
-                `helped solve ${you.helped} ${you.helped === 1 ? "puzzle" : "puzzles"}`,
-                you.activeSeconds > 0 && `${formatPuzzleTime(you.activeSeconds)} active`,
-                `${you.boardUpdates} board ${you.boardUpdates === 1 ? "update" : "updates"}`,
-                ...you.awards.map(a => `${a.emoji} ${a.title}`),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </Card.Description>
+            <KPIGroup>
+              <KPI>
+                <KPI.Header>
+                  <KPI.Title>Helped solve</KPI.Title>
+                </KPI.Header>
+                <KPI.Content>
+                  <KPI.Value value={you.helped} />
+                </KPI.Content>
+              </KPI>
+              <KPIGroup.Separator />
+              <KPI>
+                <KPI.Header>
+                  <KPI.Title>Time on puzzles</KPI.Title>
+                </KPI.Header>
+                <KPI.Content>
+                  {/* Minutes under an hour; hours (to a tenth) above. */}
+                  {you.activeSeconds < 3600 ? (
+                    <KPI.Value
+                      value={Math.round(you.activeSeconds / 60)}
+                      style="unit"
+                      unit="minute"
+                    />
+                  ) : (
+                    <KPI.Value
+                      value={you.activeSeconds / 3600}
+                      style="unit"
+                      unit="hour"
+                      maximumFractionDigits={1}
+                    />
+                  )}
+                </KPI.Content>
+              </KPI>
+              <KPIGroup.Separator />
+              <KPI>
+                <KPI.Header>
+                  <KPI.Title>Board updates</KPI.Title>
+                </KPI.Header>
+                <KPI.Content>
+                  <KPI.Value value={you.boardUpdates} />
+                </KPI.Content>
+              </KPI>
+            </KPIGroup>
+            {you.awards.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {you.awards.map(award => (
+                  <Chip key={award.title} size="sm" variant="soft" color="accent">
+                    <span aria-hidden="true">{award.emoji}</span>
+                    <Chip.Label>{award.title}</Chip.Label>
+                  </Chip>
+                ))}
+              </div>
+            )}
           </Card.Header>
           {myTopPuzzles.length > 0 && (
             <Card.Content>

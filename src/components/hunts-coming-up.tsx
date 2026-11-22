@@ -1,14 +1,7 @@
 import {buttonVariants} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
-import {
-  ArrowRightIcon,
-  ArrowUpRightIcon,
-  GlobeIcon,
-  MapPinIcon,
-  SparklesIcon,
-  UsersIcon,
-} from "lucide-react";
+import {ArrowRightIcon, ArrowUpRightIcon, GlobeIcon, MapPinIcon, SparklesIcon} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import {Grainient} from "@/components/grainient";
@@ -102,14 +95,6 @@ function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
         ) : (
           <span className="text-accent font-semibold tabular-nums">{startsIn(hunt, now)}</span>
         )}
-        {hunt.teams > 0 && (
-          <span
-            className="text-muted flex shrink-0 items-center gap-1"
-            title={`${hunt.teams} ${hunt.teams === 1 ? "team has" : "teams have"} a workspace for it`}>
-            <UsersIcon className="size-3.5" aria-hidden="true" />
-            {hunt.teams} on WOW
-          </span>
-        )}
       </div>
       <div className="flex min-w-0 flex-col gap-1">
         <h3 className="line-clamp-2 leading-snug font-semibold">{hunt.name}</h3>
@@ -122,7 +107,7 @@ function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
         <Link
           to="/workspaces/create"
           search={{hunt: hunt.id, event: hunt.name}}
-          aria-label={`Set up a workspace for ${hunt.name}`}
+          aria-label={`Set up workspace: ${hunt.name}`}
           onClick={() => track("hunt_shortcut_clicked", {hunt: hunt.name, live: isLive})}
           className={buttonVariants({size: "sm", variant: isLive ? "primary" : "secondary"})}>
           <SparklesIcon />
@@ -168,12 +153,6 @@ function FeaturedHuntCard({hunt, now}: {hunt: Hunt; now: number}) {
               {startsIn(hunt, now)}
             </span>
           )}
-          {hunt.teams > 0 && (
-            <span className="flex shrink-0 items-center gap-1 text-white/80">
-              <UsersIcon className="size-3.5" aria-hidden="true" />
-              {hunt.teams} {hunt.teams === 1 ? "team" : "teams"} on WOW
-            </span>
-          )}
         </div>
         <div className="mt-auto flex flex-col gap-1">
           <h3 className="text-2xl leading-tight font-bold tracking-tight text-balance">
@@ -188,7 +167,7 @@ function FeaturedHuntCard({hunt, now}: {hunt: Hunt; now: number}) {
           <Link
             to="/workspaces/create"
             search={{hunt: hunt.id, event: hunt.name}}
-            aria-label={`Set up a workspace for ${hunt.name}`}
+            aria-label={`Set up workspace: ${hunt.name}`}
             onClick={() =>
               track("hunt_shortcut_clicked", {hunt: hunt.name, live: isLive, featured: true})
             }

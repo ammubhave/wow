@@ -125,7 +125,8 @@ export const huntListingsRouter = {
           8 * Math.log1p(seriesTeams) -
           15 * Math.log1p(teams) -
           (played ? 60 : 0);
-        return {listing, teams, score};
+        // Happening now is a strong sign too (it's the one to act on).
+        return {listing, teams, score: score - (startsIn <= 0 ? 20 : 0)};
       })
       .filter(ranked => ranked !== null)
       .toSorted((a, b) => a.score - b.score)

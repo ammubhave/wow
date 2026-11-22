@@ -2,8 +2,8 @@ import {Alert, Button, Card, InputGroup, Label, Separator} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {CopyIcon, PlusIcon, TrashIcon} from "lucide-react";
-import {useState} from "react";
 import {toast} from "sonner";
+import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
 import {LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
@@ -13,6 +13,12 @@ import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {fromLocalInput, toLocalInput} from "@/lib/datetime-local";
 import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
+
+/** A hunt website: empty, or a web address (https:// is added for you). */
+const HUNT_WEBSITE_SCHEMA = z.union([
+  z.literal(""),
+  z.url({protocol: /^https?$/, error: "Enter a web address, like https://hunt.example"}),
+]);
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/")({
   component: RouteComponent,
@@ -178,14 +184,16 @@ function LeaveWorkspaceCard() {
     </Card>
   );
 }
+/** The link the hunt website is kept as (see `huntWebsiteLink`). */
+const HUNT_WEBSITE = "Hunt website";
+
 function DetailsCard() {
   const {suggestions: huntSuggestions, byId: huntsById} = useHuntSuggestions();
-  // The hunt picked from the suggestions, for its website link.
-  const [pickedHuntId, setPickedHuntId] = useState<string | null>(null);
   const {workspaceSlug} = Route.useParams();
   const isOwner = useIsWorkspaceOwner();
   const workspace = useWorkspace();
   const mutation = useMutation(workspaceMutations.workspaces.update());
+  const currentHuntWebsite = workspace.links.find(link => link.name === HUNT_WEBSITE)?.url ?? "";
   const form = useAppForm({
     defaultValues: {
       teamName: workspace.teamName ?? undefined,
@@ -193,6 +201,8 @@ function DetailsCard() {
       huntStartsAt: toLocalInput(workspace.huntStartsAt),
       huntEndsAt: toLocalInput(workspace.huntEndsAt),
       huntLocation: workspace.huntLocation ?? "",
+      // The "Hunt website" link (the header's first link), edited here like on the create form.
+      huntWebsite: currentHuntWebsite,
     },
     onSubmit: ({value}) => {
       const huntStartsAt = fromLocalInput(value.huntStartsAt);
@@ -201,27 +211,19 @@ function DetailsCard() {
         toast.error("The hunt has to end after it starts.");
         return;
       }
-      const pickedHunt = pickedHuntId ? huntsById.get(pickedHuntId) : undefined;
-      const huntUrl = pickedHunt && pickedHunt.name === value.eventName ? pickedHunt.url : null;
-      const links = workspace.links.map(({name, url}) => ({name, url}));
-      // Picked a hunt: add its website to the workspace's links (unless it's there already).
-      const addLink = huntUrl !== null && !links.some(link => link.url === huntUrl);
+      const {huntWebsite, ...details} = value;
+      const website = huntWebsite.trim();
+      // A changed website replaces the "Hunt website" link (first in the header), or removes it.
+      const linksChanged = website !== currentHuntWebsite;
+      const links = [
+        ...(website ? [huntWebsiteLink(website)] : []),
+        ...workspace.links
+          .filter(link => link.name !== HUNT_WEBSITE)
+          .map(({name, url}) => ({name, url})),
+      ];
       mutation.mutate(
-        {
-          workspaceSlug,
-          ...value,
-          huntStartsAt,
-          huntEndsAt,
-          ...(addLink ? {links: [...links, huntWebsiteLink(huntUrl)]} : {}),
-        },
-        {
-          onSuccess: () =>
-            toast.success(
-              addLink
-                ? "Your changes have been saved, and the hunt's website added to the links."
-                : "Your changes have been saved."
-            ),
-        }
+        {workspaceSlug, ...details, huntStartsAt, huntEndsAt, ...(linksChanged ? {links} : {})},
+        {onSuccess: () => toast.success("Your changes have been saved.")}
       );
       // Untouched again, the form follows the workspace (now showing this change) from here on.
       form.reset(value);
@@ -243,7 +245,7 @@ function DetailsCard() {
             <form.AppField
               name="teamName"
               children={field => (
-                <field.TextField variant="secondary" label="Team Name" isDisabled={!isOwner} />
+                <field.TextField variant="secondary" label="Team name" isDisabled={!isOwner} />
               )}
             />
             <form.AppField
@@ -251,18 +253,20 @@ function DetailsCard() {
               children={field => (
                 <field.SuggestField
                   variant="secondary"
-                  label="Event Name"
+                  label="Event name"
                   isDisabled={!isOwner}
                   suggestions={huntSuggestions}
                   onPick={id => {
-                    setPickedHuntId(id);
                     const listing = id ? huntsById.get(id) : undefined;
                     if (!listing) return;
-                    // Picked a hunt: its dates and place too (still editable before saving).
+                    // Picked a hunt: its dates, place and website too (still editable before saving).
                     const details = huntDetails(listing);
                     form.setFieldValue("huntStartsAt", details.huntStartsAt);
                     form.setFieldValue("huntEndsAt", details.huntEndsAt);
                     form.setFieldValue("huntLocation", details.huntLocation);
+                    if (listing.url && !form.getFieldValue("huntWebsite")) {
+                      form.setFieldValue("huntWebsite", listing.url);
+                    }
                   }}
                 />
               )}
@@ -302,8 +306,22 @@ function DetailsCard() {
                 />
               )}
             />
+            <form.AppField
+              name="huntWebsite"
+              validators={{onBlur: HUNT_WEBSITE_SCHEMA, onSubmit: HUNT_WEBSITE_SCHEMA}}
+              children={field => (
+                <field.TextField
+                  variant="secondary"
+                  label="Hunt website"
+                  type="url"
+                  placeholder="https://"
+                  description="The first link in the workspace's header."
+                  isDisabled={!isOwner}
+                />
+              )}
+            />
             <div className="flex flex-col gap-1">
-              <Label>Invitation Link</Label>
+              <Label>Invitation link</Label>
               <p className="text-muted flex items-center gap-2 text-xs">
                 https://join.wafflehaus.io/{workspaceSlug}
                 <Button

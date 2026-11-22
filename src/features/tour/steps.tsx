@@ -334,7 +334,7 @@ const CAPTAIN: TourStep[] = [
         </>
       ) : (
         <>
-          Hunts unlock puzzles in rounds. Click <B>⋯</B>, then <B>Add new round</B>.
+          Hunts unlock puzzles in rounds. Click <B>⋯</B>, then <B>Add round</B>.
         </>
       ),
     task: {isDone: ctx => ctx.workspace.rounds.length > 0, doItForMe: "round"},
@@ -347,7 +347,7 @@ const CAPTAIN: TourStep[] = [
     body: () => (
       <>
         A round's <B>meta</B> is the puzzle its other puzzles' answers feed into. Click this round's{" "}
-        <B>⋯</B>, then <B>Add new meta puzzle</B>.
+        <B>⋯</B>, then <B>Add meta</B>.
       </>
     ),
     task: {isDone: ctx => allPuzzles(ctx.workspace).some(p => p.isMetaPuzzle), doItForMe: "meta"},
@@ -359,9 +359,8 @@ const CAPTAIN: TourStep[] = [
     title: "Add a puzzle",
     body: () => (
       <>
-        Now a puzzle that feeds the meta: click the meta's <B>⋯</B>, then{" "}
-        <B>Add new puzzle feeding this meta puzzle</B>. Paste the puzzle's link from the hunt site
-        so everyone can open it in one click.
+        Now a puzzle that feeds the meta: click the meta's <B>⋯</B>, then <B>Add feeder puzzle</B>.
+        Paste the puzzle's link from the hunt site so everyone can open it in one click.
       </>
     ),
     task: {

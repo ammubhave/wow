@@ -2,6 +2,9 @@ import {Command} from "@heroui-pro/react";
 import {useNavigate} from "@tanstack/react-router";
 import {
   CompassIcon,
+  HeadphonesIcon,
+  MegaphoneIcon,
+  PlusIcon,
   BookOpenIcon,
   HistoryIcon,
   HomeIcon,
@@ -14,9 +17,24 @@ import {
 } from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {AddNewMetaPuzzleDialog} from "@/components/add-new-meta-puzzle-dialog";
+import {AddNewPuzzleDialog} from "@/components/add-new-puzzle-dialog";
+import {AddNewRoundDialog} from "@/components/add-new-round-dialog";
+import {MakeAccouncementDialog} from "@/components/make-announcement-dialog";
 import {DOC_PAGES} from "@/docs/registry";
 import {useTour} from "@/features/tour/tour-provider";
+import {useVoice} from "@/features/voice/voice-provider";
 import {useWorkspace} from "@/hooks/use-workspace";
+import {VOICE_LOBBY} from "@/server/voice";
+
+/** Every word typed appears somewhere, in any order ("feeder keeper" finds "Add feeder puzzle to Keeper's Log"). */
+const matchesEveryWord = (textValue: string, inputValue: string) => {
+  const text = textValue.toLowerCase();
+  return inputValue
+    .toLowerCase()
+    .split(/\s+/)
+    .every(word => text.includes(word));
+};
 
 export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string}) {
   const [open, setOpen] = useState(false);
@@ -33,12 +51,26 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
   const workspace = useWorkspace();
   const navigate = useNavigate();
   const tour = useTour();
+  const voice = useVoice();
+  // What an action opened (the palette closes; the dialog takes over).
+  const [dialog, setDialog] = useState<
+    | {type: "round"}
+    | {type: "meta"; roundId: string}
+    | {type: "puzzle"; roundId: string; parentPuzzleId?: string}
+    | {type: "announce"}
+    | null
+  >(null);
+  const run = (action: () => void) => {
+    action();
+    setOpen(false);
+  };
+  const inLobby = voice.room === VOICE_LOBBY;
   // Keyboard-only, like Spotlight: ⌘K / Ctrl+K opens it; there's deliberately no visible trigger.
   return (
     <Command>
       <Command.Backdrop isOpen={open} onOpenChange={setOpen}>
         <Command.Container>
-          <Command.Dialog>
+          <Command.Dialog filter={matchesEveryWord}>
             <Command.InputGroup>
               <Command.InputGroup.Input placeholder="Type a command or search..." />
               <Command.InputGroup.ClearButton />
@@ -49,6 +81,70 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   No results. Maybe it was a red herring?
                 </div>
               )}>
+              {/* Things to do, not just places to go. Searchable: "add tide", "feeder keeper". */}
+              <Command.Group heading="Actions">
+                <Command.Item
+                  textValue="Add round new"
+                  onAction={() => run(() => setDialog({type: "round"}))}>
+                  <PlusIcon />
+                  <span>Add round</span>
+                </Command.Item>
+                <Command.Item
+                  textValue="Make an announcement announce megaphone"
+                  onAction={() => run(() => setDialog({type: "announce"}))}>
+                  <MegaphoneIcon />
+                  <span>Make an announcement</span>
+                </Command.Item>
+                <Command.Item
+                  textValue={
+                    inLobby ? "Leave the lobby call voice" : "Join the lobby call voice listen"
+                  }
+                  onAction={() =>
+                    run(() => (inLobby ? voice.leave() : void voice.join(VOICE_LOBBY)))
+                  }>
+                  <HeadphonesIcon />
+                  <span>{inLobby ? "Leave the lobby call" : "Join the lobby call"}</span>
+                </Command.Item>
+                {workspace.rounds.map(round => (
+                  <Command.Item
+                    key={`meta-${round.id}`}
+                    textValue={`Add meta in ${round.name}`}
+                    onAction={() => run(() => setDialog({type: "meta", roundId: round.id}))}>
+                    <PlusIcon />
+                    <span>
+                      Add meta in <strong>{round.name}</strong>
+                    </span>
+                  </Command.Item>
+                ))}
+                {workspace.rounds.map(round => (
+                  <Command.Item
+                    key={`puzzle-${round.id}`}
+                    textValue={`Add unassigned puzzle in ${round.name}`}
+                    onAction={() => run(() => setDialog({type: "puzzle", roundId: round.id}))}>
+                    <PlusIcon />
+                    <span>
+                      Add unassigned puzzle in <strong>{round.name}</strong>
+                    </span>
+                  </Command.Item>
+                ))}
+                {workspace.rounds.flatMap(round =>
+                  round.metaPuzzles.map(meta => (
+                    <Command.Item
+                      key={`feeder-${meta.id}`}
+                      textValue={`Add feeder puzzle to ${meta.name}`}
+                      onAction={() =>
+                        run(() =>
+                          setDialog({type: "puzzle", roundId: round.id, parentPuzzleId: meta.id})
+                        )
+                      }>
+                      <PlusIcon />
+                      <span>
+                        Add feeder puzzle to <strong>{meta.name}</strong>
+                      </span>
+                    </Command.Item>
+                  ))
+                )}
+              </Command.Group>
               <Command.Group heading="Workspace">
                 <Command.Item
                   textValue="Blackboard home board"
@@ -173,6 +269,38 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
           </Command.Dialog>
         </Command.Container>
       </Command.Backdrop>
+      {/* Mounted only while open, like the board's own dialogs. */}
+      {dialog?.type === "round" && (
+        <AddNewRoundDialog
+          workspaceSlug={workspaceSlug}
+          open
+          setOpen={isOpen => !isOpen && setDialog(null)}
+        />
+      )}
+      {dialog?.type === "meta" && (
+        <AddNewMetaPuzzleDialog
+          workspaceSlug={workspaceSlug}
+          roundId={dialog.roundId}
+          open
+          setOpen={isOpen => !isOpen && setDialog(null)}
+        />
+      )}
+      {dialog?.type === "puzzle" && (
+        <AddNewPuzzleDialog
+          workspaceSlug={workspaceSlug}
+          roundId={dialog.roundId}
+          parentPuzzleId={dialog.parentPuzzleId}
+          open
+          setOpen={isOpen => !isOpen && setDialog(null)}
+        />
+      )}
+      {dialog?.type === "announce" && (
+        <MakeAccouncementDialog
+          workspaceSlug={workspaceSlug}
+          open
+          onOpenChange={isOpen => !isOpen && setDialog(null)}
+        />
+      )}
     </Command>
   );
 }

@@ -265,10 +265,6 @@ function RouteComponent() {
               <LogInIcon className="text-accent size-4" aria-hidden="true" />
               Join a workspace
             </Card.Title>
-            <Card.Description>
-              Got an invitation link? Just open it. Otherwise, enter the workspace ID and password
-              your team shared.
-            </Card.Description>
           </Card.Header>
           <Card.Content>
             <form.AppForm>

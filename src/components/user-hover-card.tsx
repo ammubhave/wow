@@ -2,7 +2,9 @@ import {HoverCard} from "@heroui-pro/react";
 import {Avatar, AvatarGroup, Chip} from "@heroui/react";
 import {sha256} from "js-sha256";
 
-type User = {name: string; email: string | null; image: string | null};
+import {AwardBadges, AwardsSummary} from "@/features/awards/awards-provider";
+
+type User = {id?: string; name: string; email: string | null; image: string | null};
 
 export function gravatarUrl(email: string, opts?: {size?: number; d?: string}) {
   const size = opts?.size ?? 96;
@@ -42,17 +44,20 @@ export function UserHoverCard({
     <HoverCard openDelay={200}>
       <HoverCard.Trigger>{children}</HoverCard.Trigger>
       <HoverCard.Content
-        className="flex w-fit items-center justify-center"
+        className="flex w-fit max-w-72 flex-col gap-2"
         placement={side ?? "bottom"}>
         <div className="flex items-center gap-2">
           <Avatar>
             <Avatar.Image src={userAvatarSrc(user)} />
             <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
           </Avatar>
-          <div className="flex flex-col items-baseline">
-            <div className="text-foreground font-medium">{user.name}</div>
+          <div className="text-foreground flex items-center gap-1.5 font-medium">
+            {user.name}
+            <AwardBadges userId={user.id} plain />
           </div>
         </div>
+        {/* The awards they lead (from the Leaderboard), and the ones they're close to. */}
+        <AwardsSummary userId={user.id} />
       </HoverCard.Content>
     </HoverCard>
   );
@@ -68,6 +73,7 @@ export function UserPresenceChip({user}: {user: User}) {
           <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
         </Avatar>
         <Chip.Label>{user.name}</Chip.Label>
+        <AwardBadges userId={user.id} plain />
       </Chip>
     </UserHoverCard>
   );

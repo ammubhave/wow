@@ -9,6 +9,7 @@ import {PresencesWebSocket} from "@/components/presences-websocket";
 import {preloadSheet} from "@/components/sheet/sheet";
 import {WorkspaceFooter} from "@/components/workspace-footer";
 import {WorkspaceHeader} from "@/components/workspace-header";
+import {AwardsProvider} from "@/features/awards/awards-provider";
 import {AwaySummary, NotificationsWebSocket} from "@/features/notifications/notifications";
 import {TourProvider} from "@/features/tour/tour-provider";
 import {VoiceProvider} from "@/features/voice/voice-provider";
@@ -82,22 +83,24 @@ function RouteComponent() {
       <NotificationsWebSocket workspaceSlug={workspaceSlug}>
         <PresencesWebSocket workspaceSlug={workspaceSlug}>
           <VoiceProvider workspaceSlug={workspaceSlug}>
-            <TourProvider workspaceSlug={workspaceSlug}>
-              <div className="flex flex-1 flex-col">
-                <WorkspaceHeader />
-                <div className="relative flex flex-1">
-                  <div className="absolute inset-0 flex overflow-auto">
-                    <Outlet />
+            <AwardsProvider workspaceSlug={workspaceSlug}>
+              <TourProvider workspaceSlug={workspaceSlug}>
+                <div className="flex flex-1 flex-col">
+                  <WorkspaceHeader />
+                  <div className="relative flex flex-1">
+                    <div className="absolute inset-0 flex overflow-auto">
+                      <Outlet />
+                    </div>
                   </div>
+                  <WorkspaceFooter />
                 </div>
-                <WorkspaceFooter />
-              </div>
-              <CallBar />
-              <AwaySummary workspaceSlug={workspaceSlug} />
-              <WorkspaceAccent />
-              <SheetPreloader />
-              <WorkspaceAnalyticsGroup />
-            </TourProvider>
+                <CallBar />
+                <AwaySummary workspaceSlug={workspaceSlug} />
+                <WorkspaceAccent />
+                <SheetPreloader />
+                <WorkspaceAnalyticsGroup />
+              </TourProvider>
+            </AwardsProvider>
           </VoiceProvider>
         </PresencesWebSocket>
       </NotificationsWebSocket>

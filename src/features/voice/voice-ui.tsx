@@ -17,6 +17,7 @@ import {share} from "rxjs";
 import {cn} from "tailwind-variants";
 
 import {UserHoverCard, userAvatarSrc, userInitials} from "@/components/user-hover-card";
+import {AwardBadges} from "@/features/awards/awards-provider";
 import {useWorkspace, voiceRoomsQueryKey, voiceSpeakingQueryKey} from "@/hooks/use-workspace";
 import {VOICE_LOBBY, type VoiceParticipant, type VoiceTrack, type VoiceUser} from "@/server/voice";
 
@@ -151,6 +152,7 @@ function PersonChip({
           <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
         </Avatar>
         <Chip.Label>{user.name}</Chip.Label>
+        <AwardBadges userId={user.id} plain />
         {call &&
           (call.muted ? (
             <MicOffIcon className="text-muted size-3" aria-hidden />

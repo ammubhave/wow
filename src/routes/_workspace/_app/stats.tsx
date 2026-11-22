@@ -1,3 +1,6 @@
+import {ChartTooltip, KPIGroup} from "@heroui-pro/react";
+import {BarChart} from "@heroui-pro/react/bar-chart";
+import {KPI} from "@heroui-pro/react/kpi";
 import {Avatar, Card, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -100,6 +103,32 @@ function RouteComponent() {
   );
 }
 
+/** A bar's tooltip: what it is (hour or tag) and the time spent. */
+function MinutesTooltip({
+  title,
+  active,
+  payload,
+  label,
+}: {
+  title: (label: unknown) => string;
+  // Filled in by Recharts.
+  active?: boolean;
+  payload?: {value?: unknown}[];
+  label?: unknown;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <ChartTooltip>
+      <ChartTooltip.Header>{title(label)}</ChartTooltip.Header>
+      <ChartTooltip.Item>
+        <ChartTooltip.Indicator color="var(--accent)" />
+        <ChartTooltip.Label>On puzzles</ChartTooltip.Label>
+        <ChartTooltip.Value>{formatHours(Number(payload[0]?.value ?? 0) * 60)}</ChartTooltip.Value>
+      </ChartTooltip.Item>
+    </ChartTooltip>
+  );
+}
+
 function StatsBody({stats}: {stats: Stats}) {
   const s = computeStats(stats);
   if (s.total === 0 && s.solved === 0) {
@@ -112,27 +141,56 @@ function StatsBody({stats}: {stats: Stats}) {
       </Card>
     );
   }
-  const maxHour = Math.max(...s.byHour.map(h => h.seconds), 1);
-  const maxTag = s.tags[0]?.[1] ?? 1;
   return (
     <>
-      <Card>
-        <Card.Content>
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              [String(s.solved), s.solved === 1 ? "puzzle helped solve" : "puzzles helped solve"],
-              [String(s.metas), s.metas === 1 ? "meta" : "metas"],
-              [formatHours(s.total), "on puzzles"],
-              [String(s.hunts), s.hunts === 1 ? "hunt" : "hunts"],
-            ].map(([value, label]) => (
-              <div key={label} className="flex flex-col">
-                <dt className="text-muted order-2 text-xs">{label}</dt>
-                <dd className="order-1 text-2xl font-semibold tabular-nums">{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </Card.Content>
-      </Card>
+      {/* Two by two on phones, one row from sm up. */}
+      <KPIGroup className="grid grid-cols-2 sm:flex">
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Puzzles helped solve</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            <KPI.Value value={s.solved} />
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator className="max-sm:hidden" />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Metas</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            <KPI.Value value={s.metas} />
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator className="max-sm:hidden" />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Time on puzzles</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            {/* Minutes under an hour; hours (to a tenth) above. */}
+            {s.total < 3600 ? (
+              <KPI.Value value={Math.round(s.total / 60)} style="unit" unit="minute" />
+            ) : (
+              <KPI.Value
+                value={s.total / 3600}
+                style="unit"
+                unit="hour"
+                maximumFractionDigits={1}
+              />
+            )}
+          </KPI.Content>
+        </KPI>
+        <KPIGroup.Separator className="max-sm:hidden" />
+        <KPI>
+          <KPI.Header>
+            <KPI.Title>Hunts</KPI.Title>
+          </KPI.Header>
+          <KPI.Content>
+            <KPI.Value value={s.hunts} />
+          </KPI.Content>
+        </KPI>
+      </KPIGroup>
 
       {s.total > 0 && (
         <Card>
@@ -145,23 +203,29 @@ function StatsBody({stats}: {stats: Stats}) {
             )}
           </Card.Header>
           <Card.Content>
-            <div className="flex h-24 items-end gap-0.5" aria-hidden>
-              {s.byHour.map(({hour, seconds}) => (
-                <div
-                  key={hour}
-                  title={`${hourLabel(hour)}: ${formatHours(seconds)}`}
-                  className="bg-accent min-h-px flex-1 rounded-t-sm"
-                  style={{height: `${(seconds / maxHour) * 100}%`, opacity: seconds ? 1 : 0.15}}
-                />
-              ))}
-            </div>
-            <div className="text-muted mt-1 flex justify-between text-xs">
-              <span>{hourLabel(0)}</span>
-              <span>{hourLabel(6)}</span>
-              <span>{hourLabel(12)}</span>
-              <span>{hourLabel(18)}</span>
-              <span>{hourLabel(23)}</span>
-            </div>
+            <BarChart
+              data={s.byHour.map(({hour, seconds}) => ({hour, minutes: Math.round(seconds / 60)}))}
+              height={160}>
+              <BarChart.Grid vertical={false} />
+              <BarChart.XAxis
+                dataKey="hour"
+                tickFormatter={(hour: number) => hourLabel(hour)}
+                ticks={[0, 6, 12, 18, 23]}
+                interval={0}
+                tickMargin={8}
+              />
+              <BarChart.YAxis width={32} allowDecimals={false} />
+              <BarChart.Bar
+                dataKey="minutes"
+                name="Minutes"
+                fill="var(--accent)"
+                radius={[4, 4, 0, 0]}
+                isAnimationActive={false}
+              />
+              <BarChart.Tooltip
+                content={<MinutesTooltip title={hour => hourLabel(Number(hour))} />}
+              />
+            </BarChart>
           </Card.Content>
         </Card>
       )}
@@ -173,22 +237,30 @@ function StatsBody({stats}: {stats: Stats}) {
             <Card.Description>Time on puzzles, by tag.</Card.Description>
           </Card.Header>
           <Card.Content>
-            <ul className="flex flex-col gap-2 text-sm">
-              {s.tags.map(([tag, seconds]) => (
-                <li key={tag} className="flex items-center gap-3">
-                  <span className="w-28 shrink-0 truncate">{tag}</span>
-                  <div className="bg-default h-2 flex-1 overflow-hidden rounded-full">
-                    <div
-                      className="bg-accent h-full rounded-full"
-                      style={{width: `${(seconds / maxTag) * 100}%`}}
-                    />
-                  </div>
-                  <span className="text-muted w-16 text-right tabular-nums">
-                    {formatHours(seconds)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <BarChart
+              data={s.tags.map(([tag, seconds]) => ({tag, minutes: Math.round(seconds / 60)}))}
+              height={Math.max(80, s.tags.length * 32)}
+              layout="vertical"
+              // Room for the time labels at the end of the bars.
+              margin={{top: 0, right: 56, bottom: 0, left: 0}}>
+              <BarChart.XAxis type="number" hide />
+              <BarChart.YAxis dataKey="tag" type="category" width={96} tickMargin={4} />
+              <BarChart.Bar
+                dataKey="minutes"
+                name="Minutes"
+                fill="var(--accent)"
+                barSize={14}
+                radius={[0, 8, 8, 0]}
+                isAnimationActive={false}
+                label={{
+                  position: "right",
+                  fill: "var(--muted)",
+                  fontSize: 11,
+                  formatter: (minutes: unknown) => formatHours(Number(minutes) * 60),
+                }}
+              />
+              <BarChart.Tooltip content={<MinutesTooltip title={tag => String(tag)} />} />
+            </BarChart>
           </Card.Content>
         </Card>
       )}

@@ -4,9 +4,9 @@ import {useRouter} from "@tanstack/react-router";
 import {
   BarChart3Icon,
   BellRingIcon,
-  BugIcon,
   ExternalLinkIcon,
   LogOut,
+  MessageCircleQuestionIcon,
   MonitorIcon,
   MoonIcon,
   PaletteIcon,
@@ -14,14 +14,13 @@ import {
   SunIcon,
   UserCogIcon,
 } from "lucide-react";
-import {useState} from "react";
 import {toast} from "sonner";
 
 import {useTheme} from "@/components/theme-provider";
 import {authClient} from "@/lib/auth-client";
+import {openHelpChat} from "@/lib/help-chat";
 import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
-import {BugReportDialog} from "./bug-report-dialog";
 import {gravatarUrl} from "./user-hover-card";
 
 /** `children` are extra menu items (e.g. the workspace section) shown above the account items. */
@@ -29,7 +28,6 @@ export function NavUser({children}: {children?: React.ReactNode}) {
   const {theme, setTheme} = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [isReportingBug, setIsReportingBug] = useState(false);
   const user = authClient.useSession().data?.user;
   if (!user) {
     return <Skeleton className="size-8 rounded-full" />;
@@ -147,11 +145,11 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               <Label>Account</Label>
             </Dropdown.Item>
             <Dropdown.Item
-              id="report-bug"
-              textValue="Report a bug"
-              onAction={() => setIsReportingBug(true)}>
-              <BugIcon />
-              <Label>Report a bug</Label>
+              id="help"
+              textValue="Support & feedback"
+              onAction={() => openHelpChat("account_menu")}>
+              <MessageCircleQuestionIcon />
+              <Label>Support &amp; feedback</Label>
             </Dropdown.Item>
             <Separator />
             <Dropdown.Item
@@ -178,7 +176,6 @@ export function NavUser({children}: {children?: React.ReactNode}) {
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
-      <BugReportDialog isOpen={isReportingBug} onOpenChange={setIsReportingBug} />
     </>
   );
 }

@@ -327,7 +327,7 @@ export function PuzzleGuesses({
               variant="secondary"
               className="min-w-0 flex-1">
               <Input
-                placeholder="Queue a guess to call in"
+                placeholder="Queue a guess"
                 className="font-mono uppercase placeholder:font-sans placeholder:normal-case"
               />
             </TextField>

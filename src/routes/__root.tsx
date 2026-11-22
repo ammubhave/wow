@@ -19,9 +19,20 @@ import {IntlProvider} from "use-intl";
 
 import {PostHogIdentity} from "@/components/posthog-identity";
 import {ThemeProvider, useTheme} from "@/components/theme-provider";
+import {captureJoinPassword} from "@/lib/join-password";
 import {store} from "@/store";
 
 import appCss from "../styles.css?url";
+
+/**
+ * Dates and times show in this browser's time zone. Said explicitly: without it, use-intl reports
+ * an error for every date it formats (and the error tracker gets each one).
+ */
+const TIME_ZONE =
+  typeof Intl === "undefined" ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// Before anything reads the address (analytics, the sign-in redirect): a join link's password.
+captureJoinPassword();
 
 declare module "react-aria-components" {
   interface RouterConfig {
@@ -99,7 +110,9 @@ function RootDocument({children}: {children: React.ReactNode}) {
               <PostHogIdentity />
               <ReactReduxProvider store={store}>
                 <RouterProvider navigate={(to, options) => router.navigate({...options, to})}>
-                  <IntlProvider locale="en">{children}</IntlProvider>
+                  <IntlProvider locale="en" timeZone={TIME_ZONE}>
+                    {children}
+                  </IntlProvider>
                 </RouterProvider>
               </ReactReduxProvider>
             </PostHogProvider>

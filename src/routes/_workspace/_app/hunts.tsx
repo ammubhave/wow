@@ -18,7 +18,6 @@ import {
   GlobeIcon,
   MapPinIcon,
   SparklesIcon,
-  UsersIcon,
 } from "lucide-react";
 import {useState} from "react";
 import {cn} from "tailwind-variants";
@@ -94,7 +93,7 @@ function HuntActions({hunt}: {hunt: Hunt}) {
         <Link
           to="/workspaces/create"
           search={{hunt: hunt.id, event: hunt.name}}
-          aria-label={`Set up a workspace for ${hunt.name}`}
+          aria-label={`Set up workspace: ${hunt.name}`}
           className={buttonVariants({size: "sm", variant: "secondary"})}>
           <SparklesIcon />
           Set up workspace
@@ -143,14 +142,6 @@ function HuntRow({hunt, now}: {hunt: Hunt; now: number}) {
             <Chip size="sm" color="success" variant="soft">
               Live
             </Chip>
-          )}
-          {hunt.teams > 0 && (
-            <span
-              className="text-muted flex items-center gap-1 text-xs"
-              title={`${hunt.teams} ${hunt.teams === 1 ? "team has" : "teams have"} a workspace for it`}>
-              <UsersIcon className="size-3.5" aria-hidden="true" />
-              {hunt.teams} on WOW
-            </span>
           )}
         </div>
         <p className="text-muted flex min-w-0 items-center gap-1.5 text-xs">

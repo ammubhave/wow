@@ -275,7 +275,7 @@ export const DOC_PAGES: DocPage[] = [
   {
     slug: "help/faq",
     title: "FAQ",
-    description: "Common questions, and how to report a bug or ask for a feature.",
+    description: "Common questions, and how to get help, report a bug or suggest a feature.",
     section: "Help",
   },
   // Puzzle Exchange

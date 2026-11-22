@@ -173,4 +173,27 @@ export const meRouter = {
       teammates,
     };
   }),
+
+  /// Proof for PostHog Support (the help chat) that this browser really is this account, so their
+  /// tickets follow them across devices: HMAC-SHA256 of their PostHog id (the user id) with the
+  /// "Identity verification secret" from PostHog's Support settings. Null until that secret is set
+  /// (`wrangler secret put POSTHOG_SUPPORT_SECRET`); the chat still works, tied to the browser.
+  supportIdentity: procedure.handler(async ({context}) => {
+    const secret = process.env.POSTHOG_SUPPORT_SECRET;
+    if (!secret) return null;
+    const distinctId = context.session.user.id;
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      {name: "HMAC", hash: "SHA-256"},
+      false,
+      ["sign"]
+    );
+    const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(distinctId));
+    const hash = Array.from(new Uint8Array(signature), b => b.toString(16).padStart(2, "0")).join(
+      ""
+    );
+    return {distinctId, hash};
+  }),
 };
