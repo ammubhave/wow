@@ -59,13 +59,6 @@ function useNotifications(workspaceSlug: string) {
   );
 }
 
-/**
- * Mentions are only for whoever was mentioned, and Drive sharing problems only for the owners;
- * everything else is for everyone.
- */
-const isForMe = (notification: WorkspaceNotification, me: string | undefined) =>
-  !("toUserIds" in notification) || (me !== undefined && notification.toUserIds.includes(me));
-
 const driveFolderUrl = (folderId: string) => `https://drive.google.com/drive/folders/${folderId}`;
 
 function describe(notification: WorkspaceNotification) {
@@ -189,7 +182,7 @@ export function NotificationsWebSocket({
         message,
         ...(current ?? []).filter(n => n.id !== message.id),
       ]);
-      if (!popupsAllowed || !isForMe(message, me)) return;
+      if (!popupsAllowed) return;
       // A Drive sharing problem needs an owner to act, so it always pops up.
       const wanted =
         message.type === "solved"
@@ -275,7 +268,7 @@ export const OPEN_BELL_EVENT = "wow:open-notifications";
  */
 export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
   const me = authClient.useSession().data?.user.id;
-  const notifications = useNotifications(workspaceSlug).filter(n => isForMe(n, me));
+  const notifications = useNotifications(workspaceSlug);
   const queryClient = useQueryClient();
   const {seenAt, readIds} =
     useQuery<ReadState>({
@@ -496,7 +489,6 @@ const AWAY_MS = 30 * 60 * 1000;
  * the bell's notifications and the activity log), with a way into the bell.
  */
 export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
-  const me = authClient.useSession().data?.user.id;
   const notifications = useNotifications(workspaceSlug);
   const workspace = useWorkspace();
   const notificationsRef = useRef(notifications);
@@ -516,7 +508,7 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
       }
     };
     const summarize = (since: number) => {
-      const recent = notificationsRef.current.filter(n => n.timestamp > since && isForMe(n, me));
+      const recent = notificationsRef.current.filter(n => n.timestamp > since);
       const solves = recent.filter(n => n.type === "solved").length;
       const announcements = recent.filter(n => n.type === "announcement").length;
       const mentions = recent.filter(n => n.type === "mention").length;
@@ -559,7 +551,7 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", check);
     };
-  }, [me, workspaceSlug]);
+  }, [workspaceSlug]);
 
   return null;
 }

@@ -24,6 +24,13 @@ export const NOTIFICATION_USER_HEADER = "x-wow-user-id";
 type SocketAttachment = {userId: string};
 
 /**
+ * Mentions are only for whoever was mentioned, and Drive sharing problems only for the owners;
+ * everything else is for everyone. Others never receive them (a mention quotes the message).
+ */
+const isFor = (notification: WorkspaceNotification, userId: string) =>
+  !("toUserIds" in notification) || notification.toUserIds.includes(userId);
+
+/**
  * A workspace's notifications: pushed live to every member, and the recent ones kept. Also keeps
  * each person's read state, so "read" follows them across browsers and devices.
  */
@@ -38,9 +45,11 @@ export class NotificationRoom extends DurableObject<Env> {
     const recent = await this.ctx.storage.list<WorkspaceNotification>({
       prefix: PREFIX,
       reverse: true,
-      limit: HISTORY,
     });
-    const history: NotificationMessage = {type: "history", notifications: [...recent.values()]};
+    const history: NotificationMessage = {
+      type: "history",
+      notifications: [...recent.values()].filter(n => isFor(n, userId)).slice(0, HISTORY),
+    };
     server.send(JSON.stringify(history));
     server.send(JSON.stringify({type: "readState", ...(await this.readState(userId))}));
     return new Response(null, {status: 101, webSocket: client});
@@ -51,7 +60,10 @@ export class NotificationRoom extends DurableObject<Env> {
     const notification: WorkspaceNotification = {...data, id, timestamp: Date.now()};
     await this.ctx.storage.put(PREFIX + id, notification);
     const payload = JSON.stringify(notification satisfies NotificationMessage);
-    for (const ws of this.ctx.getWebSockets()) ws.send(payload);
+    for (const ws of this.ctx.getWebSockets()) {
+      const attachment: SocketAttachment | null = ws.deserializeAttachment();
+      if (attachment && isFor(notification, attachment.userId)) ws.send(payload);
+    }
     // Now and then, drop the oldest beyond what the bell shows.
     if (Math.random() < 0.1) {
       const all = await this.ctx.storage.list({prefix: PREFIX, reverse: true});

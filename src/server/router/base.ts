@@ -3,7 +3,8 @@ import {ORPCError, os} from "@orpc/server";
 import {ARCHIVED_MESSAGE_START} from "@/lib/archived";
 import {auth} from "@/lib/auth";
 
-import {trackServerEvent, trackUsage} from "../posthog";
+import {trackServerEvent} from "../posthog";
+import {recordRequest} from "../usage";
 import {getMemberWorkspace, type WorkspaceRole} from "../workspace-access";
 import {ActivityLogService} from "./services/activity-log";
 import {DiscordService} from "./services/discord";
@@ -86,10 +87,11 @@ export const preauthorize = os
         message: `${ARCHIVED_MESSAGE_START}, so it's read-only. An owner can unarchive it.`,
       });
     }
-    trackUsage("usage_request", {
+    recordRequest({
       workspaceId: result.workspace.id,
       userId: context.session.user.id,
-      properties: {kind: "rpc", name: path.join(".")},
+      kind: "rpc",
+      name: path.join("."),
     });
     const output = await next({context: {workspace: result.workspace, role: result.role}});
     const tracked = TRACKED_PROCEDURES[path.join(".")];

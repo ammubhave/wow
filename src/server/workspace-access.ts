@@ -4,7 +4,7 @@ import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
-import {trackUsage} from "./posthog";
+import {recordRequest} from "./usage";
 
 // Every organization column except the server-only Google OAuth credentials.
 const {
@@ -111,8 +111,8 @@ export async function isPuzzleMember(puzzleId: string, userId: string) {
 }
 
 /**
- * Records a `usage_request` for an API route a workspace member called (see `trackUsage`). Named by
- * kind and route, with workspace slugs and ids masked, so routes group together in PostHog.
+ * Counts a request to an API route a workspace member called (see `recordRequest`). Named by
+ * kind and route, with workspace slugs and ids masked, so routes group together.
  */
 export function trackWorkspaceRequest(
   request: Request,
@@ -138,7 +138,7 @@ export function trackWorkspaceRequest(
           : segment
     )
     .join("/");
-  trackUsage("usage_request", {workspaceId, userId, properties: {kind, name}});
+  recordRequest({workspaceId, userId, kind, name});
 }
 
 /** Only allow same-origin relative redirects (e.g. "/my-team/settings"), never "//evil.com". */

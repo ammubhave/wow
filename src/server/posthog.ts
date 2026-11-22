@@ -41,7 +41,7 @@ export function captureServerException(
 }
 
 /**
- * A usage event (`usage_request`, `usage_voice`, `usage_storage`): what a workspace uses, for
+ * A usage event (`usage_voice`, `usage_storage`; requests are counted in src/server/usage.ts): what a workspace uses, for
  * attributing running costs to teams. Always in the workspace's group. By the person who caused it
  * when there is one, otherwise sent as the workspace itself, without creating a person profile.
  */
