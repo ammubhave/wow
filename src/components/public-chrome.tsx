@@ -5,6 +5,7 @@ import {MonitorIcon, MoonIcon, PaletteIcon, SunIcon} from "lucide-react";
 
 import {findDoc} from "@/docs/registry";
 import {authClient} from "@/lib/auth-client";
+import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
 import {CoffeeIcon} from "./coffee-icon";
 import {BrandTitle} from "./decrypted-text";
@@ -171,9 +172,10 @@ export function PublicFooter() {
           </p>
           <a
             className={buttonVariants({variant: "secondary", size: "sm"})}
-            href="https://www.buymeacoffee.com/amolbhave"
+            href={SUPPORT_URL}
             target="_blank"
-            rel="noopener noreferrer">
+            rel="noopener noreferrer"
+            onClick={() => trackSupportClick("footer")}>
             <CoffeeIcon aria-hidden="true" />
             Buy me a puzzle
           </a>

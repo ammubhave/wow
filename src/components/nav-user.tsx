@@ -19,6 +19,7 @@ import {toast} from "sonner";
 
 import {useTheme} from "@/components/theme-provider";
 import {authClient} from "@/lib/auth-client";
+import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
 import {BugReportDialog} from "./bug-report-dialog";
 import {gravatarUrl} from "./user-hover-card";
@@ -156,8 +157,9 @@ export function NavUser({children}: {children?: React.ReactNode}) {
             <Dropdown.Item
               id="buy-me-a-puzzle"
               textValue="Buy me a puzzle"
-              href="https://www.buymeacoffee.com/amolbhave"
-              target="_blank">
+              href={SUPPORT_URL}
+              target="_blank"
+              onAction={() => trackSupportClick("account_menu")}>
               <PuzzleIcon />
               <Label>Buy me a puzzle</Label>
               <ExternalLinkIcon className="absolute right-2" />

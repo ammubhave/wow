@@ -1,8 +1,8 @@
-import {Avatar, Button, Card, Chip, Skeleton} from "@heroui/react";
+import {Avatar, Button, buttonVariants, Card, Chip, Skeleton} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {DownloadIcon} from "lucide-react";
-import {useRef, useState} from "react";
+import {DownloadIcon, HeartIcon, XIcon} from "lucide-react";
+import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
@@ -14,6 +14,7 @@ import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
+import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 import type {RouterOutputs} from "@/server/router";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/recap")({
@@ -39,8 +40,84 @@ const HOUR = 3_600_000;
 
 function formatSpan(ms: number) {
   const hours = Math.round(ms / HOUR);
-  if (hours < 1) return `${Math.max(1, Math.round(ms / 60_000))} minutes`;
+  if (hours < 1) {
+    const minutes = Math.max(1, Math.round(ms / 60_000));
+    return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  }
   return hours === 1 ? "1 hour" : `${hours} hours`;
+}
+
+/**
+ * "Chip in for WOW" after the hunt (any amount, no suggestion). Dismissable (remembered in this
+ * browser, per workspace).
+ */
+function SupportCard({
+  workspaceSlug,
+  teamName,
+  solves,
+  solvers,
+  onShare,
+}: {
+  workspaceSlug: string;
+  teamName: string;
+  solves: number;
+  solvers: number;
+  onShare: () => void;
+}) {
+  const key = `wow:support-dismissed:${workspaceSlug}`;
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(key) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (!dismissed) track("support_prompt_shown", {place: "recap", solves, solvers});
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- once per visit, not on every update.
+  }, [dismissed]);
+  if (dismissed) return null;
+  const dismiss = () => {
+    setDismissed(true);
+    track("support_prompt_dismissed", {place: "recap"});
+    try {
+      localStorage.setItem(key, "1");
+    } catch {
+      // Not remembered (private window): it comes back next visit, which is fine.
+    }
+  };
+  return (
+    <Card className="border-accent/30 bg-accent/5 border">
+      <Card.Header className="flex-row items-start gap-3">
+        <HeartIcon className="text-accent mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Card.Title>Glad you hunted with WOW?</Card.Title>
+          <Card.Description>
+            {teamName} solved {solves} {solves === 1 ? "puzzle" : "puzzles"} here. WOW is free and
+            made by Team Wafflehaüs. If you'd like to chip in, any amount helps keep it that way.
+          </Card.Description>
+        </div>
+        <Button size="sm" variant="ghost" isIconOnly aria-label="Not now" onPress={dismiss}>
+          <XIcon />
+        </Button>
+      </Card.Header>
+      <Card.Footer className="flex-wrap gap-2 ps-8">
+        <a
+          href={SUPPORT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({size: "sm"})}
+          onClick={() => trackSupportClick("recap", {solves, solvers})}>
+          <HeartIcon />
+          Chip in
+        </a>
+        <Button size="sm" variant="secondary" onPress={onShare}>
+          <DownloadIcon />
+          Save the recap to share
+        </Button>
+      </Card.Footer>
+    </Card>
+  );
 }
 
 /** The card's "how long" figure: the number big, its unit in the label ("3" "hours of hunting"). */
@@ -468,6 +545,18 @@ function RouteComponent() {
   const standings = (
     <Standings standings={recap.standings} me={me} isLive={isLive} isOver={isOver} />
   );
+  // After the hunt (or, with no end date set, once the team has really used WOW), ask the team to
+  // chip in: the moment they're most glad they had it.
+  const askForSupport = isOver || (!workspace.huntEndsAt && recap.solves >= 10);
+  const support = (
+    <SupportCard
+      workspaceSlug={workspaceSlug}
+      teamName={teamName}
+      solves={recap.solves}
+      solvers={recap.solvers}
+      onShare={() => void download()}
+    />
+  );
 
   return (
     <Page
@@ -492,10 +581,12 @@ function RouteComponent() {
             {standings}
             {yourHunt}
             {card}
+            {askForSupport && support}
           </>
         ) : (
           <>
             {card}
+            {askForSupport && support}
             {yourHunt}
             {standings}
           </>
