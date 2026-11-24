@@ -21,10 +21,10 @@ export function SiteHeader() {
         <Link
           to="/docs"
           className={buttonVariants({size: "sm", variant: "ghost"})}
-          aria-label="Docs"
+          aria-label="Help"
           activeProps={{className: "text-accent"}}>
           <BookOpenIcon />
-          <span className="hidden sm:inline">Docs</span>
+          <span className="hidden sm:inline">Help</span>
         </Link>
         <Link
           to="/hunts"

@@ -1,6 +1,5 @@
 import {ListBox, Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
-import {toast} from "sonner";
 
 import {useWorkspace} from "@/hooks/use-workspace";
 import {workspaceMutations} from "@/lib/workspace-mutations";
@@ -22,14 +21,11 @@ export function AssignUnassignedPuzzlesDialog({
   setOpen: (open: boolean) => void;
 }) {
   const workspace = useWorkspace();
+  const metas = workspace.rounds.find(round => round.id === roundId)?.metaPuzzles ?? [];
   const mutation = useMutation(workspaceMutations.rounds.assignUnassignedPuzzles());
   const form = useAppForm({
-    defaultValues: {parentPuzzleId: ""},
+    defaultValues: {parentPuzzleId: metas[0]?.id ?? ""},
     onSubmit: ({value}) => {
-      if (value.parentPuzzleId === "") {
-        toast.info("No action taken -- please select a meta puzzle.");
-        return;
-      }
       mutation.mutate({...value, workspaceSlug});
       form.reset();
       setOpen(false);
@@ -47,32 +43,29 @@ export function AssignUnassignedPuzzlesDialog({
           <form.AppForm>
             <Modal.Body>
               <form.Form>
-                <form.AppField
-                  name="parentPuzzleId"
-                  children={field => {
-                    const items = [
-                      {value: "", label: "None"},
-                      ...(workspace.rounds
-                        .filter(round => round.id === roundId)
-                        .flatMap(round => round.metaPuzzles)
-                        .map(metaPuzzle => ({value: metaPuzzle.id, label: metaPuzzle.name})) ?? []),
-                    ];
-                    return (
-                      <field.SelectField variant="secondary" label="Feeds Into" items={items}>
-                        {items.map(item => (
-                          <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
-                            {item.label}
+                {metas.length === 0 ? (
+                  <p className="text-muted text-sm">
+                    This round has no metas yet. Add a meta first, then assign these puzzles to it.
+                  </p>
+                ) : (
+                  <form.AppField
+                    name="parentPuzzleId"
+                    children={field => (
+                      <field.SelectField variant="secondary" label="Make them all feed">
+                        {metas.map(meta => (
+                          <ListBox.Item key={meta.id} id={meta.id} textValue={meta.name}>
+                            {meta.name}
                             <ListBox.ItemIndicator />
                           </ListBox.Item>
                         ))}
                       </field.SelectField>
-                    );
-                  }}
-                />
+                    )}
+                  />
+                )}
               </form.Form>
             </Modal.Body>
             <Modal.Footer>
-              <form.SubmitButton>Save</form.SubmitButton>
+              {metas.length > 0 && <form.SubmitButton>Assign</form.SubmitButton>}
             </Modal.Footer>
           </form.AppForm>
         </Modal.Dialog>

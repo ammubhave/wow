@@ -146,7 +146,7 @@ function SidebarContents({
           />
         </div>
       )}
-      <div className="flex flex-1 flex-col gap-2 p-2 text-xs">
+      <div className="flex flex-1 flex-col gap-3 p-2 text-xs">
         {rounds.toReversed().map(round => (
           <SidebarRound
             key={round.id}
@@ -157,17 +157,15 @@ function SidebarContents({
       </div>
       {!isReadOnly && (
         <div className="p-2">
-          <Tooltip delay={0}>
-            <MakeAccouncementDialog
-              workspaceSlug={workspaceSlug}
-              children={
-                <Button variant="outline" isIconOnly aria-label="Make an announcement">
-                  <MegaphoneIcon />
-                </Button>
-              }
-            />
-            <Tooltip.Content>Make an announcement</Tooltip.Content>
-          </Tooltip>
+          <MakeAccouncementDialog
+            workspaceSlug={workspaceSlug}
+            children={
+              <Button variant="outline" size="sm">
+                <MegaphoneIcon />
+                Make an announcement
+              </Button>
+            }
+          />
         </div>
       )}
     </>
@@ -183,38 +181,48 @@ const SidebarRound = memo(function SidebarRound({
   /** The round's unfiltered puzzles: numbering matches the round order, not the active filter. */
   allPuzzles: WorkspaceRoomState["rounds"][number]["puzzles"];
 }) {
+  const solved = allPuzzles.filter(p => p.status === "solved" || p.status === "backsolved").length;
   return (
-    <div className="grid grid-cols-2 items-center justify-center gap-2">
-      <a
-        href={"#" + round.id}
-        className={cn(
-          "text-accent underline underline-offset-4",
-          getBgColorClassNamesForPuzzleStatus(round.status)
-        )}>
-        {round.name}
-      </a>
-      <div className="flex flex-wrap">
-        {round.puzzles.map(puzzle => {
-          const number = allPuzzles.findIndex(p => p.id === puzzle.id) + 1;
-          return (
-            <Tooltip key={puzzle.id} delay={0}>
-              <Tooltip.Trigger>
-                <a
-                  // The tooltip only describes; give the bare number square a real name.
-                  aria-label={`${number}. ${puzzle.name}`}
-                  className={cn(
-                    "size-4 text-[8px] flex items-center justify-center text-accent border",
-                    getBgColorClassNamesForPuzzleStatus(puzzle.status)
-                  )}
-                  href={"#" + puzzle.id}>
-                  {number}
-                </a>
-              </Tooltip.Trigger>
-              <Tooltip.Content>{puzzle.name}</Tooltip.Content>
-            </Tooltip>
-          );
-        })}
+    // Name and count on one line, the squares on a full-width line below, so long round names and
+    // big rounds don't crowd each other.
+    <div className="flex flex-col gap-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <a
+          href={"#" + round.id}
+          className={cn(
+            "text-foreground hover:text-accent truncate font-medium underline-offset-4 hover:underline",
+            getBgColorClassNamesForPuzzleStatus(round.status)
+          )}>
+          {round.name}
+        </a>
+        <span className="text-muted shrink-0 tabular-nums">
+          {solved}/{allPuzzles.length}
+        </span>
       </div>
+      {round.puzzles.length > 0 && (
+        <div className="flex flex-wrap gap-0.5">
+          {round.puzzles.map(puzzle => {
+            const number = allPuzzles.findIndex(p => p.id === puzzle.id) + 1;
+            return (
+              <Tooltip key={puzzle.id} delay={0}>
+                <Tooltip.Trigger>
+                  <a
+                    // The tooltip only describes; give the bare number square a real name.
+                    aria-label={`${number}. ${puzzle.name}`}
+                    className={cn(
+                      "text-muted hover:text-foreground flex size-5 items-center justify-center border text-[10px] tabular-nums",
+                      getBgColorClassNamesForPuzzleStatus(puzzle.status)
+                    )}
+                    href={"#" + puzzle.id}>
+                    {number}
+                  </a>
+                </Tooltip.Trigger>
+                <Tooltip.Content>{puzzle.name}</Tooltip.Content>
+              </Tooltip>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 });

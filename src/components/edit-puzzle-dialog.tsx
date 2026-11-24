@@ -9,6 +9,7 @@ import {workspaceMutations} from "@/lib/workspace-mutations";
 
 import {ControlledModal} from "./controlled-dialog";
 import {useAppForm} from "./form";
+import {PlacementOptions} from "./placement-options";
 
 export function EditPuzzleDialog({
   workspaceSlug,
@@ -93,29 +94,11 @@ export function EditPuzzleDialog({
                 />
                 <form.AppField
                   name="parentPuzzleId"
-                  children={field => {
-                    const items = [
-                      ...(workspace.rounds
-                        .flatMap(r => [
-                          {id: r.id, name: `${r.name} (Unassigned Puzzles)`},
-                          ...r.metaPuzzles,
-                        ])
-                        .map(p => ({value: p.id, label: p.name})) ?? []),
-                    ];
-                    return (
-                      <field.SelectField variant="secondary" label="Feeds Into" items={items}>
-                        {items.map(item => (
-                          <ListBox.Item
-                            key={item.value}
-                            id={item.value ?? ""}
-                            textValue={item.label}>
-                            {item.label}
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        ))}
-                      </field.SelectField>
-                    );
-                  }}
+                  children={field => (
+                    <field.SelectField variant="secondary" label="Goes in">
+                      <PlacementOptions rounds={workspace.rounds} excludeId={puzzle.id} />
+                    </field.SelectField>
+                  )}
                 />
                 <div className="grid grid-cols-[minmax(0,1fr)_7rem] items-start gap-3">
                   <form.AppField
@@ -202,7 +185,7 @@ export function EditPuzzleDialog({
                 <form.AppField
                   name="isMetaPuzzle"
                   children={field => (
-                    <field.CheckboxField variant="secondary" label="Is this a meta puzzle?" />
+                    <field.CheckboxField variant="secondary" label="It's a meta" />
                   )}
                 />
               </form.Form>

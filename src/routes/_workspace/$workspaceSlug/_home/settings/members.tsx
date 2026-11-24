@@ -12,10 +12,11 @@ import {
   TextField,
 } from "@heroui/react";
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute} from "@tanstack/react-router";
+import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {CopyIcon, LinkIcon, MailIcon, RotateCwIcon, UserMinusIcon, XIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
+import {cn} from "tailwind-variants";
 import {z} from "zod";
 
 import {ConfirmDialog} from "@/components/confirm-dialog";
@@ -81,8 +82,19 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* An archived workspace takes no new members. */}
+      {/* An archived workspace takes no new members. Owners invite by email too; anyone can share
+          the link and password. */}
       {myRole === "owner" && !isReadOnly && <InviteCard workspaceSlug={workspaceSlug} />}
+      {myRole !== "owner" && !isReadOnly && (
+        <Card>
+          <Card.Header>
+            <Card.Title>Invite teammates</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <ShareLinkAndPassword workspaceSlug={workspaceSlug} heading={null} />
+          </Card.Content>
+        </Card>
+      )}
       <Card>
         <Card.Header>
           <Card.Title>Members ({members.length})</Card.Title>
@@ -173,7 +185,54 @@ function RouteComponent() {
           make you an owner again.
         </ConfirmDialog>
       )}
+      <LeaveWorkspaceCard workspaceSlug={workspaceSlug} />
     </div>
+  );
+}
+
+/** Leave the workspace yourself, after asking. */
+function LeaveWorkspaceCard({workspaceSlug}: {workspaceSlug: string}) {
+  const navigate = useNavigate();
+  const {teamName, name} = useWorkspace();
+  const leaveMutation = useMutation(orpc.workspaces.leave.mutationOptions());
+  const [isConfirming, setIsConfirming] = useState(false);
+  const workspaceName = teamName || name;
+  return (
+    <Card>
+      <Card.Header>
+        <Card.Title>Leave workspace</Card.Title>
+        <Card.Description>
+          You lose access to its board, puzzles and chat. You can rejoin with the invitation link.
+        </Card.Description>
+      </Card.Header>
+      <Card.Footer>
+        <Button variant="danger" onPress={() => setIsConfirming(true)}>
+          Leave
+        </Button>
+      </Card.Footer>
+      <ConfirmDialog
+        isOpen={isConfirming}
+        onOpenChange={setIsConfirming}
+        heading={`Leave ${workspaceName}?`}
+        confirmLabel="Leave workspace"
+        isPending={leaveMutation.isPending}
+        onConfirm={() =>
+          leaveMutation.mutate(
+            {workspaceSlug},
+            {
+              onSuccess: async () => {
+                toast.success(`You left ${workspaceName}.`);
+                await navigate({to: "/workspaces"});
+              },
+              onError: error =>
+                toast.error(errorMessage(error, "Couldn't leave the workspace. Please try again.")),
+            }
+          )
+        }>
+        You lose access to its board, puzzles and chat right away. Your answers and messages stay.
+        To come back, ask a teammate for the invitation link.
+      </ConfirmDialog>
+    </Card>
   );
 }
 
@@ -406,7 +465,14 @@ const copy = (text: string, what: string) =>
  * The other way in: the invitation link and the workspace password, e.g. for the team's group chat
  * (anyone who has both can join).
  */
-function ShareLinkAndPassword({workspaceSlug}: {workspaceSlug: string}) {
+function ShareLinkAndPassword({
+  workspaceSlug,
+  heading = "Or share the link and password",
+}: {
+  workspaceSlug: string;
+  /** null: the card's own title says it. */
+  heading?: string | null;
+}) {
   const workspace = useWorkspace();
   const link = `https://join.wafflehaus.io/${workspaceSlug}`;
   const password = workspace.password ?? "";
@@ -415,10 +481,10 @@ function ShareLinkAndPassword({workspaceSlug}: {workspaceSlug: string}) {
   return (
     <section
       aria-label="Share the link and password"
-      className="border-separator flex flex-col gap-2 border-t pt-4">
-      <h3 className="text-muted text-xs font-medium tracking-wide uppercase">
-        Or share the link and password
-      </h3>
+      className={cn("flex flex-col gap-2", heading && "border-separator border-t pt-4")}>
+      {heading && (
+        <h3 className="text-muted text-xs font-medium tracking-wide uppercase">{heading}</h3>
+      )}
       <p className="text-muted text-sm">
         For a group chat. The link with the password joins in one click; anyone who has it can join,
         with whatever account they sign in with, so share it only with your team.

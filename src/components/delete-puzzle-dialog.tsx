@@ -10,6 +10,7 @@ export function DeletePuzzleDialog({
   puzzleId,
   puzzleName,
   isMetaPuzzle,
+  onDeleted,
   children,
   open,
   setOpen,
@@ -18,6 +19,8 @@ export function DeletePuzzleDialog({
   puzzleId: string;
   puzzleName: string;
   isMetaPuzzle: boolean;
+  /** After it's deleted (optimistically): e.g. leave the puzzle's own page. */
+  onDeleted?: () => void;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -47,6 +50,7 @@ export function DeletePuzzleDialog({
               onPress={() => {
                 mutation.mutate({workspaceSlug, id: puzzleId});
                 setOpen(false);
+                onDeleted?.();
               }}>
               {isMetaPuzzle ? "Delete meta" : "Delete puzzle"}
             </Button>

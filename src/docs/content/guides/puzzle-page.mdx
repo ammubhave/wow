@@ -42,7 +42,7 @@ The sheet and whiteboard stay loaded once you've opened them, so switching tabs 
 What the **Sheet** tab shows depends on how the workspace is set up:
 
 - **Google Sheet**: if the workspace has [Google Drive connected](/docs/google-drive), each new puzzle gets its own Google Sheet, embedded right in the page.
-- **Google Drawing**: if someone chose **Google Drawing** as the **Worksheet Type** when adding the puzzle, the tab is labelled **Drawing** and embeds that instead.
+- **Google Drawing**: if someone chose **Google Drawing** as the **Worksheet type** when adding the puzzle, the tab is labelled **Drawing** and embeds that instead.
 - **Built-in spreadsheet**: without Drive, every puzzle uses WOW's [built-in spreadsheet](/docs/guides/spreadsheet), with live cursors and puzzle formulas.
 
 A puzzle that already has a Google Sheet keeps it even if Drive is later disconnected.
@@ -69,13 +69,15 @@ The info panel holds everything about the puzzle except the work itself. Each fi
 
 ### Header and breadcrumb
 
-The top line shows the puzzle's name and a few icon buttons (hover for their names):
+The top line shows the puzzle's name and a few buttons:
 
-| Icon                              | What it does                                                                                                                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Open on the hunt site**         | Opens the puzzle's page on the hunt website. Only there if the puzzle has a link.                                                                                                         |
-| **Open spreadsheet in a new tab** | Opens the Google Sheet in its own tab, with Google's full menus. Only for Google Sheet puzzles. (**Open drawing in a new tab** for drawings.)                                             |
-| **Edit puzzle**                   | Opens the **Edit puzzle** dialog: name, **Feeds Into**, answer, **How many**, status, tags, link, and **Is this a meta puzzle?**. See [The blackboard](/docs/blackboard#the-edit-dialog). |
+| Button                            | What it does                                                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Open puzzle**                   | Opens the puzzle's page on the hunt website in a new tab. Only there if the puzzle has a link.                                                         |
+| **Open spreadsheet in a new tab** | An icon. Opens the Google Sheet in its own tab, with Google's full menus. Only for Google Sheet puzzles. (**Open drawing in a new tab** for drawings.) |
+| **⋯** (Puzzle actions)            | A menu with **Edit or move puzzle**, **Copy link**, and **Delete puzzle** (**Delete meta** on a meta).                                                 |
+
+**Edit or move puzzle** opens the **Edit puzzle** dialog: name, **Goes in**, answer, **How many**, status, tags, link, and **It's a meta**. See [The blackboard](/docs/blackboard#the-edit-dialog). **Copy link** copies the address of the puzzle's page. After you confirm a delete, you're taken back to the blackboard.
 
 Below it, a breadcrumb shows where the puzzle sits: its round, then its meta if it feeds one. Click the round to jump to it on the blackboard, or the meta to open the meta's page.
 

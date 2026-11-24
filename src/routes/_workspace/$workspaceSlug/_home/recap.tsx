@@ -234,8 +234,8 @@ function RouteComponent() {
   const isOver = Boolean(workspace.huntEndsAt && now >= new Date(workspace.huntEndsAt).getTime());
   const isLive =
     !isOver && !(workspace.huntStartsAt && now < new Date(workspace.huntStartsAt).getTime());
-  // "Hunt recap" once it's over; until then (before it starts, too) it's the leaderboard.
-  const pageTitle = isOver ? "Hunt recap" : "Leaderboard";
+  // Always "Leaderboard", like its tab (after the hunt it also has the recap card to share).
+  const pageTitle = "Leaderboard";
   const {data} = useQuery({
     ...orpc.workspaces.recap.queryOptions({input: {workspaceSlug}}),
     refetchInterval: isLive ? LIVE_REFRESH_MS : false,

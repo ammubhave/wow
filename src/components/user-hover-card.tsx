@@ -1,6 +1,7 @@
 import {HoverCard} from "@heroui-pro/react";
 import {Avatar, AvatarGroup, Chip} from "@heroui/react";
 import {sha256} from "js-sha256";
+import {useState} from "react";
 
 import {AwardBadges, AwardsSummary} from "@/features/awards/awards-provider";
 
@@ -40,9 +41,11 @@ export function UserHoverCard({
   children: React.ReactElement;
   user: User;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   return (
-    <HoverCard openDelay={200}>
-      <HoverCard.Trigger>{children}</HoverCard.Trigger>
+    <HoverCard openDelay={200} open={isOpen} onOpenChange={setIsOpen}>
+      {/* A tap opens it too: touch screens have no hover. */}
+      <HoverCard.Trigger onClick={() => setIsOpen(true)}>{children}</HoverCard.Trigger>
       <HoverCard.Content
         className="flex w-fit max-w-72 flex-col gap-2"
         placement={side ?? "bottom"}>

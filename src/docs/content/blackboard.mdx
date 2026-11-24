@@ -29,7 +29,7 @@ If you're new to how rounds, metas and feeders fit together, read [Rounds, metas
 | Hunt link (puzzle icon)  | Opens the puzzle on the hunt's website in a new tab. Only there if the puzzle has a link.                                                                                         |
 | Expand                   | The chevron for rounds and metas; a coloured line for feeders.                                                                                                                    |
 | **Name**                 | The puzzle's name. Click it to open the [puzzle page](/docs/guides/puzzle-page). A ✓ marks solved puzzles.                                                                        |
-| **Solution**             | The answer. Click to type one in.                                                                                                                                                 |
+| **Answer**               | The answer. Click to type one in.                                                                                                                                                 |
 | **Status**               | Where the puzzle stands: None, Active, Solved, Backsolved, Needs Eyes, Extraction, Stuck, Pending or Very Stuck. States that need attention colour the row; solved rows go quiet. |
 | Importance (signal icon) | Important, Normal, Obsolete, or none.                                                                                                                                             |
 | **Tags**                 | The puzzle's tags, like "crossword" or "music".                                                                                                                                   |
@@ -60,9 +60,9 @@ To rename a round later, open its ⋯ menu and choose **Edit round**.
 
 <Steps>
 
-1. Open the round's ⋯ menu and choose **Add meta**.
-2. Fill in the dialog (fields below).
-3. Click **Save**.
+1. Open the round's ⋯ menu and choose **Add a meta**.
+2. Fill in the **Add a meta** dialog (fields below).
+3. Click **Add meta**.
 
 </Steps>
 
@@ -75,21 +75,23 @@ To rename a round later, open its ⋯ menu and choose **Edit round**.
 
 ### Add a puzzle
 
-How you add a puzzle depends on where it goes:
+There are a few ways to open the **Add a puzzle** dialog:
 
-- **Feeding a meta**: open the meta's ⋯ menu and choose **Add feeder puzzle**.
-- **Unassigned**: open the round's ⋯ menu and choose **Add unassigned puzzle**.
+- **Add puzzle** in the board's toolbar (just a **+** on phones). It starts in the newest round.
+- The **+** on a round's row ("Add a puzzle to _round_"; not on phones). It starts in that round.
+- **Add a feeder** in a meta's ⋯ menu, or **Add a puzzle (no meta)** in a round's ⋯ menu.
 
-The **Add new puzzle** dialog has:
+Whichever you use, you can change where the puzzle goes in the dialog. It has:
 
 | Field              | What it's for                                                                                                                                                                                                                                              |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Name**           | The puzzle's name, as the hunt gives it.                                                                                                                                                                                                                   |
+| **Goes in**        | Where it goes, listed by round: **No meta (unassigned)** for the round's unassigned group, or **Feeds** _meta_ to make it one of that meta's feeders.                                                                                                      |
 | **Tags**           | Optional tags.                                                                                                                                                                                                                                             |
 | **Link**           | The puzzle's page on the hunt website. Paste it in so everyone can open the puzzle from the board in one click.                                                                                                                                            |
-| **Worksheet Type** | Only when the workspace has [Google Drive connected](/docs/google-drive): **Google Spreadsheet** or **Google Drawing**. Without Drive, every puzzle gets the [built-in spreadsheet](/docs/guides/spreadsheet) and a [whiteboard](/docs/guides/whiteboard). |
+| **Worksheet type** | Only when the workspace has [Google Drive connected](/docs/google-drive): **Google Spreadsheet** or **Google Drawing**. Without Drive, every puzzle gets the [built-in spreadsheet](/docs/guides/spreadsheet) and a [whiteboard](/docs/guides/whiteboard). |
 
-After you click **Save**, a **Puzzle added** toast appears with a link to go straight to the new puzzle.
+After you click **Add puzzle**, a **Puzzle added** toast appears with a link to go straight to the new puzzle.
 
 <Callout type="tip" title="Add puzzles as they unlock">
   Have one person add new puzzles the moment the hunt releases them, with the link. Everyone else
@@ -104,11 +106,15 @@ When you figure out which meta a batch of unassigned puzzles belongs to:
 
 1. Open the ⋯ menu on the round's **Unassigned puzzles** row.
 2. Choose **Assign all unassigned puzzles**.
-3. Pick the meta in **Feeds Into** and click **Save**.
+3. Pick the meta in **Make them all feed** (the round's first meta is picked to start with) and click **Assign**.
 
 </Steps>
 
-To move a single puzzle, edit it and change **Feeds Into**, or drag it in [Arrange mode](#arrange-the-board).
+If the round has no metas yet, the dialog says to add one first.
+
+### Move a puzzle
+
+To move a single puzzle to another meta or round, open its ⋯ menu and choose **Move to…**. In the **Move** _puzzle_ dialog, pick where it goes in **Goes in** and click **Move**. You can also change **Goes in** in the [edit dialog](#the-edit-dialog), or drag the puzzle in [Arrange mode](#arrange-the-board).
 
 ## Edit puzzles in place
 
@@ -118,7 +124,7 @@ Most changes happen right on the board, without opening anything.
 
 <Steps>
 
-1. Click the puzzle's **Solution** cell.
+1. Click the puzzle's **Answer** cell.
 2. Type the answer. It's shown in capitals.
 3. Press <Kbd>Enter</Kbd> (or click away) to save, or <Kbd>Esc</Kbd> to cancel.
 
@@ -138,20 +144,20 @@ For a puzzle with [more than one answer](/docs/guides/metas#puzzles-with-more-th
 
 For everything else, open the puzzle's ⋯ menu and choose **Edit puzzle** (or **Edit meta**). The **Edit puzzle** dialog has:
 
-| Field                      | What it's for                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------- |
-| **Name**                   | Rename the puzzle.                                                                          |
-| **Feeds Into**             | Which meta it feeds, or the round's unassigned group. Moving it here moves it on the board. |
-| **Answer**                 | The answer. "Several? Put ; between them."                                                  |
-| **How many**               | How many answers the puzzle has, from 1 to 20. See [Solving metas](/docs/guides/metas).     |
-| **Status**                 | The puzzle's status.                                                                        |
-| **Tags**                   | Its tags.                                                                                   |
-| **Link**                   | The puzzle's page on the hunt website.                                                      |
-| **Is this a meta puzzle?** | Turn a puzzle into a meta (or back).                                                        |
+| Field           | What it's for                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Name**        | Rename the puzzle.                                                                                                                             |
+| **Goes in**     | Which meta it feeds (**Feeds** _meta_), or **No meta (unassigned)** for a round's unassigned group. Changing it moves the puzzle on the board. |
+| **Answer**      | The answer. "Several? Put ; between them."                                                                                                     |
+| **How many**    | How many answers the puzzle has, from 1 to 20. See [Solving metas](/docs/guides/metas).                                                        |
+| **Status**      | The puzzle's status.                                                                                                                           |
+| **Tags**        | Its tags.                                                                                                                                      |
+| **Link**        | The puzzle's page on the hunt website.                                                                                                         |
+| **It's a meta** | Turn a puzzle into a meta (or back).                                                                                                           |
 
 ### Delete a puzzle or round
 
-Open the row's ⋯ menu and choose **Delete puzzle**, **Delete meta** or **Delete round**. You'll be asked to confirm.
+Open the row's ⋯ menu and choose **Delete puzzle**, **Delete meta** or **Delete round**. A dialog asks "Delete _name_?"; confirm with its **Delete puzzle**, **Delete meta** or **Delete round** button.
 
 <Callout type="warning">
   Deleting can't be undone, and any member can do it. Double-check you've got the right row.
@@ -163,7 +169,10 @@ Hover over a row and click the star to mark a puzzle as a favourite. Favourites 
 
 Starring doesn't move the puzzle. To see only your starred puzzles, turn on the **Favorites** filter in the toolbar. It's a handy way to keep track of the handful of puzzles you're juggling.
 
-<Callout type="phone">On touch screens the star is always visible, since there's no hover.</Callout>
+<Callout type="phone">
+  On a phone the star isn't in the row: open the puzzle's **⋯** menu and choose **Add to
+  favorites**. On a tablet the star is always visible, since there's no hover.
+</Callout>
 
 ## Search and filter
 
@@ -208,19 +217,21 @@ Filters are saved in your browser, so they're still there when you come back, an
 Metas can feed other metas, but WOW won't let you drop a meta into one of its own feeders.
 
 <Callout type="phone">
-  Arrange isn't available on phones. Use **Edit puzzle** and its **Feeds Into** field to move a
-  puzzle instead.
+  Arrange isn't available on phones. Use **Move to…** in a puzzle's or meta's ⋯ menu to move it
+  instead.
 </Callout>
 
 ## Row menus at a glance
 
-| Row                | Menu items                                                                |
-| ------------------ | ------------------------------------------------------------------------- |
-| Board header (⋯)   | **Add round**                                                             |
-| Round              | **Add meta**, **Add unassigned puzzle**, **Edit round**, **Delete round** |
-| Unassigned puzzles | **Assign all unassigned puzzles**                                         |
-| Meta               | **Add feeder puzzle**, **Edit meta**, **Delete meta**                     |
-| Puzzle             | **Edit puzzle**, **Delete puzzle**                                        |
+| Row                | Menu items                                                                   |
+| ------------------ | ---------------------------------------------------------------------------- |
+| Board header (⋯)   | **Add round**                                                                |
+| Round              | **Add a meta**, **Add a puzzle (no meta)**, **Edit round**, **Delete round** |
+| Unassigned puzzles | **Assign all unassigned puzzles**                                            |
+| Meta               | **Add a feeder**, **Edit meta**, **Move to…**, **Delete meta**               |
+| Puzzle             | **Edit puzzle**, **Move to…**, **Delete puzzle**                             |
+
+On desktop, each round's row also has a **+** button that adds a puzzle to that round. On phones, puzzle and meta menus also have **Open on the hunt site**.
 
 ## See what your team is doing
 
@@ -253,11 +264,11 @@ Under the notes you'll see when they were last updated, and by whom. After savin
 
 ### Progress squares
 
-Below the notes, each round has a row of small numbered squares, one per puzzle, coloured by status. Hover one to see the puzzle's name; click it to scroll the board to that puzzle. Click a round's name to jump to the round.
+Below the notes, each round shows its name and how many of its puzzles are solved (solved/total), with a line of small numbered squares underneath, one per puzzle, coloured by status. Hover one to see the puzzle's name; click it to scroll the board to that puzzle. Click a round's name to jump to the round.
 
 ### Announcements
 
-The megaphone button opens **Make an announcement**. Type your **Message**, optionally pick a **Discord Channel** to post it to as well (only when the workspace uses [Discord](/docs/discord) for voice calls), and click **Submit**. Everyone in the workspace gets it in their bell and as a pop-up. See [Chat and announcements](/docs/guides/chat#announcements).
+The **Make an announcement** button (with the megaphone) opens the **Make an announcement** dialog. Type your **Message**, optionally pick a **Discord Channel** to post it to as well (only when the workspace uses [Discord](/docs/discord) for voice calls), and click **Submit**. Everyone in the workspace gets it in their bell and as a pop-up. See [Chat and announcements](/docs/guides/chat#announcements).
 
 ### Team chat
 
@@ -268,17 +279,19 @@ The lower part of the sidebar is the team chat, with the lobby voice call above 
 <Screenshot
   src={phoneBoardImage}
   alt="The blackboard on a phone"
-  caption="On a phone, the board shows name, solution and status."
+  caption="On a phone, the board shows name and status, with the answer under the name."
   narrow
 />
 
 <Callout type="phone">
 The board is simplified on small screens:
 
-- Only the **Name**, **Solution** and **Status** columns show.
+- Only the **Name** and **Status** columns show, plus the ⋯ menu. A puzzle's answer appears in small text under its name. To type or change an answer, open the puzzle and use its **Info** tab.
+- There's no hunt link column; use **Open on the hunt site** in a puzzle's or meta's ⋯ menu instead.
+- Round rows show the solved/total count without the progress bar, and have no **+** button. Use the **+** in the toolbar to add a puzzle.
 - The filters sit in their own row under the search box; swipe it sideways to see them all.
 - The sidebar is replaced by two buttons in the toolbar: **Notes and progress** and **Team chat**, each opening a drawer from the side.
-- There's no Arrange mode.
+- There's no Arrange mode. Use **Move to…** in a row's ⋯ menu to move a puzzle.
 - The favourite star is always visible.
 
 </Callout>

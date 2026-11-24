@@ -9,6 +9,7 @@ import {newId, workspaceMutations} from "@/lib/workspace-mutations";
 
 import {ControlledModal} from "./controlled-dialog";
 import {useAppForm} from "./form";
+import {isRoundPlacement, PlacementOptions} from "./placement-options";
 
 function PuzzleAddedDescription({
   workspaceSlug,
@@ -56,14 +57,11 @@ export function AddNewPuzzleDialog({
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
-  roundId: string;
+  /** Where it goes to start with: a round (unassigned) or a meta; the dialog can change it. */
+  roundId?: string;
   parentPuzzleId?: string;
 }) {
   const workspace = useWorkspace();
-  const round = workspace.rounds.find(r => r.id === roundId);
-  const destination = parentPuzzleId
-    ? (round?.puzzles.find(p => p.id === parentPuzzleId)?.name ?? "the meta")
-    : (round?.name ?? "the round");
   const mutation = useMutation({
     ...workspaceMutations.puzzles.create(),
     // On the mutation (not the `mutate` call) so it fires for every puzzle added, even if the
@@ -72,17 +70,21 @@ export function AddNewPuzzleDialog({
   });
   const form = useAppForm({
     defaultValues: {
+      // From the toolbar (no round given): the newest round, where new puzzles usually go.
+      placement: parentPuzzleId ?? roundId ?? workspace.rounds.at(-1)?.id ?? "",
       name: "",
       tags: [] as string[],
       link: "",
       worksheetType: "google_spreadsheet" as "google_spreadsheet" | "google_drawing",
     },
-    onSubmit: ({value}) => {
+    onSubmit: ({value: {placement, ...value}}) => {
       mutation.mutate({
         type: "puzzle",
         ...value,
         // A puzzle goes either under a meta puzzle or straight into a round.
-        ...(parentPuzzleId ? {parentPuzzleId} : {roundId}),
+        ...(isRoundPlacement(workspace.rounds, placement)
+          ? {roundId: placement}
+          : {parentPuzzleId: placement}),
         id: newId(),
         workspaceSlug,
       });
@@ -97,11 +99,6 @@ export function AddNewPuzzleDialog({
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>Add a puzzle</Modal.Heading>
-            {/* Where it goes, so it's clear which menu this was opened from. */}
-            <p className="text-muted text-sm">
-              {parentPuzzleId ? "Feeds " : "In "}
-              <span className="text-foreground font-medium">{destination}</span>
-            </p>
           </Modal.Header>
           <form.AppForm>
             <Modal.Body>
@@ -116,6 +113,14 @@ export function AddNewPuzzleDialog({
                       autoFocus
                       autoComplete="off"
                     />
+                  )}
+                />
+                <form.AppField
+                  name="placement"
+                  children={field => (
+                    <field.SelectField variant="secondary" label="Goes in">
+                      <PlacementOptions rounds={workspace.rounds} />
+                    </field.SelectField>
                   )}
                 />
                 <form.AppField
@@ -162,7 +167,7 @@ export function AddNewPuzzleDialog({
                       return (
                         <field.SelectField
                           variant="secondary"
-                          label="Worksheet Type"
+                          label="Worksheet type"
                           description="The kind of puzzle worksheet you want to use."
                           items={items}>
                           {items.map(item => (

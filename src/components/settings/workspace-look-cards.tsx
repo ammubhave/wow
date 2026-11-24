@@ -76,7 +76,7 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
             onChange={setEmoji}
             isDisabled={!canEdit}
             className="w-32">
-            <Label>Team emoji</Label>
+            <Label>Workspace emoji</Label>
             <Input placeholder="🧇" maxLength={16} />
           </TextField>
           {canEdit && (
@@ -123,7 +123,7 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Team emoji</Card.Title>
+        <Card.Title>Custom emoji</Card.Title>
         <Card.Description>
           Your own reaction emoji (an image and a name). Anyone in the workspace can add them.
         </Card.Description>

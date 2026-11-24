@@ -45,7 +45,7 @@ export function AddNewMetaPuzzleDialog({
         <Modal.Dialog aria-describedby={undefined}>
           <Modal.CloseTrigger />
           <Modal.Header>
-            <Modal.Heading>Add a meta puzzle</Modal.Heading>
+            <Modal.Heading>Add a meta</Modal.Heading>
           </Modal.Header>
           <form.AppForm>
             <Modal.Body>

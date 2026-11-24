@@ -3,7 +3,9 @@ import {
   Button,
   buttonVariants,
   Chip,
+  Dropdown,
   InputGroup,
+  Label,
   ListBox,
   Spinner,
   Tabs,
@@ -16,12 +18,14 @@ import {
   ChevronRightIcon,
   CopyIcon,
   EditIcon,
+  EllipsisIcon,
   ExternalLinkIcon,
+  LinkIcon,
   PresentationIcon,
-  PuzzleIcon,
   SheetIcon,
   TableIcon,
   TimerIcon,
+  TrashIcon,
 } from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
 import {toast} from "sonner";
@@ -31,6 +35,7 @@ import {z} from "zod";
 
 import {Chat} from "@/components/chat";
 import {CommentBox} from "@/components/comment-box";
+import {DeletePuzzleDialog} from "@/components/delete-puzzle-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {PuzzleGuesses} from "@/components/guess-queue";
@@ -191,6 +196,8 @@ function PuzzleInfoPanel({
   });
 
   const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
+  const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
+  const navigate = useNavigate();
   // A feeder's siblings: the meta's other feeders, with their answers so far.
   const meta = puzzle.parentPuzzleId
     ? workspace.rounds.flatMap(r => r.puzzles).find(p => p.id === puzzle.parentPuzzleId)
@@ -205,8 +212,17 @@ function PuzzleInfoPanel({
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" title={puzzle.name}>
           {puzzle.name}
         </h2>
+        {/* Reading the puzzle is what people come here for, so it's a labelled button. */}
         {puzzle.link && (
-          <PanelLink href={puzzle.link} label="Open on the hunt site" icon={<PuzzleIcon />} />
+          <a
+            data-tour="open-puzzle"
+            className={buttonVariants({variant: "secondary", size: "sm", className: "shrink-0"})}
+            href={puzzle.link}
+            target="_blank"
+            rel="noopener noreferrer">
+            Open puzzle
+            <ExternalLinkIcon />
+          </a>
         )}
         {puzzle.googleSpreadsheetId && (
           <PanelLink
@@ -222,16 +238,63 @@ function PuzzleInfoPanel({
             icon={<BrushIcon />}
           />
         )}
-        {!isReadOnly && (
+        <Dropdown>
+          <Button size="sm" isIconOnly variant="ghost" aria-label="Puzzle actions">
+            <EllipsisIcon />
+          </Button>
+          <Dropdown.Popover placement="bottom end">
+            <Dropdown.Menu>
+              {!isReadOnly && (
+                <Dropdown.Item
+                  id="edit"
+                  textValue="Edit puzzle"
+                  onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                  <EditIcon />
+                  <Label>Edit or move puzzle</Label>
+                </Dropdown.Item>
+              )}
+              <Dropdown.Item
+                id="copy-link"
+                textValue="Copy link"
+                onAction={() =>
+                  void navigator.clipboard
+                    .writeText(window.location.href)
+                    .then(() => toast.success("Link copied"))
+                }>
+                <LinkIcon />
+                <Label>Copy link</Label>
+              </Dropdown.Item>
+              {!isReadOnly && (
+                <Dropdown.Item
+                  id="delete"
+                  textValue="Delete puzzle"
+                  variant="danger"
+                  onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                  <TrashIcon />
+                  <Label>{puzzle.isMetaPuzzle ? "Delete meta" : "Delete puzzle"}</Label>
+                </Dropdown.Item>
+              )}
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
+        {isEditPuzzleDialogOpen && (
           <EditPuzzleDialog
             workspaceSlug={workspaceSlug}
             puzzle={puzzle}
             open={isEditPuzzleDialogOpen}
-            setOpen={setIsEditPuzzleDialogOpen}>
-            <Button size="sm" isIconOnly variant="ghost" aria-label="Edit puzzle">
-              <EditIcon />
-            </Button>
-          </EditPuzzleDialog>
+            setOpen={setIsEditPuzzleDialogOpen}
+          />
+        )}
+        {isDeletePuzzleDialogOpen && (
+          <DeletePuzzleDialog
+            workspaceSlug={workspaceSlug}
+            puzzleId={puzzle.id}
+            puzzleName={puzzle.name}
+            isMetaPuzzle={puzzle.isMetaPuzzle}
+            open={isDeletePuzzleDialogOpen}
+            setOpen={setIsDeletePuzzleDialogOpen}
+            onDeleted={() => void navigate({to: "/$workspaceSlug", params: {workspaceSlug}})}
+          />
         )}
       </div>
       <PuzzleContext workspaceSlug={workspaceSlug} puzzle={puzzle} />
@@ -839,13 +902,13 @@ function WorksheetFrame({title, src, openHref}: {title: string; src: string; ope
         src={src}
         allow="fullscreen; geolocation; microphone; camera; payment"
         onLoad={() => setLoaded(true)}
-        className="h-full w-full flex-1 bg-white"
+        className="h-full w-full flex-1"
       />
       {!loaded && (
         <div className="bg-surface absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
           <Spinner aria-label="Loading the sheet" />
           <p className="text-muted text-sm">
-            {slow ? "Google is taking its time…" : "Unfolding the sheet…"}
+            {slow ? "Google is taking a while…" : "Loading the sheet…"}
           </p>
           {slow && (
             <div className="flex gap-2">

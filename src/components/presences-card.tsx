@@ -1,5 +1,6 @@
 import {HoverCard} from "@heroui-pro/react";
 import {Avatar, Chip} from "@heroui/react";
+import {useState} from "react";
 
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {useAppSelector} from "@/store";
@@ -8,9 +9,14 @@ import {UserHoverCard, userAvatarSrc, userInitials} from "./user-hover-card";
 
 export function PresencesCard({id}: {id: string}) {
   const presences = useAppSelector(state => state.presences.value[id]) ?? NO_PRESENCES;
+  const [isOpen, setIsOpen] = useState(false);
   return (
-    <HoverCard openDelay={500}>
-      <HoverCard.Trigger>
+    <HoverCard openDelay={500} open={isOpen} onOpenChange={setIsOpen}>
+      {/* Hover, focus or a tap: touch screens have no hover. */}
+      <HoverCard.Trigger
+        tabIndex={0}
+        aria-label={`${presences.length} online: show who`}
+        onClick={() => setIsOpen(true)}>
         <Chip color="success" variant="soft" size="sm" className="cursor-default text-nowrap">
           <svg viewBox="0 0 6 6" aria-hidden="true" className="size-1.5 shrink-0 fill-current">
             <circle r={3} cx={3} cy={3} />

@@ -28,7 +28,7 @@ import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {VOICE_LOBBY} from "@/server/voice";
 
-/** Every word typed appears somewhere, in any order ("feeder keeper" finds "Add feeder puzzle to Keeper's Log"). */
+/** Every word typed appears somewhere, in any order ("feeder keeper" finds "Add a feeder to Keeper's Log"). */
 const matchesEveryWord = (textValue: string, inputValue: string) => {
   const text = textValue.toLowerCase();
   return inputValue
@@ -116,11 +116,11 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   workspace.rounds.map(round => (
                     <Command.Item
                       key={`meta-${round.id}`}
-                      textValue={`Add meta in ${round.name}`}
+                      textValue={`Add a meta in ${round.name}`}
                       onAction={() => run(() => setDialog({type: "meta", roundId: round.id}))}>
                       <PlusIcon />
                       <span>
-                        Add meta in <strong>{round.name}</strong>
+                        Add a meta in <strong>{round.name}</strong>
                       </span>
                     </Command.Item>
                   ))}
@@ -128,11 +128,11 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   workspace.rounds.map(round => (
                     <Command.Item
                       key={`puzzle-${round.id}`}
-                      textValue={`Add unassigned puzzle in ${round.name}`}
+                      textValue={`Add a puzzle in ${round.name}`}
                       onAction={() => run(() => setDialog({type: "puzzle", roundId: round.id}))}>
                       <PlusIcon />
                       <span>
-                        Add unassigned puzzle in <strong>{round.name}</strong>
+                        Add a puzzle in <strong>{round.name}</strong>
                       </span>
                     </Command.Item>
                   ))}
@@ -141,7 +141,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                     round.metaPuzzles.map(meta => (
                       <Command.Item
                         key={`feeder-${meta.id}`}
-                        textValue={`Add feeder puzzle to ${meta.name}`}
+                        textValue={`Add a feeder to ${meta.name}`}
                         onAction={() =>
                           run(() =>
                             setDialog({type: "puzzle", roundId: round.id, parentPuzzleId: meta.id})
@@ -149,7 +149,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                         }>
                         <PlusIcon />
                         <span>
-                          Add feeder puzzle to <strong>{meta.name}</strong>
+                          Add a feeder to <strong>{meta.name}</strong>
                         </span>
                       </Command.Item>
                     ))
