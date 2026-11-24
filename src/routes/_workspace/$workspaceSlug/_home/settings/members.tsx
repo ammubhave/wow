@@ -69,8 +69,10 @@ function RouteComponent() {
                 : `${name} is now a member.`
           );
         },
-        onError: error =>
-          toast.error(errorMessage(error, "Couldn't change the role. Please try again.")),
+        onError: error => {
+          setIsSteppingDown(false);
+          toast.error(errorMessage(error, "Couldn't change the role. Please try again."));
+        },
       }
     );
   // Owners first, then by name.
@@ -224,8 +226,10 @@ function LeaveWorkspaceCard({workspaceSlug}: {workspaceSlug: string}) {
                 toast.success(`You left ${workspaceName}.`);
                 await navigate({to: "/workspaces"});
               },
-              onError: error =>
-                toast.error(errorMessage(error, "Couldn't leave the workspace. Please try again.")),
+              onError: error => {
+                setIsConfirming(false);
+                toast.error(errorMessage(error, "Couldn't leave the workspace. Please try again."));
+              },
             }
           )
         }>

@@ -229,7 +229,7 @@ export const workspacesRouter = {
         .then(members => members.filter(member => toWorkspaceRole(member.role) === "owner"));
       if (owners.length === 1 && owners[0]!.userId === context.session.user.id) {
         throw new ORPCError("BAD_REQUEST", {
-          message: "You're the only owner. Make someone else an owner (in Members) first.",
+          message: "You're the only owner. Make someone else an owner first, then leave.",
         });
       }
       await auth.api.leaveOrganization({
