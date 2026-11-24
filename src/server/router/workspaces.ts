@@ -92,7 +92,10 @@ export const workspacesRouter = {
         )
         .get();
       if (!workspace) {
-        throw new ORPCError("FORBIDDEN");
+        // One answer for a wrong ID and a wrong password, so IDs can't be probed.
+        throw new ORPCError("FORBIDDEN", {
+          message: "No workspace matches that ID and password. Check both and try again.",
+        });
       }
       // Already in (a double submit, or the join link opened again): just go to the workspace.
       // addMember would throw "User is already a member", which surfaced as a failed join.
@@ -219,6 +222,16 @@ export const workspacesRouter = {
     .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
+      const owners = await db
+        .select({userId: schema.member.userId, role: schema.member.role})
+        .from(schema.member)
+        .where(eq(schema.member.organizationId, context.workspace.id))
+        .then(members => members.filter(member => toWorkspaceRole(member.role) === "owner"));
+      if (owners.length === 1 && owners[0]!.userId === context.session.user.id) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "You're the only owner. Make someone else an owner (in Members) first.",
+        });
+      }
       await auth.api.leaveOrganization({
         headers: context.headers,
         body: {organizationId: context.workspace.id},

@@ -57,7 +57,7 @@ function RouteComponent() {
         }
       },
       onError: () => {
-        toast.error("Oops! Something went wrong.");
+        toast.error("Couldn't check your answer. Please try again.");
       },
     })
   );

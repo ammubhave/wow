@@ -52,7 +52,7 @@ export function AddNewMetaPuzzleDialog({
               <form.Form>
                 <form.AppField
                   name="name"
-                  validators={{onSubmit: z.string().min(1)}}
+                  validators={{onSubmit: z.string().trim().min(1, "Give the meta a name.")}}
                   children={field => (
                     <field.TextField
                       variant="secondary"

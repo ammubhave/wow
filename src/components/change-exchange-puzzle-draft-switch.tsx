@@ -16,7 +16,7 @@ export function ChangeExchangePuzzleDraftSwitch({huntPuzzleId}: {huntPuzzleId: s
       onChange={checked =>
         mutation.mutate(
           {huntPuzzleId, draft: !checked},
-          {onError: () => toast.error("Oops! Something went wrong.")}
+          {onError: () => toast.error("Couldn't change that. Please try again.")}
         )
       }>
       <Switch.Content>

@@ -26,7 +26,7 @@ export function AddNewExchangeHuntDialog({children}: {children: React.ReactEleme
           }
         )
         .catch(() => {
-          toast.error("Oops! Something went wrong.");
+          toast.error("Couldn't add the hunt. Please try again.");
         }),
   });
 
@@ -43,7 +43,7 @@ export function AddNewExchangeHuntDialog({children}: {children: React.ReactEleme
               <form.Form>
                 <form.AppField
                   name="name"
-                  validators={{onSubmit: z.string().min(1)}}
+                  validators={{onSubmit: z.string().trim().min(1, "Give the hunt a name.")}}
                   children={field => (
                     <field.TextField
                       variant="secondary"

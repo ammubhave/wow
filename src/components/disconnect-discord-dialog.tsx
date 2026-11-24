@@ -49,9 +49,9 @@ export function DisconnectDiscordDialog({
                     }
                   ),
                   {
-                    loading: "Disconnecting Discord...",
+                    loading: "Disconnecting Discord…",
                     success: "Discord was disconnected.",
-                    error: "Oops! Something went wrong.",
+                    error: "Couldn't disconnect Discord. Please try again.",
                   }
                 );
               }}>

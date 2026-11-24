@@ -23,10 +23,12 @@ import {
 } from "lucide-react";
 import {Fragment, useState} from "react";
 import {toast} from "sonner";
+import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
 import {HuntsComingUp} from "@/components/hunts-coming-up";
 import {Page} from "@/components/page";
+import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/")({
@@ -197,9 +199,9 @@ function RouteComponent() {
     defaultValues: {workspaceSlug: "", password: ""},
     onSubmit: ({value}) => {
       toast.promise(joinWorkspaceMutation.mutateAsync(value), {
-        loading: "Joining workspace...",
-        success: "Success! You have joined the workspace.",
-        error: "Oops! Something went wrong.",
+        loading: "Joining workspace…",
+        success: "You're in",
+        error: (error: unknown) => errorMessage(error, "Couldn't join. Please try again."),
       });
     },
   });
@@ -295,6 +297,7 @@ function RouteComponent() {
               <form.Form>
                 <form.AppField
                   name="workspaceSlug"
+                  validators={{onSubmit: z.string().trim().min(1, "Enter the workspace ID.")}}
                   children={field => (
                     <field.TextField
                       id={JOIN_INPUT_ID}
@@ -310,6 +313,7 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="password"
+                  validators={{onSubmit: z.string().min(1, "Enter the workspace password.")}}
                   children={field => (
                     <field.PasswordField variant="secondary" label="Workspace password" />
                   )}

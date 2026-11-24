@@ -34,6 +34,7 @@ import {
   ListPlusIcon,
   PlusIcon,
   PuzzleIcon,
+  SearchXIcon,
   SignalHighIcon,
   SignalIcon,
   SignalMediumIcon,
@@ -671,10 +672,23 @@ function RouteComponent() {
     `blackboard-collapsed-${workspaceSlug}`,
     []
   );
-  const [hideSolved, setHideSolved] = useLocalStorage("hideSolved", false);
-  const [hideObsolete, setHideObsolete] = useLocalStorage("hideObsolete", false);
-  const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage("hideSolvedMetas", false);
-  const [onlyShowFavorites, setOnlyShowFavorites] = useLocalStorage("onlyShowFavorites", false);
+  // Filters, remembered per workspace: a tag filter left on in one hunt shouldn't hide the next.
+  const [hideSolved, setHideSolved] = useLocalStorage(
+    `blackboard-hideSolved-${workspaceSlug}`,
+    false
+  );
+  const [hideObsolete, setHideObsolete] = useLocalStorage(
+    `blackboard-hideObsolete-${workspaceSlug}`,
+    false
+  );
+  const [hideSolvedMetas, setHideSolvedMetas] = useLocalStorage(
+    `blackboard-hideSolvedMetas-${workspaceSlug}`,
+    false
+  );
+  const [onlyShowFavorites, setOnlyShowFavorites] = useLocalStorage(
+    `blackboard-onlyShowFavorites-${workspaceSlug}`,
+    false
+  );
   const [search, setSearch] = useState("");
   // "/" focuses the search box (unless you're already typing somewhere).
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -692,8 +706,14 @@ function RouteComponent() {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
-  const [tags, setTags] = useLocalStorage<(string | null)[]>("tags", []);
-  const [importances, setImportances] = useLocalStorage<(string | null)[]>("importances", []);
+  const [tags, setTags] = useLocalStorage<(string | null)[]>(
+    `blackboard-tags-${workspaceSlug}`,
+    []
+  );
+  const [importances, setImportances] = useLocalStorage<(string | null)[]>(
+    `blackboard-importances-${workspaceSlug}`,
+    []
+  );
 
   // Read once here and handed to rows as booleans: a per-row subscription would re-render every
   // row whenever any favorite changes. (Suspends like the rows used to, so stars never flash.)
@@ -871,6 +891,20 @@ function RouteComponent() {
     ),
   });
   const boardRounds = isArranging ? workspace.rounds : rounds;
+
+  const clearFilters = () => {
+    setHideSolved(false);
+    setHideSolvedMetas(false);
+    setOnlyShowFavorites(false);
+    setHideObsolete(false);
+    setTags([]);
+    setImportances([]);
+  };
+  // Search or filters hide every puzzle: say so, rather than showing empty round headers.
+  const nothingMatches =
+    !isArranging &&
+    workspace.rounds.some(r => r.puzzles.length > 0) &&
+    rounds.every(r => r.puzzles.length === 0);
 
   let filterCount = 0;
   if (tags.length > 0) filterCount += 1;
@@ -1061,14 +1095,7 @@ function RouteComponent() {
                     variant="ghost"
                     className="shrink-0"
                     aria-label="Clear filters"
-                    onPress={() => {
-                      setHideSolved(false);
-                      setHideSolvedMetas(false);
-                      setOnlyShowFavorites(false);
-                      setHideObsolete(false);
-                      setTags([]);
-                      setImportances([]);
-                    }}>
+                    onPress={clearFilters}>
                     <XIcon />
                     <span className="hidden xl:inline">Clear</span>
                   </Button>
@@ -1200,6 +1227,37 @@ function RouteComponent() {
                     open={isAddNewRoundDialogOpen}
                     setOpen={setIsAddNewRoundDialogOpen}
                   />
+                )}
+                {nothingMatches && (
+                  <EmptyState className="py-16">
+                    <EmptyState.Header>
+                      <EmptyState.Media variant="icon">
+                        <SearchXIcon />
+                      </EmptyState.Media>
+                      <EmptyState.Title>No puzzles match</EmptyState.Title>
+                      <EmptyState.Description>
+                        {query && filterCount > 0
+                          ? "Nothing matches your search with these filters on."
+                          : query
+                            ? `Nothing matches “${search.trim()}”.`
+                            : "Every puzzle is hidden by the filters."}
+                      </EmptyState.Description>
+                    </EmptyState.Header>
+                    <EmptyState.Content>
+                      <Button
+                        variant="secondary"
+                        onPress={() => {
+                          setSearch("");
+                          clearFilters();
+                        }}>
+                        {query && filterCount > 0
+                          ? "Clear search and filters"
+                          : query
+                            ? "Clear search"
+                            : "Clear filters"}
+                      </Button>
+                    </EmptyState.Content>
+                  </EmptyState>
                 )}
                 {workspace.rounds.length === 0 && (
                   // A new workspace: say what goes here, with the first step one click away.
@@ -1442,6 +1500,8 @@ const BlackboardRound = memo(function BlackboardRound({
           <DeleteRoundDialog
             workspaceSlug={workspaceSlug}
             roundId={round.id}
+            roundName={round.name}
+            puzzleCount={puzzleCount}
             open={isDeleteRoundDialogOpen}
             setOpen={setIsDeleteRoundDialogOpen}
           />
@@ -1754,6 +1814,8 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
           <DeletePuzzleDialog
             workspaceSlug={workspaceSlug}
             puzzleId={metaPuzzle.id}
+            puzzleName={metaPuzzle.name}
+            isMetaPuzzle
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}
           />
@@ -1961,6 +2023,8 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           <DeletePuzzleDialog
             workspaceSlug={workspaceSlug}
             puzzleId={puzzle.id}
+            puzzleName={puzzle.name}
+            isMetaPuzzle={false}
             open={isDeletePuzzleDialogOpen}
             setOpen={setIsDeletePuzzleDialogOpen}
           />

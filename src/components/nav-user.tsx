@@ -119,7 +119,7 @@ export function NavUser({children}: {children?: React.ReactNode}) {
                         notificationsDisabled: selected === "disabled",
                       });
                       if (error) {
-                        toast.error("Oops! Something went wrong.");
+                        toast.error("Couldn't change your email notifications. Please try again.");
                         return;
                       }
                       await queryClient.invalidateQueries();

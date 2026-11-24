@@ -16,6 +16,7 @@ import {
 } from "@/hooks/use-hunt-suggestions";
 import {authClient} from "@/lib/auth-client";
 import {fromLocalInput} from "@/lib/datetime-local";
+import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 
 /** A hunt website: empty, or a web address (https:// is added for you). */
@@ -23,6 +24,8 @@ const HUNT_WEBSITE_SCHEMA = z.union([
   z.literal(""),
   z.url({protocol: /^https?$/, error: "Enter a web address, like https://hunt.example"}),
 ]);
+
+const TEAM_NAME_SCHEMA = z.string().trim().min(1, "Enter your team's name.");
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   component: RouteComponent,
@@ -59,23 +62,10 @@ function RouteComponent() {
       password: "",
     },
     onSubmit: async ({value}) => {
+      // (The fields' validators checked the dates and the workspace ID.)
       const huntStartsAt = fromLocalInput(value.huntStartsAt);
       const huntEndsAt = fromLocalInput(value.huntEndsAt);
-      if (huntStartsAt && huntEndsAt && huntEndsAt <= huntStartsAt) {
-        toast.error("The hunt has to end after it starts.");
-        return;
-      }
       const huntUrl = value.huntWebsite.trim();
-      if (!(await authClient.organization.checkSlug({slug: value.workspaceSlug})).data) {
-        toast.error("Workspace ID is already taken. Please choose another one.");
-        return;
-      }
-      if (reservedSlugs.has(value.workspaceSlug.toLowerCase())) {
-        toast.error(
-          `Workspace ID cannot be ${value.workspaceSlug.toLowerCase()}. Please choose another one.`
-        );
-        return;
-      }
       const create = async () => {
         await authClient.organization.create(
           {
@@ -105,9 +95,10 @@ function RouteComponent() {
         });
       };
       toast.promise(create(), {
-        loading: "Creating workspace...",
-        success: "Success! Your workspace has been created.",
-        error: "Oops! Something went wrong.",
+        loading: "Creating workspace…",
+        success: "Workspace created",
+        error: (error: unknown) =>
+          errorMessage(error, "Couldn't create the workspace. Please try again."),
         description: `${value.teamName} · ${value.eventName}`,
       });
     },
@@ -158,7 +149,7 @@ function RouteComponent() {
               <form.Form>
                 <form.AppField
                   name="teamName"
-                  validators={{onBlur: z.string().min(1)}}
+                  validators={{onBlur: TEAM_NAME_SCHEMA, onSubmit: TEAM_NAME_SCHEMA}}
                   listeners={{onChange: suggestId}}
                   children={field => (
                     <field.TextField variant="secondary" label="Team name" isRequired />
@@ -166,6 +157,9 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="eventName"
+                  validators={{
+                    onSubmit: z.string().trim().min(1, "Enter the hunt's name, or pick one."),
+                  }}
                   children={field => (
                     <field.SuggestField
                       variant="secondary"
@@ -187,6 +181,15 @@ function RouteComponent() {
                   />
                   <form.AppField
                     name="huntEndsAt"
+                    validators={{
+                      onSubmit: ({value, fieldApi}) => {
+                        const starts = fromLocalInput(fieldApi.form.getFieldValue("huntStartsAt"));
+                        const ends = fromLocalInput(value);
+                        return starts && ends && ends <= starts
+                          ? {message: "The hunt has to end after it starts."}
+                          : undefined;
+                      },
+                    }}
                     children={field => (
                       <field.TextField variant="secondary" label="Ends" type="datetime-local" />
                     )}
@@ -217,6 +220,18 @@ function RouteComponent() {
                 />
                 <form.AppField
                   name="workspaceSlug"
+                  validators={{
+                    onSubmit: ({value}) =>
+                      !value.trim()
+                        ? {message: "Choose a workspace ID."}
+                        : reservedSlugs.has(value.toLowerCase())
+                          ? {message: `"${value.toLowerCase()}" is reserved. Choose another ID.`}
+                          : undefined,
+                    onSubmitAsync: async ({value}) =>
+                      (await authClient.organization.checkSlug({slug: value})).data
+                        ? undefined
+                        : {message: "That ID is taken. Choose another one."},
+                  }}
                   listeners={{
                     onChange: () => {
                       idEdited.current = true;

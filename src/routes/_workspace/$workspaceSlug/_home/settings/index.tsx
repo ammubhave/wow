@@ -2,9 +2,11 @@ import {Alert, Button, Card, InputGroup, Label, Separator} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {CopyIcon, PlusIcon, TrashIcon} from "lucide-react";
+import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {ConfirmDialog} from "@/components/confirm-dialog";
 import {useAppForm} from "@/components/form";
 import {LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
 import {huntDetails, huntWebsiteLink, useHuntSuggestions} from "@/hooks/use-hunt-suggestions";
@@ -12,6 +14,7 @@ import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
 import {fromLocalInput, toLocalInput} from "@/lib/datetime-local";
+import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -166,38 +169,45 @@ function UpdateLinksCard() {
 function LeaveWorkspaceCard() {
   const navigate = Route.useNavigate();
   const {workspaceSlug} = Route.useParams();
+  const {teamName, name} = useWorkspace();
   const leaveMutation = useMutation(orpc.workspaces.leave.mutationOptions());
+  const [isConfirming, setIsConfirming] = useState(false);
+  const workspaceName = teamName || name;
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Leave Workspace</Card.Title>
+        <Card.Title>Leave workspace</Card.Title>
         <Card.Description>
-          Leave this workspace. You will no longer be able to access it.
+          You lose access to its board, puzzles and chat. You can rejoin with the invitation link.
         </Card.Description>
       </Card.Header>
       <Card.Footer>
-        <Button
-          variant="danger"
-          onPress={() => {
-            toast.promise(
-              leaveMutation.mutateAsync(
-                {workspaceSlug},
-                {
-                  onSuccess: async () => {
-                    await navigate({to: "/workspaces"});
-                  },
-                }
-              ),
-              {
-                loading: "Leaving workspace...",
-                success: "Success! You have left the workspace.",
-                error: "Oops! Something went wrong.",
-              }
-            );
-          }}>
+        <Button variant="danger" onPress={() => setIsConfirming(true)}>
           Leave
         </Button>
       </Card.Footer>
+      <ConfirmDialog
+        isOpen={isConfirming}
+        onOpenChange={setIsConfirming}
+        heading={`Leave ${workspaceName}?`}
+        confirmLabel="Leave workspace"
+        isPending={leaveMutation.isPending}
+        onConfirm={() =>
+          leaveMutation.mutate(
+            {workspaceSlug},
+            {
+              onSuccess: async () => {
+                toast.success(`You left ${workspaceName}.`);
+                await navigate({to: "/workspaces"});
+              },
+              onError: error =>
+                toast.error(errorMessage(error, "Couldn't leave the workspace. Please try again.")),
+            }
+          )
+        }>
+        You lose access to its board, puzzles and chat right away. Your answers and messages stay.
+        To come back, ask a teammate for the invitation link.
+      </ConfirmDialog>
     </Card>
   );
 }
@@ -353,9 +363,9 @@ function DetailsCard() {
                     toast.promise(
                       navigator.clipboard.writeText(`https://join.wafflehaus.io/${workspaceSlug}`),
                       {
-                        loading: "Copying...",
-                        success: "Join link copied!",
-                        error: "Oops! Something went wrong.",
+                        loading: "Copying…",
+                        success: "Invitation link copied",
+                        error: "Couldn't copy. Select the link and copy it instead.",
                       }
                     );
                   }}>

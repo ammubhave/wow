@@ -236,3 +236,9 @@
     background-position: -100% 0;
   }
 }
+
+/* Signed-in pages (src/routes/_workspace.tsx): no floating support button over the work. The panel
+   still opens from Support & feedback in the account menu. (!important: the widget styles it inline.) */
+html[data-app] #ph-conversations-widget-container button[aria-label="Open chat"] {
+  display: none !important;
+}

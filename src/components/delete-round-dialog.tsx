@@ -8,12 +8,16 @@ import {ControlledAlertDialog} from "./controlled-dialog";
 export function DeleteRoundDialog({
   workspaceSlug,
   roundId,
+  roundName,
+  puzzleCount,
   children,
   open,
   setOpen,
 }: {
   workspaceSlug: string;
   roundId: string;
+  roundName: string;
+  puzzleCount: number;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -26,10 +30,14 @@ export function DeleteRoundDialog({
           <AlertDialog.CloseTrigger />
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />
-            <AlertDialog.Heading>Are you absolutely sure?</AlertDialog.Heading>
+            <AlertDialog.Heading>Delete {roundName}?</AlertDialog.Heading>
           </AlertDialog.Header>
           <AlertDialog.Body>
-            <p>This action cannot be undone. This will permanently delete this round.</p>
+            <p>
+              {puzzleCount === 0
+                ? "This can't be undone."
+                : `Its ${puzzleCount === 1 ? "puzzle disappears" : `${puzzleCount} puzzles disappear`} from the board too. This can't be undone.`}
+            </p>
           </AlertDialog.Body>
           <AlertDialog.Footer>
             <Button slot="close" variant="tertiary">
@@ -41,7 +49,7 @@ export function DeleteRoundDialog({
                 mutation.mutate({workspaceSlug, id: roundId});
                 setOpen(false);
               }}>
-              Delete
+              Delete round
             </Button>
           </AlertDialog.Footer>
         </AlertDialog.Dialog>

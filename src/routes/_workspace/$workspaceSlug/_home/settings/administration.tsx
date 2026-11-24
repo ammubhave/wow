@@ -2,9 +2,11 @@ import {Alert, Button, Card, Chip} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {ArchiveIcon, ArchiveRestoreIcon} from "lucide-react";
+import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {ConfirmDialog} from "@/components/confirm-dialog";
 import {useAppForm} from "@/components/form";
 import {SpreadsheetChoice, VoiceChoice} from "@/components/workspace-tools";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
@@ -50,7 +52,7 @@ function DeleteWorkspaceCard() {
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Delete Workspace</Card.Title>
+        <Card.Title>Delete workspace</Card.Title>
         <Card.Description>
           This will delete the workspace and all its data. This action is irreversible.
         </Card.Description>
@@ -68,13 +70,16 @@ function ArchiveWorkspaceCard({isOwner}: {isOwner: boolean}) {
   const {workspaceSlug} = Route.useParams();
   const {archivedAt} = useWorkspace();
   const mutation = useMutation(orpc.workspaces.setArchived.mutationOptions());
+  const [isConfirming, setIsConfirming] = useState(false);
   const isArchived = archivedAt !== null;
   const setArchived = (archived: boolean) =>
     mutation.mutate(
       {workspaceSlug, archived},
       {
-        onSuccess: () =>
-          toast.success(archived ? "The workspace is archived." : "The workspace is back."),
+        onSuccess: () => {
+          setIsConfirming(false);
+          toast.success(archived ? "The workspace is archived." : "The workspace is back.");
+        },
         onError: () => toast.error("Couldn't change that. Please try again."),
       }
     );
@@ -82,7 +87,7 @@ function ArchiveWorkspaceCard({isOwner}: {isOwner: boolean}) {
     <Card>
       <Card.Header>
         <Card.Title className="flex items-center gap-2">
-          Archive Workspace
+          Archive workspace
           {isArchived && (
             <Chip size="sm" variant="soft">
               <Chip.Label>Archived</Chip.Label>
@@ -100,11 +105,23 @@ function ArchiveWorkspaceCard({isOwner}: {isOwner: boolean}) {
           variant="secondary"
           isDisabled={!isOwner}
           isPending={mutation.isPending}
-          onPress={() => setArchived(!isArchived)}>
+          // Unarchiving only gives things back, so it doesn't ask.
+          onPress={() => (isArchived ? setArchived(false) : setIsConfirming(true))}>
           {isArchived ? <ArchiveRestoreIcon /> : <ArchiveIcon />}
           {isArchived ? "Unarchive" : "Archive"}
         </Button>
       </Card.Footer>
+      <ConfirmDialog
+        isOpen={isConfirming}
+        onOpenChange={setIsConfirming}
+        heading="Archive this workspace?"
+        confirmLabel="Archive"
+        status="warning"
+        isPending={mutation.isPending}
+        onConfirm={() => setArchived(true)}>
+        It becomes read-only for everyone and disappears from their workspace lists. Nothing is
+        deleted, and you can unarchive it here any time.
+      </ConfirmDialog>
     </Card>
   );
 }
@@ -128,7 +145,7 @@ function WorkspacePasswordCard({canEdit}: {canEdit: boolean}) {
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Workspace Password</Card.Title>
+        <Card.Title>Workspace password</Card.Title>
         <Card.Description>The workspace password is used to join the workspace.</Card.Description>
       </Card.Header>
       <form.AppForm>

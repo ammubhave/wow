@@ -52,7 +52,7 @@ export function MakeAccouncementDialog({
           }
         )
         .catch(() => {
-          toast.error("Oops! Something went wrong.");
+          toast.error("Couldn't send the announcement. Please try again.");
         }),
   });
 
@@ -69,7 +69,7 @@ export function MakeAccouncementDialog({
               <form.Form>
                 <form.AppField
                   name="message"
-                  validators={{onSubmit: z.string().min(1)}}
+                  validators={{onSubmit: z.string().trim().min(1, "Write the announcement.")}}
                   children={field => (
                     <field.TextareaField
                       variant="secondary"

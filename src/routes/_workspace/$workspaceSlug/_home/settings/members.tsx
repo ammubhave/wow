@@ -18,12 +18,14 @@ import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {ConfirmDialog} from "@/components/confirm-dialog";
 import {ControlledAlertDialog} from "@/components/controlled-dialog";
 import {PeopleCardSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {authClient} from "@/lib/auth-client";
+import {errorMessage} from "@/lib/errors";
 import {joinLinkWithPassword} from "@/lib/join-password";
 import {orpc} from "@/lib/orpc";
 
@@ -50,6 +52,26 @@ function RouteComponent() {
   ).data;
   const updateRole = useMutation(orpc.workspaces.members.updateRole.mutationOptions());
   const isReadOnly = useIsReadOnly();
+  const [isSteppingDown, setIsSteppingDown] = useState(false);
+  const setRole = (userId: string, name: string, role: "owner" | "member") =>
+    updateRole.mutate(
+      {workspaceSlug, userId, role},
+      {
+        // (Every query refetches after a mutation, so your own role updates too.)
+        onSuccess: () => {
+          setIsSteppingDown(false);
+          toast.success(
+            userId === me
+              ? "You're now a member."
+              : role === "owner"
+                ? `${name} is now an owner.`
+                : `${name} is now a member.`
+          );
+        },
+        onError: error =>
+          toast.error(errorMessage(error, "Couldn't change the role. Please try again.")),
+      }
+    );
   // Owners first, then by name.
   const sorted = members.toSorted(
     (a, b) =>
@@ -100,19 +122,9 @@ function RouteComponent() {
                     onChange={role => {
                       if (role !== "owner" && role !== "member") return;
                       if (role === member.role) return;
-                      updateRole.mutate(
-                        {workspaceSlug, userId: member.user.id, role},
-                        {
-                          // (Every query refetches after a mutation, so your own role updates too.)
-                          onSuccess: () =>
-                            toast.success(
-                              role === "owner"
-                                ? `${member.user.name} is now an owner.`
-                                : `${member.user.name} is now a member.`
-                            ),
-                          onError: error => toast.error(error.message),
-                        }
-                      );
+                      // Stepping down yourself takes Settings away from you, so it asks first.
+                      if (member.user.id === me) setIsSteppingDown(true);
+                      else setRole(member.user.id, member.user.name, role);
                     }}>
                     <Select.Trigger>
                       <Select.Value />
@@ -148,6 +160,19 @@ function RouteComponent() {
           ))}
         </Card.Content>
       </Card>
+      {me && (
+        <ConfirmDialog
+          isOpen={isSteppingDown}
+          onOpenChange={setIsSteppingDown}
+          heading="Stop being an owner?"
+          confirmLabel="Make me a member"
+          status="warning"
+          isPending={updateRole.isPending}
+          onConfirm={() => setRole(me, "", "member")}>
+          You won't be able to change the workspace's settings or members. Only another owner can
+          make you an owner again.
+        </ConfirmDialog>
+      )}
     </div>
   );
 }
@@ -211,7 +236,8 @@ function RemoveMemberButton({
                         );
                       }
                     },
-                    onError: error => toast.error(error.message),
+                    onError: error =>
+                      toast.error(errorMessage(error, "Couldn't remove them. Please try again.")),
                   }
                 )
               }>
@@ -266,7 +292,8 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
           // Keep what didn't go (and anything that wasn't an address), to fix and send again.
           setText([...failed.map(result => result.email), ...invalid].join("\n"));
         },
-        onError: error => toast.error(error.message),
+        onError: error =>
+          toast.error(errorMessage(error, "Couldn't send the invitations. Please try again.")),
       }
     );
 
@@ -322,7 +349,13 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
                         {workspaceSlug, invitationId: invitation.id},
                         {
                           onSuccess: () => toast.success(`Sent again to ${invitation.email}.`),
-                          onError: error => toast.error(error.message),
+                          onError: error =>
+                            toast.error(
+                              errorMessage(
+                                error,
+                                "Couldn't resend the invitation. Please try again."
+                              )
+                            ),
                         }
                       )
                     }>
@@ -341,7 +374,13 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
                         {
                           onSuccess: () =>
                             toast.success(`The invitation to ${invitation.email} was cancelled.`),
-                          onError: error => toast.error(error.message),
+                          onError: error =>
+                            toast.error(
+                              errorMessage(
+                                error,
+                                "Couldn't cancel the invitation. Please try again."
+                              )
+                            ),
                         }
                       )
                     }>

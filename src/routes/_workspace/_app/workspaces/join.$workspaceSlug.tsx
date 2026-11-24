@@ -10,6 +10,7 @@ import {useAppForm} from "@/components/form";
 import {CardFormSkeleton} from "@/components/page-skeletons";
 import PixelBlast from "@/components/pixel-blast";
 import {authClient} from "@/lib/auth-client";
+import {errorMessage} from "@/lib/errors";
 import {forgetJoinPassword, joinPasswordFor} from "@/lib/join-password";
 import {orpc} from "@/lib/orpc";
 import {accentHex, applyAccent} from "@/lib/workspace-theme";
@@ -37,14 +38,12 @@ function RouteComponent() {
     onSubmit: async ({value}) => {
       const join = joinWorkspaceMutation.mutateAsync(value);
       toast.promise(join, {
-        loading: "Joining workspace...",
-        success: "Success! You have joined the workspace.",
+        loading: "Joining workspace…",
+        success: "You're in",
         error: (error: unknown) =>
           error instanceof ORPCError && error.code === "FORBIDDEN"
             ? "That password isn't right."
-            : error instanceof ORPCError && error.code === "CONFLICT"
-              ? error.message
-              : "Oops! Something went wrong.",
+            : errorMessage(error, "Couldn't join. Please try again."),
       });
       await join.catch((error: unknown) => {
         // The link's password is out of date (or mistyped): forget it and ask for the real one.

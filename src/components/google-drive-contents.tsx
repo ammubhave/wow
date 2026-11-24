@@ -7,6 +7,7 @@ import {UsersIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {errorMessage} from "@/lib/errors";
 import {startOAuthFlow} from "@/lib/oauth-state";
 import {orpc} from "@/lib/orpc";
 
@@ -49,14 +50,16 @@ export function GoogleDriveSetup({
                 : fileMutation.mutateAsync({workspaceSlug, fileId: id}),
               openPicker === "folder"
                 ? {
-                    loading: "Selecting folder...",
-                    success: "Success! The folder has been selected.",
-                    error: "Oops! Something went wrong.",
+                    loading: "Selecting folder…",
+                    success: "Folder selected",
+                    error: (error: unknown) =>
+                      errorMessage(error, "Couldn't use that folder. Please try again."),
                   }
                 : {
-                    loading: "Selecting template file...",
-                    success: "Success! The template file has been selected.",
-                    error: "Oops! Something went wrong.",
+                    loading: "Selecting template…",
+                    success: "Template selected",
+                    error: (error: unknown) =>
+                      errorMessage(error, "Couldn't use that file. Please try again."),
                   }
             );
           }}

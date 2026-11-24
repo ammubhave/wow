@@ -8,12 +8,16 @@ import {ControlledAlertDialog} from "./controlled-dialog";
 export function DeletePuzzleDialog({
   workspaceSlug,
   puzzleId,
+  puzzleName,
+  isMetaPuzzle,
   children,
   open,
   setOpen,
 }: {
   workspaceSlug: string;
   puzzleId: string;
+  puzzleName: string;
+  isMetaPuzzle: boolean;
   children?: React.ReactElement;
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -26,10 +30,13 @@ export function DeletePuzzleDialog({
           <AlertDialog.CloseTrigger />
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />
-            <AlertDialog.Heading>Are you absolutely sure?</AlertDialog.Heading>
+            <AlertDialog.Heading>Delete {puzzleName}?</AlertDialog.Heading>
           </AlertDialog.Header>
           <AlertDialog.Body>
-            <p>This action cannot be undone. This will permanently delete this puzzle.</p>
+            <p>
+              Its spreadsheet, whiteboard and chat are deleted for everyone. This can't be undone.
+              {isMetaPuzzle && " Its feeders stay, as unassigned puzzles in the round."}
+            </p>
           </AlertDialog.Body>
           <AlertDialog.Footer>
             <Button slot="close" variant="tertiary">
@@ -41,7 +48,7 @@ export function DeletePuzzleDialog({
                 mutation.mutate({workspaceSlug, id: puzzleId});
                 setOpen(false);
               }}>
-              Delete
+              {isMetaPuzzle ? "Delete meta" : "Delete puzzle"}
             </Button>
           </AlertDialog.Footer>
         </AlertDialog.Dialog>

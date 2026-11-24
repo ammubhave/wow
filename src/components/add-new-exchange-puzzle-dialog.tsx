@@ -32,7 +32,7 @@ export function AddNewExchangePuzzleDialog({
           }
         )
         .catch(() => {
-          toast.error("Oops! Something went wrong.");
+          toast.error("Couldn't add the puzzle. Please try again.");
         }),
   });
 
@@ -49,7 +49,7 @@ export function AddNewExchangePuzzleDialog({
               <form.Form>
                 <form.AppField
                   name="title"
-                  validators={{onSubmit: z.string().min(1)}}
+                  validators={{onSubmit: z.string().trim().min(1, "Give the puzzle a title.")}}
                   children={field => (
                     <field.TextField
                       variant="secondary"

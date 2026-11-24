@@ -4,6 +4,7 @@ import {setupRouterSsrQueryIntegration} from "@tanstack/react-router-ssr-query";
 import {posthog} from "posthog-js";
 import {toast} from "sonner";
 
+import {ErrorPage} from "./components/error-page";
 import {NotFoundPage} from "./components/not-found-page";
 import {PageSkeleton} from "./components/page-skeletons";
 import {ARCHIVED_MESSAGE_START} from "./lib/archived";
@@ -40,6 +41,8 @@ export const getRouter = () => {
     defaultPendingComponent: PageSkeleton,
     // Unknown URLs, workspaces and puzzles.
     defaultNotFoundComponent: () => <NotFoundPage />,
+    // A page that failed to load or crashed (instead of the router's developer error screen).
+    defaultErrorComponent: ErrorPage,
     // Errors that a route's error screen catches never reach the window, so PostHog's exception
     // autocapture misses them: report them here.
     defaultOnCatch: error => {

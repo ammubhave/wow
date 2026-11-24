@@ -51,7 +51,7 @@ export function EditRoundDialog({
               <form.Form>
                 <form.AppField
                   name="name"
-                  validators={{onSubmit: z.string().min(1)}}
+                  validators={{onSubmit: z.string().trim().min(1, "Give the round a name.")}}
                   children={field => (
                     <field.TextField
                       variant="secondary"

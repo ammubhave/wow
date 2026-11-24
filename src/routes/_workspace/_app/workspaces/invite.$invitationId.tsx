@@ -7,6 +7,7 @@ import {toast} from "sonner";
 import {CardFormSkeleton} from "@/components/page-skeletons";
 import PixelBlast from "@/components/pixel-blast";
 import {authClient} from "@/lib/auth-client";
+import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 
 /**
@@ -63,7 +64,8 @@ function RouteComponent() {
         toast.success(`Welcome to ${invite.teamName ?? "the team"}!`);
         void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: slug}});
       },
-      onError: error => toast.error(error.message),
+      onError: error =>
+        toast.error(errorMessage(error, "Couldn't accept the invitation. Please try again.")),
     })
   );
   const team = (
