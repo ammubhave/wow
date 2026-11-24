@@ -182,7 +182,12 @@ async function graphql<T>(query: string, variables: Record<string, unknown>): Pr
 
 /** WOW's resources, in this environment's config (wrangler.jsonc). */
 async function sources(now: Date) {
-  const {script, d1DatabaseId, r2Bucket} = env.USAGE_SOURCES;
+  // The postinstall's `wrangler types --strict-vars=false` types JSON vars as plain `object`.
+  const {script, d1DatabaseId, r2Bucket} = env.USAGE_SOURCES as {
+    script: string;
+    d1DatabaseId: string;
+    r2Bucket: string;
+  };
   const {namespaces} = await graphql<{namespaces: {dimensions: {namespaceId: string}}[]}>(
     NAMESPACES_QUERY,
     {script, start: toHour(new Date(now.getTime() - 30 * 24 * HOUR_MS)), end: toHour(now)}

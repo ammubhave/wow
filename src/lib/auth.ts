@@ -232,8 +232,8 @@ export const auth = betterAuth({
             // Which tools the team chose (see workspace-tools.tsx): "builtin" or "google" sheets,
             // "builtin" or "discord" calls. A choice, kept apart from the connections, so switching
             // back to built-in leaves existing Google Sheets and Discord channels working.
-            sheetsTool: {type: "string", required: false, defaultValue: "builtin", input: false},
-            voiceTool: {type: "string", required: false, defaultValue: "builtin", input: false},
+            sheetsTool: {type: "string", required: true, defaultValue: "builtin", input: false},
+            voiceTool: {type: "string", required: true, defaultValue: "builtin", input: false},
             // When an owner archived it: hidden from everyone's workspace list (see setArchived).
             archivedAt: {type: "date", required: false, input: false},
             tags: {type: "string[]", required: false},
