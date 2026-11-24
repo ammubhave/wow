@@ -134,5 +134,24 @@ function RootDocument({children}: {children: React.ReactNode}) {
 
 function ThemedToaster() {
   const {theme} = useTheme();
-  return <Toaster theme={theme} richColors expand closeButton swipeDirections={[]} />;
+  return (
+    <Toaster
+      theme={theme}
+      expand
+      closeButton
+      swipeDirections={[]}
+      // The theme's surfaces, square corners and status colors (sonner's richColors brings its own).
+      toastOptions={{
+        classNames: {
+          toast: "!bg-overlay !text-foreground !border-separator !rounded-none !shadow-overlay",
+          description: "!text-muted",
+          closeButton: "!bg-overlay !border-separator !text-muted",
+          success: "[&_[data-icon]]:!text-success",
+          error: "[&_[data-icon]]:!text-danger",
+          warning: "[&_[data-icon]]:!text-warning",
+          info: "[&_[data-icon]]:!text-accent",
+        },
+      }}
+    />
+  );
 }

@@ -306,7 +306,7 @@ function RemoteVideo({
     <div
       ref={containerRef}
       className={cn(
-        "group bg-default relative aspect-video overflow-hidden rounded-lg",
+        "group bg-default relative aspect-video overflow-hidden",
         isScreen && "col-span-full"
       )}>
       <Video track$={track$} className="size-full object-contain" />
@@ -362,7 +362,7 @@ export function CallBar() {
       {/* Under the header (z-40), so its open menu covers the bar; above the page's own layers. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-12 z-30 flex flex-col items-center gap-2 px-4">
         {hasMedia && isPanelOpen && (
-          <div className="bg-overlay pointer-events-auto grid max-h-[60vh] w-full max-w-2xl grid-cols-2 gap-2 overflow-y-auto rounded-2xl p-2 shadow-lg">
+          <div className="bg-overlay pointer-events-auto grid max-h-[60vh] w-full max-w-2xl grid-cols-2 gap-2 overflow-y-auto p-2 shadow-lg">
             {videos.map(v => (
               <RemoteVideo
                 key={v.key}
@@ -372,7 +372,7 @@ export function CallBar() {
               />
             ))}
             {voice.camera && (
-              <div className="bg-default relative aspect-video overflow-hidden rounded-lg">
+              <div className="bg-default relative aspect-video overflow-hidden">
                 <Video
                   track$={engine.camera.broadcastTrack$}
                   className="size-full object-cover"

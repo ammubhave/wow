@@ -78,7 +78,7 @@ function heading(Tag: "h2" | "h3") {
 
 function Table(props: React.ComponentProps<"table">) {
   return (
-    <div className="border-separator overflow-x-auto rounded-xl border">
+    <div className="border-separator overflow-x-auto border">
       <table
         className="[&_tr]:border-separator w-full border-collapse text-sm [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_th]:px-3 [&_th]:py-2 [&_th]:text-start [&_th]:font-semibold [&_thead]:bg-[var(--surface-secondary)] [&_tr+tr]:border-t"
         {...props}
@@ -113,7 +113,7 @@ export function Callout({
     phone: {Icon: SmartphoneIcon, tone: "border-separator bg-default/40 [&_svg]:text-muted"},
   }[type];
   return (
-    <aside className={cn("not-prose flex gap-3 rounded-xl border p-4 text-sm", tone)}>
+    <aside className={cn("not-prose flex gap-3 border p-4 text-sm", tone)}>
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <div className="flex min-w-0 flex-col gap-1.5 [&_p]:m-0">
         {title && <p className="font-semibold">{title}</p>}
@@ -141,7 +141,7 @@ export function Kbd({children}: {children: React.ReactNode}) {
 export function UiPath({path}: {path: string}) {
   const parts = path.split(">").map(part => part.trim());
   return (
-    <span className="bg-default inline-flex flex-wrap items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.9em] font-medium">
+    <span className="bg-default inline-flex flex-wrap items-center gap-1 px-1.5 py-0.5 text-[0.9em] font-medium">
       {parts.map((part, i) => (
         <span key={part} className="inline-flex items-center gap-1">
           {i > 0 && <span className="text-muted">›</span>}
@@ -182,7 +182,7 @@ export function Screenshot({
         alt={alt}
         loading="lazy"
         className={cn(
-          "border-separator rounded-xl border shadow-sm",
+          "border-separator border shadow-sm",
           narrow ? "mx-auto w-72 max-w-full" : "w-full"
         )}
       />
@@ -199,7 +199,7 @@ export function TakeTheTour() {
   const tour = useTour();
   if (!tour) return null;
   return (
-    <aside className="not-prose border-accent/30 bg-accent/5 flex flex-wrap items-center gap-3 rounded-xl border p-4 text-sm">
+    <aside className="not-prose border-accent/30 bg-accent/5 flex flex-wrap items-center gap-3 border p-4 text-sm">
       <CompassIcon className="text-accent size-5 shrink-0" aria-hidden="true" />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="font-semibold">New here?</span>
@@ -247,7 +247,7 @@ export function Card({
   return (
     <Link
       to={docHref(to)}
-      className="group border-separator hover:border-accent/50 hover:bg-accent/5 flex flex-col gap-1 rounded-xl border p-4 transition-colors">
+      className="group border-separator hover:border-accent/50 hover:bg-accent/5 flex flex-col gap-1 border p-4 transition-colors">
       <span className="flex items-center justify-between gap-2 font-semibold">
         {title}
         <ArrowRightIcon
@@ -271,7 +271,7 @@ export function PuzzleFormulas() {
             <article
               key={formula.name}
               id={formula.name.toLowerCase()}
-              className="border-separator flex scroll-mt-6 flex-col gap-2 rounded-xl border p-4">
+              className="border-separator flex scroll-mt-6 flex-col gap-2 border p-4">
               <code className="font-mono text-sm font-semibold">{formula.signature}</code>
               <p className="text-sm">{formula.what}</p>
               {formula.details && (
@@ -336,7 +336,7 @@ export function StatusTable({meanings}: {meanings: Record<string, string>}) {
               <td>
                 <span
                   className={cn(
-                    "inline-block rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+                    "inline-block px-2 py-0.5 text-xs font-medium whitespace-nowrap",
                     "bgColorNoHover" in group && group.bgColorNoHover
                   )}>
                   {status.label}
@@ -368,7 +368,7 @@ export function ImportanceTable({meanings}: {meanings: Record<string, string>}) 
             <td>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap [&_svg]:size-3.5",
+                  "inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium whitespace-nowrap [&_svg]:size-3.5",
                   importance.color
                 )}>
                 {importance.icon}

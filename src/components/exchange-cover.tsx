@@ -39,7 +39,7 @@ export function ExchangeCover({
     </>
   );
   return (
-    <section className="group relative isolate overflow-hidden rounded-3xl text-white">
+    <section className="group relative isolate overflow-hidden text-white">
       <Grainient colors={monthColors(huntDate(hunt))} className="absolute inset-0 -z-10" />
       {/* Keeps white text readable on the lightest parts of any month's gradient. */}
       <div

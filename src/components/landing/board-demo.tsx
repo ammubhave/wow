@@ -72,7 +72,7 @@ export function BoardDemo() {
   return (
     <DemoFrame address="www.wafflehaus.io/your-team">
       <div className="flex flex-col p-3 text-sm">
-        <div className="bg-surface-secondary flex items-center gap-3 rounded-lg px-3 py-2">
+        <div className="bg-surface-secondary flex items-center gap-3 px-3 py-2">
           <span className="font-semibold">Act I · The Heist</span>
           <ProgressBar
             aria-label="Round progress"
@@ -163,7 +163,7 @@ export function DemoFrame({
     <div
       aria-hidden="true"
       className={cn(
-        "bg-surface border-separator shadow-overlay w-full overflow-hidden rounded-2xl border select-none",
+        "bg-surface border-separator shadow-overlay w-full overflow-hidden border select-none",
         className
       )}>
       <div className="border-separator flex items-center gap-2 border-b px-4 py-2.5">

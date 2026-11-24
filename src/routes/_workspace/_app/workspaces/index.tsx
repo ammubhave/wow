@@ -250,9 +250,9 @@ function RouteComponent() {
       }>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         {!workspaces ? (
-          <Skeleton className="h-36 rounded-2xl" />
+          <Skeleton className="h-36" />
         ) : !hasWorkspaces ? (
-          <EmptyState className="border-separator flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
+          <EmptyState className="border-separator flex flex-col items-center gap-3 border border-dashed px-6 py-12 text-center">
             <UsersIcon className="text-muted size-8" aria-hidden="true" />
             <div className="flex flex-col gap-1">
               <p className="text-foreground font-semibold">No workspaces yet</p>

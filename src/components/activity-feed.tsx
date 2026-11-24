@@ -436,15 +436,15 @@ export function ActivityFeedSkeleton() {
   return (
     <div className={cn(READING_WIDTH, "flex flex-col gap-6")} aria-busy="true" aria-label="Loading">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-32 rounded-lg" />
-        <Skeleton className="h-9 w-24 rounded-lg" />
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-9 w-24" />
       </div>
-      <Skeleton className="h-4 w-24 rounded-lg" />
+      <Skeleton className="h-4 w-24" />
       {Array.from({length: 8}, (_, i) => (
         <div key={i} className="flex items-center gap-3">
           <Skeleton className="size-6 shrink-0 rounded-full" />
-          <Skeleton className="h-4 flex-1 rounded-lg" />
-          <Skeleton className="h-4 w-14 rounded-lg" />
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-4 w-14" />
         </div>
       ))}
     </div>

@@ -47,6 +47,11 @@ function Hero() {
   return (
     <section className="relative overflow-hidden">
       <LetterGlitch />
+      {/* The glyphs fade out behind the headline and copy, so the text reads cleanly. */}
+      <div
+        aria-hidden="true"
+        className="max-lg:bg-background/60 pointer-events-none absolute inset-0 lg:bg-[linear-gradient(to_right,var(--background)_25%,transparent_65%)]"
+      />
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pt-16 pb-20 md:pt-24 lg:grid-cols-[1fr_1.1fr] lg:pb-28">
         <div className="flex flex-col items-start gap-6">
           <Chip variant="soft" color="accent">
@@ -120,7 +125,7 @@ function Features() {
       <ul className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map(({Icon, title, text}) => (
           <li key={title} className="flex gap-4">
-            <span className="bg-accent/15 text-accent flex size-10 shrink-0 items-center justify-center rounded-xl">
+            <span className="bg-accent/15 text-accent flex size-10 shrink-0 items-center justify-center">
               <Icon className="size-5" aria-hidden="true" />
             </span>
             <div className="flex flex-col gap-1">

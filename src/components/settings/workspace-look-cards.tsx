@@ -134,7 +134,7 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
             {emoji.map(e => (
               <li
                 key={e.name}
-                className="bg-surface-secondary flex items-center gap-2 rounded-lg py-1 ps-2 pe-1">
+                className="bg-surface-secondary flex items-center gap-2 py-1 ps-2 pe-1">
                 <img src={customEmojiUrl(workspaceSlug, e.fileId)} alt="" className="size-5" />
                 <span className="text-sm">:{e.name}:</span>
                 {!isReadOnly && (

@@ -94,8 +94,8 @@ function RouteComponent() {
           <StatsBody stats={data} />
         ) : (
           <>
-            <Skeleton className="h-28 w-full rounded-2xl" />
-            <Skeleton className="h-48 w-full rounded-2xl" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-48 w-full" />
           </>
         )}
       </div>

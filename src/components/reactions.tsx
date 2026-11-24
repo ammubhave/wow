@@ -74,7 +74,7 @@ const PICKER_PARTS: Partial<EmojiPickerListComponents> = {
   Emoji: ({emoji, ...props}) => (
     <button
       {...props}
-      className="data-[active]:bg-default flex size-8 items-center justify-center rounded-md text-lg">
+      className="data-[active]:bg-default flex size-8 items-center justify-center text-lg">
       {emoji.emoji}
     </button>
   ),
@@ -133,7 +133,7 @@ export function ReactionPicker({onReact}: {onReact: (reaction: string) => void})
               <EmojiPicker.Search
                 aria-label="Search emoji"
                 placeholder="Search emoji…"
-                className="bg-default mb-1 rounded-lg px-2 py-1 text-sm outline-none"
+                className="bg-default mb-1 px-2 py-1 text-sm outline-none"
                 autoFocus
               />
               <EmojiPicker.Viewport className="relative flex-1">

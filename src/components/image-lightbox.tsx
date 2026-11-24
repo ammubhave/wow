@@ -36,7 +36,7 @@ export function ImageLightbox({src, alt}: {src: string; alt: string}) {
           src={src}
           alt={alt}
           loading="lazy"
-          className="border-separator max-h-60 max-w-full rounded-lg border object-contain"
+          className="border-separator max-h-60 max-w-full border object-contain"
         />
       </Modal.Trigger>
       <Modal.Backdrop variant="blur">

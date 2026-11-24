@@ -9,6 +9,7 @@ import PixelBlast from "@/components/pixel-blast";
 import {authClient} from "@/lib/auth-client";
 import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
+import {accentHex} from "@/lib/workspace-theme";
 
 /**
  * Where an emailed invitation's link goes (see `workspaces.invitations`). Signed-out visitors are
@@ -38,7 +39,7 @@ function InviteFrame({title, children}: {title: string; children: React.ReactNod
   return (
     <div className="relative flex w-full flex-1 items-center justify-center px-4">
       <div className="absolute inset-0">
-        <PixelBlast color="#f49f1e" pixelSize={3} />
+        <PixelBlast color={accentHex(undefined)} pixelSize={3} />
       </div>
       <div className="z-10 w-full max-w-sm">
         <Card>

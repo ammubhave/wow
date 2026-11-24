@@ -91,8 +91,8 @@ export function SignInMethodsCard({email}: {email: string}) {
       <Card.Content>
         {providers.isPending ? (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
         ) : (
           <>
@@ -359,8 +359,8 @@ export function SessionsCard({currentToken}: {currentToken: string}) {
       <Card.Content>
         {sessions.isPending ? (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
         ) : (
           (sessions.data ?? []).map((session, i) => {

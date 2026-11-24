@@ -51,7 +51,7 @@ function DocsNav({slug, onNavigate}: {slug: string; onNavigate?: () => void}) {
                     onClick={onNavigate}
                     aria-current={isCurrent ? "page" : undefined}
                     className={cn(
-                      "block rounded-lg px-3 py-1.5 text-sm transition-colors",
+                      "block px-3 py-1.5 text-sm transition-colors",
                       isCurrent
                         ? "bg-accent/10 text-accent font-medium"
                         : "text-muted hover:text-foreground hover:bg-default/60"
@@ -119,7 +119,7 @@ function Pager({page}: {page: DocPage}) {
       {previous ? (
         <Link
           to={docHref(previous.slug)}
-          className="border-separator hover:bg-default/40 flex flex-col gap-1 rounded-xl border p-4 transition-colors">
+          className="border-separator hover:bg-default/40 flex flex-col gap-1 border p-4 transition-colors">
           <span className="text-muted flex items-center gap-1 text-xs">
             <ArrowLeftIcon className="size-3" aria-hidden="true" />
             Previous
@@ -132,7 +132,7 @@ function Pager({page}: {page: DocPage}) {
       {next && (
         <Link
           to={docHref(next.slug)}
-          className="border-separator hover:bg-default/40 flex flex-col items-end gap-1 rounded-xl border p-4 text-end transition-colors">
+          className="border-separator hover:bg-default/40 flex flex-col items-end gap-1 border p-4 text-end transition-colors">
           <span className="text-muted flex items-center gap-1 text-xs">
             Next
             <ArrowRightIcon className="size-3" aria-hidden="true" />
@@ -250,7 +250,7 @@ export function DocsShell({base, slug}: {base: string; slug: string}) {
                 </Button>
               </div>
               {isNavOpen && (
-                <div className="border-separator rounded-xl border p-3">
+                <div className="border-separator border p-3">
                   <DocsNav slug={page?.slug ?? ""} onNavigate={() => setIsNavOpen(false)} />
                 </div>
               )}
@@ -268,9 +268,9 @@ export function DocsShell({base, slug}: {base: string; slug: string}) {
                   <Suspense
                     fallback={
                       <div className="flex flex-col gap-3" aria-busy="true">
-                        <Skeleton className="h-4 w-full rounded-lg" />
-                        <Skeleton className="h-4 w-11/12 rounded-lg" />
-                        <Skeleton className="h-4 w-4/5 rounded-lg" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-11/12" />
+                        <Skeleton className="h-4 w-4/5" />
                       </div>
                     }>
                     <Typography.Prose

@@ -133,11 +133,7 @@ function StandingRow({
   isMe: boolean;
 }) {
   return (
-    <li
-      className={cn(
-        "flex min-w-0 items-center gap-2 rounded-lg px-2 py-1 text-sm",
-        isMe && "bg-accent/10"
-      )}>
+    <li className={cn("flex min-w-0 items-center gap-2 px-2 py-1 text-sm", isMe && "bg-accent/10")}>
       <span className="w-6 shrink-0 text-center tabular-nums">
         {MEDALS[place - 1] ?? <span className="text-muted text-xs">#{place}</span>}
       </span>
@@ -249,8 +245,8 @@ function RouteComponent() {
     return (
       <Page title={pageTitle}>
         <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
-          <Skeleton className="h-72 w-full rounded-3xl" />
-          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-72 w-full" />
+          <Skeleton className="h-40 w-full" />
         </div>
       </Page>
     );
@@ -282,10 +278,11 @@ function RouteComponent() {
       {/* The shareable card. */}
       <div
         ref={cardRef}
-        className="relative overflow-hidden rounded-3xl p-6 text-white md:p-8"
+        className="relative overflow-hidden p-6 text-white md:p-8"
         style={{
           background:
-            "radial-gradient(120% 120% at 0% 0%, color-mix(in oklab, var(--accent) 85%, white 15%) 0%, var(--accent) 35%, color-mix(in oklab, var(--accent) 45%, black 55%) 100%)",
+            // Darkened from the accent, so the white text reads on light accents like Gold too.
+            "radial-gradient(120% 120% at 0% 0%, color-mix(in oklab, var(--accent) 80%, black 20%) 0%, color-mix(in oklab, var(--accent) 65%, black 35%) 40%, color-mix(in oklab, var(--accent) 40%, black 60%) 100%)",
         }}>
         <p className="text-sm font-medium tracking-wide text-white/75">{workspace.eventName}</p>
         <h2 className="mt-1 text-3xl font-bold md:text-4xl">

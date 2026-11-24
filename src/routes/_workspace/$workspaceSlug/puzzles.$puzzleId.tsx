@@ -257,9 +257,10 @@ function PuzzleInfoPanel({
                 id="copy-link"
                 textValue="Copy link"
                 onAction={() =>
-                  void navigator.clipboard
-                    .writeText(window.location.href)
-                    .then(() => toast.success("Link copied"))
+                  void navigator.clipboard.writeText(window.location.href).then(
+                    () => toast.success("Link copied"),
+                    () => toast.error("Couldn't copy. Copy the address from the address bar.")
+                  )
                 }>
                 <LinkIcon />
                 <Label>Copy link</Label>

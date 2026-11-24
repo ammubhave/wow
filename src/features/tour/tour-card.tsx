@@ -128,7 +128,7 @@ export function TourCard({
       {rect ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed z-60 rounded-xl motion-safe:transition-all motion-safe:duration-300"
+          className="pointer-events-none fixed z-60 motion-safe:transition-all motion-safe:duration-300"
           style={{
             top: rect.top - PAD,
             left: rect.left - PAD,
@@ -154,7 +154,7 @@ export function TourCard({
             : {position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)"}
         }
         className={cn(
-          "bg-overlay shadow-overlay border-separator z-61 flex w-[min(22rem,calc(100vw-24px))] flex-col gap-3 rounded-2xl border p-4 text-sm",
+          "bg-overlay shadow-overlay border-separator z-61 flex w-[min(22rem,calc(100vw-24px))] flex-col gap-3 border p-4 text-sm",
           !isReady && "invisible"
         )}>
         <div className="flex items-center gap-2">

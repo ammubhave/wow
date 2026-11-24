@@ -372,7 +372,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                   tabIndex={-1}
                   // `group`: the reaction button appears while the message is hovered or focused.
                   className={cn(
-                    "group hover:bg-surface-secondary/60 focus:bg-surface-secondary/60 relative -mx-2 rounded-lg px-2 outline-none",
+                    "group hover:bg-surface-secondary/60 focus:bg-surface-secondary/60 relative -mx-2 px-2 outline-none",
                     isFirstInGroup ? "mt-2 pt-1 pb-0.5" : "py-0.5",
                     message.timestamp > mountedAt && ARRIVE_FROM_BOTTOM
                   )}>
@@ -438,7 +438,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                     </ChatMessage.Content>
                     {/* Floats over the corner instead of taking a column on every message. */}
                     {!message.deleted && editingId !== message.id && (
-                      <ChatMessage.Actions className="bg-surface absolute -top-3 right-1 rounded-lg opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
+                      <ChatMessage.Actions className="bg-surface absolute -top-3 right-1 opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
                         <ReactionPicker
                           onReact={reaction =>
                             send({type: "react", messageId: message.id, reaction})

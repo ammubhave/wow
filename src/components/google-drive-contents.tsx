@@ -110,7 +110,7 @@ export function GoogleDriveSetup({
             <Stepper.Step>
               <Stepper.Indicator />
               <Stepper.Content className="flex-1">
-                <Stepper.Title>Select Google Drive Folder</Stepper.Title>
+                <Stepper.Title>Select a Google Drive folder</Stepper.Title>
                 <Stepper.Description>
                   {"folderLink" in state.data ? (
                     <>
@@ -136,7 +136,7 @@ export function GoogleDriveSetup({
             <Stepper.Step>
               <Stepper.Indicator />
               <Stepper.Content className="flex-1">
-                <Stepper.Title>Select Template File</Stepper.Title>
+                <Stepper.Title>Select a template file</Stepper.Title>
                 <Stepper.Description>
                   {"fileLink" in state.data ? (
                     <>

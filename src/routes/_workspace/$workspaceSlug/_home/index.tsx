@@ -178,7 +178,8 @@ function metaColor(id: string) {
   let hue = parseInt(hash.substring(0, 4), 16) % (360 - 150);
   if (hue > 30) hue += 150;
   const saturation = (parseInt(hash.substring(4, 6), 16) / 255.0) ** 0.5 * 80 + 50;
-  const lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) ** 0.5 * 70;
+  // 45–65%: dark enough on the light theme, light enough to see on the dark one.
+  const lightness = (parseInt(hash.substring(6, 8), 16) / 255.0) * 20 + 45;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
@@ -233,11 +234,11 @@ function getTagColor(tag: string): string {
 
 // Trigger classes for the in-cell Selects (shared by each stand-in and its real Select).
 const SELECT_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950";
+  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
 const PUZZLE_STATUS_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 focus:outline-none dark:hover:bg-amber-950 dark:focus:bg-amber-950";
+  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
 const IMPORTANCE_TRIGGER_CLASS =
-  "-my-2 h-auto w-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-amber-100 focus:bg-amber-100 dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950 focus:outline-none";
+  "-my-2 h-auto w-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
 
 // Sentinel id used by HeroUI ListBox/Select for the `null` status option, since
 // React Aria collection item ids cannot be null.
@@ -295,7 +296,7 @@ function useIsBeingCreated(
 }
 
 const ANSWER_INPUT_CLASS =
-  "absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-amber-100 focus-visible:bg-amber-100 focus-visible:outline-none dark:hover:bg-amber-950 dark:focus-visible:bg-amber-950";
+  "absolute inset-0 items-center px-2 font-mono break-all whitespace-normal uppercase hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none";
 
 /**
  * Shows the (optimistic) answer; while focused it edits a local draft, committed on blur or Enter
@@ -388,7 +389,7 @@ function TagsCell({
           form.reset({tags: value});
           setIsEditing(true);
         }}
-        className="flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1 hover:bg-amber-100 dark:hover:bg-amber-950">
+        className="hover:bg-accent-soft flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1">
         {value.map(tag => (
           <Chip key={tag} size="sm" className={getTagColor(tag)}>
             {tag}
@@ -407,7 +408,7 @@ function TagsCell({
           onOpenChange={isOpen => {
             if (!isOpen) setIsEditing(false);
           }}
-          className="border-0 bg-amber-100 dark:bg-amber-950"
+          className="bg-accent-soft border-0"
           items={tags}
         />
       )}

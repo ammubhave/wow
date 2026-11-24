@@ -28,7 +28,7 @@ export function SpotlightCard({
         card.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
       }}
       className={cn(
-        "group/spotlight bg-surface border-separator relative isolate overflow-hidden rounded-2xl border",
+        "group/spotlight bg-surface border-separator relative isolate overflow-hidden border",
         className
       )}>
       <div

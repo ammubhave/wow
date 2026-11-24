@@ -72,7 +72,7 @@ export function PuzzMain({
                     )}
                   </form.AppField>
                   <InputGroup.Suffix>
-                    <Button type="submit">Submit Answer</Button>
+                    <Button type="submit">Submit answer</Button>
                   </InputGroup.Suffix>
                 </InputGroup>
               </TextField>
@@ -149,7 +149,7 @@ export function PuzzHidden({
     <span
       className={cn(
         className ?? "",
-        hidden ? "bg-black text-black select-none pointer-events-none" : ""
+        hidden ? "bg-foreground text-foreground select-none pointer-events-none" : ""
       )}>
       {children}
     </span>

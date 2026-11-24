@@ -130,13 +130,13 @@
     }
 
     th {
-      background-color: var(--bg-muted);
+      background-color: var(--surface-secondary);
       font-weight: bold;
       text-align: left;
     }
 
     .selectedCell:after {
-      background: var(--gray-2);
+      background: var(--accent-soft);
       content: "";
       left: 0;
       right: 0;
@@ -148,7 +148,7 @@
     }
 
     .column-resize-handle {
-      background-color: var(--purple);
+      background-color: var(--accent);
       bottom: -2px;
       pointer-events: none;
       position: absolute;

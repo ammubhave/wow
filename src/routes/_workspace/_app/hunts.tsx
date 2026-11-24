@@ -123,7 +123,7 @@ function HuntRow({hunt, now}: {hunt: Hunt; now: number}) {
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:flex-nowrap">
       <div
         className={cn(
-          "flex size-12 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
+          "flex size-12 shrink-0 flex-col items-center justify-center leading-none",
           isLive ? "bg-success/15 text-success" : "bg-default text-foreground"
         )}
         aria-hidden="true">
@@ -463,9 +463,9 @@ function RouteComponent() {
       {view === "calendar" ? (
         <CalendarView month={month} hunts={hunts} now={now} />
       ) : !hunts ? (
-        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-64" />
       ) : hunts.length === 0 ? (
-        <EmptyState className="border-separator rounded-2xl border border-dashed py-12">
+        <EmptyState className="border-separator border border-dashed py-12">
           No hunts match. Try another search, or All.
         </EmptyState>
       ) : (

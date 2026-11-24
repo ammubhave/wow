@@ -151,7 +151,7 @@ export function PinnedBar({
   return (
     <section
       aria-label="Pinned messages"
-      className="border-separator bg-surface-secondary/50 mx-2 mb-1 rounded-lg border px-2 py-1.5">
+      className="border-separator bg-surface-secondary/50 mx-2 mb-1 border px-2 py-1.5">
       <button
         type="button"
         className="text-muted flex w-full items-center gap-1 text-xs"

@@ -48,6 +48,7 @@ export function MakeAccouncementDialog({
             onSuccess: () => {
               form.reset();
               setOpen(false);
+              toast.success("Announcement sent");
             },
           }
         )
@@ -63,6 +64,9 @@ export function MakeAccouncementDialog({
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>Make an announcement</Modal.Heading>
+            <p className="text-muted text-sm">
+              Everyone in the workspace gets it as a pop-up and in their notifications.
+            </p>
           </Modal.Header>
           <Modal.Body>
             <form.AppForm>
@@ -84,7 +88,7 @@ export function MakeAccouncementDialog({
                     name="channelId"
                     children={field => {
                       const items = [
-                        {value: "", label: "None"},
+                        {value: "", label: "Don't post it to Discord"},
                         ...discordTextChannels.data!.map(c => ({
                           value: c.id,
                           label: `#${c.name ?? c.id}`,
@@ -93,7 +97,7 @@ export function MakeAccouncementDialog({
                       return (
                         <field.SelectField
                           variant="secondary"
-                          label="Discord Channel"
+                          label="Also post it to Discord"
                           items={items}>
                           {items.map(item => (
                             <ListBox.Item key={item.value} id={item.value} textValue={item.label}>
@@ -111,7 +115,7 @@ export function MakeAccouncementDialog({
           </Modal.Body>
           <Modal.Footer>
             <form.AppForm>
-              <form.SubmitButton>Submit</form.SubmitButton>
+              <form.SubmitButton>Send announcement</form.SubmitButton>
             </form.AppForm>
           </Modal.Footer>
         </Modal.Dialog>

@@ -8,11 +8,11 @@ import {Skeleton} from "@heroui/react";
 export function HuntListSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-4" aria-busy="true" aria-label="Loading">
-      <Skeleton className="h-4 w-40 rounded-lg" />
-      <Skeleton className="h-8 w-64 rounded-lg" />
+      <Skeleton className="h-4 w-40" />
+      <Skeleton className="h-8 w-64" />
       <div className="flex flex-col gap-2">
         {Array.from({length: 6}, (_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          <Skeleton key={i} className="h-14 w-full" />
         ))}
       </div>
     </div>
@@ -22,16 +22,16 @@ export function HuntListSkeleton() {
 export function ExchangePuzzleSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-4" aria-busy="true" aria-label="Loading">
-      <Skeleton className="h-4 w-72 rounded-lg" />
+      <Skeleton className="h-4 w-72" />
       <div className="flex flex-col items-center gap-3">
-        <Skeleton className="h-8 w-80 rounded-lg" />
-        <Skeleton className="h-4 w-48 rounded-lg" />
+        <Skeleton className="h-8 w-80" />
+        <Skeleton className="h-4 w-48" />
       </div>
       <div className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-full rounded-lg" />
-        <Skeleton className="h-4 w-11/12 rounded-lg" />
-        <Skeleton className="h-4 w-4/5 rounded-lg" />
-        <Skeleton className="h-64 w-full rounded-lg" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-11/12" />
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-64 w-full" />
       </div>
     </div>
   );

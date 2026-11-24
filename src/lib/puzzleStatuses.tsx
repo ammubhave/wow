@@ -8,8 +8,8 @@ const puzzleStatuses = [
   },
   {
     groupLabel: "Solved",
-    bgColor: "bg-green-100 hover:bg-green-100/50 dark:bg-green-950 dark:hover:bg-green-950/50",
-    bgColorNoHover: "bg-green-100 dark:bg-green-950",
+    bgColor: "bg-success-soft hover:bg-success-soft/50",
+    bgColorNoHover: "bg-success-soft",
     values: [
       {value: "solved", label: "Solved"},
       {value: "backsolved", label: "Backsolved"},
@@ -17,21 +17,21 @@ const puzzleStatuses = [
   },
   {
     groupLabel: "Warning",
-    bgColor: "bg-yellow-100 hover:bg-yellow-100/50 dark:bg-yellow-950 dark:hover:bg-yellow-950/50",
-    bgColorNoHover: "bg-yellow-100 dark:bg-yellow-950",
+    bgColor: "bg-warning-soft hover:bg-warning-soft/50",
+    bgColorNoHover: "bg-warning-soft",
     values: [
-      {value: "needs_eyes", label: "Needs Eyes"},
+      {value: "needs_eyes", label: "Needs eyes"},
       {value: "extraction", label: "Extraction"},
     ],
   },
   {
     groupLabel: "Stuck",
-    bgColor: "bg-red-100 hover:bg-red-100/50 dark:bg-red-950 dark:hover:bg-red-950/50",
-    bgColorNoHover: "bg-red-100 dark:bg-red-950",
+    bgColor: "bg-danger-soft hover:bg-danger-soft/50",
+    bgColorNoHover: "bg-danger-soft",
     values: [
       {value: "stuck", label: "Stuck"},
       {value: "pending", label: "Pending"},
-      {value: "very_stuck", label: "Very Stuck"},
+      {value: "very_stuck", label: "Very stuck"},
     ],
   },
 ];

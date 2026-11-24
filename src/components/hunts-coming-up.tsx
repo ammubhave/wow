@@ -137,7 +137,7 @@ function FeaturedHuntCard({hunt, now}: {hunt: Hunt; now: number}) {
   const isLive = hunt.startsAt.getTime() <= now;
   const place = where(hunt);
   return (
-    <div className="relative isolate overflow-hidden rounded-2xl text-white sm:col-span-2">
+    <div className="relative isolate overflow-hidden text-white sm:col-span-2">
       <Grainient colors={monthColors(hunt.startsAt)} className="absolute inset-0 -z-10" />
       {/* Keeps the text readable over the gradient's lighter patches. */}
       <div

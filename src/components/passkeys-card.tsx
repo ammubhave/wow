@@ -40,7 +40,7 @@ export function PasskeysCard() {
       </Card.Header>
       <Card.Content className="gap-2">
         {isPending ? (
-          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-10 w-full" />
         ) : passkeys && passkeys.length > 0 ? (
           <ul className="flex flex-col gap-1">
             {passkeys.map(passkey => (
