@@ -66,39 +66,42 @@ export type VoiceMute = {type: "voiceMute"};
 
 export type VoiceServerMessage = VoiceState | VoiceSpeaking | VoiceHello | VoiceMute;
 
+/** Who is in a call room, and how many of them share their camera or screen. */
+export type VoiceRoomCounts = {people: number; cameras: number; screens: number};
+
 /**
- * Voice usage accounting: people (connections) in each call room since `at`. Kept by the workspace
- * room and closed out whenever anyone joins, leaves or changes their call state.
+ * Voice usage accounting: each call room's counts since `at`. Kept by the workspace room and closed
+ * out whenever anyone joins, leaves or changes their call state.
  */
-export type VoiceUsageSample = {at: number; rooms: Record<string, number>};
+export type VoiceUsageSample = {at: number; rooms: Record<string, VoiceRoomCounts>};
 
-/** One call room's usage over a period, as sent in `usage_voice`. */
-export type VoiceUsagePeriod = {
-  room: string;
-  participants: number;
-  durationSeconds: number;
-  /**
-   * Seconds of audio streams the voice service delivered: everyone hears everyone else, so n people
-   * for t seconds is n × (n − 1) × t. This is what the SFU bills (egress).
-   */
-  streamSeconds: number;
-};
+export type VoiceStreamKind = "audio" | "camera" | "screen";
 
-/** The usage of each call room from `sample.at` until `now` (at the head-count of the sample). */
+/**
+ * Seconds of media streams the voice service delivered over a period, by kind. Everyone in a room
+ * receives every stream the others publish: n people for t seconds is n × (n − 1) × t of audio,
+ * and each camera or screen is (n − 1) × t more. This is what the SFU bills (egress).
+ */
+export type VoiceUsagePeriod = {room: string; kind: VoiceStreamKind; streamSeconds: number};
+
+/** The usage of each call room from `sample.at` until `now` (at the counts of the sample). */
 export function voiceUsageSince(
   sample: VoiceUsageSample | undefined,
   now: number
 ): VoiceUsagePeriod[] {
   if (!sample) return [];
-  const durationSeconds = Math.max(0, (now - sample.at) / 1000);
-  // Under a second (e.g. two state changes in a row): not worth an event.
-  if (durationSeconds < 1) return [];
-  return Object.entries(sample.rooms)
-    .filter(([, participants]) => participants > 0)
-    .map(([room, participants]) => ({
-      room,
-      participants,
-      durationSeconds,
-      streamSeconds: durationSeconds * participants * (participants - 1),
-    }));
+  const seconds = Math.max(0, (now - sample.at) / 1000);
+  // Under a second (e.g. two state changes in a row): not worth recording.
+  if (seconds < 1) return [];
+  return Object.entries(sample.rooms).flatMap(([room, {people, cameras, screens}]) => {
+    const receivers = Math.max(0, people - 1);
+    const streams: [VoiceStreamKind, number][] = [
+      ["audio", people],
+      ["camera", cameras],
+      ["screen", screens],
+    ];
+    return streams
+      .filter(([, publishers]) => publishers * receivers > 0)
+      .map(([kind, publishers]) => ({room, kind, streamSeconds: seconds * publishers * receivers}));
+  });
 }

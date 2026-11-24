@@ -3,6 +3,7 @@ import {Hono} from "hono";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
+import {chunks} from "@/lib/chunks";
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
@@ -57,12 +58,6 @@ const ELEMENT_PREFIX = "el:";
 // Whiteboards are kept for good (for write-ups and old hunts), until their puzzle is deleted.
 
 const STORAGE_BATCH = 128;
-
-function chunks<T>(items: T[], size: number) {
-  return Array.from({length: Math.ceil(items.length / size)}, (_, i) =>
-    items.slice(i * size, (i + 1) * size)
-  );
-}
 
 /** Whether `incoming` should replace `current` (Excalidraw's reconciliation rule). */
 function isNewer(incoming: StoredElement, current: StoredElement | undefined) {

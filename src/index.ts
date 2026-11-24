@@ -7,6 +7,7 @@ import * as schema from "./lib/db/schema";
 import {fetchDiscord} from "./server/do/discord-client";
 import {syncHuntListings} from "./server/hunt-calendar";
 import {captureServerException} from "./server/posthog";
+import {importUsage} from "./server/usage-import";
 
 /**
  * Dotfile paths (`/.env`, `/.git/config`, `/.aws/credentials`, ...): only vulnerability scanners ask
@@ -43,15 +44,21 @@ export default {
     }
   },
 
-  // Cron triggers (wrangler.jsonc): refresh the hunt listings.
-  scheduled(_controller, _env, ctx) {
-    ctx.waitUntil(
-      syncHuntListings().catch((error: unknown) => {
-        console.error("Hunt listings sync failed:", error);
-        captureServerException(error, {properties: {task: "hunt listings sync"}});
-        throw error;
-      })
-    );
+  // Cron trigger (wrangler.jsonc), hourly: import the last hour's usage, and every 6 hours refresh
+  // the hunt listings.
+  scheduled(controller, _env, ctx) {
+    const task = (name: string, run: () => Promise<unknown>) =>
+      ctx.waitUntil(
+        run().catch((error: unknown) => {
+          console.error(`${name} failed:`, error);
+          captureServerException(error, {properties: {task: name}});
+          throw error;
+        })
+      );
+    task("usage import", () => importUsage());
+    if (new Date(controller.scheduledTime).getUTCHours() % 6 === 0) {
+      task("hunt listings sync", () => syncHuntListings());
+    }
   },
 
   async email(message) {

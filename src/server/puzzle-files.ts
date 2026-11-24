@@ -1,7 +1,7 @@
 import {env} from "cloudflare:workers";
 
 import {auth} from "@/lib/auth";
-import {trackUsage} from "@/server/posthog";
+import {meter} from "@/server/usage";
 import {isPuzzleMember, trackWorkspaceRequest} from "@/server/workspace-access";
 
 // Images shared on a puzzle (chat, whiteboard), stored in R2 under `<area>/<puzzleId>/<id>`. Ids
@@ -46,8 +46,9 @@ const IMAGE_TYPES = new Set([
  * there (an SVG with a <script> would otherwise act as whoever opened the link): no sniffing, no
  * scripts or other loads, and a sandboxed (opaque) origin. <img> tags in the app are unaffected.
  */
-export async function serveImage(key: string) {
+export async function serveImage(key: string, usage: StorageUsage) {
   const object = await env.R2.get(key);
+  r2Op("r2_class_b_ops", usage);
   if (object === null) return new Response(null, {status: 404});
   const contentType = object.httpMetadata?.contentType ?? "";
   return new Response(object.body, {
@@ -62,13 +63,16 @@ export async function serveImage(key: string) {
   });
 }
 
-/** Who stored a file, for usage attribution (`usage_storage`). */
+/** Who read or stored a file, for usage metering (see src/server/usage.ts). */
 export type StorageUsage = {workspaceId: string; userId: string; area: string};
+
+const r2Op = (op: "r2_class_a_ops" | "r2_class_b_ops", {workspaceId, userId, area}: StorageUsage) =>
+  meter({workspaceId, meter: op, quantity: 1, detail: area, userId});
 
 /**
  * Stores an uploaded image under `key`. With `verifySha256`, `fileId` must be the SHA-256 of the
  * bytes, so nobody can put different content under an id someone else will send. A new file is
- * recorded as `usage_storage` for its workspace (a re-upload of the same content isn't).
+ * metered for its workspace (a re-upload of the same content isn't).
  */
 export async function storeImage(
   request: Request,
@@ -89,12 +93,16 @@ export async function storeImage(
   if (body.byteLength > maxBytes) return new Response(null, {status: 413});
   if (verifySha256 && (await sha256Hex(body)) !== fileId) return new Response(null, {status: 400});
   // Already there (same content): skip the write.
+  r2Op("r2_class_b_ops", usage);
   if ((await env.R2.head(key)) === null) {
     await env.R2.put(key, body, {httpMetadata: {contentType}});
-    trackUsage("usage_storage", {
+    r2Op("r2_class_a_ops", usage);
+    meter({
       workspaceId: usage.workspaceId,
+      meter: "r2_bytes_added",
+      quantity: body.byteLength,
+      detail: usage.area,
       userId: usage.userId,
-      properties: {area: usage.area, bytes: body.byteLength},
     });
   }
   return new Response(null, {status: 204});
@@ -102,7 +110,7 @@ export async function storeImage(
 
 /**
  * GET/PUT handlers for one area's puzzle images (see `storeImage` for `verifySha256`). `usageArea`
- * names the area in usage events (e.g. `puzzle_chat`).
+ * names the area in usage metering (e.g. `puzzle_chat`).
  */
 export function puzzleFileHandlers(
   area: string,
@@ -113,7 +121,11 @@ export function puzzleFileHandlers(
     GET: async ({request, params: {puzzleId, fileId}}: Params) => {
       const authz = await authorize(request, puzzleId);
       if (authz.denied) return authz.denied;
-      return await serveImage(puzzleFilesPrefix(area, puzzleId) + fileId);
+      return await serveImage(puzzleFilesPrefix(area, puzzleId) + fileId, {
+        workspaceId: authz.workspaceId,
+        userId: authz.userId,
+        area: usageArea,
+      });
     },
     PUT: async ({request, params: {puzzleId, fileId}}: Params) => {
       const authz = await authorize(request, puzzleId);

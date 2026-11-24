@@ -13,7 +13,11 @@ export const Route = createFileRoute("/api/workspaces/$workspaceSlug/emoji/$file
       GET: async ({request, params: {workspaceSlug, fileId}}) => {
         const authz = await authorizeWorkspaceRequest(request, workspaceSlug);
         if (authz.response) return authz.response;
-        return await serveImage(key(authz.workspace.id, fileId));
+        return await serveImage(key(authz.workspace.id, fileId), {
+          workspaceId: authz.workspace.id,
+          userId: authz.session.user.id,
+          area: "emoji",
+        });
       },
       PUT: async ({request, params: {workspaceSlug, fileId}}) => {
         const authz = await authorizeWorkspaceRequest(request, workspaceSlug);

@@ -4,6 +4,7 @@ import {and, count, eq, inArray, isNotNull, max, type SQL, sql} from "drizzle-or
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
+import {chunks} from "@/lib/chunks";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {newTourState, tourStateSchema} from "@/lib/tour-state";
@@ -1071,12 +1072,6 @@ const RECAP_CACHE_SECONDS = 60;
 
 function hasDefaultCache(c: CacheStorage): c is CacheStorage & {default: Cache} {
   return "default" in c;
-}
-
-function chunks<T>(items: T[], size: number) {
-  return Array.from({length: Math.ceil(items.length / size)}, (_, i) =>
-    items.slice(i * size, (i + 1) * size)
-  );
 }
 
 type Recap = Awaited<ReturnType<typeof computeRecap>>;

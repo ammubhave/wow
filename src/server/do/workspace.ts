@@ -19,6 +19,7 @@ import {
   type VoiceHello,
   type VoiceMute,
   type VoiceSpeaking,
+  type VoiceRoomCounts,
   type VoiceUpdate,
   type VoiceUsageSample,
   type VoiceUser,
@@ -26,7 +27,7 @@ import {
   voiceUsageSince,
 } from "@/server/voice";
 
-import {trackUsage} from "../posthog";
+import {meter} from "../usage";
 
 /// Who's on each websocket, and their call state (kept as the socket's attachment, so it survives
 /// the room hibernating).
@@ -71,13 +72,25 @@ const VOICE_SESSION_TTL_MS = 1000 * 60 * 60 * 48;
 /// per-app limit, so one misbehaving client can't exhaust it for the team.
 const VOICE_SESSIONS_PER_MINUTE = 10;
 type VoiceSessionRecord = {userId: string; createdAt: number};
+/// Counts per call room in a voice state.
+const roomCounts = ({rooms}: VoiceState): Record<string, VoiceRoomCounts> =>
+  Object.fromEntries(
+    Object.entries(rooms).map(([room, people]) => [
+      room,
+      {
+        people: people.length,
+        cameras: people.filter(p => p.camera).length,
+        screens: people.filter(p => p.screen).length,
+      },
+    ])
+  );
+
 /// Storage key for voice usage accounting (see `#recordVoiceUsage`).
 const VOICE_USAGE_KEY = "voiceUsage";
 
-/// Whether two head-counts per call room are the same.
-const sameRooms = (a: Record<string, number>, b: Record<string, number>) =>
-  Object.keys(a).length === Object.keys(b).length &&
-  Object.entries(a).every(([room, count]) => b[room] === count);
+/// Whether two sets of call room counts are the same.
+const sameRooms = (a: Record<string, VoiceRoomCounts>, b: Record<string, VoiceRoomCounts>) =>
+  JSON.stringify(a) === JSON.stringify(b);
 
 // Overlap window when re-reading the activity log incrementally, so entries committed slightly out
 // of `createdAt` order are not missed (results are de-duplicated by id).
@@ -272,7 +285,7 @@ export class WorkspaceRoom extends DurableObject<Env> {
   /// The same, parsed back: exactly what every connected client holds, to diff the next reload
   /// against.
   #parsed: Json | undefined;
-  /// Who has been in each call room since when, for `usage_voice` (also in storage, so a long call
+  /// Who has been in each call room since when, for voice metering (also in storage, so a long call
   /// is still counted when the room hibernates mid-call).
   #voiceUsage: VoiceUsageSample | undefined;
 
@@ -549,28 +562,23 @@ export class WorkspaceRoom extends DurableObject<Env> {
     return {type: "voice", rooms};
   }
 
-  /// People (connections) in each call room right now.
+  /// Counts per call room right now.
   #voiceRoomCounts(closing?: WebSocket) {
-    return Object.fromEntries(
-      Object.entries(this.#voiceState(closing).rooms).map(([room, people]) => [room, people.length])
-    );
+    return roomCounts(this.#voiceState(closing));
   }
 
-  /// Closes out the period since the last call change as `usage_voice` events (one per room, at
-  /// the head-count it had), then starts a new period with `rooms`.
-  #recordVoiceUsage(rooms: Record<string, number>) {
+  /// Meters the streams delivered since the last call change (see `voiceUsageSince`), then starts
+  /// a new period with `rooms`.
+  #recordVoiceUsage(rooms: Record<string, VoiceRoomCounts>) {
     const now = Date.now();
     const workspaceId = this.ctx.id.name;
     if (workspaceId) {
       for (const period of voiceUsageSince(this.#voiceUsage, now)) {
-        trackUsage("usage_voice", {
+        meter({
           workspaceId,
-          properties: {
-            room: period.room,
-            participants: period.participants,
-            duration_seconds: Math.round(period.durationSeconds),
-            stream_seconds: Math.round(period.streamSeconds),
-          },
+          meter: "sfu_stream_seconds",
+          quantity: period.streamSeconds,
+          detail: period.kind,
         });
       }
     }
@@ -582,9 +590,7 @@ export class WorkspaceRoom extends DurableObject<Env> {
 
   #broadcastVoice(closing?: WebSocket) {
     const state = this.#voiceState(closing);
-    this.#recordVoiceUsage(
-      Object.fromEntries(Object.entries(state.rooms).map(([room, people]) => [room, people.length]))
-    );
+    this.#recordVoiceUsage(roomCounts(state));
     const message = JSON.stringify(state);
     for (const ws of this.ctx.getWebSockets()) {
       if (ws !== closing) ws.send(message);

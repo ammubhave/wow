@@ -12,8 +12,9 @@
     "logs": {"enabled": true, "destinations": ["posthog-logs"]},
   },
   "placement": {"mode": "smart"},
-  // Refreshes hunt listings from the puzzle hunt calendars (src/server/hunt-calendar.ts).
-  "triggers": {"crons": ["17 */6 * * *"]},
+  // Hourly: imports Cloudflare usage (src/server/usage-import.ts); every 6 hours also refreshes hunt
+  // listings from the puzzle hunt calendars (src/server/hunt-calendar.ts).
+  "triggers": {"crons": ["17 * * * *"]},
   // A pure SPA: no page is rendered on the server. The app shell is a static file (TanStack Start
   // SPA mode writes it to index.html at build), so page loads are served from static assets
   // without running the Worker: a navigation to a URL with no matching file gets index.html. The
@@ -44,6 +45,14 @@
     "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",
     "SFU_APP_ID": "f34b8034e0479c66588a2bcc5a3c88da",
     "TURN_SERVER_APP_ID": "4d9169bd6c62a93238fe4406cec48e08",
+    // For the usage import (src/server/usage-import.ts, with the CF_ANALYTICS_TOKEN secret): the
+    // account, and this environment's Worker, D1 database and R2 bucket.
+    "CLOUDFLARE_ACCOUNT_ID": "ff0f90cb5a46c881c601b8f3c650c60e",
+    "USAGE_SOURCES": {
+      "script": "wow",
+      "d1DatabaseId": "33287a33-35b9-47c0-8c7f-2e2d79a73a54",
+      "r2Bucket": "wow",
+    },
   },
   "durable_objects": {
     "bindings": [
@@ -97,6 +106,14 @@
         "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",
         "SFU_APP_ID": "f34b8034e0479c66588a2bcc5a3c88da",
         "TURN_SERVER_APP_ID": "4d9169bd6c62a93238fe4406cec48e08",
+        // For the usage import (src/server/usage-import.ts, with the CF_ANALYTICS_TOKEN secret): the
+        // account, and this environment's Worker, D1 database and R2 bucket.
+        "CLOUDFLARE_ACCOUNT_ID": "ff0f90cb5a46c881c601b8f3c650c60e",
+        "USAGE_SOURCES": {
+          "script": "wow-production",
+          "d1DatabaseId": "dbd210d9-5627-4157-aec9-7d6431e68833",
+          "r2Bucket": "wow-production",
+        },
       },
       "durable_objects": {
         "bindings": [

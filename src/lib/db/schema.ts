@@ -275,3 +275,14 @@ export const huntListings = sqliteTable(
     index("hunt_listings_endsAt_idx").on(t.endsAt),
   ]
 );
+
+// Usage metering (src/server/usage-import.ts): the hours whose Cloudflare usage has been imported
+// into Analytics Engine, so each is imported once.
+
+export const usageImports = sqliteTable("usage_imports", {
+  /** The UTC hour, as Cloudflare's analytics name it: "2026-11-23T14:00:00Z". */
+  hour: text().primaryKey(),
+  importedAt: integer({mode: "timestamp_ms"})
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+});
