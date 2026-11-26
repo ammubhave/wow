@@ -1,6 +1,6 @@
-import {expect, test} from "vite-plus/test";
+import {describe, expect, it, test} from "vite-plus/test";
 
-import {compareBoardOrder, placeAmong} from "./board-order";
+import {compareBoardOrder, isWithin, placeAmong} from "./board-order";
 
 const item = (id: string, position: string | null, createdAt = 0) => ({id, position, createdAt});
 const order = (items: ReturnType<typeof item>[]) =>
@@ -56,4 +56,21 @@ test("renumbers siblings that share a position", () => {
   const result = apply(items, placeAmong(items, "c", {after: "a"}));
   expect(order(result)).toEqual(["a", "c", "b"]);
   expect(new Set(result.map(i => i.position)).size).toBe(3);
+});
+
+describe("isWithin", () => {
+  const parentsOf = (parents: Record<string, string | null>) => (id: string) => parents[id];
+
+  it("finds an ancestor through other metas", () => {
+    const parentOf = parentsOf({a: null, b: "a", c: "b"});
+    expect(isWithin(parentOf, "c", "a")).toBe(true);
+    expect(isWithin(parentOf, "a", "a")).toBe(true);
+    expect(isWithin(parentOf, "a", "c")).toBe(false);
+  });
+
+  it("stops on a loop instead of walking it forever", () => {
+    const parentOf = parentsOf({a: "b", b: "a", c: null});
+    expect(isWithin(parentOf, "a", "c")).toBe(false);
+    expect(isWithin(parentOf, "a", "b")).toBe(true);
+  });
 });

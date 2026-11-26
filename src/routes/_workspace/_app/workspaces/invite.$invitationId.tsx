@@ -1,5 +1,5 @@
 import {Button, Card} from "@heroui/react";
-import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {MailIcon} from "lucide-react";
 import {toast} from "sonner";
@@ -56,6 +56,7 @@ function InviteFrame({title, children}: {title: string; children: React.ReactNod
 function RouteComponent() {
   const {invitationId} = Route.useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const invite = useSuspenseQuery(
     orpc.workspaces.invitations.preview.queryOptions({input: {invitationId}})
   ).data;
@@ -134,6 +135,9 @@ function RouteComponent() {
                   search: {redirectTo: `/workspaces/invite/${invitationId}`},
                 })
               )
+              // Nothing of this account's (this invite's preview included) may show to whoever
+              // signs in next.
+              .then(() => queryClient.clear())
           }>
           Sign out and switch account
         </Button>

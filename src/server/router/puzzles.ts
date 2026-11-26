@@ -3,7 +3,7 @@ import {env, waitUntil} from "cloudflare:workers";
 import {and, desc, eq, isNull, sql} from "drizzle-orm";
 import {z} from "zod";
 
-import {placeAmong, placeSchema} from "@/lib/board-order";
+import {isWithin, placeAmong, placeSchema} from "@/lib/board-order";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {invariant} from "@/lib/invariant";
@@ -104,7 +104,7 @@ export const puzzlesRouter = {
           id: z.uuid().optional(),
           name: z.string(),
           tags: z.array(z.string()),
-          link: z.url().or(z.string().length(0)),
+          link: z.url({protocol: /^https?$/}).or(z.string().length(0)),
           worksheetType: z.enum(["google_spreadsheet", "google_drawing"]),
         })
       )
@@ -207,7 +207,12 @@ export const puzzlesRouter = {
           .optional(),
         status: z.string().nullable().optional(),
         importance: z.string().nullable().optional(),
-        link: z.string().nullable().optional(),
+        // Web links only (or empty), as in `create`.
+        link: z
+          .url({protocol: /^https?$/})
+          .or(z.string().length(0))
+          .nullable()
+          .optional(),
         comment: z
           .string()
           .transform(val => (val.length === 0 ? null : val))
@@ -245,7 +250,7 @@ export const puzzlesRouter = {
         if (input.parentPuzzleId === puzzle.id) {
           throw new ORPCError("BAD_REQUEST", {message: "A puzzle can't be its own parent."});
         }
-        const [targetRound, targetParent] = await Promise.all([
+        const [targetRound, workspacePuzzles] = await Promise.all([
           db
             .select({id: schema.round.id})
             .from(schema.round)
@@ -257,21 +262,32 @@ export const puzzlesRouter = {
             )
             .get(),
           db
-            .select({roundId: schema.puzzle.roundId})
+            .select({
+              id: schema.puzzle.id,
+              roundId: schema.puzzle.roundId,
+              parentPuzzleId: schema.puzzle.parentPuzzleId,
+              isMetaPuzzle: schema.puzzle.isMetaPuzzle,
+            })
             .from(schema.puzzle)
             .innerJoin(schema.round, eq(schema.puzzle.roundId, schema.round.id))
-            .where(
-              and(
-                eq(schema.puzzle.id, input.parentPuzzleId),
-                eq(schema.round.workspaceId, workspaceId)
-              )
-            )
-            .get(),
+            .where(eq(schema.round.workspaceId, workspaceId)),
         ]);
+        const byId = new Map(workspacePuzzles.map(p => [p.id, p]));
+        const targetParent = byId.get(input.parentPuzzleId);
         if (targetRound) {
           roundId = targetRound.id;
           input.parentPuzzleId = null;
         } else if (targetParent) {
+          // Only a meta takes feeders, and not one that feeds this puzzle (that would make a loop
+          // that hides both from the board).
+          if (!targetParent.isMetaPuzzle) {
+            throw new ORPCError("BAD_REQUEST", {message: "Puzzles can only feed a meta."});
+          }
+          if (isWithin(id => byId.get(id)?.parentPuzzleId, targetParent.id, puzzle.id)) {
+            throw new ORPCError("BAD_REQUEST", {
+              message: "A meta can't feed a puzzle that feeds it.",
+            });
+          }
           roundId = targetParent.roundId;
         } else {
           throw new ORPCError("NOT_FOUND", {message: "Round or parent puzzle not found"});
@@ -345,6 +361,14 @@ export const puzzlesRouter = {
         commentUpdatedAt = new Date();
         commentUpdatedBy = context.session.user.name;
       }
+      // A meta that stops being one lets go of its feeders: they stay in its round, unassigned,
+      // instead of pointing at a puzzle the board doesn't show feeders under.
+      if (input.isMetaPuzzle === false && puzzle.isMetaPuzzle) {
+        await db
+          .update(schema.puzzle)
+          .set({parentPuzzleId: null})
+          .where(eq(schema.puzzle.parentPuzzleId, puzzle.id));
+      }
       await db
         .update(schema.puzzle)
         .set({
@@ -415,12 +439,10 @@ export const puzzlesRouter = {
         if (!meta?.isMetaPuzzle)
           throw new ORPCError("NOT_FOUND", {message: "Meta puzzle not found"});
         // Not onto itself or anything feeding it (that would make a loop).
-        for (let at: typeof meta | undefined = meta; at; at = byId.get(at.parentPuzzleId ?? "")) {
-          if (at.id === puzzle.id) {
-            throw new ORPCError("BAD_REQUEST", {
-              message: "A meta can't feed a puzzle that feeds it.",
-            });
-          }
+        if (isWithin(id => byId.get(id)?.parentPuzzleId, meta.id, puzzle.id)) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "A meta can't feed a puzzle that feeds it.",
+          });
         }
         roundId = meta.roundId;
         parentPuzzleId = meta.id;

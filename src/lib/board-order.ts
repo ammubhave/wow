@@ -73,3 +73,20 @@ export function placeAmong(siblings: Ordered[], id: string, place: Place) {
   updates.set(id, key);
   return updates;
 }
+
+/**
+ * Whether `id` is `ancestorId` or feeds it, directly or through other metas. `parentOf` gives a
+ * puzzle's meta (null or undefined at the top). Stops on a loop instead of walking it forever.
+ */
+export function isWithin(
+  parentOf: (id: string) => string | null | undefined,
+  id: string,
+  ancestorId: string
+) {
+  const seen = new Set<string>();
+  for (let at: string | null | undefined = id; at != null && !seen.has(at); at = parentOf(at)) {
+    if (at === ancestorId) return true;
+    seen.add(at);
+  }
+  return false;
+}

@@ -4,6 +4,7 @@ import React, {useState} from "react";
 import {cn} from "tailwind-variants";
 
 import {useAppForm} from "@/components/form";
+import {normalizeAnswer} from "@/lib/answers";
 import {celebrate} from "@/lib/confetti";
 
 type PuzzHint = {label: string; hints: Array<string | React.ReactNode>};
@@ -37,7 +38,7 @@ export function PuzzMain({
     defaultValues: {answer: ""},
     onSubmit: async value => {
       const checkAnswer = toAnswerFormat(value.value.answer);
-      if (checkAnswer === toAnswerFormat(answer)) {
+      if (checkAnswer !== "" && checkAnswer === toAnswerFormat(answer)) {
         await celebrate();
         setCheckResponse({status: "success", message: `${checkAnswer} is correct!`});
       } else if (
@@ -214,6 +215,5 @@ function PuzzCard({children}: {children: React.ReactNode}) {
   return <Card>{children}</Card>;
 }
 
-function toAnswerFormat(str: string) {
-  return str.toUpperCase().replace(/[^A-Z]/g, "");
-}
+// Digits count, as on the exchange's server check (only case, spaces and punctuation don't).
+const toAnswerFormat = normalizeAnswer;

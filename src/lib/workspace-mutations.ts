@@ -26,7 +26,7 @@ import {
 import {toast} from "sonner";
 import {v7 as uuid7} from "uuid";
 
-import {placeAmong} from "@/lib/board-order";
+import {isWithin, placeAmong} from "@/lib/board-order";
 import {client as rpcClient, orpc} from "@/lib/orpc";
 import {socketStates} from "@/lib/workspace-socket";
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
@@ -164,6 +164,10 @@ function updatePuzzle(wire: Wire, input: RouterInputs["puzzles"]["update"]): Wir
   }
   const puzzle = findPuzzle(wire, id);
   if (!puzzle) return wire;
+  // Like the server: a meta that stops being one lets go of its feeders (they stay unassigned).
+  if (fields.isMetaPuzzle === false && puzzle.isMetaPuzzle) {
+    wire = mapPuzzles(wire, p => (p.parentPuzzleId === id ? {...p, parentPuzzleId: null} : p));
+  }
   const updated = {...puzzle, ...patch, roundId: roundId ?? puzzle.roundId};
   if (updated.roundId === puzzle.roundId) {
     return mapPuzzles(wire, p => (p.id === id ? updated : p));
@@ -295,9 +299,7 @@ function movePuzzle(wire: Wire, input: RouterInputs["puzzles"]["move"]): Wire {
   if ("metaId" in input.to) {
     const meta = byId.get(input.to.metaId);
     if (!meta?.isMetaPuzzle) return wire;
-    for (let at: WirePuzzle | undefined = meta; at; at = byId.get(at.parentPuzzleId ?? "")) {
-      if (at.id === puzzle.id) return wire;
-    }
+    if (isWithin(pid => byId.get(pid)?.parentPuzzleId, meta.id, puzzle.id)) return wire;
     roundId = meta.roundId;
     parentPuzzleId = meta.id;
   } else {

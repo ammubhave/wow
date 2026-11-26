@@ -4,6 +4,7 @@ import {eq} from "drizzle-orm";
 import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
+import {normalizeAnswer} from "@/lib/answers";
 import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -34,8 +35,6 @@ type SubmitAnswerResult =
   | {isCorrect: true}
   | {isCorrect: false; isPartial: true; message: string}
   | {isCorrect: false; isPartial: false};
-
-const normalizeAnswer = (answer: string) => answer.toUpperCase().replace(/[^A-Z]/g, "");
 
 export const exchangeRouter = {
   isAdmin: base.handler(async ({context}) => {
@@ -177,15 +176,28 @@ export const exchangeRouter = {
       }),
     submitAnswer: base
       .input(z.object({huntPuzzleId: z.string().min(1), answer: z.string().min(1)}))
-      .handler(async ({input}): Promise<SubmitAnswerResult> => {
-        const puzzle = await db.query.huntPuzzles.findFirst({
-          where: {id: input.huntPuzzleId},
-          columns: {answer: true, partials: true},
-        });
-        if (!puzzle) throw new ORPCError("NOT_FOUND");
+      .handler(async ({context, input}): Promise<SubmitAnswerResult> => {
+        const [row] = await db
+          .select({
+            answer: schema.huntPuzzles.answer,
+            partials: schema.huntPuzzles.partials,
+            draft: schema.huntPuzzles.draft,
+            huntDraft: schema.hunts.draft,
+          })
+          .from(schema.huntPuzzles)
+          .innerJoin(schema.hunts, eq(schema.huntPuzzles.huntId, schema.hunts.id))
+          .where(eq(schema.huntPuzzles.id, input.huntPuzzleId));
+        if (!row) throw new ORPCError("NOT_FOUND");
+        // Drafts can only be checked by those who can see them, as in `get`.
+        if ((row.draft || row.huntDraft) && !(await isAdmin(context.headers))) {
+          throw new ORPCError("NOT_FOUND");
+        }
         const submitted = normalizeAnswer(input.answer);
-        if (submitted === normalizeAnswer(puzzle.answer)) return {isCorrect: true};
-        const partial = puzzle.partials?.find(p => submitted === normalizeAnswer(p.answer));
+        // A guess with nothing left after normalizing (only punctuation) matches nothing, and a
+        // puzzle with no answer set yet accepts nothing.
+        if (submitted === "") return {isCorrect: false, isPartial: false};
+        if (submitted === normalizeAnswer(row.answer)) return {isCorrect: true};
+        const partial = row.partials?.find(p => submitted === normalizeAnswer(p.answer));
         if (partial) return {isCorrect: false, isPartial: true, message: partial.message};
         return {isCorrect: false, isPartial: false};
       }),

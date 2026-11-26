@@ -52,14 +52,22 @@ export function EditPuzzleDialog({
       tags: puzzle.tags,
     },
     onSubmit: ({value}) => {
+      // Only the fields changed here: the rest may have been changed by a teammate since the
+      // dialog opened, and sending the values shown here would undo that.
+      const changed = (name: keyof typeof value) => form.getFieldMeta(name)?.isDirty === true;
       mutation.mutate({
         workspaceSlug,
         id: puzzle.id,
-        ...value,
-        answer: parseTypedAnswers(value.answer),
-        answerCount: Math.min(20, Math.max(1, Math.trunc(Number(value.answerCount)) || 1)),
-        link: value.link === "" ? null : value.link,
-        status: value.status === "" ? null : value.status,
+        parentPuzzleId: changed("parentPuzzleId") ? value.parentPuzzleId : undefined,
+        name: changed("name") ? value.name : undefined,
+        answer: changed("answer") ? parseTypedAnswers(value.answer) : undefined,
+        answerCount: changed("answerCount")
+          ? Math.min(20, Math.max(1, Math.trunc(Number(value.answerCount)) || 1))
+          : undefined,
+        link: changed("link") ? (value.link === "" ? null : value.link) : undefined,
+        status: changed("status") ? (value.status === "" ? null : value.status) : undefined,
+        isMetaPuzzle: changed("isMetaPuzzle") ? value.isMetaPuzzle : undefined,
+        tags: changed("tags") ? value.tags : undefined,
       });
       // Untouched again, the form follows `puzzle` (now showing this edit) from here on.
       form.reset();

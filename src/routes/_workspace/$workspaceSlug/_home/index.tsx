@@ -70,6 +70,7 @@ import {VoiceRoomBadge} from "@/features/voice/voice-ui";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {formatAnswers, parseTypedAnswers, solvedByAnswer, splitAnswers} from "@/lib/answers";
+import {isWithin as feedsInto} from "@/lib/board-order";
 import {orpc} from "@/lib/orpc";
 import {
   getColorClassNamesForPuzzleImportances,
@@ -247,6 +248,27 @@ type BoardDialog =
 
 const OpenBoardDialogContext = createContext<(dialog: BoardDialog) => void>(() => {});
 
+/**
+ * The puzzle as it is now, not as it was when its dialog opened: a teammate may have changed it
+ * since (the dialogs show and act on it), or deleted it (which closes the dialog).
+ */
+function LivePuzzle({
+  id,
+  onGone,
+  children,
+}: {
+  id: string;
+  onGone: () => void;
+  children: (puzzle: BoardPuzzle) => React.ReactNode;
+}) {
+  const workspace = useWorkspace();
+  const puzzle = workspace.rounds.flatMap(round => round.puzzles).find(p => p.id === id);
+  useEffect(() => {
+    if (!puzzle) onGone();
+  }, [puzzle, onGone]);
+  return puzzle ? children(puzzle) : null;
+}
+
 // Opening a dialog only re-renders this: `children` is the same element, so the board (and React
 // Aria's table, which rebuilds when any row changes) stays as it is. Keeping the open state on the
 // page or in a row made opening one take a noticeable moment on a big board.
@@ -310,31 +332,37 @@ function BoardDialogs({
           setOpen={setOpen}
         />
       )}
-      {dialog?.kind === "edit-puzzle" && (
-        <EditPuzzleDialog
-          workspaceSlug={workspaceSlug}
-          puzzle={dialog.puzzle}
-          open
-          setOpen={setOpen}
-        />
-      )}
-      {dialog?.kind === "move-puzzle" && (
-        <MovePuzzleDialog
-          workspaceSlug={workspaceSlug}
-          puzzle={dialog.puzzle}
-          open
-          setOpen={setOpen}
-        />
-      )}
-      {dialog?.kind === "delete-puzzle" && (
-        <DeletePuzzleDialog
-          workspaceSlug={workspaceSlug}
-          puzzleId={dialog.puzzle.id}
-          puzzleName={dialog.puzzle.name}
-          isMetaPuzzle={dialog.puzzle.isMetaPuzzle}
-          open
-          setOpen={setOpen}
-        />
+      {(dialog?.kind === "edit-puzzle" ||
+        dialog?.kind === "move-puzzle" ||
+        dialog?.kind === "delete-puzzle") && (
+        <LivePuzzle id={dialog.puzzle.id} onGone={() => setDialog(null)}>
+          {puzzle =>
+            dialog.kind === "edit-puzzle" ? (
+              <EditPuzzleDialog
+                workspaceSlug={workspaceSlug}
+                puzzle={puzzle}
+                open
+                setOpen={setOpen}
+              />
+            ) : dialog.kind === "move-puzzle" ? (
+              <MovePuzzleDialog
+                workspaceSlug={workspaceSlug}
+                puzzle={puzzle}
+                open
+                setOpen={setOpen}
+              />
+            ) : (
+              <DeletePuzzleDialog
+                workspaceSlug={workspaceSlug}
+                puzzleId={puzzle.id}
+                puzzleName={puzzle.name}
+                isMetaPuzzle={puzzle.isMetaPuzzle}
+                open
+                setOpen={setOpen}
+              />
+            )
+          }
+        </LivePuzzle>
       )}
     </OpenBoardDialogContext.Provider>
   );
@@ -1038,7 +1066,7 @@ function BlackboardPage() {
     const same =
       childPuzzles.length === m.childPuzzles.length &&
       childPuzzles.every((c, i) => c === m.childPuzzles[i]);
-    if (hideSolvedMetas && m.status === "solved") return null;
+    if (hideSolvedMetas && isSolvedStatus(m.status)) return null;
     if (childPuzzles.length === 0 && !matches(m)) return null;
     return same ? m : {...m, childPuzzles};
   };
@@ -1080,12 +1108,8 @@ function BlackboardPage() {
   const groupRound = new Map(workspace.rounds.map(r => [unassignedGroupId(r.id), r.id]));
   const draggingKey = useRef<string | null>(null);
   /** Whether `id` is `ancestorId` or feeds it (directly or through other metas). */
-  const isWithin = (id: string, ancestorId: string) => {
-    for (let at = allPuzzles.get(id); at; at = allPuzzles.get(at.parentPuzzleId ?? "")) {
-      if (at.id === ancestorId) return true;
-    }
-    return false;
-  };
+  const isWithin = (id: string, ancestorId: string) =>
+    feedsInto(pid => allPuzzles.get(pid)?.parentPuzzleId, id, ancestorId);
   /** What dropping `key` on `target` does, or null if it can't go there. */
   const moveFor = (key: string, target: DropTarget) => {
     if (target.type !== "item") return null;

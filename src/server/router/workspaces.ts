@@ -133,7 +133,8 @@ export const workspacesRouter = {
           .nullable()
           .optional(),
         tags: z.array(z.string()).optional(),
-        links: z.array(z.object({name: z.string(), url: z.url()})).optional(),
+        // Web links only: a javascript: or data: URL would run as whoever opens it.
+        links: z.array(z.object({name: z.string(), url: z.url({protocol: /^https?$/})})).optional(),
         // Optional hunt clock (ms since epoch; null clears it).
         huntStartsAt: z.number().nullable().optional(),
         huntEndsAt: z.number().nullable().optional(),

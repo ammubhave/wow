@@ -15,7 +15,8 @@ type MoveMutation = Parameters<typeof adjustRangeOnMutation>[1];
  * against the same sheet: e.g. a value typed into A5 while a teammate inserted a row above it
  * lands in A6. Only structural mutations (inserting, removing or moving rows, columns or ranges,
  * and removing a sheet) move things; every other mutation just has its positions mapped through
- * them. `aFirst` breaks ties (two inserts at the same row): the room's order decides.
+ * them. `aFirst` breaks ties (two inserts at the same row, two writes of the same cell): the
+ * room's order decides.
  */
 
 const INSERT_ROW = "sheet.mutation.insert-row";
@@ -212,8 +213,146 @@ function shiftFormulas(m: SheetMutation, cellSheet: string, movedSheet: string, 
   return {id: m.id, params: {...params, cellValue: cells}};
 }
 
+/** Looks up a cell style the workbook stores by id (`s` may name one instead of spelling it out). */
+let styleById: (id: string) => unknown = () => undefined;
+export function setStyleResolver(resolve: (id: string) => unknown) {
+  styleById = resolve;
+}
+
+const SET_RANGE_VALUES = "sheet.mutation.set-range-values";
+
+/**
+ * The parts of a cell Univer's set-range-values writes independently (see its `mergeCellData`):
+ * keys a cell write leaves out are kept. `s` (style) is merged key by key, `custom` is replaced
+ * whole, and the rest are the cell's content, which go together (a new `v` drops the old rich
+ * text `p`, a new `f` its cached result, and so on).
+ */
+const CUSTOM = "custom";
+const STYLE = "s";
+const BORDER = "bd";
+/** What a cell's content is cleared with (as Univer's own "clear contents" does). */
+const CLEARED_CONTENT = {v: null, t: null, f: null, si: null, p: null};
+
+const writesContent = (cell: Obj) => Object.keys(cell).some(k => k !== STYLE && k !== CUSTOM);
+
+/** A style (`s`) as an object, if it is one or names one the workbook has. */
+function styleObject(style: unknown): Obj | undefined {
+  const found = typeof style === "string" ? styleById(style) : style;
+  return isObj(found) ? found : undefined;
+}
+
+/**
+ * The style `a` writes (merging unless `aOverrides`) minus what `b`'s later style write sets
+ * anyway; undefined if nothing of it is left.
+ */
+function styleAfter(aStyle: unknown, aOverrides: boolean, bStyle: unknown, bOverrides: boolean) {
+  // `b` replaces the whole style (or clears it): nothing of `a`'s shows.
+  if (bOverrides || bStyle === null) return undefined;
+  const bs = styleObject(bStyle);
+  // A style this workbook can't look up: `b` may set any of its keys, so it wins outright.
+  if (!bs) return undefined;
+  if (aStyle === null) {
+    // `a` cleared the style, then `b` set some of it: the keys `b` sets win. (The old style's
+    // other keys, which `a` cleared, can't be cleared from here without knowing them.)
+    return undefined;
+  }
+  const as = styleObject(aStyle);
+  if (!as) return undefined;
+  if (aOverrides) {
+    // `a` replaces the whole style: replace it with `a`'s, then `b`'s merged on top.
+    const merged: Obj = {...as, ...bs};
+    const aBorder = as[BORDER];
+    const bBorder = bs[BORDER];
+    if (isObj(aBorder) && isObj(bBorder)) merged[BORDER] = {...aBorder, ...bBorder};
+    return merged;
+  }
+  const out: Obj = {};
+  for (const [key, value] of Object.entries(as)) {
+    if (!(key in bs)) {
+      out[key] = value;
+    } else if (key === BORDER && isObj(value) && isObj(bs[BORDER])) {
+      // Borders merge side by side too.
+      const sides = bs[BORDER];
+      const left = Object.fromEntries(Object.entries(value).filter(([side]) => !(side in sides)));
+      if (Object.keys(left).length > 0) out[key] = left;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * `a`'s cell write minus what `b`'s write of the same cell, applied after it, sets anyway (so
+ * applying `b` then this ends the same as `a` then `b`); undefined if nothing of it is left.
+ */
+function cellAfter(a: unknown, aOverrides: boolean, b: unknown, bOverrides: boolean): unknown {
+  // `b` deletes the cell: whatever `a` wrote is gone.
+  if (!isObj(b)) return undefined;
+  // `a` deletes the cell, then `b` writes some of it: clear only what `b` doesn't write.
+  const aCell: Obj = isObj(a) ? a : {...CLEARED_CONTENT, [CUSTOM]: null, [STYLE]: null};
+  const out: Obj = {};
+  const bContent = writesContent(b);
+  for (const [key, value] of Object.entries(aCell)) {
+    if (key === STYLE) {
+      if (!(STYLE in b)) {
+        out[key] = value;
+      } else {
+        const style = styleAfter(value, aOverrides, b[STYLE], bOverrides);
+        if (style !== undefined) out[key] = style;
+      }
+    } else if (key === CUSTOM) {
+      if (!(CUSTOM in b)) out[key] = value;
+    } else if (!bContent) {
+      out[key] = value;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Two cell writes (set-range-values) to the same sheet: the room's order decides what each cell
+ * ends up as, cell by cell and part by part. The later write (`b` unless `aFirst`) keeps
+ * everything; the earlier one (`a` if `aFirst`) loses what the later one also writes, since the
+ * later one would have overwritten it. So someone whose own write is still unconfirmed keeps
+ * seeing it when a teammate's earlier write of the same cell arrives, as everyone else will.
+ */
+function transformCells(a: SheetMutation, b: SheetMutation, aFirst: boolean): SheetMutation[] {
+  if (!aFirst) return [a];
+  const aParams = paramsOf(a);
+  const bParams = paramsOf(b);
+  if (aParams.unitId !== bParams.unitId || subUnitOf(a) !== subUnitOf(b)) return [a];
+  const aCells = aParams.cellValue;
+  const bCells = bParams.cellValue;
+  if (!isObj(aCells) || !isObj(bCells)) return [a];
+  const aOverrides = aParams.isOverrideStyle === true;
+  const bOverrides = bParams.isOverrideStyle === true;
+  let changed = false;
+  const cells: Obj = {};
+  for (const [rowKey, row] of Object.entries(aCells)) {
+    const bRow = bCells[rowKey];
+    if (!isObj(row) || !isObj(bRow)) {
+      cells[rowKey] = row;
+      continue;
+    }
+    const out: Obj = {};
+    for (const [colKey, cell] of Object.entries(row)) {
+      if (!(colKey in bRow)) {
+        out[colKey] = cell;
+        continue;
+      }
+      changed = true;
+      const left = cellAfter(cell, aOverrides, bRow[colKey], bOverrides);
+      if (left !== undefined) out[colKey] = left;
+    }
+    if (Object.keys(out).length > 0) cells[rowKey] = out;
+  }
+  if (!changed) return [a];
+  if (Object.keys(cells).length === 0) return [];
+  return [{id: a.id, params: {...aParams, cellValue: cells}}];
+}
+
 /** `a` (a single mutation) rewritten to apply after `b`. May become zero or two mutations. */
 function transformOne(a: SheetMutation, b: SheetMutation, aFirst: boolean): SheetMutation[] {
+  if (a.id === SET_RANGE_VALUES && b.id === SET_RANGE_VALUES) return transformCells(a, b, aFirst);
   const bs = structural(b);
   if (!bs) return [a];
   const sheet = subUnitOf(a);

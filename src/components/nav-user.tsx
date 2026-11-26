@@ -169,6 +169,8 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               onAction={async () => {
                 await authClient.signOut();
                 await router.navigate({to: "/login"});
+                // Nothing of this account's may show to whoever signs in next on this tab.
+                queryClient.clear();
               }}>
               <LogOut />
               <Label>Log out</Label>

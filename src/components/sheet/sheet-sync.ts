@@ -18,7 +18,7 @@ import type {
 import {gunzipText, gzipText, PACK_OVER_CHARS} from "./sheet-compress";
 import {isPersonalMutation, withoutPersonalState} from "./sheet-filters";
 import {fingerprint} from "./sheet-fingerprint";
-import {isStructural, setSheetNameResolver, transform} from "./sheet-ot";
+import {isStructural, setSheetNameResolver, setStyleResolver, transform} from "./sheet-ot";
 
 // After this many log entries, a client uploads a snapshot so newcomers don't replay them all.
 const SNAPSHOT_EVERY = 100;
@@ -123,6 +123,8 @@ export class SheetSync {
     setSheetNameResolver(name =>
       this.api.getWorkbook(this.unitId)?.getSheetByName(name)?.getSheetId()
     );
+    // Cell writes may name a stored style; transforms need its keys.
+    setStyleResolver(id => this.api.getWorkbook(this.unitId)?.getWorkbook().getStyles().get(id));
   }
 
   /** Whether some of this person's edits haven't been confirmed by the room yet. */
