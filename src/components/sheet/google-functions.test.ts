@@ -5,6 +5,10 @@ import {a1z26, caesar, caesarAll, morse, nth} from "./puzzle-functions";
 
 describe("SPLIT", () => {
   test("splits on a delimiter", () => expect(split("a,b,c", ",")).toEqual([["a", "b", "c"]]));
+  test("turns decimal numbers into numbers, and keeps hex, binary and Infinity as text", () =>
+    expect(split("12,-1.5,.5,1e3,0x1F,0b1,0o7,Infinity, 7 ", ",")).toEqual([
+      [12, -1.5, 0.5, 1000, "0x1F", "0b1", "0o7", "Infinity", 7],
+    ]));
   test("splits on each character by default", () =>
     expect(split("a-b c", "- ")).toEqual([["a", "b", "c"]]));
   test("splits on the whole delimiter when asked", () =>

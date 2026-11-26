@@ -9,7 +9,7 @@ import {
   Separator,
   Skeleton,
 } from "@heroui/react";
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
 import {
   ArrowRightIcon,
@@ -30,6 +30,7 @@ import {HuntsComingUp} from "@/components/hunts-coming-up";
 import {Page} from "@/components/page";
 import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
+import {workspaceMembershipChanged} from "@/lib/workspace-membership";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/")({
   component: RouteComponent,
@@ -187,9 +188,11 @@ function WorkspaceCard({workspace, now}: {workspace: WorkspaceSummary; now: numb
 function RouteComponent() {
   const myWorkspaces = useQuery(orpc.me.workspaces.queryOptions());
   const router = useRouter();
+  const queryClient = useQueryClient();
   const joinWorkspaceMutation = useMutation(
     orpc.workspaces.join.mutationOptions({
       onSuccess: data => {
+        workspaceMembershipChanged(queryClient, data.slug);
         form.reset();
         void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: data.slug}});
       },

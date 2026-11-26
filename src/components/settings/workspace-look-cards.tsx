@@ -8,6 +8,8 @@ import {cn} from "tailwind-variants";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
+import {ARCHIVED_MESSAGE_START} from "@/lib/archived";
+import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 import {uploadImage} from "@/lib/upload-image";
 import {workspaceMutations} from "@/lib/workspace-mutations";
@@ -98,7 +100,17 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
   // Archived: the emoji are shown, with nothing to add or remove.
   const isReadOnly = useIsReadOnly();
   const add = useMutation(orpc.workspaces.customEmoji.add.mutationOptions());
-  const remove = useMutation(orpc.workspaces.customEmoji.remove.mutationOptions());
+  const remove = useMutation(
+    orpc.workspaces.customEmoji.remove.mutationOptions({
+      onSuccess: (_data, {name}) => toast.success(`:${name}: removed.`),
+      // Archived workspaces are reported once by the global handler (router.tsx).
+      onError: (error, {name}) => {
+        if (!error.message.startsWith(ARCHIVED_MESSAGE_START)) {
+          toast.error(errorMessage(error, `Couldn't remove :${name}:. Try again.`));
+        }
+      },
+    })
+  );
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   // Preview of the chosen image (released when replaced, or when the card goes away).

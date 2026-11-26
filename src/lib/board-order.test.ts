@@ -1,6 +1,6 @@
 import {describe, expect, it, test} from "vite-plus/test";
 
-import {compareBoardOrder, isWithin, placeAmong} from "./board-order";
+import {compareBoardOrder, isWithin, newest, placeAmong} from "./board-order";
 
 const item = (id: string, position: string | null, createdAt = 0) => ({id, position, createdAt});
 const order = (items: ReturnType<typeof item>[]) =>
@@ -72,5 +72,17 @@ describe("isWithin", () => {
     const parentOf = parentsOf({a: "b", b: "a", c: null});
     expect(isWithin(parentOf, "a", "c")).toBe(false);
     expect(isWithin(parentOf, "a", "b")).toBe(true);
+  });
+});
+
+describe("newest", () => {
+  it("picks the most recently created, wherever it sits on the board", () => {
+    const rounds = [
+      {id: "r3", position: "a0", createdAt: "2026-11-20T12:00:00Z"},
+      {id: "r1", position: "a1", createdAt: "2026-11-18T12:00:00Z"},
+      {id: "r2", position: "a2", createdAt: "2026-11-19T12:00:00Z"},
+    ];
+    expect(newest(rounds)?.id).toBe("r3");
+    expect(newest([])).toBeUndefined();
   });
 });

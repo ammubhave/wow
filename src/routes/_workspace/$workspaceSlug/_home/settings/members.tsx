@@ -11,7 +11,7 @@ import {
   TextArea,
   TextField,
 } from "@heroui/react";
-import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {CopyIcon, LinkIcon, MailIcon, RotateCwIcon, UserMinusIcon, XIcon} from "lucide-react";
 import {useState} from "react";
@@ -29,6 +29,7 @@ import {authClient} from "@/lib/auth-client";
 import {errorMessage} from "@/lib/errors";
 import {joinLinkWithPassword} from "@/lib/join-password";
 import {orpc} from "@/lib/orpc";
+import {workspaceMembershipChanged} from "@/lib/workspace-membership";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/members")({
   loader: ({context: {queryClient}, params: {workspaceSlug}}) =>
@@ -196,6 +197,7 @@ function RouteComponent() {
 function LeaveWorkspaceCard({workspaceSlug}: {workspaceSlug: string}) {
   const navigate = useNavigate();
   const {teamName, name} = useWorkspace();
+  const queryClient = useQueryClient();
   const leaveMutation = useMutation(orpc.workspaces.leave.mutationOptions());
   const [isConfirming, setIsConfirming] = useState(false);
   const workspaceName = teamName || name;
@@ -225,6 +227,7 @@ function LeaveWorkspaceCard({workspaceSlug}: {workspaceSlug: string}) {
               onSuccess: async () => {
                 toast.success(`You left ${workspaceName}.`);
                 await navigate({to: "/workspaces"});
+                workspaceMembershipChanged(queryClient, workspaceSlug);
               },
               onError: error => {
                 setIsConfirming(false);
@@ -288,16 +291,13 @@ function RemoveMemberButton({
                   {
                     onSuccess: result => {
                       setOpen(false);
+                      // Their Drive access is taken away in the background; owners are told
+                      // if that fails.
                       toast.success(
-                        result.drive === "removed"
-                          ? `${name} was removed from the workspace and its Google Drive folder.`
+                        result.drive === "removing"
+                          ? `${name} was removed from the workspace. Their access to its Google Drive folder is being removed.`
                           : `${name} was removed from the workspace.`
                       );
-                      if (result.drive === "failed") {
-                        toast.error(
-                          `Couldn't take ${name}'s access to the Drive folder away: ${result.detail} You can remove them from the folder's sharing settings in Google Drive.`
-                        );
-                      }
                     },
                     onError: error =>
                       toast.error(errorMessage(error, "Couldn't remove them. Please try again.")),

@@ -81,7 +81,20 @@ const sentMessageSchema = z.union([
   }),
   z.object({type: z.literal("presence"), presence: presenceSchema.nullable()}),
   /** Sent on (re)connecting: the last entry the client has (0 for none), to catch up from. */
-  z.object({type: z.literal("hello"), since: z.number().int().nonnegative()}),
+  z.object({
+    type: z.literal("hello"),
+    since: z.number().int().nonnegative(),
+    /**
+     * The batch it sent but never saw confirmed, and the entries it was sent on top of: the room
+     * says whether it took it (`inflightApplied`), so it's never applied twice.
+     */
+    inflight: z
+      .object({
+        batchId: z.string().min(1).max(64),
+        baseSeqs: z.number().int().nonnegative().array().max(50),
+      })
+      .optional(),
+  }),
 ]);
 export type SheetSentMessage = z.infer<typeof sentMessageSchema>;
 
@@ -115,6 +128,8 @@ export type SheetReceivedMessage =
       entries: SheetEntry[];
       /** Whether these entries continue from the client's `since` (no rebuild needed). */
       caughtUp: boolean;
+      /** Whether the room already took the client's unconfirmed batch (see `hello`). */
+      inflightApplied?: boolean;
       peers: SheetPeer[];
     }
   | ({type: "entry"} & SheetEntry)
@@ -122,8 +137,11 @@ export type SheetReceivedMessage =
   | {type: "reject"; batchId: string}
   | ({type: "presence"} & SheetPeer)
   | {type: "leave"; id: string}
-  /** This client's workbook differs from its teammates': rebuild it from the room's copy. */
-  | {type: "resync"}
+  /**
+   * This client's workbook differs from its teammates': rebuild it from the room's copy, keeping
+   * its unsent edits, or dropping them if `discard` (it may not edit: sending them again is futile).
+   */
+  | {type: "resync"; discard?: boolean}
   /** A snapshot at `seq` was uploaded: send a fingerprint if this client is at exactly `seq`. */
   | {type: "verify"; seq: number}
   /** A snapshot at `seq` was stored (no need for another until well after it). */
@@ -139,6 +157,8 @@ const SNAPSHOT_ENCODING_KEY = "meta:snapshotEncoding";
 const SNAPSHOT_PREFIX = "snapshot:";
 const ENTRY_PREFIX = "entry:";
 const ENTRY_CHUNK_PREFIX = "entrychunk:";
+/** Which batch became each entry, kept longer than the entries (see `hello`'s `inflight`). */
+const BATCH_AT_PREFIX = "batchat:";
 // Stored values have a size limit, so a large workbook or entry is split across keys.
 const CHUNK_CHARS = 256 * 1024;
 const STORAGE_BATCH = 128;
@@ -147,6 +167,9 @@ const STORAGE_BATCH = 128;
 const UNCHECKED_SNAPSHOT_AFTER = 10;
 // Entries kept from before the latest snapshot, so a reconnecting client can catch up.
 const RETAINED_ENTRIES = 1000;
+// Batch ids kept, by entry: a client back after this many entries has its unconfirmed batch
+// treated as new. A few dozen bytes each.
+const RETAINED_BATCH_IDS = 50_000;
 
 /** Storage reads and writes take at most 128 keys at a time. */
 const batched = <T>(items: T[]) =>
@@ -156,6 +179,7 @@ const batched = <T>(items: T[]) =>
 
 /** Zero-padded so the storage's lexical key order is the log order. */
 const entryKey = (seq: number) => ENTRY_PREFIX + seq.toString().padStart(12, "0");
+const batchAtKey = (seq: number) => BATCH_AT_PREFIX + seq.toString().padStart(12, "0");
 const entryChunkKey = (seq: number, i: number) =>
   `${ENTRY_CHUNK_PREFIX}${seq.toString().padStart(12, "0")}:${i.toString().padStart(6, "0")}`;
 
@@ -216,11 +240,20 @@ export class SheetRoom extends DurableObject {
           since <= seq &&
           (since === seq || (oldest !== undefined && oldest <= since + 1));
         const snapshot = caughtUp ? null : await this.readSnapshot();
+        // A batch is only taken on top of the latest entry, so if it was, it's at baseSeq + 1.
+        const inflight = m.inflight;
+        const taken = inflight
+          ? await this.storage.get<string>(
+              inflight.baseSeqs.map(baseSeq => batchAtKey(baseSeq + 1))
+            )
+          : new Map<string, string>();
+        const inflightApplied = [...taken.values()].includes(inflight?.batchId ?? "");
         this.send(ws, {
           type: "init",
           snapshot,
           entries: await this.readEntries(caughtUp ? since : (snapshot?.seq ?? 0)),
           caughtUp,
+          inflightApplied,
           peers: this.peers(ws),
         });
         return;
@@ -254,9 +287,9 @@ export class SheetRoom extends DurableObject {
         return;
       case "mutations": {
         // An archived workspace's sheet can't change.
-        // (A rejected batch is retried; a resync drops it and reloads the sheet as stored.)
+        // (A rejected batch is retried; this resync drops it and reloads the sheet as stored.)
         if (this.attachment(ws).readOnly) {
-          this.send(ws, {type: "resync"});
+          this.send(ws, {type: "resync", discard: true});
           return;
         }
         const seq = (await this.storage.get<number>(SEQ_KEY)) ?? 0;
@@ -348,7 +381,11 @@ export class SheetRoom extends DurableObject {
   async writeEntry(entry: SheetEntry) {
     const json = JSON.stringify({mutations: entry.mutations, packed: entry.packed});
     if (json.length <= CHUNK_CHARS) {
-      await this.storage.put({[entryKey(entry.seq)]: entry, [SEQ_KEY]: entry.seq});
+      await this.storage.put({
+        [entryKey(entry.seq)]: entry,
+        [batchAtKey(entry.seq)]: entry.batchId,
+        [SEQ_KEY]: entry.seq,
+      });
       return;
     }
     const chunks: Record<string, string> = {};
@@ -365,7 +402,11 @@ export class SheetRoom extends DurableObject {
         ...batched(Object.keys(chunks)).map(keys =>
           txn.put(Object.fromEntries(keys.map(key => [key, chunks[key]])))
         ),
-        txn.put({[entryKey(entry.seq)]: stored, [SEQ_KEY]: entry.seq}),
+        txn.put({
+          [entryKey(entry.seq)]: stored,
+          [batchAtKey(entry.seq)]: entry.batchId,
+          [SEQ_KEY]: entry.seq,
+        }),
       ]);
     });
   }
@@ -438,8 +479,20 @@ export class SheetRoom extends DurableObject {
             ).keys(),
           ]
         : [];
+    const trimmedBatchIds =
+      seq > RETAINED_BATCH_IDS
+        ? [
+            ...(
+              await this.storage.list({
+                prefix: BATCH_AT_PREFIX,
+                end: batchAtKey(seq - RETAINED_BATCH_IDS + 1),
+              })
+            ).keys(),
+          ]
+        : [];
     const stale = [
       ...trimmed,
+      ...trimmedBatchIds,
       ...Array.from({length: previousChunks}, (_, i) => SNAPSHOT_PREFIX + i).filter(
         key => !(key in chunks)
       ),

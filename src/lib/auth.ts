@@ -5,18 +5,22 @@ import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
 import {captcha, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
-import {and, eq} from "drizzle-orm";
+import {and, eq, isNotNull} from "drizzle-orm";
 import {z} from "zod";
 
+import {startDriveAccess} from "../server/drive-access";
 import {sendActionEmail} from "../server/email";
 import {trackServerEvent} from "../server/posthog";
 import {authRateLimit} from "./auth-rate-limit";
 import {db} from "./db";
 import * as schema from "./db/schema";
 import {newTourState} from "./tour-state";
+import {workspaceSlugProblem} from "./workspace-slug";
 
 // Owns the activity of accounts that have been deleted (see `user.deleteUser` below).
 const DELETED_USER_ID = "deleted-user";
+/** Workspaces with a Drive folder that an account being deleted was in, from before to after. */
+const driveFoldersOfDeletedUsers = new Map<string, string[]>();
 
 /** The links a new workspace was created with: well-formed web links only, a few at most. */
 const givenLinks = (links: unknown) =>
@@ -101,6 +105,32 @@ export const auth = betterAuth({
           .update(schema.activityLogEntry)
           .set({userId: DELETED_USER_ID})
           .where(eq(schema.activityLogEntry.userId, user.id));
+        // Noted now (their memberships go with the account), acted on in afterDelete.
+        const workspaces = await db
+          .select({id: schema.organization.id})
+          .from(schema.member)
+          .innerJoin(schema.organization, eq(schema.member.organizationId, schema.organization.id))
+          .where(
+            and(eq(schema.member.userId, user.id), isNotNull(schema.organization.googleFolderId))
+          );
+        driveFoldersOfDeletedUsers.set(
+          user.id,
+          workspaces.map(workspace => workspace.id)
+        );
+      },
+      // Their access to each team's Drive folder is taken away. Started only once the account is
+      // gone: the workflow acts on whether they're still a member.
+      afterDelete: async user => {
+        const workspaceIds = driveFoldersOfDeletedUsers.get(user.id) ?? [];
+        driveFoldersOfDeletedUsers.delete(user.id);
+        await startDriveAccess(
+          workspaceIds.map(workspaceId => ({
+            workspaceId,
+            userId: user.id,
+            name: user.name,
+            email: user.email,
+          }))
+        );
       },
     },
   },
@@ -179,12 +209,9 @@ export const auth = betterAuth({
           }
         },
         beforeCreateOrganization: async ({organization: org}) => {
-          const reservedSlugs = ["exchange"];
-          if (reservedSlugs.includes(org.slug?.toLowerCase() ?? "")) {
-            throw new APIError("BAD_REQUEST", {
-              message: `Workspace ID cannot be ${org.slug?.toLowerCase()}.`,
-            });
-          }
+          // Its address is /<slug>: not one of the app's own, and a working URL.
+          const slugProblem = workspaceSlugProblem(org.slug ?? "");
+          if (slugProblem) throw new APIError("BAD_REQUEST", {message: slugProblem});
           // The same rule as changing it later (workspaces.update).
           if (typeof org.password !== "string" || org.password.length < 8) {
             throw new APIError("BAD_REQUEST", {

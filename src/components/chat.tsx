@@ -302,6 +302,12 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
     return () => window.clearInterval(timer);
   }, [anyoneTyping]);
 
+  // The composer as it is now, for putting back a message whose images failed to upload.
+  const tokensValueRef = useRef(tokens.value);
+  useEffect(() => {
+    tokensValueRef.current = tokens.value;
+  }, [tokens.value]);
+
   const handleSend = async () => {
     if (isUploading || (!input.trim() && images.length === 0)) return;
     const text = outgoingText();
@@ -310,17 +316,35 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
       clearInput();
       return;
     }
+    // Taken out of the composer now, so anything typed or attached while they upload stays for
+    // the next message instead of being cleared with this one.
+    const sending = images;
+    const sentValue = tokens.value;
+    clearInput();
+    setImages([]);
     setIsUploading(true);
     try {
       const ids = await Promise.all(
-        images.map(image => uploadImage(image.file, imageUrl, IMAGE_LIMITS))
+        sending.map(image => uploadImage(image.file, imageUrl, IMAGE_LIMITS))
       );
       send({type: "send", text, images: ids});
-      clearInput();
-      images.forEach(image => URL.revokeObjectURL(image.src));
-      setImages([]);
+      sending.forEach(image => URL.revokeObjectURL(image.src));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't upload the image.");
+      // Put the unsent message back, ahead of whatever was added since, so nothing is lost.
+      setImages(current => {
+        const next = [...sending, ...current];
+        next.slice(MAX_IMAGES).forEach(image => URL.revokeObjectURL(image.src));
+        return next.slice(0, MAX_IMAGES);
+      });
+      const typedSince = tokensValueRef.current.segments;
+      tokens.setValue(
+        new TokenFieldValue<Member>(
+          typedSince.length === 0
+            ? sentValue.segments
+            : [...sentValue.segments, {type: "text", text: " "}, ...typedSince]
+        )
+      );
     } finally {
       setIsUploading(false);
     }

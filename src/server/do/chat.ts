@@ -108,6 +108,12 @@ const TYPING_MIN_INTERVAL_MS = 1500;
 // Joining sends the newest messages only, so a long-running chat stays cheap to open.
 const SNAPSHOT_MESSAGES = 500;
 
+/** Eggö's commands: a message starting with one gets its reaction, and Eggö repeats it. */
+const COMMANDS = [
+  {value: "!stuck", reaction: "angry"},
+  {value: "!help", reaction: "like"},
+] as const;
+
 /**
  * A puzzle's chat, or a team's (on the blackboard). Messages live in the room's durable storage (keyed by uuidv7, so in time order),
  * which survives the object being evicted or redeployed. They're kept for as long as the puzzle
@@ -198,6 +204,8 @@ export class ChatRoom extends DurableObject {
 
     if (m.type === "send") {
       const key = uuidv7();
+      // Eggö commands: the message gets the command's reaction and Eggö answers.
+      const command = COMMANDS.find(cmd => m.text.startsWith(cmd.value));
       const data: ChatMessage = {
         id: key,
         text: m.text,
@@ -205,42 +213,26 @@ export class ChatRoom extends DurableObject {
         name: attachment.name,
         userId: attachment.userId,
         timestamp: Date.now(),
-        reactions: {},
+        // Given before it's saved: saving it again later (after the mentions are sent, while
+        // other messages are handled) would overwrite a reaction someone added meanwhile.
+        reactions: command ? {[command.reaction]: 1} : {},
       };
       // Saved before it's shared, so nobody sees a message that could still be lost.
       await this.storage.put<ChatMessage>(key, data);
       this.broadcast({type: "message", message: data, isNew: true});
-      await this.notifyMentions(attachment, m.text);
-
-      // Check for Eggö commands.
-      const commands = [
-        {value: "!stuck", reaction: "angry"},
-        {value: "!help", reaction: "like"},
-      ];
-      let matchedCommand = null;
-      for (const cmd of commands) {
-        if (m.text.startsWith(cmd.value)) {
-          matchedCommand = cmd;
-          break;
-        }
-      }
-
-      if (matchedCommand !== null) {
-        data.reactions[matchedCommand.reaction] = 1;
-        this.broadcast({type: "message", message: data});
-        await this.storage.put(key, data);
-
+      if (command) {
         const botKey = uuidv7();
         const botData: ChatMessage = {
           id: botKey,
-          text: matchedCommand.value,
+          text: command.value,
           name: "Eggö",
           timestamp: Date.now(),
           reactions: {},
         };
-        this.broadcast({type: "message", message: botData, isNew: true});
         await this.storage.put<ChatMessage>(botKey, botData);
+        this.broadcast({type: "message", message: botData, isNew: true});
       }
+      await this.notifyMentions(attachment, m.text);
     } else if (m.type === "react") {
       const data = await this.storage.get<ChatMessage | string>(m.messageId);
       if (data && isMessage(data) && !data.deleted && attachment.userId) {

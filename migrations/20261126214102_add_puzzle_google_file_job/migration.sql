@@ -1,0 +1,1 @@
+ALTER TABLE `puzzle` ADD `googleFileJob` text;

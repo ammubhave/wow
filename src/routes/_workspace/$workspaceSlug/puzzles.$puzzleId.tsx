@@ -50,6 +50,8 @@ import {formatPuzzleTime, usePuzzleTimeTracker} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {formatAnswers, joinAnswers, solvedByAnswer, splitAnswers} from "@/lib/answers";
+import type {GoogleFileJob} from "@/lib/db/schema";
+import {errorMessage} from "@/lib/errors";
 import {client} from "@/lib/orpc";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
 import {
@@ -764,6 +766,7 @@ function WorksheetPane({
     link: string | null;
     googleSpreadsheetId: string | null;
     googleDrawingId: string | null;
+    googleFileJob: GoogleFileJob | null;
   };
   /** On phones, chat and the details panel become tabs here too. */
   phone?: {chat: ReactNode; info: ReactNode};
@@ -780,8 +783,10 @@ function WorksheetPane({
   // Mount the whiteboard the first time it's shown, then keep it (and its connection) around.
   const [whiteboardOpened, setWhiteboardOpened] = useState(view === "whiteboard");
   if (view === "whiteboard" && !whiteboardOpened) setWhiteboardOpened(true);
-  const sheetLabel =
-    googleWorksheet && puzzle.googleDrawingId && !puzzle.googleSpreadsheetId ? "Drawing" : "Sheet";
+  const isDrawing = googleWorksheet
+    ? Boolean(puzzle.googleDrawingId && !puzzle.googleSpreadsheetId)
+    : puzzle.googleFileJob?.kind === "google_drawing";
+  const sheetLabel = isDrawing ? "Drawing" : "Sheet";
 
   return (
     <>
@@ -842,6 +847,9 @@ function WorksheetPane({
             }
             openHref={`${googleFileUrl(puzzle)}/${isReadOnly ? "preview" : "edit"}`}
           />
+        ) : puzzle.googleFileJob ? (
+          // Its Google file is being made (it appears here once the room has its id), or failed.
+          <GoogleFileJobPanel puzzleId={puzzle.id} job={puzzle.googleFileJob} />
         ) : (
           <PuzzleSheet key={puzzle.id} puzzleId={puzzle.id} />
         )}
@@ -876,6 +884,43 @@ function WorksheetPane({
 }
 
 const VIEWS = ["sheet", "whiteboard", "chat", "info"] as const;
+
+/** Where the puzzle's Google file will be: being made, or not made, with a way to try again. */
+function GoogleFileJobPanel({puzzleId, job}: {puzzleId: string; job: GoogleFileJob}) {
+  const {workspaceSlug} = Route.useParams();
+  const isReadOnly = useIsReadOnly();
+  const what = job.kind === "google_drawing" ? "Google Drawing" : "Google Sheet";
+  const retry = useMutation({
+    mutationFn: () => client.puzzles.retrySheet({workspaceSlug, id: puzzleId}),
+    // The room broadcasts the job going back to "creating".
+    meta: {invalidates: false},
+    onError: error => toast.error(errorMessage(error, `Couldn't try again. Please try again.`)),
+  });
+  if (job.status === "creating") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+        <Spinner aria-label={`Creating the ${what}`} />
+        <p className="text-muted text-sm">Creating the {what}…</p>
+        <p className="text-muted text-xs">It opens here as soon as it's ready.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+      <p className="text-sm font-medium">Couldn't create the {what}</p>
+      {job.detail && <p className="text-muted max-w-md text-xs">{job.detail}</p>}
+      {!isReadOnly && (
+        <Button
+          size="sm"
+          variant="secondary"
+          isPending={retry.isPending}
+          onPress={() => retry.mutate()}>
+          Try again
+        </Button>
+      )}
+    </div>
+  );
+}
 
 /** Google can be slow to answer; after this long, offer a retry or a new tab. */
 const SLOW_SHEET_MS = 15_000;

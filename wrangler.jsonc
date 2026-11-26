@@ -52,6 +52,8 @@
       "script": "wow",
       "d1DatabaseId": "33287a33-35b9-47c0-8c7f-2e2d79a73a54",
       "r2Bucket": "wow",
+      // The usage dataset (analytics_engine_datasets), read back to work out costs.
+      "dataset": "wow_usage_dev",
     },
   },
   "durable_objects": {
@@ -102,6 +104,31 @@
       "binding": "PUZZLE_CLEANUP_WORKFLOW",
       "class_name": "PuzzleCleanupWorkflow",
     },
+    {
+      // Shares a workspace's Drive folder with members and takes it away from former ones
+      // (src/server/drive-access.ts).
+      "name": "DriveAccessWorkflow",
+      "binding": "DRIVE_ACCESS_WORKFLOW",
+      "class_name": "DriveAccessWorkflow",
+    },
+    {
+      // Deletes WOW's channels from a Discord server disconnected from its workspace.
+      "name": "DiscordDisconnectWorkflow",
+      "binding": "DISCORD_DISCONNECT_WORKFLOW",
+      "class_name": "DiscordDisconnectWorkflow",
+    },
+    {
+      // Sends an email, retrying if Cloudflare Email Service fails (src/server/email.ts).
+      "name": "EmailWorkflow",
+      "binding": "EMAIL_WORKFLOW",
+      "class_name": "EmailWorkflow",
+    },
+    {
+      // Makes a new puzzle's Google Sheet or Drawing (src/server/puzzle-worksheet.ts).
+      "name": "PuzzleSheetWorkflow",
+      "binding": "PUZZLE_SHEET_WORKFLOW",
+      "class_name": "PuzzleSheetWorkflow",
+    },
   ],
   "env": {
     "production": {
@@ -132,6 +159,8 @@
           "script": "wow-production",
           "d1DatabaseId": "dbd210d9-5627-4157-aec9-7d6431e68833",
           "r2Bucket": "wow-production",
+          // The usage dataset (analytics_engine_datasets), read back to work out costs.
+          "dataset": "wow_usage",
         },
       },
       "durable_objects": {
@@ -176,6 +205,31 @@
           "name": "PuzzleCleanupWorkflow-production",
           "binding": "PUZZLE_CLEANUP_WORKFLOW",
           "class_name": "PuzzleCleanupWorkflow",
+        },
+        {
+          // Shares a workspace's Drive folder with members and takes it away from former ones
+          // (src/server/drive-access.ts).
+          "name": "DriveAccessWorkflow-production",
+          "binding": "DRIVE_ACCESS_WORKFLOW",
+          "class_name": "DriveAccessWorkflow",
+        },
+        {
+          // Deletes WOW's channels from a Discord server disconnected from its workspace.
+          "name": "DiscordDisconnectWorkflow-production",
+          "binding": "DISCORD_DISCONNECT_WORKFLOW",
+          "class_name": "DiscordDisconnectWorkflow",
+        },
+        {
+          // Sends an email, retrying if Cloudflare Email Service fails (src/server/email.ts).
+          "name": "EmailWorkflow-production",
+          "binding": "EMAIL_WORKFLOW",
+          "class_name": "EmailWorkflow",
+        },
+        {
+          // Makes a new puzzle's Google Sheet or Drawing (src/server/puzzle-worksheet.ts).
+          "name": "PuzzleSheetWorkflow-production",
+          "binding": "PUZZLE_SHEET_WORKFLOW",
+          "class_name": "PuzzleSheetWorkflow",
         },
       ],
     },

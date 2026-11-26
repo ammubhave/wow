@@ -4,6 +4,7 @@ import {
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
   uniqueIndex,
@@ -26,6 +27,14 @@ const base = {
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .$onUpdate(() => new Date())
     .notNull(),
+};
+
+/** A puzzle's Google file being made, or that couldn't be (see `puzzle.googleFileJob`). */
+export type GoogleFileJob = {
+  status: "creating" | "failed";
+  kind: "google_spreadsheet" | "google_drawing";
+  /** Why it failed, in plain words. */
+  detail?: string;
 };
 
 export const round = sqliteTable(
@@ -54,6 +63,11 @@ export const puzzle = sqliteTable(
     link: text(),
     googleSpreadsheetId: text(),
     googleDrawingId: text(),
+    /**
+     * Its Google Sheet or Drawing while PuzzleSheetWorkflow makes it (src/server/puzzle-worksheet.ts),
+     * or why it couldn't; null once it's made (or when it gets none).
+     */
+    googleFileJob: text({mode: "json"}).$type<GoogleFileJob>(),
     /** Its answers, one per line (most puzzles have one; see `answerCount`). */
     answer: text(),
     /** How many answers it has: it's solved once all of them are in. */
@@ -285,7 +299,27 @@ export const usageImports = sqliteTable("usage_imports", {
   importedAt: integer({mode: "timestamp_ms"})
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
+  /** When its cost was worked out into `workspace_cost` (src/server/usage-cost.ts). */
+  costedAt: integer({mode: "timestamp_ms"}),
 });
+
+/**
+ * What each workspace cost in each UTC hour, by service, in US dollars at Cloudflare's list prices
+ * (src/server/usage-cost.ts). Kept here because Analytics Engine, where the readings are, keeps
+ * only three months. Workspace "" is overhead that belongs to no workspace. No foreign key: the
+ * cost of a deleted workspace still counts toward the account's.
+ */
+export const workspaceCost = sqliteTable(
+  "workspace_cost",
+  {
+    workspaceId: text().notNull(),
+    hour: text().notNull(),
+    /** workers, durableObjects, d1, r2 or realtime (see usage-cost-plan.ts). */
+    service: text().notNull(),
+    usd: real().notNull(),
+  },
+  t => [primaryKey({columns: [t.workspaceId, t.hour, t.service]})]
+);
 
 /**
  * A deleted puzzle whose stored data (chat, whiteboard, built-in sheet, their images, its Google

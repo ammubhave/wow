@@ -77,11 +77,16 @@ function describe(notification: WorkspaceNotification) {
         body: notification.text,
       };
     case "driveShareFailed":
-      return {
-        title: `Couldn't share the Google Drive folder with ${notification.member.name}`,
-        // What to do first: the bell shows only two lines.
-        body: `Share it with ${notification.member.email} in Google Drive. ${notification.detail}`,
-      };
+      // What to do first: the bell shows only two lines.
+      return notification.access === "unshare"
+        ? {
+            title: `Couldn't remove ${notification.member.name} from the Google Drive folder`,
+            body: `Stop sharing it with ${notification.member.email} in Google Drive. ${notification.detail}`,
+          }
+        : {
+            title: `Couldn't share the Google Drive folder with ${notification.member.name}`,
+            body: `Share it with ${notification.member.email} in Google Drive. ${notification.detail}`,
+          };
     default:
       return notification satisfies never;
   }

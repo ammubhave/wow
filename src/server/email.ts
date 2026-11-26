@@ -1,4 +1,10 @@
-import {env, waitUntil} from "cloudflare:workers";
+import {
+  env,
+  waitUntil,
+  WorkflowEntrypoint,
+  type WorkflowEvent,
+  type WorkflowStep,
+} from "cloudflare:workers";
 
 import {captureServerException} from "./posthog";
 
@@ -13,8 +19,8 @@ const escapeHtml = (text: string) =>
 
 /**
  * An email with one call to action (verify, reset, …), as HTML and plain text, sent through
- * Cloudflare Email Service. Sent after the response (it never delays or fails the request);
- * failures go to error tracking.
+ * Cloudflare Email Service. Sent after the response (it never delays or fails the request), by
+ * EmailWorkflow, which retries it.
  */
 export function sendActionEmail({
   to,
@@ -50,14 +56,35 @@ export function sendActionEmail({
 </html>`;
   const text = [...intro, `${action.label}: ${action.url}`, ...(outro ?? [])].join("\n\n");
 
+  const email: EmailParams = {to, subject, html, text};
   waitUntil(
-    (async () => {
-      try {
-        await env.EMAIL.send({from: FROM, to, subject, html, text});
-      } catch (error) {
-        console.error(`Couldn't send "${subject}" email`, error);
-        captureServerException(error, {properties: {emailSubject: subject}});
-      }
-    })()
+    env.EMAIL_WORKFLOW.create({params: email}).catch((error: unknown) => {
+      console.error(`Couldn't start sending "${subject}" email`, error);
+      captureServerException(error, {properties: {emailSubject: subject}});
+    })
   );
+}
+
+type EmailParams = {to: string; subject: string; html: string; text: string};
+
+/**
+ * Sends one email, retrying for about half an hour if Cloudflare Email Service fails, so a passing
+ * outage doesn't lose a password reset or an invitation. One that never goes out leaves the
+ * workflow instance errored, with the reason, in the dashboard.
+ */
+export class EmailWorkflow extends WorkflowEntrypoint<Env, EmailParams> {
+  async run(event: WorkflowEvent<EmailParams>, step: WorkflowStep) {
+    try {
+      await step.do(
+        "send",
+        {retries: {limit: 5, delay: "1 minute", backoff: "exponential"}, timeout: "1 minute"},
+        async () => {
+          await env.EMAIL.send({from: FROM, ...event.payload});
+        }
+      );
+    } catch (error) {
+      console.error(`Couldn't send "${event.payload.subject}" email`, error);
+      throw error;
+    }
+  }
 }

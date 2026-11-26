@@ -36,12 +36,15 @@ export type MentionNotification = NotificationBase & {
 };
 
 /**
- * Someone joined, but WOW couldn't share the workspace's Google Drive folder with them (usually a
- * file in it wasn't created through WOW, which the app's Drive access can't touch). Only the owners
- * see it: they're the ones who can share the folder by hand.
+ * WOW couldn't share the workspace's Google Drive folder with someone who joined (usually a file
+ * in it wasn't created through WOW, which the app's Drive access can't touch), or couldn't take
+ * away the access of someone who left or was removed. Only the owners see it: they're the ones who
+ * can change the folder's sharing by hand.
  */
 export type DriveShareFailedNotification = NotificationBase & {
   type: "driveShareFailed";
+  /** Sharing with a new member (the default, as older notifications were) or removing a former one. */
+  access?: "share" | "unshare";
   toUserIds: string[];
   member: {id: string; name: string; email: string};
   folderId: string;

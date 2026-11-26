@@ -296,13 +296,8 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
             updatePresence({sheetId: sheet.getSheetId(), ranges: toRanges([range])});
         }, 0);
       },
-      onResync: dropped => {
-        track("sheet_resynced", {dropped_unsent_edits: dropped});
-        if (dropped) {
-          toast.warning("Your sheet was out of step with your team's and was reloaded.", {
-            id: "sheet-resync",
-          });
-        }
+      onResync: () => {
+        track("sheet_resynced");
       },
       onProblem: problem => {
         if (problem.kind === "apply-failed") {
@@ -313,10 +308,11 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
             console.warn(`Couldn't apply ${problem.mutationId} from a teammate`, problem.error);
           }
         } else {
-          track("sheet_offline_edits_dropped");
-          toast.warning("Edits you made while offline couldn't be merged and were dropped.", {
-            id: "sheet-offline-dropped",
-          });
+          track("sheet_offline_edits_rebased");
+          toast.warning(
+            "Edits you made while offline were redone on your team's latest sheet. Check they're where you meant.",
+            {id: "sheet-offline-rebased"}
+          );
         }
       },
       onTooBig: reverted => {
@@ -391,7 +387,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
         }
         // Only the workbook's own changes: Univer's cell editor and formula bar are documents
         // too, and their keystrokes (before a cell is committed) must stay in this browser.
-        if (!isForUnit(event.params, unitId) || !sync.ready) return;
+        if (!isForUnit(event.params, unitId) || !sync.loaded) return;
         // Plain JSON on the wire.
         const json = JSON.stringify(event.params ?? {});
         const mutation: SheetMutation = {id: event.id, params: JSON.parse(json)};

@@ -61,10 +61,13 @@ export function isForUnit(params: unknown, unitId: string) {
     : false;
 }
 
-/** Problems worth reporting: a teammate's edit that failed here, or edits that were lost. */
+/**
+ * Problems worth reporting: a teammate's edit that failed here, or edits made offline that had
+ * to be redone on top of the room's copy without knowing everything that changed meanwhile.
+ */
 export type SyncProblem =
   | {kind: "apply-failed"; mutationId: string; error: unknown}
-  | {kind: "offline-edits-dropped"};
+  | {kind: "offline-edits-rebased"};
 
 /** The undo and redo stacks, which LocalUndoRedoService keeps per unit (protected API). */
 type UndoStacks = {
@@ -86,14 +89,19 @@ export class SheetSync {
   /** The last room entry this workbook includes. */
   confirmedSeq = 0;
   /** Sent, not yet confirmed (at most one batch). */
-  private inflight: {batchId: string; mutations: SheetMutation[]} | null = null;
+  /** The batch sent and not yet confirmed, and every entry it was sent on top of. */
+  private inflight: {batchId: string; mutations: SheetMutation[]; baseSeqs: number[]} | null = null;
   /** Applied here, not yet sent. */
   private buffer: SheetMutation[] = [];
   /** The current command's mutations (a command makes several in a row), until it's done. */
   private command: SheetMutation[] = [];
   private commandTooBig = false;
-  /** False until the first `init`; edits made before then aren't sent. */
+  /** False until the first `init`, and while rebuilding after a resync: nothing is sent. */
   ready = false;
+  /** Whether a workbook was ever loaded: edits made since are kept, even while resyncing. */
+  loaded = false;
+  /** True while the workbook is rebuilt from the room's copy (those mutations aren't edits). */
+  private rebuilding = false;
   /** The latest stored snapshot (so the next is taken about SNAPSHOT_EVERY entries later). */
   private lastSnapshotSeq = 0;
   /** Where this client last uploaded one (not to upload again before it's stored). */
@@ -113,8 +121,8 @@ export class SheetSync {
       onTooBig: (reverted: boolean) => void;
       /** The workbook was (re)built from the room's copy (a snapshot, then `entries`). */
       onWorkbookLoaded: (entries: SheetEntry[]) => void;
-      /** The room found this workbook had drifted; it's being rebuilt (`dropped`: unsent edits). */
-      onResync: (dropped: boolean) => void;
+      /** The room found this workbook had drifted; it's being rebuilt (unsent edits are kept). */
+      onResync: () => void;
       /** Something went wrong that the person may not notice (for error reporting). */
       onProblem: (problem: SyncProblem) => void;
     }
@@ -134,7 +142,19 @@ export class SheetSync {
 
   /** What to ask the room for on (re)connecting: entries after this one. */
   hello(): SheetSentMessage {
-    return {type: "hello", since: this.ready ? this.confirmedSeq : 0};
+    return this.helloFrom(this.ready ? this.confirmedSeq : 0);
+  }
+
+  /** Also names the unconfirmed batch, so the room can say whether it already took it. */
+  private helloFrom(since: number): SheetSentMessage {
+    const inflight = this.inflight;
+    return inflight
+      ? {
+          type: "hello",
+          since,
+          inflight: {batchId: inflight.batchId, baseSeqs: inflight.baseSeqs.slice(-50)},
+        }
+      : {type: "hello", since};
   }
 
   /** Messages are handled one at a time, in order (unpacking a large one takes a moment). */
@@ -155,7 +175,7 @@ export class SheetSync {
   private process(message: SheetReceivedMessage) {
     switch (message.type) {
       case "init":
-        this.init(message.snapshot, message.entries, message.caughtUp);
+        this.init(message.snapshot, message.entries, message.caughtUp, message.inflightApplied);
         return;
       case "entry":
         this.receive(message);
@@ -164,7 +184,7 @@ export class SheetSync {
         this.rejected(message.batchId);
         return;
       case "resync":
-        this.resync();
+        this.resync(message.discard === true);
         return;
       case "verify":
         // A teammate uploaded a snapshot at this entry: compare, if this workbook is there too.
@@ -180,6 +200,7 @@ export class SheetSync {
 
   /** A mutation made here (by this person, or their undo); `bytes` is its size on the wire. */
   local(mutation: SheetMutation, bytes: number) {
+    if (!this.loaded || this.rebuilding) return;
     // Filters are personal (see sheet-filters.ts).
     if (isPersonalMutation(mutation.id)) return;
     if (bytes > MAX_MUTATION_BYTES) this.commandTooBig = true;
@@ -202,27 +223,50 @@ export class SheetSync {
     });
   }
 
-  private init(snapshot: SheetSnapshot | null, entries: SheetEntry[], caughtUp: boolean) {
+  private init(
+    snapshot: SheetSnapshot | null,
+    entries: SheetEntry[],
+    caughtUp: boolean,
+    inflightApplied = false
+  ) {
     if (caughtUp && this.ready) {
       for (const entry of entries) this.receive(entry);
     } else {
-      // First load, or offline too long to catch up: start over from the room's copy.
-      if (this.ready && (this.inflight || this.buffer.length > 0)) {
-        this.hooks.onProblem({kind: "offline-edits-dropped"});
-      }
+      // First load, a resync, or offline too long to catch up: start over from the room's copy.
+      // What this person made that the room doesn't have yet is kept, moved over the entries
+      // they hadn't seen, redone on the new workbook and sent.
+      const {mutations: kept, exact} = rebasePending(
+        {
+          // Already in the room's copy (perhaps only in its snapshot): not redone.
+          inflight: inflightApplied ? null : this.inflight,
+          buffer: this.buffer,
+          since: this.confirmedSeq,
+        },
+        snapshot?.seq ?? 0,
+        entries
+      );
+      if (!exact && kept.length > 0) this.hooks.onProblem({kind: "offline-edits-rebased"});
       this.inflight = null;
       this.buffer = [];
-      if (this.api.getWorkbook(this.unitId)) this.api.disposeUnit(this.unitId);
-      this.api.createWorkbook(
-        snapshot ? withoutPersonalState(parseWorkbook(snapshot.data)) : emptyWorkbook(this.unitId)
-      );
-      this.confirmedSeq = snapshot?.seq ?? 0;
-      this.lastSnapshotSeq = this.confirmedSeq;
-      for (const entry of entries) {
-        this.apply(entry.mutations);
-        this.confirmedSeq = entry.seq;
+      this.rebuilding = true;
+      try {
+        if (this.api.getWorkbook(this.unitId)) this.api.disposeUnit(this.unitId);
+        this.api.createWorkbook(
+          snapshot ? withoutPersonalState(parseWorkbook(snapshot.data)) : emptyWorkbook(this.unitId)
+        );
+        this.confirmedSeq = snapshot?.seq ?? 0;
+        this.lastSnapshotSeq = this.confirmedSeq;
+        for (const entry of entries) {
+          this.apply(entry.mutations);
+          this.confirmedSeq = entry.seq;
+        }
+        this.apply(kept);
+      } finally {
+        this.rebuilding = false;
       }
+      this.buffer = kept;
       this.ready = true;
+      this.loaded = true;
       this.hooks.onWorkbookLoaded(entries);
       if (entries.length >= SNAPSHOT_EVERY) this.checkpoint(true, true);
     }
@@ -268,7 +312,8 @@ export class SheetSync {
   }
 
   private rejected(batchId: string) {
-    if (this.inflight?.batchId !== batchId) return;
+    // While resyncing, the rebuilt workbook's `init` sends it again (see there).
+    if (!this.ready || this.inflight?.batchId !== batchId) return;
     // The entries it missed have arrived (and it was transformed over them): try again on top.
     if (this.inflight.mutations.length === 0) {
       this.inflight = null;
@@ -288,7 +333,11 @@ export class SheetSync {
       if (count > 0 && size > BATCH_BUDGET_CHARS) break;
       count++;
     }
-    this.inflight = {batchId: crypto.randomUUID(), mutations: this.buffer.slice(0, count)};
+    this.inflight = {
+      batchId: crypto.randomUUID(),
+      mutations: this.buffer.slice(0, count),
+      baseSeqs: [],
+    };
     this.buffer = this.buffer.slice(count);
     this.sendInflight();
   }
@@ -301,6 +350,7 @@ export class SheetSync {
       batchId: inflight.batchId,
       baseSeq: this.confirmedSeq,
     } as const;
+    inflight.baseSeqs.push(this.confirmedSeq);
     const json = JSON.stringify(inflight.mutations);
     if (json.length <= PACK_OVER_CHARS) {
       this.send({...message, mutations: inflight.mutations});
@@ -415,15 +465,60 @@ export class SheetSync {
     })();
   }
 
-  /** This workbook drifted from the team's: throw it away and rebuild it from the room's log. */
-  private resync() {
-    const dropped = this.pending;
-    this.inflight = null;
-    this.buffer = [];
+  /**
+   * This workbook drifted from the team's: throw it away and rebuild it from the room's log.
+   * Unsent edits (and any made until the rebuild) wait, and are redone on the rebuilt workbook,
+   * unless the room said to `discard` them (this person may no longer edit).
+   */
+  private resync(discard: boolean) {
+    if (discard) {
+      this.inflight = null;
+      this.buffer = [];
+    }
     this.ready = false;
-    this.hooks.onResync(dropped);
-    this.send({type: "hello", since: 0});
+    this.hooks.onResync();
+    this.send(this.helloFrom(0));
   }
+}
+
+/**
+ * Edits made here that the room doesn't have yet (`inflight`, sent, and `buffer`, not yet),
+ * made on top of entry `since`, moved over the room's `entries` after it so they can be redone
+ * on a workbook rebuilt from a snapshot at `snapshotSeq` and those entries. The batch in flight
+ * is dropped if the room has it. `exact` is false when entries between `since` and the snapshot
+ * aren't there to move over (the edits are then redone as made, on top of the snapshot).
+ */
+export function rebasePending(
+  pending: {
+    inflight: {batchId: string; mutations: SheetMutation[]} | null;
+    buffer: SheetMutation[];
+    since: number;
+  },
+  snapshotSeq: number,
+  entries: SheetEntry[]
+): {mutations: SheetMutation[]; exact: boolean} {
+  let inflight = pending.inflight;
+  let buffer = pending.buffer;
+  for (const entry of entries) {
+    // Already in the workbook these edits were made on.
+    if (entry.seq <= pending.since) continue;
+    if (entry.batchId === inflight?.batchId) {
+      inflight = null;
+      continue;
+    }
+    // A teammate's, ordered before ours (as in SheetSync's `receive`).
+    let remote = entry.mutations;
+    if (inflight) {
+      const [mutations, r] = transform(inflight.mutations, remote, false);
+      inflight = {batchId: inflight.batchId, mutations};
+      remote = r;
+    }
+    buffer = transform(buffer, remote, false)[0];
+  }
+  return {
+    mutations: [...(inflight?.mutations ?? []), ...buffer],
+    exact: pending.since >= snapshotSeq,
+  };
 }
 
 /** An entry's mutations, unzipped if it was sent gzipped. */

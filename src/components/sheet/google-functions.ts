@@ -73,6 +73,12 @@ export function compare(a: Value, b: Value): number {
   return toNumber(a) - toNumber(b);
 }
 
+/**
+ * A plain decimal number ("12", "-1.5", ".5", "1e3"), as Google Sheets reads one. JavaScript's
+ * Number() also takes "0x1F", "0b1", "0o7" and "Infinity", which Sheets keeps as text.
+ */
+const DECIMAL = /^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i;
+
 /** SPLIT(text, delimiter, [split_by_each = TRUE], [remove_empty_text = TRUE]). */
 export function split(text: string, delimiter: string, byEach = true, removeEmpty = true): Matrix {
   if (delimiter === "") return [[text]];
@@ -85,9 +91,7 @@ export function split(text: string, delimiter: string, byEach = true, removeEmpt
   }
   if (removeEmpty) parts = parts.filter(part => part !== "");
   // Numbers come out as numbers, as in Google Sheets.
-  return [
-    parts.map(part => (part.trim() !== "" && !Number.isNaN(Number(part)) ? Number(part) : part)),
-  ];
+  return [parts.map(part => (DECIMAL.test(part) ? Number(part) : part))];
 }
 
 /** COUNTUNIQUE(value1, [value2, ...]): distinct non-blank values (text case-sensitively). */

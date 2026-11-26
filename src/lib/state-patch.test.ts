@@ -247,5 +247,6 @@ describe("diffState / applyPatch", () => {
         current = result;
       }
     }
-  });
+    // Thousands of cases: about 5 seconds when other test files are running alongside.
+  }, 30_000);
 });

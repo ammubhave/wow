@@ -18,6 +18,8 @@ export type FolderShareResult =
       detail: string;
       /** A file added outside WOW stops the folder being shared with anyone. */
       blocked?: boolean;
+      /** Google might well succeed if asked again (rate limited, or an error on its side). */
+      retryable?: boolean;
       /**
        * A file in the folder that wasn't made through WOW, which blocks sharing the whole folder
        * (WOW's Drive access only covers files it created), when Google names it.
@@ -86,8 +88,15 @@ export async function shareDriveFolder(
         : "A file in the folder was added outside WOW, which stops WOW sharing the folder. Move files WOW didn't create out of the folder, then share with everyone again from Settings → Administration.",
     };
   }
-  return {ok: false, detail: `Google Drive refused (${resp.status}): ${error.message}`};
+  return {
+    ok: false,
+    detail: `Google Drive refused (${resp.status}): ${error.message}`,
+    retryable: isRetryable(resp.status),
+  };
 }
+
+/** Rate limited, or an error on Google's side: worth asking again later. */
+const isRetryable = (status: number) => status === 429 || status >= 500;
 
 /** Said when WOW has no working Google connection to share with. */
 export const DRIVE_DISCONNECTED_DETAIL =
@@ -101,14 +110,14 @@ const permissionsSchema = z.object({
 });
 
 /**
- * Takes `email`'s access to the workspace's Drive folder away again (when they're removed from the
- * workspace). The folder's owner is never touched. Fine if they had no access.
+ * Takes `email`'s access to the workspace's Drive folder away again (when they're no longer a
+ * member). The folder's owner is never touched. Fine if they had no access.
  */
 export async function unshareDriveFolder(
   accessToken: string,
   folderId: string,
   email: string
-): Promise<{ok: true; removed: boolean} | {ok: false; detail: string}> {
+): Promise<{ok: true; removed: boolean} | {ok: false; detail: string; retryable: boolean}> {
   const headers = {Authorization: `Bearer ${accessToken}`};
   const base = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}/permissions`;
   let pageToken: string | undefined;
@@ -124,7 +133,11 @@ export async function unshareDriveFolder(
     if (!resp.ok) {
       // oxlint-disable-next-line no-await-in-loop -- only on the way out.
       const error = await readError(resp);
-      return {ok: false, detail: `Google Drive refused (${resp.status}): ${error.message}`};
+      return {
+        ok: false,
+        detail: `Google Drive refused (${resp.status}): ${error.message}`,
+        retryable: isRetryable(resp.status),
+      };
     }
     // oxlint-disable-next-line no-await-in-loop -- pages come one after another.
     const page = permissionsSchema.parse(await resp.json());
@@ -139,7 +152,11 @@ export async function unshareDriveFolder(
       if (!deleted.ok && deleted.status !== 404) {
         // oxlint-disable-next-line no-await-in-loop -- only on the way out.
         const error = await readError(deleted);
-        return {ok: false, detail: `Google Drive refused (${deleted.status}): ${error.message}`};
+        return {
+          ok: false,
+          detail: `Google Drive refused (${deleted.status}): ${error.message}`,
+          retryable: isRetryable(deleted.status),
+        };
       }
       removed = true;
     }

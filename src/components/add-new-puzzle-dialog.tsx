@@ -1,10 +1,13 @@
 import {ListBox, Modal} from "@heroui/react";
+import {ORPCError} from "@orpc/client";
 import {useMutation} from "@tanstack/react-query";
 import {Link} from "@tanstack/react-router";
 import {toast} from "sonner";
 import {z} from "zod";
 
 import {useWorkspace} from "@/hooks/use-workspace";
+import {newest} from "@/lib/board-order";
+import {errorMessage} from "@/lib/errors";
 import {newId, workspaceMutations} from "@/lib/workspace-mutations";
 
 import {ControlledModal} from "./controlled-dialog";
@@ -45,6 +48,64 @@ function showPuzzleAddedToast(workspaceSlug: string, puzzle: {id: string; name: 
   });
 }
 
+function showAlreadyAddedToast(workspaceSlug: string, puzzle: {id: string; name: string | null}) {
+  toast.info("Already on the board", {
+    description: (
+      <PuzzleAddedDescription
+        workspaceSlug={workspaceSlug}
+        puzzleId={puzzle.id}
+        puzzleName={puzzle.name ?? "the puzzle"}
+      />
+    ),
+  });
+}
+
+const duplicateSchema = z.object({puzzleId: z.string().nullable(), name: z.string().nullable()});
+
+/**
+ * Says, as you type, when the puzzle seems to be on the board already: one with the same link
+ * (the server won't add a second), or with the same name (which can be fine: some hunts reuse
+ * names, so it's only a heads-up).
+ */
+function AlreadyOnBoard({
+  workspaceSlug,
+  name,
+  link,
+  onOpen,
+}: {
+  workspaceSlug: string;
+  name: string;
+  link: string;
+  onOpen: () => void;
+}) {
+  const {rounds} = useWorkspace();
+  const wantedLink = link.trim();
+  const wantedName = name.trim().toLowerCase();
+  const all = rounds.flatMap(round => round.puzzles.map(puzzle => ({puzzle, round})));
+  const byLink = wantedLink
+    ? all.find(({puzzle}) => puzzle.link?.trim() === wantedLink)
+    : undefined;
+  const byName =
+    !byLink && wantedName
+      ? all.find(({puzzle}) => puzzle.name.trim().toLowerCase() === wantedName)
+      : undefined;
+  const match = byLink ?? byName;
+  if (!match) return null;
+  return (
+    <output className="bg-warning-soft text-warning-soft-foreground block px-3 py-2 text-sm">
+      {byLink ? "This puzzle is already on the board: " : "There's already a puzzle called "}
+      <Link
+        to="/$workspaceSlug/puzzles/$puzzleId"
+        params={{workspaceSlug, puzzleId: match.puzzle.id}}
+        onClick={onOpen}
+        className="font-medium underline">
+        {match.puzzle.name}
+      </Link>{" "}
+      in {match.round.name}.{byLink ? "" : " Check it isn't the same one."}
+    </output>
+  );
+}
+
 export function AddNewPuzzleDialog({
   workspaceSlug,
   children,
@@ -67,11 +128,26 @@ export function AddNewPuzzleDialog({
     // On the mutation (not the `mutate` call) so it fires for every puzzle added, even if the
     // dialog was used again before the server answered.
     onSuccess: puzzle => showPuzzleAddedToast(workspaceSlug, puzzle),
+    onError: error => {
+      // A teammate added it first (the server keeps one puzzle per link): point to theirs.
+      const duplicate =
+        error instanceof ORPCError && error.code === "CONFLICT"
+          ? duplicateSchema.safeParse(error.data).data
+          : undefined;
+      if (duplicate?.puzzleId) {
+        showAlreadyAddedToast(workspaceSlug, {id: duplicate.puzzleId, name: duplicate.name});
+        return;
+      }
+      toast.error("Couldn't add the puzzle", {
+        description: errorMessage(error, "Please try again."),
+      });
+    },
   });
   const form = useAppForm({
     defaultValues: {
-      // From the toolbar (no round given): the newest round, where new puzzles usually go.
-      placement: parentPuzzleId ?? roundId ?? workspace.rounds.at(-1)?.id ?? "",
+      // From the toolbar (no round given): the newest round, where new puzzles usually go, even if
+      // the team has moved it up the board.
+      placement: parentPuzzleId ?? roundId ?? newest(workspace.rounds)?.id ?? "",
       name: "",
       tags: [] as string[],
       link: "",
@@ -150,6 +226,16 @@ export function AddNewPuzzleDialog({
                     />
                   )}
                 />
+                <form.Subscribe selector={state => [state.values.name, state.values.link] as const}>
+                  {([name, link]) => (
+                    <AlreadyOnBoard
+                      workspaceSlug={workspaceSlug}
+                      name={name}
+                      link={link}
+                      onOpen={() => setOpen(false)}
+                    />
+                  )}
+                </form.Subscribe>
                 {/* Only with Drive: without it every puzzle gets the built-in sheet and whiteboard,
                     so offering "Google Spreadsheet" would promise something it doesn't do. */}
                 {!workspace.googleConnected ? (

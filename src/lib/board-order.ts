@@ -23,6 +23,22 @@ export function compareBoardOrder(a: Ordered, b: Ordered) {
   return time(a.createdAt) - time(b.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
 
+/**
+ * The most recently created of `items` (ties: the later id), wherever it sits on the board: where
+ * new puzzles usually go, even after the team moves it to the top.
+ */
+export function newest<T extends Pick<Ordered, "id" | "createdAt">>(items: readonly T[]) {
+  let latest: T | undefined;
+  for (const item of items) {
+    const newer =
+      !latest ||
+      time(item.createdAt) > time(latest.createdAt) ||
+      (time(item.createdAt) === time(latest.createdAt) && item.id > latest.id);
+    if (newer) latest = item;
+  }
+  return latest;
+}
+
 /** Where to put an item among its new siblings: before or after one of them, or last. */
 export const placeSchema = z.union([
   z.object({before: z.string()}),

@@ -1,6 +1,7 @@
 import {ORPCError} from "@orpc/server";
 import {waitUntil} from "cloudflare:workers";
-import {and, desc, eq, isNull, sql} from "drizzle-orm";
+import {and, desc, eq, isNull, notExists, sql} from "drizzle-orm";
+import {v7 as uuid7} from "uuid";
 import {z} from "zod";
 
 import {isWithin, placeAmong, placeSchema} from "@/lib/board-order";
@@ -11,73 +12,9 @@ import {invariant} from "@/lib/invariant";
 import {invalidateWorkspace} from "../do/workspace";
 import {trackServerEvent} from "../posthog";
 import {isDeletedPuzzleId, recordDeletedPuzzle, startPuzzleCleanup} from "../puzzle-cleanup";
+import {startPuzzleSheet} from "../puzzle-worksheet";
 import {isPuzzleInWorkspace} from "../workspace-access";
 import {preauthorize, procedure} from "./base";
-
-/** Creates the puzzle's Google Drive worksheet (if Drive is connected) and records its id. */
-async function createPuzzleWorksheet(
-  context: {google: {getAccessToken: (workspaceId: string) => Promise<string | null | undefined>}},
-  workspace: {
-    id: string;
-    googleFolderId: string | null;
-    googleTemplateFileId: string | null;
-    sheetsTool: string;
-  },
-  puzzle: {id: string},
-  input: {name: string; worksheetType: "google_spreadsheet" | "google_drawing"}
-) {
-  // The team chose built-in sheets (Drive may still be connected, for older puzzles' sheets).
-  if (workspace.sheetsTool !== "google") return;
-  const googleAccessToken = await context.google.getAccessToken(workspace.id);
-  if (!googleAccessToken) return;
-  let resp;
-  if (workspace.googleTemplateFileId && input.worksheetType === "google_spreadsheet") {
-    resp = await (
-      await fetch(
-        `https://www.googleapis.com/drive/v3/files/${workspace.googleTemplateFileId}/copy`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${googleAccessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: `${input.name} [${puzzle.id}]`,
-            parents: [workspace.googleFolderId],
-          }),
-        }
-      )
-    ).json();
-  } else {
-    resp = await (
-      await fetch(`https://www.googleapis.com/drive/v3/files`, {
-        method: "POST",
-        headers: {Authorization: `Bearer ${googleAccessToken}`, "Content-Type": "application/json"},
-        body: JSON.stringify({
-          name: `${input.name} [${puzzle.id}]`,
-          parents: [workspace.googleFolderId],
-          mimeType:
-            input.worksheetType === "google_spreadsheet"
-              ? "application/vnd.google-apps.spreadsheet"
-              : "application/vnd.google-apps.drawing",
-        }),
-      })
-    ).json();
-  }
-
-  await db
-    .update(schema.puzzle)
-    .set({
-      googleSpreadsheetId:
-        input.worksheetType === "google_spreadsheet"
-          ? z.object({id: z.string()}).parse(resp).id
-          : null,
-      googleDrawingId:
-        input.worksheetType === "google_drawing" ? z.object({id: z.string()}).parse(resp).id : null,
-    })
-    .where(eq(schema.puzzle.id, puzzle.id));
-  await invalidateWorkspace(workspace.id);
-}
 
 /** The most time one `recordTime` call can add (the page saves about every minute). */
 export const MAX_TIME_BATCH_SECONDS = 120;
@@ -150,20 +87,71 @@ export const puzzlesRouter = {
         throw new ORPCError("CONFLICT", {message: "That puzzle id is taken. Try again."});
       }
 
-      const puzzle = await db
-        .insert(schema.puzzle)
-        .values({
-          id: input.id,
-          name: input.name,
-          tags: input.tags,
-          link: input.link,
-          roundId,
-          isMetaPuzzle: input.type === "meta-puzzle",
-          parentPuzzleId: "parentPuzzleId" in input ? input.parentPuzzleId : null,
-          importance: "normal",
-        })
-        .returning()
-        .then(rows => rows[0]);
+      const link = input.link.trim();
+      const values = {
+        id: input.id ?? uuid7(),
+        name: input.name,
+        tags: input.tags,
+        link,
+        roundId,
+        isMetaPuzzle: input.type === "meta-puzzle",
+        parentPuzzleId: "parentPuzzleId" in input ? input.parentPuzzleId : null,
+        importance: "normal",
+        // Its Google file is made next (PuzzleSheetWorkflow); its page says so meanwhile.
+        googleFileJob:
+          workspace.sheetsTool === "google" && workspace.googleFolderId
+            ? ({status: "creating", kind: input.worksheetType} as const)
+            : null,
+      };
+      // When a puzzle is released, several teammates often add it at once. One statement adds it
+      // only if no puzzle in the workspace has its link yet, so only the first one gets in.
+      const sameLink = db
+        .select({id: schema.puzzle.id})
+        .from(schema.puzzle)
+        .innerJoin(schema.round, eq(schema.round.id, schema.puzzle.roundId))
+        .where(and(eq(schema.round.workspaceId, workspace.id), eq(schema.puzzle.link, link)));
+      const literal = <T>(value: T, column: string) => sql<T>`${value}`.as(column);
+      const puzzle = link
+        ? await db
+            .insert(schema.puzzle)
+            .select(
+              db
+                .select({
+                  id: literal(values.id, "id"),
+                  name: literal(values.name, "name"),
+                  tags: literal(JSON.stringify(values.tags), "tags"),
+                  link: literal(link, "link"),
+                  roundId: literal(roundId, "roundId"),
+                  isMetaPuzzle: literal(values.isMetaPuzzle ? 1 : 0, "isMetaPuzzle"),
+                  parentPuzzleId: literal(values.parentPuzzleId, "parentPuzzleId"),
+                  importance: literal(values.importance, "importance"),
+                  googleFileJob: literal(
+                    values.googleFileJob ? JSON.stringify(values.googleFileJob) : null,
+                    "googleFileJob"
+                  ),
+                })
+                .from(schema.round)
+                .where(and(eq(schema.round.id, roundId), notExists(sameLink)))
+            )
+            .returning()
+            .then(rows => rows[0])
+        : await db
+            .insert(schema.puzzle)
+            .values(values)
+            .returning()
+            .then(rows => rows[0]);
+      if (!puzzle) {
+        const existing = await db
+          .select({id: schema.puzzle.id, name: schema.puzzle.name})
+          .from(schema.puzzle)
+          .innerJoin(schema.round, eq(schema.round.id, schema.puzzle.roundId))
+          .where(and(eq(schema.round.workspaceId, workspace.id), eq(schema.puzzle.link, link)))
+          .get();
+        throw new ORPCError("CONFLICT", {
+          message: `${existing?.name ?? "A puzzle"} is already on the board with that link.`,
+          data: {puzzleId: existing?.id ?? null, name: existing?.name ?? null},
+        });
+      }
       invariant(puzzle);
 
       // Independent of Google Drive being connected.
@@ -185,14 +173,10 @@ export const puzzlesRouter = {
         puzzleName: puzzle.name,
         workspaceId: workspace.id,
       });
-      // Respond (and broadcast the new row) right away; the Drive worksheet can take a second or two,
-      // so it is created in the background and broadcast again once its id is known.
+      // Respond (and broadcast the new row) right away; the Google file takes a second or two, so a
+      // workflow makes it (retrying if Google fails) and the room broadcasts its id once it's known.
       await invalidateWorkspace(workspace.id);
-      waitUntil(
-        createPuzzleWorksheet(context, workspace, puzzle, input).catch((error: unknown) =>
-          console.error("Failed to create the puzzle's Google Drive worksheet", error)
-        )
-      );
+      if (puzzle.googleFileJob) waitUntil(startPuzzleSheet(puzzle.id));
       waitUntil(context.discord.sync(workspace.id));
 
       return puzzle;
@@ -486,6 +470,32 @@ export const puzzlesRouter = {
       await invalidateWorkspace(workspaceId);
       // Discord channels are grouped by round.
       if (roundId !== puzzle.roundId) waitUntil(context.discord.sync(workspaceId));
+    }),
+
+  /** Tries again to make a puzzle's Google file, after it failed. */
+  retrySheet: procedure
+    .input(z.object({workspaceSlug: z.string(), id: z.string()}))
+    .use(preauthorize)
+    .handler(async ({context, input}) => {
+      if (!(await isPuzzleInWorkspace(input.id, context.workspace.id))) {
+        throw new ORPCError("NOT_FOUND");
+      }
+      // Only a failed job, so a double click or two people retrying start one workflow.
+      const retried = await db
+        .update(schema.puzzle)
+        .set({
+          googleFileJob: sql`json_set(json_remove(${schema.puzzle.googleFileJob}, '$.detail'), '$.status', 'creating')`,
+        })
+        .where(
+          and(
+            eq(schema.puzzle.id, input.id),
+            sql`json_extract(${schema.puzzle.googleFileJob}, '$.status') = 'failed'`
+          )
+        )
+        .returning({id: schema.puzzle.id});
+      if (retried.length === 0) return;
+      await invalidateWorkspace(context.workspace.id);
+      waitUntil(startPuzzleSheet(input.id));
     }),
 
   delete: procedure

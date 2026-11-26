@@ -8,6 +8,7 @@ import {fetchDiscord} from "./server/do/discord-client";
 import {syncHuntListings} from "./server/hunt-calendar";
 import {captureServerException} from "./server/posthog";
 import {retryPendingPuzzleCleanups} from "./server/puzzle-cleanup";
+import {costUsage} from "./server/usage-cost";
 import {importUsage} from "./server/usage-import";
 
 /**
@@ -45,7 +46,8 @@ export default {
     }
   },
 
-  // Cron trigger (wrangler.jsonc), hourly: import the last hour's usage, restart unfinished puzzle
+  // Cron trigger (wrangler.jsonc), hourly: import the last hour's usage, work out what
+  // each workspace cost (src/server/usage-cost.ts), restart unfinished puzzle
   // cleanups (src/server/puzzle-cleanup.ts), and every 6 hours refresh
   // the hunt listings.
   scheduled(controller, _env, ctx) {
@@ -58,6 +60,7 @@ export default {
         })
       );
     task("usage import", () => importUsage());
+    task("usage cost", () => costUsage());
     task("puzzle cleanup retry", () => retryPendingPuzzleCleanups());
     if (new Date(controller.scheduledTime).getUTCHours() % 6 === 0) {
       task("hunt listings sync", () => syncHuntListings());
@@ -105,8 +108,14 @@ export {DiscordClient} from "./server/do/discord-client";
 export {ChatRoom} from "./server/do/chat";
 export {NotificationRoom} from "./server/do/notification";
 export {PresenceRoom} from "./server/do/presence";
-export {DeleteChannelAfterDelayWorkflow} from "./server/do/discord-client";
+export {
+  DeleteChannelAfterDelayWorkflow,
+  DiscordDisconnectWorkflow,
+} from "./server/do/discord-client";
 export {WorkspaceRoom} from "./server/do/workspace";
 export {WhiteboardRoom} from "./server/do/whiteboard";
 export {SheetRoom} from "./server/do/sheet";
 export {PuzzleCleanupWorkflow} from "./server/puzzle-cleanup";
+export {DriveAccessWorkflow} from "./server/drive-access";
+export {EmailWorkflow} from "./server/email";
+export {PuzzleSheetWorkflow} from "./server/puzzle-worksheet";

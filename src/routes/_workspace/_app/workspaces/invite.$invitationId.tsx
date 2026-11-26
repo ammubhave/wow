@@ -9,6 +9,7 @@ import PixelBlast from "@/components/pixel-blast";
 import {authClient} from "@/lib/auth-client";
 import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
+import {workspaceMembershipChanged} from "@/lib/workspace-membership";
 import {accentHex} from "@/lib/workspace-theme";
 
 /**
@@ -63,6 +64,7 @@ function RouteComponent() {
   const accept = useMutation(
     orpc.workspaces.invitations.accept.mutationOptions({
       onSuccess: ({slug}) => {
+        workspaceMembershipChanged(queryClient, slug);
         toast.success(`Welcome to ${invite.teamName ?? "the team"}!`);
         void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: slug}});
       },

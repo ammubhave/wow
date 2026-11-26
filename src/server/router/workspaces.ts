@@ -1,6 +1,7 @@
 import {ORPCError} from "@orpc/server";
 import {env, waitUntil} from "cloudflare:workers";
-import {and, count, eq, inArray, isNotNull, max, type SQL, sql} from "drizzle-orm";
+import {and, count, eq, exists, inArray, isNotNull, max, ne, or, type SQL, sql} from "drizzle-orm";
+import {alias} from "drizzle-orm/sqlite-core";
 import {z} from "zod";
 
 import {auth} from "@/lib/auth";
@@ -17,13 +18,10 @@ import {
   invalidateWorkspace,
   type WorkspaceRoomWireState,
 } from "../do/workspace";
-import {
-  DRIVE_DISCONNECTED_DETAIL,
-  type FolderShareResult,
-  shareDriveFolder,
-  unshareDriveFolder,
-} from "../drive-share";
-import {captureServerException, trackServerEvent} from "../posthog";
+import {startDriveAccess} from "../drive-access";
+import {DRIVE_DISCONNECTED_DETAIL, shareDriveFolder} from "../drive-share";
+import {trackServerEvent} from "../posthog";
+import {getWorkspaceCost} from "../usage-cost";
 import {toWorkspaceRole} from "../workspace-access";
 import {type AuthedContext, preauthorize, procedure, requireOwner} from "./base";
 
@@ -41,6 +39,31 @@ const themeJson = sql`(case when json_valid(${themeColumn}) then ${themeColumn} 
 
 /** Archived workspaces are read-only, and that includes who's in them. */
 const ARCHIVED_JOIN_MESSAGE = "This workspace is archived, so it isn't taking new members.";
+
+/** Whether `userId` is a member of the workspace. */
+const isMember = async (workspaceId: string, userId: string) =>
+  (await db
+    .select({id: schema.member.id})
+    .from(schema.member)
+    .where(and(eq(schema.member.organizationId, workspaceId), eq(schema.member.userId, userId)))
+    .get()) !== undefined;
+
+/** Whether the workspace has an owner other than `userId` (as part of a statement). */
+const anotherOwner = (workspaceId: string, userId: string) => {
+  const other = alias(schema.member, "other");
+  return exists(
+    db
+      .select({id: other.id})
+      .from(other)
+      .where(
+        and(
+          eq(other.organizationId, workspaceId),
+          eq(other.role, "owner"),
+          ne(other.userId, userId)
+        )
+      )
+  );
+};
 
 export const workspacesRouter = {
   /** What the join page shows before you're in: the team, its look, and how many are already in. */
@@ -72,6 +95,11 @@ export const workspacesRouter = {
       archived: workspace.archivedAt !== null,
     };
   }),
+  /** What the workspace has cost to run so far (src/server/usage-cost.ts), for any member. */
+  cost: procedure
+    .input(z.object({workspaceSlug: z.string()}))
+    .use(preauthorize)
+    .handler(({context}) => getWorkspaceCost(context.workspace.id)),
   join: procedure
     .input(z.object({workspaceSlug: z.string(), password: z.string()}))
     .handler(async ({context, input}) => {
@@ -118,10 +146,19 @@ export const workspacesRouter = {
         .get();
       if (existing) return {id: workspace.id, name: workspace.name, slug: workspace.slug};
       if (workspace.archivedAt) throw new ORPCError("CONFLICT", {message: ARCHIVED_JOIN_MESSAGE});
-      await auth.api.addMember({
-        // Joining with the password makes you a member; owners can promote people after.
-        body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},
-      });
+      try {
+        await auth.api.addMember({
+          // Joining with the password makes you a member; owners can promote people after.
+          body: {userId: context.session.user.id, role: "member", organizationId: workspace.id},
+        });
+      } catch (error) {
+        // Another request joined first (a double click, two tabs): the unique index on member
+        // refused this one. Only the first one welcomes them.
+        if (await isMember(workspace.id, context.session.user.id)) {
+          return {id: workspace.id, name: workspace.name, slug: workspace.slug};
+        }
+        throw error;
+      }
       await welcomeNewMember(context, workspace, "password");
       // Never return the full row: it holds the Google OAuth tokens and the join password.
       return {id: workspace.id, name: workspace.name, slug: workspace.slug};
@@ -230,20 +267,31 @@ export const workspacesRouter = {
     .input(z.object({workspaceSlug: z.string()}))
     .use(preauthorize)
     .handler(async ({context}) => {
-      const owners = await db
-        .select({userId: schema.member.userId, role: schema.member.role})
-        .from(schema.member)
-        .where(eq(schema.member.organizationId, context.workspace.id))
-        .then(members => members.filter(member => toWorkspaceRole(member.role) === "owner"));
-      if (owners.length === 1 && owners[0]!.userId === context.session.user.id) {
+      // One statement, so two owners leaving (or one leaving as the other steps down) at the same
+      // moment can't leave the workspace with no owner.
+      const left = await db
+        .delete(schema.member)
+        .where(
+          and(
+            eq(schema.member.organizationId, context.workspace.id),
+            eq(schema.member.userId, context.session.user.id),
+            or(
+              ne(schema.member.role, "owner"),
+              anotherOwner(context.workspace.id, context.session.user.id)
+            )
+          )
+        )
+        .returning({id: schema.member.id});
+      if (left.length === 0) {
         throw new ORPCError("BAD_REQUEST", {
           message: "You're the only owner. Make someone else an owner first, then leave.",
         });
       }
-      await auth.api.leaveOrganization({
-        headers: context.headers,
-        body: {organizationId: context.workspace.id},
-      });
+      // Their access to the team's Drive folder goes too, in the background.
+      if (context.workspace.googleFolderId) {
+        const {id, name, email} = context.session.user;
+        waitUntil(startDriveAccess([{workspaceId: context.workspace.id, userId: id, name, email}]));
+      }
     }),
 
   getGoogleTokenState: procedure
@@ -785,6 +833,8 @@ export const workspacesRouter = {
             body: {invitationId: input.invitationId},
           });
         } catch (error) {
+          // Accepted already (a double click, or another tab): just go to the workspace.
+          if (await isMember(workspace.id, context.session.user.id)) return {slug: workspace.slug};
           throw new ORPCError("BAD_REQUEST", {message: authErrorMessage(error)});
         }
         await welcomeNewMember(context, workspace, "invitation");
@@ -839,31 +889,19 @@ export const workspacesRouter = {
           .returning({id: schema.member.id});
         if (removed.length === 0) throw new ORPCError("NOT_FOUND");
         await invalidateWorkspace(context.workspace.id);
-        // Their access to the team's Drive folder goes too (it was shared when they joined).
-        const folderId = context.workspace.googleFolderId;
-        if (!folderId) return {drive: "none"} as const;
+        // Their access to the team's Drive folder goes too (it was shared when they joined), in
+        // the background, retried; the owners hear if it can't be done.
+        if (!context.workspace.googleFolderId) return {drive: "none"} as const;
         const user = await db
-          .select({email: schema.user.email})
+          .select({name: schema.user.name, email: schema.user.email})
           .from(schema.user)
           .where(eq(schema.user.id, input.userId))
           .get();
-        // They're already removed: a Drive problem is reported, never thrown.
-        try {
-          const accessToken = await context.google.getAccessToken(context.workspace.id);
-          if (!user || !accessToken) {
-            return {drive: "failed", detail: DRIVE_DISCONNECTED_DETAIL} as const;
-          }
-          const result = await unshareDriveFolder(accessToken, folderId, user.email);
-          return result.ok
-            ? ({drive: result.removed ? "removed" : "none"} as const)
-            : ({drive: "failed", detail: result.detail} as const);
-        } catch (error) {
-          captureServerException(error, {
-            distinctId: context.session.user.id,
-            properties: {workspaceId: context.workspace.id},
-          });
-          return {drive: "failed", detail: "Google Drive didn't respond."} as const;
-        }
+        if (!user) return {drive: "none"} as const;
+        waitUntil(
+          startDriveAccess([{workspaceId: context.workspace.id, userId: input.userId, ...user}])
+        );
+        return {drive: "removing"} as const;
       }),
 
     /// Owners can make others owners (or members again). The last owner can't be demoted, so a
@@ -875,27 +913,34 @@ export const workspacesRouter = {
       .use(preauthorize)
       .use(requireOwner)
       .handler(async ({context, input}) => {
-        const members = await db
-          .select({userId: schema.member.userId, role: schema.member.role})
-          .from(schema.member)
-          .where(eq(schema.member.organizationId, context.workspace.id));
-        const target = members.find(member => member.userId === input.userId);
-        if (!target) throw new ORPCError("NOT_FOUND");
-        const owners = members.filter(member => toWorkspaceRole(member.role) === "owner");
-        if (input.role === "member" && owners.length === 1 && owners[0]!.userId === input.userId) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: "A workspace needs at least one owner. Make someone else an owner first.",
-          });
-        }
-        await db
+        // The check that another owner remains is part of the update, so two owners demoting each
+        // other at the same moment can't leave the workspace with no owner.
+        const updated = await db
           .update(schema.member)
           .set({role: input.role})
           .where(
             and(
               eq(schema.member.organizationId, context.workspace.id),
+              eq(schema.member.userId, input.userId),
+              input.role === "member" ? anotherOwner(context.workspace.id, input.userId) : undefined
+            )
+          )
+          .returning({id: schema.member.id});
+        if (updated.length > 0) return;
+        const isMember = await db
+          .select({id: schema.member.id})
+          .from(schema.member)
+          .where(
+            and(
+              eq(schema.member.organizationId, context.workspace.id),
               eq(schema.member.userId, input.userId)
             )
-          );
+          )
+          .get();
+        if (!isMember) throw new ORPCError("NOT_FOUND");
+        throw new ORPCError("BAD_REQUEST", {
+          message: "A workspace needs at least one owner. Make someone else an owner first.",
+        });
       }),
 
     get: procedure
@@ -997,15 +1042,16 @@ export const workspacesRouter = {
       .use(preauthorize)
       .use(requireOwner)
       .handler(async ({context}) => {
-        if (!context.workspace.discordGuildId) throw new ORPCError("BAD_REQUEST");
-        await env.DISCORD_CLIENT.getByName(context.workspace.discordGuildId).deleteAllChannels(
-          context.workspace.discordGuildId
-        );
+        const guildId = context.workspace.discordGuildId;
+        if (!guildId) throw new ORPCError("BAD_REQUEST");
+        // Unlinked now; WOW's channels are deleted in the background, a retried step each, since
+        // Discord's rate limits make that slow on a big server.
         await db
           .update(schema.organization)
           .set({discordGuildId: null})
           .where(eq(schema.organization.id, context.workspace.id));
         await invalidateWorkspace(context.workspace.id);
+        await env.DISCORD_DISCONNECT_WORKFLOW.create({params: {guildId}});
       }),
   },
 };
@@ -1031,43 +1077,12 @@ async function welcomeNewMember(
       )
     );
 
-  const shareFolder = async () => {
-    if (!workspace.googleFolderId) return;
-    const googleAccessToken = await context.google.getAccessToken(workspace.id);
-    const result: FolderShareResult = googleAccessToken
-      ? await shareDriveFolder(
-          googleAccessToken,
-          workspace.googleFolderId,
-          context.session.user.email
-        )
-      : {ok: false, detail: DRIVE_DISCONNECTED_DETAIL};
-    if (result.ok) return;
-    // Tell the owners, who can fix it (or share the folder by hand).
-    const owners = await db
-      .select({id: schema.member.userId})
-      .from(schema.member)
-      .where(and(eq(schema.member.organizationId, workspace.id), eq(schema.member.role, "owner")))
-      .all();
-    if (owners.length === 0) return;
+  // The team's Drive folder (every puzzle sheet) is shared with them in the background, retried;
+  // the owners hear if it can't be done.
+  if (workspace.googleFolderId) {
     const {id, name, email} = context.session.user;
-    await context.notification.broadcast(workspace.id, {
-      type: "driveShareFailed",
-      toUserIds: owners.map(o => o.id),
-      member: {id, name, email},
-      folderId: workspace.googleFolderId,
-      detail: result.detail,
-      blockingFileId: result.blockingFileId,
-    });
-  };
-  waitUntil(
-    shareFolder().catch(error => {
-      console.error("Sharing the Drive folder with a new member failed", error);
-      captureServerException(error, {
-        distinctId: context.session.user.id,
-        properties: {workspaceId: workspace.id},
-      });
-    })
-  );
+    waitUntil(startDriveAccess([{workspaceId: workspace.id, userId: id, name, email}]));
+  }
   // Awaited before invalidating so the broadcast state includes the "join" entry.
   await context.activityLog.createWorkspace({workspaceId: workspace.id, subType: "join"});
   await invalidateWorkspace(workspace.id);

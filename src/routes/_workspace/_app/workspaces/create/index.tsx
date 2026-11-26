@@ -18,6 +18,7 @@ import {authClient} from "@/lib/auth-client";
 import {fromLocalInput} from "@/lib/datetime-local";
 import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
+import {workspaceSlugProblem} from "@/lib/workspace-slug";
 
 /** A hunt website: empty, or a web address (https:// is added for you). */
 const HUNT_WEBSITE_SCHEMA = z.union([
@@ -34,8 +35,6 @@ export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   head: () => ({meta: [{title: "Create workspace | WOW"}]}),
 });
 
-const reservedSlugs = new Set(["exchange"]);
-
 /** "The Night Owls" → "the-night-owls": the shape of a workspace ID. */
 const slugify = (text: string) =>
   text
@@ -46,6 +45,7 @@ const slugify = (text: string) =>
     .replace(/^-|-$/g, "");
 
 function RouteComponent() {
+  const creating = useRef(false);
   const {suggestions: huntSuggestions, byId: huntsById} = useHuntSuggestions();
   const search = Route.useSearch();
   const router = useRouter();
@@ -66,7 +66,13 @@ function RouteComponent() {
       const huntStartsAt = fromLocalInput(value.huntStartsAt);
       const huntEndsAt = fromLocalInput(value.huntEndsAt);
       const huntUrl = value.huntWebsite.trim();
-      const create = async () => {
+      // Awaited, so the form counts as submitting (Create is disabled) until it's done, and a
+      // second click or Enter while it's working does nothing.
+      if (creating.current) return;
+      creating.current = true;
+      const description = `${value.teamName} · ${value.eventName}`;
+      const toastId = toast.loading("Creating workspace…", {description});
+      try {
         await authClient.organization.create(
           {
             name: `${value.teamName} - ${value.eventName}`,
@@ -79,27 +85,42 @@ function RouteComponent() {
           },
           {throw: true}
         );
-        // Dates go separately: the sign-in library's create takes no dates over JSON.
-        if (huntStartsAt !== null || huntEndsAt !== null) {
+      } catch (error) {
+        creating.current = false;
+        toast.error(errorMessage(error, "Couldn't create the workspace. Please try again."), {
+          id: toastId,
+          description,
+        });
+        return;
+      }
+      // It exists from here on: a problem with the dates is reported as just that.
+      let datesSaved = true;
+      // Dates go separately: the sign-in library's create takes no dates over JSON.
+      if (huntStartsAt !== null || huntEndsAt !== null) {
+        try {
           await orpc.workspaces.update.call({
             workspaceSlug: value.workspaceSlug,
             huntStartsAt,
             huntEndsAt,
           });
+        } catch {
+          datesSaved = false;
         }
-        void queryClient.invalidateQueries();
-        form.reset();
-        void router.navigate({
-          to: "/workspaces/create/$workspaceSlug",
-          params: {workspaceSlug: value.workspaceSlug},
+      }
+      if (datesSaved) {
+        toast.success("Workspace created", {id: toastId, description});
+      } else {
+        toast.warning("Workspace created, but its hunt dates weren't saved", {
+          id: toastId,
+          description: "Add them in the workspace's Settings.",
         });
-      };
-      toast.promise(create(), {
-        loading: "Creating workspace…",
-        success: "Workspace created",
-        error: (error: unknown) =>
-          errorMessage(error, "Couldn't create the workspace. Please try again."),
-        description: `${value.teamName} · ${value.eventName}`,
+      }
+      void queryClient.invalidateQueries();
+      form.reset();
+      creating.current = false;
+      await router.navigate({
+        to: "/workspaces/create/$workspaceSlug",
+        params: {workspaceSlug: value.workspaceSlug},
       });
     },
   });
@@ -221,12 +242,10 @@ function RouteComponent() {
                 <form.AppField
                   name="workspaceSlug"
                   validators={{
-                    onSubmit: ({value}) =>
-                      !value.trim()
-                        ? {message: "Choose a workspace ID."}
-                        : reservedSlugs.has(value.toLowerCase())
-                          ? {message: `"${value.toLowerCase()}" is reserved. Choose another ID.`}
-                          : undefined,
+                    onSubmit: ({value}) => {
+                      const problem = workspaceSlugProblem(value);
+                      return problem ? {message: problem} : undefined;
+                    },
                     onSubmitAsync: async ({value}) =>
                       (await authClient.organization.checkSlug({slug: value})).data
                         ? undefined

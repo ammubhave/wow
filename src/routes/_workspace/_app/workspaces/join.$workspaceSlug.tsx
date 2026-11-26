@@ -1,6 +1,6 @@
 import {Card, Chip} from "@heroui/react";
 import {ORPCError} from "@orpc/client";
-import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {UsersIcon} from "lucide-react";
 import {useEffect, useState} from "react";
@@ -13,6 +13,7 @@ import {authClient} from "@/lib/auth-client";
 import {errorMessage} from "@/lib/errors";
 import {forgetJoinPassword, joinPasswordFor} from "@/lib/join-password";
 import {orpc} from "@/lib/orpc";
+import {workspaceMembershipChanged} from "@/lib/workspace-membership";
 import {accentHex, applyAccent} from "@/lib/workspace-theme";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/join/$workspaceSlug")({
@@ -55,9 +56,11 @@ function RouteComponent() {
       });
     },
   });
+  const queryClient = useQueryClient();
   const joinWorkspaceMutation = useMutation(
     orpc.workspaces.join.mutationOptions({
       onSuccess: data => {
+        workspaceMembershipChanged(queryClient, data.slug);
         forgetJoinPassword(params.workspaceSlug);
         form.reset();
         void router.navigate({to: "/$workspaceSlug", params: {workspaceSlug: data.slug}});

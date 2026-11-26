@@ -9,6 +9,8 @@ import {useMediaQuery} from "usehooks-ts";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
+import {ARCHIVED_MESSAGE_START} from "@/lib/archived";
+import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 import {type TourKind, type TourState, parseTourState} from "@/lib/tour-state";
 import {newId, workspaceMutations} from "@/lib/workspace-mutations";
@@ -51,6 +53,17 @@ export function TourProvider({
       onMutate: async (input, {client}) => {
         await client.cancelQueries({queryKey: memberQuery.queryKey});
         client.setQueryData(memberQuery.queryKey, old => (old ? {...old, tour: input.tour} : old));
+      },
+      onError: (error, _input, _result, {client}) => {
+        // Back to what's saved, so the tour doesn't act on progress that wasn't kept.
+        void client.invalidateQueries({queryKey: memberQuery.queryKey});
+        // Archived workspaces are reported once by the global handler (router.tsx); one message
+        // however many steps fail.
+        if (!error.message.startsWith(ARCHIVED_MESSAGE_START)) {
+          toast.error(errorMessage(error, "Couldn't save your tour progress."), {
+            id: "tour-save-failed",
+          });
+        }
       },
     })
   );

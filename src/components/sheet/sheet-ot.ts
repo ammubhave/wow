@@ -34,8 +34,14 @@ type Span = {start: number; end: number};
 type Structural =
   | {kind: "insert"; axis: Axis; at: number; count: number}
   | {kind: "remove"; axis: Axis; start: number; end: number}
-  | {kind: "move"; mutation: MoveMutation}
+  | {kind: "move"; mutation: MoveMutation; rows?: RowMove}
   | {kind: "removeSheet"};
+
+/**
+ * A move of whole rows (or columns): the ones in `from` are taken out and put back before the row
+ * that was at `to` (as Univer's moveMatrixArray does), so `to` is outside `from`.
+ */
+type RowMove = {axis: Axis; from: Span; to: number};
 
 type Obj = Record<string, unknown>;
 const isObj = (value: unknown): value is Obj =>
@@ -57,6 +63,8 @@ const subUnitOf = (m: SheetMutation) => {
   if (typeof params.subUnitId === "string") return params.subUnitId;
   // move-range names its sheets inside `from`/`to`.
   if (isObj(params.from) && typeof params.from.subUnitId === "string") return params.from.subUnitId;
+  // Notes name their sheet `sheetId`.
+  if (typeof params.sheetId === "string") return params.sheetId;
   return undefined;
 };
 
@@ -89,9 +97,17 @@ function structural(m: SheetMutation): Structural | undefined {
     }
     case MOVE_ROWS:
     case MOVE_COLS:
-    case MOVE_RANGE:
+    case MOVE_RANGE: {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Univer's own mutation JSON.
-      return {kind: "move", mutation: m as MoveMutation};
+      const move: Structural = {kind: "move", mutation: m as MoveMutation};
+      const {sourceRange, targetRange} = paramsOf(m);
+      if (m.id === MOVE_RANGE || !isRange(sourceRange) || !isRange(targetRange)) return move;
+      const axis = m.id === MOVE_ROWS ? "row" : "col";
+      return {
+        ...move,
+        rows: {axis, from: spanOf(sourceRange, axis), to: spanOf(targetRange, axis).start},
+      };
+    }
     case REMOVE_SHEET:
       return {kind: "removeSheet"};
     default:
@@ -111,6 +127,47 @@ function mapSpan(span: Span, b: Structural & {kind: "insert" | "remove"}): Span 
   const start = span.start - removedBefore(span.start - 1);
   const end = span.end - removedBefore(span.end);
   return end < start ? null : {start, end};
+}
+
+/** Where row (or column) `p` ends up after `move`. */
+function movedIndex(p: number, {from, to}: RowMove): number {
+  const count = from.end - from.start + 1;
+  if (p >= from.start && p <= from.end) {
+    return (to < from.start ? to : to - count) + p - from.start;
+  }
+  if (to < from.start) return p >= to && p < from.start ? p + count : p;
+  return p > from.end && p < to ? p - count : p;
+}
+
+/** Whether `move` leaves every row where it was (its rows go back where they came from). */
+const movesNothing = ({from, to}: RowMove) => to >= from.start && to <= from.end + 1;
+
+/**
+ * Rows inserted before row `at`, after `move`. They stay before the row they were inserted
+ * above, so rows inserted inside the moved rows go with them. Rows inserted right above the moved
+ * rows stay where those were, like rows inserted right below them, rather than going along.
+ */
+function insertedAt(at: number, move: RowMove): number {
+  const {from} = move;
+  if (at > from.start && at <= from.end) return movedIndex(at, move);
+  return movedIndex(at === from.start ? from.end + 1 : at, move);
+}
+
+/**
+ * Rows `start`..`end` after `move`, as runs of adjacent rows from the bottom up (so removing them
+ * in order doesn't shift the ones still to remove): the move may have split them up.
+ */
+function movedRuns(start: number, end: number, move: RowMove): Span[] {
+  const rows: number[] = [];
+  for (let r = start; r <= end; r++) rows.push(movedIndex(r, move));
+  rows.sort((x, y) => y - x);
+  const runs: Span[] = [];
+  for (const r of rows) {
+    const last = runs.at(-1);
+    if (last && last.start === r + 1) last.start = r;
+    else runs.push({start: r, end: r});
+  }
+  return runs;
 }
 
 /** A range after `b`; null if every cell of it was removed. */
@@ -153,6 +210,85 @@ function mapMatrix(matrix: Record<string, Obj>, b: Structural): Record<string, O
   return out;
 }
 
+/** Row (or column) `index` after `b`; null if it was removed. */
+function mapIndex(index: number, axis: Axis, b: Structural): number | null {
+  const mapped = mapRange(
+    axis === "row"
+      ? {startRow: index, endRow: index, startColumn: 0, endColumn: 0, rangeType: RANGE_TYPE.ROW}
+      : {
+          startRow: 0,
+          endRow: 0,
+          startColumn: index,
+          endColumn: index,
+          rangeType: RANGE_TYPE.COLUMN,
+        },
+    b
+  );
+  if (!mapped) return null;
+  return axis === "row" ? mapped.startRow : mapped.startColumn;
+}
+
+/**
+ * Params keyed by row (or column) number, e.g. set-worksheet-row-height's `rowHeight: {5: 40}`
+ * (a single number applies to every row in its `ranges`, which are mapped anyway).
+ */
+const INDEX_KEYED: Record<string, Axis> = {
+  rowHeight: "row",
+  autoHeightInfo: "row",
+  rowData: "row",
+  colWidth: "col",
+  columnData: "col",
+};
+
+function mapIndexKeys(value: Obj, axis: Axis, b: Structural): Obj {
+  const out: Obj = {};
+  for (const [key, v] of Object.entries(value)) {
+    const mapped = mapIndex(Number(key), axis, b);
+    if (mapped !== null) out[mapped] = v;
+  }
+  return out;
+}
+
+/**
+ * Mutations that name a cell by `row` and `col` (or `column`) instead of by range: notes and
+ * links, which Univer keeps apart from the cells. These are where in the params ("" is the params
+ * themselves). Univer moves the notes and links a client already has when a teammate's insert or
+ * delete arrives, so only these, made at the same time, need moving.
+ */
+const CELL_POSITIONS: Record<string, string[]> = {
+  "sheet.mutation.update-note": [""],
+  "sheet.mutation.remove-note": [""],
+  "sheet.mutation.toggle-note-popup": [""],
+  "sheet.mutation.update-note-position": ["", "newPosition"],
+  "sheets.mutation.add-hyper-link": ["link"],
+  "sheets.mutation.update-hyper-link-ref": [""],
+  "sheets.mutation.update-rich-hyper-link": [""],
+};
+
+/** A `{row, col}` (or `{row, column}`) after `b`; null if its cell was removed. */
+function mapCell(cell: Obj, b: Structural): Obj | null {
+  const colKey = "col" in cell ? "col" : "column";
+  const r = cell.row;
+  const c = cell[colKey];
+  // Some name the note or link by id alone.
+  if (typeof r !== "number" || typeof c !== "number") return cell;
+  const mapped = mapRange({startRow: r, endRow: r, startColumn: c, endColumn: c}, b);
+  return mapped && {...cell, row: mapped.startRow, [colKey]: mapped.startColumn};
+}
+
+/** Moves the cells a note or link mutation names; null if one was removed (nothing to act on). */
+function mapCellPositions(id: string, params: Obj, b: Structural): Obj | null {
+  let out = params;
+  for (const path of CELL_POSITIONS[id] ?? []) {
+    const cell = path === "" ? out : out[path];
+    if (!isObj(cell)) continue;
+    const mapped = mapCell(cell, b);
+    if (!mapped) return null;
+    out = path === "" ? mapped : {...out, [path]: mapped};
+  }
+  return out;
+}
+
 /**
  * Maps every position inside a mutation's params through `b`: ranges (`range`, `ranges`,
  * `sourceRange`...) and cell matrices (`cellValue`, `value`). Returns null when the mutation's
@@ -163,10 +299,22 @@ function mapParams(value: unknown, b: Structural, key = ""): unknown {
     const mapped = mapRange(value, b);
     return mapped ?? (key === "range" ? null : undefined);
   }
+  if (key === "rowsAutoHeightInfo" && Array.isArray(value)) {
+    // set-worksheet-row-auto-height: `[{row, autoHeight}]`; rows that were removed are dropped.
+    return value.flatMap(item => {
+      if (!isObj(item) || typeof item.row !== "number") return [item];
+      const mapped = mapIndex(item.row, "row", b);
+      return mapped === null ? [] : [{...item, row: mapped}];
+    });
+  }
   if (Array.isArray(value)) {
     return value.map(item => mapParams(item, b)).filter(item => item !== undefined);
   }
   if (isMatrix(value) && (key === "cellValue" || key === "value")) return mapMatrix(value, b);
+  const axis = INDEX_KEYED[key];
+  if (axis && isObj(value) && Object.keys(value).every(isIndexKey)) {
+    return mapIndexKeys(value, axis, b);
+  }
   if (isObj(value)) {
     const out: Obj = {};
     for (const [k, v] of Object.entries(value)) {
@@ -350,6 +498,45 @@ function transformCells(a: SheetMutation, b: SheetMutation, aFirst: boolean): Sh
   return [{id: a.id, params: {...aParams, cellValue: cells}}];
 }
 
+/**
+ * A move of whole rows (`a`, moving `move`) rewritten to apply after a teammate inserted or removed
+ * rows `b`. The moved rows are the same rows (new ones inserted among them go along), and they
+ * still go right before the row they were moving to; if that row was removed, before the first
+ * row after it that's left, which is where it was.
+ */
+function transformMove(
+  a: SheetMutation,
+  move: RowMove,
+  b: Structural & {kind: "insert" | "remove"}
+): SheetMutation[] {
+  const from = mapSpan(move.from, b);
+  const to =
+    b.kind === "insert"
+      ? // Rows inserted right where the moved rows go stay below them: after the move, they're
+        // still right above the row they were inserted above (see insertedAt).
+        move.to + (b.at < move.to ? b.count : 0)
+      : move.to - Math.max(0, Math.min(b.end, move.to - 1) - b.start + 1);
+  // Every moved row was removed, or what's left is already where it was going (moving it "into
+  // itself" would throw).
+  if (!from || movesNothing({axis: move.axis, from, to})) return [];
+  const params = paramsOf(a);
+  const count = from.end - from.start + 1;
+  const set = (range: unknown, start: number, end: number) =>
+    move.axis === "row"
+      ? {...(isObj(range) ? range : {}), startRow: start, endRow: end}
+      : {...(isObj(range) ? range : {}), startColumn: start, endColumn: end};
+  return [
+    {
+      id: a.id,
+      params: {
+        ...params,
+        sourceRange: set(params.sourceRange, from.start, from.end),
+        targetRange: set(params.targetRange, to, to + count - 1),
+      },
+    },
+  ];
+}
+
 /** `a` (a single mutation) rewritten to apply after `b`. May become zero or two mutations. */
 function transformOne(a: SheetMutation, b: SheetMutation, aFirst: boolean): SheetMutation[] {
   if (a.id === SET_RANGE_VALUES && b.id === SET_RANGE_VALUES) return transformCells(a, b, aFirst);
@@ -365,6 +552,24 @@ function transformOne(a: SheetMutation, b: SheetMutation, aFirst: boolean): Shee
 
   const as = structural(a);
   const range = rangeParam(a);
+  if (as?.kind === "move" && as.rows && (bs.kind === "insert" || bs.kind === "remove")) {
+    if (as.rows.axis === bs.axis) return transformMove(a, as.rows, bs);
+  }
+  if (as && range && bs.kind === "move" && (as.kind === "insert" || as.kind === "remove")) {
+    // Inserting or removing whole rows isn't changed by moving columns (or cells).
+    if (!bs.rows || bs.rows.axis !== as.axis || movesNothing(bs.rows)) return [a];
+    const move = bs.rows;
+    const set = (start: number, end: number): IRange =>
+      move.axis === "row"
+        ? {...range, startRow: start, endRow: end}
+        : {...range, startColumn: start, endColumn: end};
+    if (as.kind === "insert") {
+      const at = insertedAt(as.at, move);
+      return [withRange(a, set(at, at + as.count - 1))];
+    }
+    // The rows being removed may no longer be next to each other.
+    return movedRuns(as.start, as.end, move).map(run => withRange(a, set(run.start, run.end)));
+  }
   if (as && range && bs.kind !== "move" && (as.kind === "insert" || as.kind === "remove")) {
     if (as.axis !== bs.axis) {
       // Inserting rows doesn't move columns, but a column insert's range spans rows, so map it.
@@ -406,13 +611,19 @@ function transformOne(a: SheetMutation, b: SheetMutation, aFirst: boolean): Shee
     return mapped ? [withRange(a, set(mapped.start, mapped.end))] : [];
   }
 
-  const params = mapParams(a.params, bs);
+  const mapped = mapParams(a.params, bs);
+  const params = isObj(mapped) ? mapCellPositions(a.id, mapped, bs) : mapped;
   if (params === null) return [];
-  const mapped = {id: a.id, params};
+  // A row move that lost its rows or its target (to a teammate's move) has nothing left to do;
+  // sent without them, it would throw.
+  if (as?.kind === "move" && as.rows) {
+    if (!isObj(params) || !isRange(params.sourceRange) || !isRange(params.targetRange)) return [];
+  }
+  const result = {id: a.id, params};
   return [
     sheet !== undefined && movedSheet !== undefined
-      ? shiftFormulas(mapped, sheet, movedSheet, bs)
-      : mapped,
+      ? shiftFormulas(result, sheet, movedSheet, bs)
+      : result,
   ];
 }
 

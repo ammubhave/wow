@@ -5,7 +5,11 @@ import {
   WorkflowEvent,
   WorkflowStep,
 } from "cloudflare:workers";
+import {eq} from "drizzle-orm";
 import {z} from "zod";
+
+import {db} from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 
 import {
   CATEGORY,
@@ -278,21 +282,8 @@ export class DiscordClient extends DurableObject {
       });
   }
 
-  async deleteAllChannels(discordGuildId: string) {
-    const channels = await this.listChannels(discordGuildId);
-    if (channels === undefined) {
-      return;
-    }
-    for (const channel of channels) {
-      // Sequential on purpose: Discord rate-limits channel deletes per guild.
-      try {
-        // oxlint-disable-next-line no-await-in-loop
-        await this.deleteChannel(channel.id);
-      } catch (error) {
-        // Disconnecting goes ahead even if some channels can't be removed.
-        console.error("Discord: couldn't delete a channel", error);
-      }
-    }
+  /** Forgets which channel is whose (when the server is disconnected from its workspace). */
+  public async forgetChannels() {
     await this.ctx.storage.delete(PUZZLE_CHANNELS_KEY);
   }
 }
@@ -305,7 +296,62 @@ export class DeleteChannelAfterDelayWorkflow extends WorkflowEntrypoint<
 > {
   async run(event: WorkflowEvent<DeleteChannelAfterDelayWorkflowParams>, step: WorkflowStep) {
     await step.sleep("sleep for 10 minutes", "10 minutes");
-    const discordClient = env.DISCORD_CLIENT.getByName(event.payload.workspaceId);
-    await discordClient.deleteChannel(event.payload.channelId);
+    // A step, so a Discord outage or rate limit just then is retried instead of leaving the
+    // channel behind. (`workspaceId` is the Discord server's id: the DiscordClient's name.)
+    await step.do(
+      "delete the channel",
+      {retries: {limit: 6, delay: "30 seconds", backoff: "exponential"}},
+      () =>
+        env.DISCORD_CLIENT.getByName(event.payload.workspaceId).deleteChannel(
+          event.payload.channelId
+        )
+    );
   }
+}
+
+type DiscordDisconnectParams = {guildId: string};
+
+/**
+ * Removes WOW's channels from a Discord server that was disconnected from its workspace. The
+ * workspace is unlinked first (workspaces.discord.disconnect), so it doesn't wait for this; each
+ * channel is its own retried step, so Discord's rate limits or an outage can't leave some behind.
+ * Stops if the server is linked to a workspace again meanwhile: its channels are wanted again.
+ */
+export class DiscordDisconnectWorkflow extends WorkflowEntrypoint<Env, DiscordDisconnectParams> {
+  async run(event: WorkflowEvent<DiscordDisconnectParams>, step: WorkflowStep) {
+    const {guildId} = event.payload;
+    const client = () => env.DISCORD_CLIENT.getByName(guildId);
+    const channelIds = await step.do("list WOW's channels", RETRIES, async () => {
+      const channels = await client().listChannels(guildId);
+      // Discord didn't answer (or the bot was removed from the server: then this keeps failing,
+      // and there's nothing WOW can delete anyway).
+      if (channels === undefined) throw new Error(`Couldn't list the channels of ${guildId}`);
+      // Channels inside categories first, so a category is empty when it goes.
+      return channels
+        .toSorted((a, b) => Number(a.parent_id === null) - Number(b.parent_id === null))
+        .map(channel => channel.id);
+    });
+    for (const channelId of channelIds) {
+      // oxlint-disable-next-line no-await-in-loop -- one at a time: Discord rate-limits deletes per server.
+      const linked = await step.do(`check ${channelId}`, () => isLinked(guildId));
+      if (linked) return;
+      // oxlint-disable-next-line no-await-in-loop -- as above.
+      await step.do(`delete ${channelId}`, RETRIES, () => client().deleteChannel(channelId));
+    }
+    await step.do("forget the channels", async () => {
+      if (!(await isLinked(guildId))) await client().forgetChannels();
+    });
+  }
+}
+
+const RETRIES = {retries: {limit: 6, delay: "30 seconds", backoff: "exponential"}} as const;
+
+/** Whether a workspace uses this Discord server (again). */
+async function isLinked(guildId: string) {
+  const workspace = await db
+    .select({id: schema.organization.id})
+    .from(schema.organization)
+    .where(eq(schema.organization.discordGuildId, guildId))
+    .get();
+  return workspace !== undefined;
 }
