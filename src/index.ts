@@ -7,6 +7,7 @@ import * as schema from "./lib/db/schema";
 import {fetchDiscord} from "./server/do/discord-client";
 import {syncHuntListings} from "./server/hunt-calendar";
 import {captureServerException} from "./server/posthog";
+import {retryPendingPuzzleCleanups} from "./server/puzzle-cleanup";
 import {importUsage} from "./server/usage-import";
 
 /**
@@ -44,7 +45,8 @@ export default {
     }
   },
 
-  // Cron trigger (wrangler.jsonc), hourly: import the last hour's usage, and every 6 hours refresh
+  // Cron trigger (wrangler.jsonc), hourly: import the last hour's usage, restart unfinished puzzle
+  // cleanups (src/server/puzzle-cleanup.ts), and every 6 hours refresh
   // the hunt listings.
   scheduled(controller, _env, ctx) {
     const task = (name: string, run: () => Promise<unknown>) =>
@@ -56,6 +58,7 @@ export default {
         })
       );
     task("usage import", () => importUsage());
+    task("puzzle cleanup retry", () => retryPendingPuzzleCleanups());
     if (new Date(controller.scheduledTime).getUTCHours() % 6 === 0) {
       task("hunt listings sync", () => syncHuntListings());
     }
@@ -106,3 +109,4 @@ export {DeleteChannelAfterDelayWorkflow} from "./server/do/discord-client";
 export {WorkspaceRoom} from "./server/do/workspace";
 export {WhiteboardRoom} from "./server/do/whiteboard";
 export {SheetRoom} from "./server/do/sheet";
+export {PuzzleCleanupWorkflow} from "./server/puzzle-cleanup";

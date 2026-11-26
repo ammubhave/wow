@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_workspace")({
   component: RouteComponent,
   loader: async ({location}) => {
     const session = await getSession();
-    if (!session) throw redirect({to: "/login", search: {redirectTo: location.pathname}});
+    if (!session) throw redirect({to: "/login", search: {redirectTo: location.href}});
   },
 });
 

@@ -20,6 +20,52 @@ const HUNT_WEBSITE_SCHEMA = z.union([
   z.url({protocol: /^https?$/, error: "Enter a web address, like https://hunt.example"}),
 ]);
 
+/** A team or event name: can be changed, not cleared. */
+const NAME_SCHEMA = (what: string) =>
+  z.string().trim().min(1, `Give the ${what} a name.`).optional();
+
+/**
+ * The links as they'll be saved: blank rows dropped, "https://" added to a bare address
+ * ("hunt.example"). Or what's wrong with them, before anything is sent.
+ */
+function linksToSave(links: {name: string; url: string}[]) {
+  const kept = links
+    .map(link => ({name: link.name.trim(), url: link.url.trim()}))
+    .filter(link => link.name !== "" || link.url !== "");
+  const result = kept.map(link => {
+    const url = /^[a-z][a-z\d+.-]*:/i.test(link.url) ? link.url : `https://${link.url}`;
+    return {name: link.name, url};
+  });
+  for (const [i, link] of result.entries()) {
+    if (link.name === "") return {error: `Give link ${i + 1} a name.`} as const;
+    // Spaces too: some browsers accept them in a URL where the server doesn't.
+    const valid = HUNT_WEBSITE_SCHEMA.safeParse(link.url).success && !/\s/.test(link.url);
+    if (!valid || kept[i]!.url === "") {
+      return {error: `Link ${i + 1} isn't a web address, like https://hunt.example.`} as const;
+    }
+  }
+  return {links: result} as const;
+}
+
+/**
+ * Saves a settings change and waits for the server: true once saved (and says so). On failure the
+ * mutation has already shown the error, and the form keeps what was typed.
+ */
+async function save(
+  mutation: ReturnType<typeof useWorkspaceUpdate>,
+  input: Parameters<ReturnType<typeof useWorkspaceUpdate>["mutateAsync"]>[0]
+) {
+  try {
+    await mutation.mutateAsync(input);
+  } catch {
+    return false;
+  }
+  toast.success("Your changes have been saved.");
+  return true;
+}
+
+const useWorkspaceUpdate = () => useMutation(workspaceMutations.workspaces.update());
+
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/")({
   component: RouteComponent,
 });
@@ -57,16 +103,19 @@ function UpdateLinksCard() {
   const workspace = useWorkspace();
   // Archived: the links are shown as they are, with nothing to add, remove or save.
   const isReadOnly = useIsReadOnly();
-  const mutation = useMutation(workspaceMutations.workspaces.update());
+  const mutation = useWorkspaceUpdate();
   const form = useAppForm({
     defaultValues: {links: workspace.links.map(({name, url}) => ({name, url})) ?? []},
-    onSubmit: ({value}) => {
-      mutation.mutate(
-        {workspaceSlug, ...value},
-        {onSuccess: () => toast.success("Your changes have been saved.")}
-      );
+    onSubmit: async ({value}) => {
+      const checked = linksToSave(value.links);
+      if ("error" in checked) {
+        toast.error(checked.error);
+        return;
+      }
+      // Only once it's saved: if it isn't (the error is shown), what was typed stays to fix.
+      if (!(await save(mutation, {workspaceSlug, links: checked.links}))) return;
       // Untouched again, the form follows the workspace (now showing this change) from here on.
-      form.reset(value);
+      form.reset({links: checked.links});
     },
   });
 
@@ -172,7 +221,7 @@ function DetailsCard() {
   // Owners can change the details, unless the workspace is archived.
   const canEdit = isOwner && !isReadOnly;
   const workspace = useWorkspace();
-  const mutation = useMutation(workspaceMutations.workspaces.update());
+  const mutation = useWorkspaceUpdate();
   const currentHuntWebsite = workspace.links.find(link => link.name === HUNT_WEBSITE)?.url ?? "";
   const form = useAppForm({
     defaultValues: {
@@ -184,7 +233,7 @@ function DetailsCard() {
       // The "Hunt website" link (the header's first link), edited here like on the create form.
       huntWebsite: currentHuntWebsite,
     },
-    onSubmit: ({value}) => {
+    onSubmit: async ({value}) => {
       const huntStartsAt = fromLocalInput(value.huntStartsAt);
       const huntEndsAt = fromLocalInput(value.huntEndsAt);
       if (huntStartsAt && huntEndsAt && huntEndsAt <= huntStartsAt) {
@@ -201,10 +250,16 @@ function DetailsCard() {
           .filter(link => link.name !== HUNT_WEBSITE)
           .map(({name, url}) => ({name, url})),
       ];
-      mutation.mutate(
-        {workspaceSlug, ...details, huntStartsAt, huntEndsAt, ...(linksChanged ? {links} : {})},
-        {onSuccess: () => toast.success("Your changes have been saved.")}
-      );
+      const saved = await save(mutation, {
+        workspaceSlug,
+        ...details,
+        teamName: details.teamName?.trim(),
+        eventName: details.eventName?.trim(),
+        huntStartsAt,
+        huntEndsAt,
+        ...(linksChanged ? {links} : {}),
+      });
+      if (!saved) return;
       // Untouched again, the form follows the workspace (now showing this change) from here on.
       form.reset(value);
     },
@@ -224,12 +279,14 @@ function DetailsCard() {
           <form.Form>
             <form.AppField
               name="teamName"
+              validators={{onSubmit: NAME_SCHEMA("team")}}
               children={field => (
                 <field.TextField variant="secondary" label="Team name" isDisabled={!canEdit} />
               )}
             />
             <form.AppField
               name="eventName"
+              validators={{onSubmit: NAME_SCHEMA("event")}}
               children={field => (
                 <field.SuggestField
                   variant="secondary"
@@ -317,16 +374,15 @@ function UpdateTagsCard() {
   const workspace = useWorkspace();
   // Archived: the tags are shown as they are, with nothing to add, remove or save.
   const isReadOnly = useIsReadOnly();
-  const mutation = useMutation(workspaceMutations.workspaces.update());
+  const mutation = useWorkspaceUpdate();
   const form = useAppForm({
     defaultValues: {tags: workspace.tags},
-    onSubmit: ({value}) => {
-      mutation.mutate(
-        {workspaceSlug, ...value},
-        {onSuccess: () => toast.success("Your changes have been saved.")}
-      );
+    onSubmit: async ({value}) => {
+      // Blank rows (an "Add tag" left empty) aren't tags.
+      const tags = value.tags.map(tag => tag.trim()).filter(tag => tag !== "");
+      if (!(await save(mutation, {workspaceSlug, tags}))) return;
       // Untouched again, the form follows the workspace (now showing this change) from here on.
-      form.reset(value);
+      form.reset({tags});
     },
   });
 

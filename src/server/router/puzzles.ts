@@ -1,5 +1,5 @@
 import {ORPCError} from "@orpc/server";
-import {env, waitUntil} from "cloudflare:workers";
+import {waitUntil} from "cloudflare:workers";
 import {and, desc, eq, isNull, sql} from "drizzle-orm";
 import {z} from "zod";
 
@@ -10,6 +10,7 @@ import {invariant} from "@/lib/invariant";
 
 import {invalidateWorkspace} from "../do/workspace";
 import {trackServerEvent} from "../posthog";
+import {isDeletedPuzzleId, recordDeletedPuzzle, startPuzzleCleanup} from "../puzzle-cleanup";
 import {isPuzzleInWorkspace} from "../workspace-access";
 import {preauthorize, procedure} from "./base";
 
@@ -143,6 +144,10 @@ export const puzzlesRouter = {
             )?.roundId;
       if (!roundId) {
         throw new ORPCError("NOT_FOUND", {message: "Round not found"});
+      }
+      // A deleted puzzle's id stays retired: its stored data may still be on its way out.
+      if (input.id && (await isDeletedPuzzleId(input.id))) {
+        throw new ORPCError("CONFLICT", {message: "That puzzle id is taken. Try again."});
       }
 
       const puzzle = await db
@@ -509,33 +514,13 @@ export const puzzlesRouter = {
         workspaceId: puzzle.round.workspaceId,
       });
 
-      await db.delete(schema.puzzle).where(eq(schema.puzzle.id, input.id));
-      // Its chat, whiteboard and built-in spreadsheet (with their images) go with it, off the response path.
-      waitUntil(
-        Promise.all([
-          env.CHAT_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
-          env.WHITEBOARD_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
-          env.SHEET_ROOMS.getByName(puzzle.id, {locationHint: "enam"}).clear(puzzle.id),
-        ])
-      );
-
-      const googleFileId = puzzle.googleSpreadsheetId || puzzle.googleDrawingId;
-      if (googleFileId) {
-        // Off the response path: the puzzle is already gone from the workspace.
-        waitUntil(
-          (async () => {
-            const googleAccessToken = await context.google.getAccessToken(puzzle.round.workspaceId);
-            if (!googleAccessToken) return;
-            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${googleFileId}`, {
-              method: "DELETE",
-              headers: {Authorization: `Bearer ${googleAccessToken}`},
-            });
-            if (!resp.ok && resp.status !== 404) {
-              console.error(`Failed to delete Google file ${googleFileId}: ${resp.status}`);
-            }
-          })()
-        );
-      }
+      // Recorded in the same batch, so its chat, whiteboard, sheet, images and Google file are
+      // always cleaned up (src/server/puzzle-cleanup.ts), off the response path.
+      await db.batch([
+        recordDeletedPuzzle({...puzzle, workspaceId: puzzle.round.workspaceId}),
+        db.delete(schema.puzzle).where(eq(schema.puzzle.id, input.id)),
+      ]);
+      waitUntil(startPuzzleCleanup([puzzle.id]));
       await invalidateWorkspace(puzzle.round.workspaceId);
       waitUntil(context.discord.sync(puzzle.round.workspaceId));
     }),

@@ -40,7 +40,8 @@ function RouteComponent() {
     searchParams.error ? socialSignInErrorMessage(searchParams.error) : null
   );
   const turnstileRef = useRef<TurnstileInstance>(null);
-  const onSignedIn = () => router.navigate({to: searchParams.redirectTo});
+  // `href`, not `to`: redirectTo may carry a query string and hash (e.g. `?hunt=…`, `?view=chat`).
+  const onSignedIn = () => router.navigate({href: searchParams.redirectTo});
 
   const form = useAppForm({
     defaultValues: {email: "", password: "", token: ""},

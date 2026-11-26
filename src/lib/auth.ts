@@ -10,6 +10,7 @@ import {z} from "zod";
 
 import {sendActionEmail} from "../server/email";
 import {trackServerEvent} from "../server/posthog";
+import {authRateLimit} from "./auth-rate-limit";
 import {db} from "./db";
 import * as schema from "./db/schema";
 import {newTourState} from "./tour-state";
@@ -30,7 +31,14 @@ export const INVITATION_DAYS = 7;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {provider: "sqlite", schema}),
-  advanced: {database: {joins: true}},
+  advanced: {
+    database: {joins: true},
+    // Set by Cloudflare to the connecting client. The default (X-Forwarded-For) can be sent by the
+    // client too, and then rate limiting can't tell anyone apart.
+    ipAddress: {ipAddressHeaders: ["cf-connecting-ip"]},
+  },
+  // Counted by Cloudflare's rate-limiting bindings (see auth-rate-limit.ts).
+  rateLimit: authRateLimit,
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({user, url}) => {

@@ -75,6 +75,13 @@ export const workspacesRouter = {
   join: procedure
     .input(z.object({workspaceSlug: z.string(), password: z.string()}))
     .handler(async ({context, input}) => {
+      // Slows password guessing: a few tries a minute per account (binding in wrangler.jsonc).
+      const {success} = await env.JOIN_RATE_LIMIT.limit({key: context.session.user.id});
+      if (!success) {
+        throw new ORPCError("TOO_MANY_REQUESTS", {
+          message: "Too many attempts. Wait a minute, then try again.",
+        });
+      }
       const workspace = await db
         .select({
           id: schema.organization.id,

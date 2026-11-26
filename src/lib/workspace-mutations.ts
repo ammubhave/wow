@@ -345,8 +345,25 @@ function moveRound(wire: Wire, input: RouterInputs["rounds"]["move"]): Wire {
 }
 
 /** A date input in ms: undefined leaves it alone, null clears it. */
-const toDate = (ms: number | null | undefined) =>
-  ms === undefined ? undefined : ms === null ? null : new Date(ms);
+/**
+ * A hunt time as the state holds it. The socket's state is parsed JSON, so a time there is an ISO
+ * string, not a Date: an unchanged time keeps the value it has, so the preview matches the server's
+ * copy (and the change counts as confirmed) instead of differing from it for good.
+ */
+// `current` is typed as the server's Date, but at run time it's that string.
+const toDate = (ms: number | null | undefined, current: Date | null) => {
+  if (ms === undefined) return undefined;
+  if (ms === null) return null;
+  return current !== null && new Date(current).getTime() === ms ? current : new Date(ms);
+};
+
+/** The theme with its emoji set, or cleared (no key at all, as the server sends it). */
+function withEmoji(theme: Wire["theme"], emoji: string | null | undefined): Wire["theme"] {
+  if (emoji === undefined) return theme;
+  if (emoji !== null) return {...theme, emoji};
+  const {emoji: _, ...rest} = theme;
+  return rest;
+}
 
 function updateWorkspace(wire: Wire, input: RouterInputs["workspaces"]["update"]): Wire {
   const {
@@ -364,16 +381,12 @@ function updateWorkspace(wire: Wire, input: RouterInputs["workspaces"]["update"]
     ...defined({
       ...fields,
       comment: comment === undefined ? undefined : comment || null,
-      huntStartsAt: toDate(huntStartsAt),
-      huntEndsAt: toDate(huntEndsAt),
+      huntStartsAt: toDate(huntStartsAt, wire.huntStartsAt),
+      huntEndsAt: toDate(huntEndsAt, wire.huntEndsAt),
       // As the server stores it: trimmed, and empty clears it.
       huntLocation: huntLocation === undefined ? undefined : huntLocation?.trim() || null,
     }),
-    theme: {
-      ...wire.theme,
-      ...(accent !== undefined && {accent}),
-      ...(emoji !== undefined && {emoji: emoji ?? undefined}),
-    },
+    theme: withEmoji({...wire.theme, ...(accent !== undefined && {accent})}, emoji),
   };
 }
 

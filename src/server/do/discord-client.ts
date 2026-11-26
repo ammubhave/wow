@@ -7,6 +7,23 @@ import {
 } from "cloudflare:workers";
 import {z} from "zod";
 
+import {
+  CATEGORY,
+  desiredRounds,
+  planSync,
+  retryAfterSeconds,
+  type SyncRound,
+  VOICE,
+} from "../discord-sync-plan";
+
+/** Attempts per request when Discord rate-limits it (429), and the longest wait we'll sit out. */
+const MAX_ATTEMPTS = 5;
+const MAX_RETRY_WAIT_SECONDS = 60;
+
+/**
+ * A Discord API request. Rate-limited requests (429) are retried after the wait Discord asks for,
+ * up to MAX_ATTEMPTS; after that, or for a longer wait, the 429 response is returned.
+ */
 export async function fetchDiscord(
   url: string,
   init?: Omit<RequestInit<RequestInitCfProperties>, "body"> & {body?: any}
@@ -16,136 +33,182 @@ export async function fetchDiscord(
     headers.set("content-type", "application/json");
   }
   headers.set("authorization", `Bot ${env.DISCORD_BOT_TOKEN}`);
-  return await fetch(`https://discord.com/api/v10${url}`, {
-    ...init,
-    headers,
-    body: init?.body
-      ? init.body instanceof FormData
-        ? init.body
-        : JSON.stringify(init.body)
-      : undefined,
-  });
+  const body = init?.body
+    ? init.body instanceof FormData
+      ? init.body
+      : JSON.stringify(init.body)
+    : undefined;
+  for (let attempt = 1; ; attempt++) {
+    // Retries are sequential by nature.
+    // oxlint-disable-next-line no-await-in-loop
+    const response = await fetch(`https://discord.com/api/v10${url}`, {...init, headers, body});
+    if (response.status !== 429 || attempt >= MAX_ATTEMPTS) return response;
+    // oxlint-disable-next-line no-await-in-loop
+    const json: unknown = await response
+      .clone()
+      .json()
+      .catch(() => undefined);
+    const seconds = retryAfterSeconds(json, response.headers.get("retry-after"));
+    if (seconds > MAX_RETRY_WAIT_SECONDS) return response;
+    // oxlint-disable-next-line no-await-in-loop
+    await new Promise(resolve => setTimeout(resolve, seconds * 1000 + 100));
+  }
 }
 
+export class DiscordApiError extends Error {
+  constructor(
+    readonly status: number,
+    method: string,
+    url: string,
+    detail: string
+  ) {
+    super(`Discord ${method} ${url} failed with ${status}: ${detail.slice(0, 500)}`);
+    this.name = "DiscordApiError";
+  }
+}
+
+/** A Discord API request that throws a DiscordApiError unless it succeeds; returns the JSON body. */
+async function discordRequest(
+  url: string,
+  init?: Parameters<typeof fetchDiscord>[1]
+): Promise<unknown> {
+  const response = await fetchDiscord(url, init);
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new DiscordApiError(response.status, init?.method ?? "GET", url, detail);
+  }
+  if (response.status === 204) return undefined;
+  return await response.json();
+}
+
+type SyncWorkspace = {discordGuildId: string; rounds: SyncRound[]};
+
+/** Storage key for the puzzle id → voice channel id mapping. */
+const PUZZLE_CHANNELS_KEY = "puzzleChannels";
+
 export class DiscordClient extends DurableObject {
-  public async sync(workspace: {
-    discordGuildId: string;
-    rounds: {
-      name: string;
-      puzzles: {
-        name: string;
-        status: string | null;
-        importance: string | null;
-        isMetaPuzzle: boolean;
-      }[];
-    }[];
-  }) {
-    await this.ctx.blockConcurrencyWhile(async () => {
-      // Discord API calls below are intentionally sequential: channel creation order determines
-      // channel position, and Discord rate-limits channel create/update/delete per guild.
-      /* oxlint-disable no-await-in-loop */
-      const allPuzzles = workspace.rounds
-        .map(round => ({
-          name: round.name,
-          puzzles: round.puzzles
-            .filter(
-              puzzle =>
-                // Done with: solved, or marked Obsolete (an importance, not a status).
-                puzzle.status !== "solved" &&
-                puzzle.status !== "backsolved" &&
-                puzzle.importance !== "obsolete"
-            )
-            .map(puzzle => ({
-              name: `${puzzle.isMetaPuzzle ? "[META] " : ""}${puzzle.name}`,
-              status: puzzle.status,
-            })),
-        }))
-        .filter(round => round.puzzles.length > 0);
+  /** The running sync, if any: there is never more than one at a time. */
+  private running: Promise<void> | undefined;
+  /** The latest board received while a sync ran: synced once that run finishes. */
+  private pending: SyncWorkspace | undefined;
 
-      const channelsWithDuplicates = await this.listChannels(workspace.discordGuildId);
-      if (channelsWithDuplicates === undefined) {
-        return;
+  /**
+   * Mirror the board into the guild. Never runs two syncs at once: a call during a sync queues the
+   * board it was given, and any number of such calls coalesce into one follow-up sync of the latest.
+   * Resolves when the guild has caught up with this call's board (or a newer one).
+   *
+   * Not inside blockConcurrencyWhile: a first sync of a big board, or one waiting out Discord's
+   * rate limits, can take well over the 30 seconds after which that resets the object.
+   */
+  public async sync(workspace: SyncWorkspace) {
+    this.pending = workspace;
+    this.running ??= this.drain().finally(() => {
+      this.running = undefined;
+    });
+    await this.running;
+  }
+
+  private async drain() {
+    while (this.pending) {
+      const workspace = this.pending;
+      this.pending = undefined;
+      try {
+        // Sequential on purpose: each run must finish before the next starts.
+        // oxlint-disable-next-line no-await-in-loop
+        await this.syncOnce(workspace);
+      } catch (error) {
+        // The next trigger retries from scratch; the sync is idempotent.
+        console.error("Discord sync failed", error);
+      }
+    }
+  }
+
+  private async syncOnce(workspace: SyncWorkspace) {
+    const guildId = workspace.discordGuildId;
+    const existing = await this.listChannels(guildId);
+    if (existing === undefined) return;
+
+    const rounds = desiredRounds(workspace.rounds);
+    const stored = (await this.ctx.storage.get<Record<string, string>>(PUZZLE_CHANNELS_KEY)) ?? {};
+    const plan = planSync(
+      rounds,
+      existing.map(channel => ({
+        id: channel.id,
+        name: channel.name,
+        type: channel.type,
+        parentId: channel.parent_id,
+      })),
+      stored
+    );
+
+    // Puzzle id → channel id, for puzzles whose channel this run settled; saved even if it fails
+    // partway, keeping earlier entries for puzzles it didn't reach.
+    const puzzleIds = new Set(rounds.flatMap(round => round.puzzles.flatMap(p => p.id ?? [])));
+    const settled = new Map<string, string>();
+
+    // Discord API calls below are intentionally sequential: channel creation order determines
+    // channel position, and Discord rate-limits channel create/update/delete per guild.
+    /* oxlint-disable no-await-in-loop */
+    try {
+      const categories = new Map(plan.categories);
+      for (const round of plan.createCategories) {
+        const category = await this.createChannel({guildId, name: round, type: CATEGORY});
+        categories.set(round, category.id);
       }
 
-      // Delete duplicate channels
-      const channels: typeof channelsWithDuplicates = [];
-      for (const [_, duplicates] of Object.entries(
-        Object.groupBy(channelsWithDuplicates, channel => channel.name)
-      )) {
-        if (duplicates === undefined) {
-          continue;
-        }
-        for (const duplicate of duplicates?.slice(1) ?? []) {
-          await this.deleteChannel(duplicate.id);
-        }
-        channels.push(duplicates[0]!);
-      }
-
-      const categories = new Map(
-        channels.filter(channel => channel.type === 4).map(channel => [channel.name, channel.id])
-      );
-
-      // Create new categories
-      const rounds = new Set<string>();
-      for (const round of allPuzzles) {
-        rounds.add(round.name);
-        if (!categories.has(round.name)) {
-          const newCategory = await this.createChannel({
-            guildId: workspace.discordGuildId,
-            name: round.name,
-            type: 4,
-          });
-          categories.set(round.name, newCategory.id);
-        }
-      }
-
-      const voices = new Map(
-        channels
-          .filter(channel => channel.type === 2)
-          .map(channel => [channel.name, {id: channel.id, parentId: channel.parent_id}])
-      );
-      // Add new voice channels
-      const puzzles = new Map<string, string>();
-      for (const round of allPuzzles) {
-        for (const puzzle of round.puzzles) {
-          puzzles.set(puzzle.name, round.name);
-          if (!voices.has(puzzle.name)) {
-            await this.createChannel({
-              guildId: workspace.discordGuildId,
-              name: puzzle.name,
-              type: 2,
-              parentId: categories.get(round.name),
+      for (const action of plan.voices) {
+        try {
+          if (action.kind === "create") {
+            const channel = await this.createChannel({
+              guildId,
+              name: action.name,
+              type: VOICE,
+              parentId: categories.get(action.round),
             });
-          } else if (voices.get(puzzle.name)!.parentId !== categories.get(round.name)) {
-            await this.updateChannel(voices.get(puzzle.name)!.id, {
-              parentId: categories.get(round.name),
+            if (action.puzzleId) settled.set(action.puzzleId, channel.id);
+            continue;
+          }
+          if (action.kind === "update") {
+            await this.updateChannel(action.channelId, {
+              ...(action.name !== undefined && {name: `🧩 ${action.name}`}),
+              ...(action.round !== undefined && {parentId: categories.get(action.round) ?? null}),
             });
           }
+          if (action.puzzleId) settled.set(action.puzzleId, action.channelId);
+        } catch (error) {
+          // One puzzle Discord rejects (say, a name it won't take) shouldn't hold up the rest.
+          if (!(error instanceof DiscordApiError) || error.status === 429) throw error;
+          console.error("Discord sync: skipping a puzzle's channel", error);
         }
       }
 
-      // Delete old voice channels
-      for (const [voiceName, channelId] of voices) {
-        if (!puzzles.has(voiceName)) {
-          await this.updateChannel(channelId.id, {
-            name: `✅ ${voiceName}`,
-            parentId: channelId.parentId,
-          });
-          await env.DELETE_CHANNEL_AFTER_DELAY_WORKFLOW.create({
-            id: crypto.randomUUID(),
-            params: {channelId: channelId.id, workspaceId: this.ctx.id.name!},
-          });
-        }
+      for (const channel of plan.retireVoices) {
+        await this.updateChannel(channel.id, {
+          name: `✅ ${channel.name}`,
+          parentId: channel.parentId,
+        });
+        await env.DELETE_CHANNEL_AFTER_DELAY_WORKFLOW.create({
+          id: crypto.randomUUID(),
+          params: {channelId: channel.id, workspaceId: this.ctx.id.name!},
+        });
       }
-
-      // Delete old categories
-      for (const [categoryName, channelId] of categories) {
-        if (!rounds.has(categoryName)) {
-          await this.deleteChannel(channelId);
-        }
+      for (const channelId of plan.deleteVoices) {
+        await this.deleteChannel(channelId);
       }
-      /* oxlint-enable no-await-in-loop */
-    });
+      for (const channelId of plan.deleteCategories) {
+        await this.deleteChannel(channelId);
+      }
+    } finally {
+      if (puzzleIds.size > 0 || Object.keys(stored).length > 0) {
+        const next: Record<string, string> = {};
+        for (const id of puzzleIds) {
+          const channelId = settled.get(id) ?? stored[id];
+          if (channelId) next[id] = channelId;
+        }
+        await this.ctx.storage.put(PUZZLE_CHANNELS_KEY, next);
+      }
+    }
+    /* oxlint-enable no-await-in-loop */
   }
 
   public async createChannel({
@@ -159,30 +222,33 @@ export class DiscordClient extends DurableObject {
     type: number;
     parentId?: string;
   }) {
-    const response = await (
-      await fetchDiscord(`/guilds/${guildId}/channels`, {
-        method: "POST",
-        body: {name: `🧩 ${name}`, type, parent_id: parentId ?? null},
-      })
-    ).json();
+    const response = await discordRequest(`/guilds/${guildId}/channels`, {
+      method: "POST",
+      body: {name: `🧩 ${name}`, type, parent_id: parentId ?? null},
+    });
     return z.object({id: z.string()}).parse(response);
   }
 
+  /** `name` is the full channel name, prefix included. */
   public async updateChannel(channelId: string, data: {parentId?: string | null; name?: string}) {
-    return await (
-      await fetchDiscord(`/channels/${channelId}`, {
-        method: "PATCH",
-        body: {parent_id: data.parentId, name: data.name},
-      })
-    ).json();
+    return await discordRequest(`/channels/${channelId}`, {
+      method: "PATCH",
+      body: {parent_id: data.parentId, name: data.name},
+    });
   }
 
+  /** Deletes a channel; one that's already gone counts as deleted. */
   public async deleteChannel(channelId: string) {
-    return await fetchDiscord(`/channels/${channelId}`, {method: "DELETE"});
+    try {
+      await discordRequest(`/channels/${channelId}`, {method: "DELETE"});
+    } catch (error) {
+      if (error instanceof DiscordApiError && error.status === 404) return;
+      throw error;
+    }
   }
 
-  public async listChannels(workspaceId: string) {
-    const response = await fetchDiscord(`/guilds/${workspaceId}/channels`);
+  public async listChannels(guildId: string) {
+    const response = await fetchDiscord(`/guilds/${guildId}/channels`);
     if (response.status !== 200) {
       return undefined;
     }
@@ -219,9 +285,15 @@ export class DiscordClient extends DurableObject {
     }
     for (const channel of channels) {
       // Sequential on purpose: Discord rate-limits channel deletes per guild.
-      // oxlint-disable-next-line no-await-in-loop
-      await this.deleteChannel(channel.id);
+      try {
+        // oxlint-disable-next-line no-await-in-loop
+        await this.deleteChannel(channel.id);
+      } catch (error) {
+        // Disconnecting goes ahead even if some channels can't be removed.
+        console.error("Discord: couldn't delete a channel", error);
+      }
     }
+    await this.ctx.storage.delete(PUZZLE_CHANNELS_KEY);
   }
 }
 

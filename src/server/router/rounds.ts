@@ -8,6 +8,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 import {invalidateWorkspace} from "../do/workspace";
+import {recordDeletedRoundPuzzles, startPuzzleCleanup} from "../puzzle-cleanup";
 import {preauthorize, procedure} from "./base";
 
 export const roundsRouter = {
@@ -115,8 +116,13 @@ export const roundsRouter = {
         roundName: round.name,
       });
 
-      // Delete round from database
-      await db.delete(schema.round).where(eq(schema.round.id, input.id));
+      // Its puzzles are recorded in the same batch, so their stored data is always cleaned up
+      // (src/server/puzzle-cleanup.ts), off the response path.
+      const [deletedPuzzles] = await db.batch([
+        recordDeletedRoundPuzzles(round),
+        db.delete(schema.round).where(eq(schema.round.id, input.id)),
+      ]);
+      waitUntil(startPuzzleCleanup(deletedPuzzles.map(puzzle => puzzle.id)));
       await invalidateWorkspace(round.workspaceId);
       waitUntil(context.discord.sync(round.workspaceId));
     }),

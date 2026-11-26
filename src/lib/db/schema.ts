@@ -286,3 +286,25 @@ export const usageImports = sqliteTable("usage_imports", {
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
 });
+
+/**
+ * A deleted puzzle whose stored data (chat, whiteboard, built-in sheet, their images, its Google
+ * file) is being removed by PuzzleCleanupWorkflow (src/server/puzzle-cleanup.ts). Written in the
+ * same batch that deletes the puzzle, so no deletion is missed; the hourly cron restarts any
+ * cleanup that hasn't finished. Kept after cleanup so a new puzzle can never take a deleted id.
+ */
+export const deletedPuzzle = sqliteTable(
+  "deleted_puzzle",
+  {
+    /** The deleted puzzle's id (no foreign key: the puzzle row is gone). */
+    id: text().primaryKey(),
+    workspaceId: text().notNull(),
+    googleFileId: text(),
+    deletedAt: integer({mode: "timestamp_ms"})
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    /** When its cleanup finished; null while it's pending. */
+    cleanedAt: integer({mode: "timestamp_ms"}),
+  },
+  t => [index("deleted_puzzle_cleanedAt_idx").on(t.cleanedAt)]
+);

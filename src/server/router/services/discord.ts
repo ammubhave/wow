@@ -17,7 +17,11 @@ export class DiscordService {
     const rounds = await db.query.round.findMany({
       where: {workspaceId},
       columns: {name: true},
-      with: {puzzles: {columns: {name: true, status: true, importance: true, isMetaPuzzle: true}}},
+      with: {
+        puzzles: {
+          columns: {id: true, name: true, status: true, importance: true, isMetaPuzzle: true},
+        },
+      },
     });
     await env.DISCORD_CLIENT.getByName(workspace.discordGuildId).sync({
       rounds,
