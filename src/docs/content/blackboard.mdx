@@ -18,7 +18,7 @@ The board is a tree. Each **round** is a top-level row. Inside a round you'll fi
 
 Click the chevron on a round, meta or unassigned group to collapse or expand it. WOW remembers what you've collapsed for each workspace, in your browser.
 
-Each feeder row has a coloured line on the left matching its meta, so you can tell at a glance which meta a puzzle belongs to.
+Each feeder row has a coloured line on the left matching its meta, so you can tell at a glance which meta a puzzle belongs to. A meta that feeds another meta sits one step in, with its own feeders indented under it, and its parent's line carries on down beside them to the parent's remaining feeders.
 
 If you're new to how rounds, metas and feeders fit together, read [Rounds, metas and feeders](/docs/concepts/hunt-structure) first.
 
@@ -33,7 +33,7 @@ If you're new to how rounds, metas and feeders fit together, read [Rounds, metas
 | **Status**               | Where the puzzle stands: None, Active, Solved, Backsolved, Needs eyes, Extraction, Stuck, Pending or Very stuck. States that need attention colour the row; solved rows go quiet. |
 | Importance (signal icon) | Important, Normal, Obsolete, or none.                                                                                                                                             |
 | **Tags**                 | The puzzle's tags, like "crossword" or "music".                                                                                                                                   |
-| **Working on this**      | Avatars of teammates who have the puzzle open right now.                                                                                                                          |
+| **Working on this**      | Avatars of teammates who have the puzzle open right now. Hidden when the board is too narrow for it, as on a laptop with the sidebar open.                                        |
 | Actions                  | The favourite star and the row's ⋯ menu.                                                                                                                                          |
 
 Round rows are a little different: they show the round's name, a progress bar with "X/Y" solved, and a round status (None or Solved) instead of a puzzle status.
@@ -48,9 +48,8 @@ Anyone in the workspace can add, edit and delete rounds and puzzles.
 
 <Steps>
 
-1. Click the **Board menu** (⋯) at the right end of the board's header row. On an empty board, use the button under **No rounds yet** instead.
-2. Choose **Add round**.
-3. Type the round's **Name** and click **Save**.
+1. Click the **+** at the right end of the board's header row (above the row menus). On an empty board, use the button under **No rounds yet** instead.
+2. Type the round's **Name** and click **Save**.
 
 </Steps>
 
@@ -79,7 +78,7 @@ There are a few ways to open the **Add a puzzle** dialog:
 
 - **Add puzzle** in the board's toolbar (just a **+** on phones). It starts in the newest round.
 - The **+** on a round's row ("Add a puzzle to _round_"; not on phones). It starts in that round.
-- **Add a feeder** in a meta's ⋯ menu, or **Add a puzzle (no meta)** in a round's ⋯ menu.
+- The **+** on a meta's row ("Add a feeder to _meta_"; not on phones), or **Add a feeder** in its ⋯ menu. Or **Add a puzzle (no meta)** in a round's ⋯ menu.
 
 Whichever you use, you can change where the puzzle goes in the dialog. It has:
 
@@ -180,7 +179,7 @@ The toolbar above the board narrows what you see.
 
 ### Search
 
-Type in **Search puzzles…**, or press <Kbd>/</Kbd> anywhere on the board to jump to it. Search matches a puzzle's name, answer, notes and tags. A meta stays visible when any of its feeders match.
+Type in **Search puzzles…**, or press <Kbd>/</Kbd> or <Kbd>⌘ F</Kbd> (<Kbd>Ctrl F</Kbd> on Windows) anywhere on the board to jump to it. The board only draws the rows on screen, so the browser's own find can't see the rest; press <Kbd>⌘ F</Kbd> again in the search box if you want it anyway. Search matches a puzzle's name, answer, notes and tags. A meta stays visible when any of its feeders match.
 
 ### Filters
 
@@ -225,13 +224,12 @@ Metas can feed other metas, but WOW won't let you drop a meta into one of its ow
 
 | Row                | Menu items                                                                   |
 | ------------------ | ---------------------------------------------------------------------------- |
-| Board header (⋯)   | **Add round**                                                                |
 | Round              | **Add a meta**, **Add a puzzle (no meta)**, **Edit round**, **Delete round** |
 | Unassigned puzzles | **Assign all unassigned puzzles**                                            |
 | Meta               | **Add a feeder**, **Edit meta**, **Move to…**, **Delete meta**               |
 | Puzzle             | **Edit puzzle**, **Move to…**, **Delete puzzle**                             |
 
-On desktop, each round's row also has a **+** button that adds a puzzle to that round. On phones, puzzle and meta menus also have **Open on the hunt site**.
+On desktop, each round's row also has a **+** button that adds a puzzle to that round, each meta's row has one that adds a feeder, and the board's header row has one that adds a round. On phones, puzzle and meta menus also have **Open on the hunt site**.
 
 ## See what your team is doing
 

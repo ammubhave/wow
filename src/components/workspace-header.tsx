@@ -4,10 +4,10 @@ import {Link, useChildMatches} from "@tanstack/react-router";
 import {
   ExternalLinkIcon,
   HistoryIcon,
-  HomeIcon,
   InfoIcon,
   PuzzleIcon,
   SettingsIcon,
+  TableIcon,
   TrophyIcon,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
@@ -24,10 +24,11 @@ import {HuntClock} from "./hunt-clock";
 import {NavUser} from "./nav-user";
 import {WorkspaceCommandDialog} from "./workspace-command-dialog";
 
-// Icon-only on purpose: these are the least-used destinations. Hunt links and the current puzzle
-// are what solvers reach for, so those get the labels and the space.
+// Icon-only on purpose, even the current one: these are the least-used destinations, and a fixed
+// width keeps each icon in the same place on every page. Hunt links and the current puzzle are
+// what solvers reach for, so those get the labels and the space.
 const SECTIONS = [
-  {routeId: "/$workspaceSlug/", path: "", label: "Blackboard", Icon: HomeIcon},
+  {routeId: "/$workspaceSlug/", path: "", label: "Blackboard", Icon: TableIcon},
   {routeId: "/$workspaceSlug/settings", path: "/settings", label: "Settings", Icon: SettingsIcon},
   {
     routeId: "/$workspaceSlug/activity-log",
@@ -118,8 +119,8 @@ export function WorkspaceHeader() {
         {newPuzzleId && puzzle && (
           <span className="min-w-0 truncate text-sm font-medium md:hidden">{puzzle.name}</span>
         )}
-        {/* Real links (⌘/middle-click work) with a segmented look. Sections are icon-only except the
-            current one, which also shows its label; the current puzzle always shows its name. */}
+        {/* Real links (⌘/middle-click work) with a segmented look. Sections are icon-only (their names
+            show on hover); the current puzzle always shows its name. */}
         <Tabs selectedKey={selectedKey} className="hidden md:flex">
           <Tabs.ListContainer>
             <Tabs.List data-tour="sections" aria-label="Workspace sections" className="w-fit">
@@ -133,13 +134,8 @@ export function WorkspaceHeader() {
                   ref={sectionHint.tabRef(routeId)}
                   onHoverChange={hovering => sectionHint.onHoverChange(routeId, hovering)}
                   onPress={sectionHint.hide}>
-                  {({isSelected}) => (
-                    <>
-                      <Icon className="size-4 shrink-0" />
-                      {isSelected && <span className="ms-1.5">{label}</span>}
-                      <Tabs.Indicator />
-                    </>
-                  )}
+                  <Icon className="size-4 shrink-0" />
+                  <Tabs.Indicator />
                 </Tabs.Tab>
               ))}
               {puzzle && puzzleHref && (
@@ -158,7 +154,7 @@ export function WorkspaceHeader() {
         </Tabs>
         {/* The icon-only tabs' names (the current one shows its name already). */}
         <Tooltip
-          isOpen={Boolean(hinted && sectionHint.anchor && hinted.routeId !== selectedKey)}
+          isOpen={Boolean(hinted && sectionHint.anchor)}
           onOpenChange={open => {
             if (!open) sectionHint.dismiss();
           }}>

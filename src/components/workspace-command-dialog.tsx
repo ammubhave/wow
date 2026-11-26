@@ -7,7 +7,7 @@ import {
   PlusIcon,
   BookOpenIcon,
   HistoryIcon,
-  HomeIcon,
+  TableIcon,
   InfoIcon,
   LinkIcon,
   PuzzleIcon,
@@ -162,7 +162,7 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                     void navigate({to: "/$workspaceSlug", params: {workspaceSlug}});
                     setOpen(false);
                   }}>
-                  <HomeIcon />
+                  <TableIcon />
                   <span>Blackboard</span>
                 </Command.Item>
                 <Command.Item

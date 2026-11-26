@@ -14,8 +14,10 @@ import {
   selectVariants,
   Separator,
   Table,
+  TableLayout,
   ToggleButton,
   Tooltip,
+  Virtualizer,
   type Key,
   type Selection,
 } from "@heroui/react";
@@ -92,34 +94,30 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
 // denser than HeroUI's default; the "secondary" variant keeps them transparent so the row status
 // colors show through.
 
-// Columns that only fit on wider screens: on phones the board is name, answer and status.
-const DESKTOP_ONLY = "hidden md:table-cell";
-/**
- * Phones: a column squeezed to nothing rather than hidden, for one that a row spans with colSpan
- * (hiding it would shift that row's later cells under the wrong columns). The Answer column: phones
- * show the answer under the name instead, so Status fits on screen.
- */
-const PHONE_COLLAPSED =
-  "max-md:w-0 max-md:max-w-0 max-md:overflow-hidden max-md:p-0 max-md:*:hidden";
+// The table is virtualized, so React Aria lays it out: columns have set widths (a hidden column
+// gets 0) and rows a set height.
+const ROW_HEIGHT = 37;
+const HEADING_HEIGHT = 40;
+/** The row buttons: up to three (a meta's favorite, + and ⋯); phones show only the ⋯. */
+const ACTIONS_WIDTH = 124;
+const PHONE_ACTIONS_WIDTH = 52;
+const columnWidth = (width: number) => ({width, minWidth: width, maxWidth: width});
+
+/** Board width below which "Working on this" is dropped, so the row menus stay on screen. */
+const NARROW_BOARD = 860;
+/** Hidden while the board is narrow (the table root then has `data-narrow`). */
+const NARROW_HIDDEN = "in-data-narrow:hidden";
+
+// Columns that only fit on wider screens: on phones the board is name, answer and status (their
+// columns are 0 wide there).
+const DESKTOP_ONLY = "max-md:hidden";
+/** Phones: the Answer column (0 wide there; phones show the answer under the name instead). */
+const PHONE_COLLAPSED = "max-md:p-0 max-md:*:hidden";
 /** Narrower than the md breakpoint (the board's phone layout). */
 const useIsPhone = () => !useMediaQuery("(min-width: 768px)");
-/**
- * On phones the board scrolls sideways; the row menus (add a puzzle, edit, delete) stay pinned to
- * the right edge so they're always in reach.
- */
-const STICKY_ACTIONS =
-  "max-md:sticky max-md:right-0 max-md:z-[1] max-md:bg-background max-md:shadow-[-10px_0_10px_-10px_rgb(0_0_0/0.5)]";
-// A name cell is capped (its link truncates with an ellipsis, the full name on hover) so one long
-// puzzle name doesn't push the other columns and the row menus off the board: narrow on phones,
-// enough for the board to fit beside the sidebar on a laptop, roomier on big screens.
-/**
- * Phones: the name's width, so Status and the menu fit beside it (a table cell's own max-width is
- * ignored, so it goes on what's inside): the screen less the expand, Status and menu columns.
- */
-const NAME_ON_PHONES = "max-md:max-w-[calc(100vw-13rem)]";
-const NAME_CELL_ON_PHONES = "max-w-44 md:max-w-64 2xl:max-w-96";
-const CELL = "p-2 text-xs whitespace-nowrap";
-const COLUMN = "px-2 whitespace-nowrap";
+// Cells are divs (the table is virtualized), so they center their content themselves.
+const CELL = "flex items-center p-2 text-xs whitespace-nowrap";
+const COLUMN = "flex h-full items-center px-2 whitespace-nowrap";
 
 /** The rows under a round: its metas, then (if any) its unassigned puzzles as a group. */
 type UnassignedGroup = {
@@ -160,16 +158,54 @@ function RowChevron({
  * their meta, so every name starts in the same place whatever its depth. (HeroUI indents a tree
  * column by depth; this one stays put.)
  */
-const TREE_CELL = "relative w-8 p-0 ps-0!";
+const TREE_CELL = "relative flex items-center justify-center p-0 ps-0!";
 
-/** A feeder's line: down from its meta (in the meta's colour), then across to the name. */
-function FeederLine({color}: {color: string}) {
+/**
+ * One meta's line through a row, in the meta's colour: across to the name of a row it feeds
+ * (`branch`, or `last` for its last feeder, where the line ends), or straight down past a row
+ * deeper in its tree (`pass`).
+ */
+type TreeLineKind = "pass" | "branch" | "last";
+function TreeLine({color, kind}: {color: string; kind: TreeLineKind}) {
   return (
     <span aria-hidden className="absolute inset-0">
-      <span className="absolute inset-y-0 left-1/2 w-px" style={{backgroundColor: color}} />
-      <span className="absolute top-1/2 right-0 left-1/2 h-px" style={{backgroundColor: color}} />
+      <span
+        className={cn("absolute left-1/2 w-px", kind === "last" ? "top-0 h-1/2" : "inset-y-0")}
+        style={{backgroundColor: color}}
+      />
+      {kind !== "pass" && (
+        <span className="absolute top-1/2 right-0 left-1/2 h-px" style={{backgroundColor: color}} />
+      )}
     </span>
   );
+}
+
+/**
+ * A row's place in a meta inside a meta: the lines of the metas above its own, outermost first.
+ * Each is a meta id (its line carries on down past this row) or `-` (that meta's feeders ended
+ * above). A string, so it's cheap to compare when rows are memoized.
+ */
+type OuterLines = string;
+function outerLineKinds(outer: OuterLines) {
+  return outer === ""
+    ? []
+    : outer
+        .split(" ")
+        .map(id => (id === "-" ? null : {color: metaColor(id), kind: "pass" as const}));
+}
+
+/**
+ * The tree, drawn across two places: the tree column has the outermost meta's line, and each
+ * deeper meta's line gets a slot in front of the name, so a meta inside a meta and its feeders sit
+ * one step in from the meta they feed.
+ */
+function NameIndent({lines}: {lines: ({color: string; kind: TreeLineKind} | null)[]}) {
+  return lines.map((line, i) => (
+    // oxlint-disable-next-line react/no-array-index-key -- a slot per depth; position is the identity.
+    <span key={i} className="relative -my-2 me-1 w-6 shrink-0 self-stretch">
+      {line && <TreeLine {...line} />}
+    </span>
+  ));
 }
 
 /** A meta's colour, shared by the meta's dot and its feeders' bars. */
@@ -192,6 +228,169 @@ const ArrangingContext = createContext(false);
  * stay memoized.
  */
 const ReadOnlyContext = createContext(false);
+/** Each round's solved and total puzzle counts, by round id. */
+const RoundProgressContext = createContext<ReadonlyMap<string, {solved: number; total: number}>>(
+  new Map()
+);
+
+type BoardPuzzle = React.ComponentProps<typeof EditPuzzleDialog>["puzzle"];
+
+/** The board's dialogs, opened from the toolbar, the header row and the rows' + buttons and menus. */
+type BoardDialog =
+  | {kind: "add-round"}
+  | {kind: "add-meta"; roundId: string}
+  | {kind: "add-puzzle"; roundId?: string; parentPuzzleId?: string}
+  | {kind: "edit-round"; round: {id: string; name: string}}
+  | {kind: "delete-round"; roundId: string; roundName: string; puzzleCount: number}
+  | {kind: "assign-unassigned"; roundId: string}
+  | {kind: "edit-puzzle" | "move-puzzle" | "delete-puzzle"; puzzle: BoardPuzzle};
+
+const OpenBoardDialogContext = createContext<(dialog: BoardDialog) => void>(() => {});
+
+// Opening a dialog only re-renders this: `children` is the same element, so the board (and React
+// Aria's table, which rebuilds when any row changes) stays as it is. Keeping the open state on the
+// page or in a row made opening one take a noticeable moment on a big board.
+function BoardDialogs({
+  workspaceSlug,
+  children,
+}: {
+  workspaceSlug: string;
+  children: React.ReactNode;
+}) {
+  const [dialog, setDialog] = useState<BoardDialog | null>(null);
+  const setOpen = (open: boolean) => {
+    if (!open) setDialog(null);
+  };
+  return (
+    <OpenBoardDialogContext.Provider value={setDialog}>
+      {children}
+      {dialog?.kind === "add-round" && (
+        <AddNewRoundDialog workspaceSlug={workspaceSlug} open setOpen={setOpen} />
+      )}
+      {dialog?.kind === "add-meta" && (
+        <AddNewMetaPuzzleDialog
+          workspaceSlug={workspaceSlug}
+          roundId={dialog.roundId}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "add-puzzle" && (
+        <AddNewPuzzleDialog
+          workspaceSlug={workspaceSlug}
+          roundId={dialog.roundId}
+          parentPuzzleId={dialog.parentPuzzleId}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "edit-round" && (
+        <EditRoundDialog
+          workspaceSlug={workspaceSlug}
+          round={dialog.round}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "delete-round" && (
+        <DeleteRoundDialog
+          workspaceSlug={workspaceSlug}
+          roundId={dialog.roundId}
+          roundName={dialog.roundName}
+          puzzleCount={dialog.puzzleCount}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "assign-unassigned" && (
+        <AssignUnassignedPuzzlesDialog
+          workspaceSlug={workspaceSlug}
+          roundId={dialog.roundId}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "edit-puzzle" && (
+        <EditPuzzleDialog
+          workspaceSlug={workspaceSlug}
+          puzzle={dialog.puzzle}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "move-puzzle" && (
+        <MovePuzzleDialog
+          workspaceSlug={workspaceSlug}
+          puzzle={dialog.puzzle}
+          open
+          setOpen={setOpen}
+        />
+      )}
+      {dialog?.kind === "delete-puzzle" && (
+        <DeletePuzzleDialog
+          workspaceSlug={workspaceSlug}
+          puzzleId={dialog.puzzle.id}
+          puzzleName={dialog.puzzle.name}
+          isMetaPuzzle={dialog.puzzle.isMetaPuzzle}
+          open
+          setOpen={setOpen}
+        />
+      )}
+    </OpenBoardDialogContext.Provider>
+  );
+}
+
+/**
+ * Smooths a collapse or expand: call it just before the rows change. Rows that stay slide from
+ * where they were, rows that appear under an expanded row fade in, and rows that scroll in from
+ * below as one collapses slide up with the rest.
+ */
+function animateRowMoves(scroller: HTMLElement) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const rows = () => scroller.querySelectorAll<HTMLElement>("[role=row][data-key]");
+  // Where each row is now, without the slide of a toggle that's still animating.
+  for (const row of rows()) for (const animation of row.getAnimations()) animation.cancel();
+  const before = new Map(
+    [...rows()].map(row => [row.dataset.key, row.getBoundingClientRect().top])
+  );
+  // Runs after React has rendered the change but before it's painted.
+  requestAnimationFrame(() => {
+    let lastKept: {top: number; delta: number} | null = null;
+    const appeared: HTMLElement[] = [];
+    for (const row of rows()) {
+      const top = row.getBoundingClientRect().top;
+      const old = before.get(row.dataset.key);
+      if (old === undefined) {
+        appeared.push(row);
+      } else {
+        if (!lastKept || top > lastKept.top) lastKept = {top, delta: old - top};
+        if (old !== top) {
+          row.animate([{transform: `translateY(${old - top}px)`}, {transform: "none"}], {
+            duration: 200,
+            easing: "ease-out",
+          });
+        }
+      }
+    }
+    for (const row of appeared) {
+      const top = row.getBoundingClientRect().top;
+      if (lastKept && top > lastKept.top && lastKept.delta > 0) {
+        row.animate([{transform: `translateY(${lastKept.delta}px)`}, {transform: "none"}], {
+          duration: 200,
+          easing: "ease-out",
+        });
+      } else {
+        row.animate(
+          [
+            {opacity: 0, transform: "translateY(-6px)"},
+            {opacity: 1, transform: "none"},
+          ],
+          {duration: 200, easing: "ease-out"}
+        );
+      }
+    }
+  });
+}
 
 /** The drag handle shown in Arrange mode (React Aria starts a drag from `slot="drag"`). */
 function DragHandle({label}: {label: string}) {
@@ -369,7 +568,7 @@ function TagsCell({
   const form = useAppForm({defaultValues: {tags: value}});
   if (isReadOnly) {
     return (
-      <div className="flex h-full w-full flex-wrap items-center gap-1 p-1">
+      <div className="flex h-full w-full items-center gap-1 overflow-hidden p-1">
         {value.map(tag => (
           <Chip key={tag} size="sm" className={getTagColor(tag)}>
             {tag}
@@ -389,7 +588,7 @@ function TagsCell({
           form.reset({tags: value});
           setIsEditing(true);
         }}
-        className="hover:bg-accent-soft flex h-full w-full cursor-text flex-wrap items-center gap-1 p-1">
+        className="hover:bg-accent-soft flex h-full w-full cursor-text items-center gap-1 overflow-hidden p-1">
         {value.map(tag => (
           <Chip key={tag} size="sm" className={getTagColor(tag)}>
             {tag}
@@ -684,10 +883,45 @@ const FILTER_TOGGLE =
 
 function RouteComponent() {
   const {workspaceSlug} = Route.useParams();
+  return (
+    <BoardDialogs workspaceSlug={workspaceSlug}>
+      <BlackboardPage />
+    </BoardDialogs>
+  );
+}
+
+function BlackboardPage() {
+  const {workspaceSlug} = Route.useParams();
+  const openDialog = useContext(OpenBoardDialogContext);
   const workspace = useWorkspace();
   const isReadOnly = useIsReadOnly();
-  const [isAddNewRoundDialogOpen, setIsAddNewRoundDialogOpen] = useState(false);
-  const [isAddPuzzleDialogOpen, setIsAddPuzzleDialogOpen] = useState(false);
+  const isPhone = useIsPhone();
+  // Ours rather than a class for the Virtualizer to create, so we can ask it where a row is.
+  const [boardLayout] = useState(() => new TableLayout());
+  const boardScrollRef = useRef<HTMLDivElement>(null);
+  const boardBoxRef = useRef<HTMLDivElement>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) =>
+      setIsNarrow(entry !== undefined && entry.contentRect.width < NARROW_BOARD)
+    );
+    if (boardBoxRef.current) observer.observe(boardBoxRef.current);
+    return () => observer.disconnect();
+  }, []);
+  // The sidebar links to rows by "#id", but a row off screen isn't rendered (the table is
+  // virtualized), so scroll the board to it instead.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const link = e.target instanceof Element ? e.target.closest("a[href^='#']") : null;
+      const id = link?.getAttribute("href")?.slice(1);
+      const rect = id ? boardLayout.getLayoutInfo(id)?.rect : null;
+      if (!rect || !boardScrollRef.current) return;
+      e.preventDefault();
+      boardScrollRef.current.scrollTo({top: rect.y - HEADING_HEIGHT});
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [boardLayout]);
   const [isArrangeOn, setIsArranging] = useState(false);
   // Arranging moves rows, so a read-only workspace can't be arranged (even if it was archived while
   // you were arranging).
@@ -716,7 +950,9 @@ function RouteComponent() {
     false
   );
   const [search, setSearch] = useState("");
-  // "/" focuses the search box (unless you're already typing somewhere).
+  // "/" focuses the search box (unless you're already typing somewhere). So does ⌘F / Ctrl+F: the
+  // board only renders the rows in view, so the browser's find would miss the rest. Pressed again
+  // in the search box, it's the browser's find after all.
   const searchInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -724,9 +960,15 @@ function RouteComponent() {
       const isTyping =
         target !== null &&
         (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
-      if (e.key === "/" && !isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const isFind =
+        e.key.toLowerCase() === "f" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey;
+      if (
+        (e.key === "/" && !isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) ||
+        (isFind && target !== searchInputRef.current)
+      ) {
         e.preventDefault();
         searchInputRef.current?.focus();
+        searchInputRef.current?.select();
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -743,17 +985,22 @@ function RouteComponent() {
 
   // Read once here and handed to rows as booleans: a per-row subscription would re-render every
   // row whenever any favorite changes. (Suspends like the rows used to, so stars never flash.)
-  const favoritePuzzleIds = toStringArray(
-    useSuspenseQuery(orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})).data
-      .favoritePuzzleIds
-  );
-  const favoriteSet = new Set(favoritePuzzleIds);
+  const favoritesData = useSuspenseQuery(
+    orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}})
+  ).data.favoritePuzzleIds;
+  // Memoized by hand (the compiler doesn't here): a new Set on every render made every row
+  // re-render whenever the page did, e.g. when collapsing a round.
+  const favoriteSet = useMemo(() => new Set(toStringArray(favoritesData)), [favoritesData]);
   // From the unfiltered rounds, so "Hide solved" doesn't change a round's progress.
-  const roundProgress = new Map(
-    workspace.rounds.map(r => [
-      r.id,
-      {solved: r.puzzles.filter(p => isSolvedStatus(p.status)).length, total: r.puzzles.length},
-    ])
+  const roundProgress = useMemo(
+    () =>
+      new Map(
+        workspace.rounds.map(r => [
+          r.id,
+          {solved: r.puzzles.filter(p => isSolvedStatus(p.status)).length, total: r.puzzles.length},
+        ])
+      ),
+    [workspace.rounds]
   );
 
   type Filterable = {
@@ -820,8 +1067,10 @@ function RouteComponent() {
     const closed = new Set(collapsed);
     return new Set<Key>(expandableKey.split(",").filter(id => id && !closed.has(id)));
   }, [collapsed, expandableKey]);
-  const onExpandedChange = (keys: Selection) =>
+  const onExpandedChange = (keys: Selection) => {
+    if (boardScrollRef.current) animateRowMoves(boardScrollRef.current);
     setCollapsed(keys === "all" ? [] : expandableIds.filter(id => !keys.has(id)));
+  };
 
   // --- Arrange mode: drag rounds and puzzles. Every row is shown (filters are paused).
   const {mutate: movePuzzle} = useMutation(workspaceMutations.puzzles.move());
@@ -1134,17 +1383,10 @@ function RouteComponent() {
                   size="sm"
                   className="shrink-0"
                   aria-label="Add a puzzle"
-                  onPress={() => setIsAddPuzzleDialogOpen(true)}>
+                  onPress={() => openDialog({kind: "add-puzzle"})}>
                   <PlusIcon />
                   <span className="max-sm:hidden">Add puzzle</span>
                 </Button>
-              )}
-              {isAddPuzzleDialogOpen && (
-                <AddNewPuzzleDialog
-                  workspaceSlug={workspaceSlug}
-                  open={isAddPuzzleDialogOpen}
-                  setOpen={setIsAddPuzzleDialogOpen}
-                />
               )}
               {!isReadOnly && (
                 <ToggleButton
@@ -1160,8 +1402,8 @@ function RouteComponent() {
               <SidebarDrawerButton workspaceSlug={workspaceSlug} rounds={rounds} />
               <TeamChatDrawerButton />
             </div>
-            <div className="min-h-0 flex-1 overflow-auto">
-              <div className="min-w-0">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="contents">
                 {isArranging && (
                   <p className="bg-accent-soft text-accent-soft-foreground px-3 py-2 text-xs">
                     Drag rows by their handles to reorder them. Drop a puzzle on a meta to make it a
@@ -1169,113 +1411,156 @@ function RouteComponent() {
                   </p>
                 )}
                 <ReadOnlyContext.Provider value={isReadOnly}>
-                  <ArrangingContext.Provider value={isArranging}>
-                    {/* overflow-visible: HeroUI clips the table sideways, which on phones hid
-                    the status and row menu; the board's scroll box scrolls it instead. */}
-                    <Table data-tour="board" variant="secondary" className="overflow-visible">
-                      {/* The board's scroll box is the scroll container; an inner overflow box would
-                      stop the sticky header from sticking. */}
-                      <Table.ScrollContainer className="overflow-visible">
-                        <Table.Content
-                          aria-label="Blackboard"
-                          className="h-fit text-xs"
-                          treeColumn="tree"
-                          expandedKeys={expandedKeys}
-                          onExpandedChange={onExpandedChange}
-                          // Always passed (React Aria can't add or drop them later); off outside Arrange.
-                          dragAndDropHooks={dragAndDropHooks}>
-                          <Table.Header className="bg-background sticky top-0 z-10">
-                            <Table.Column
-                              className={cn("w-8 p-0", DESKTOP_ONLY)}
-                              aria-label="Hunt link">
-                              <span className="sr-only">Hunt link</span>
-                            </Table.Column>
-                            <Table.Column id="tree" className="w-8 p-0" aria-label="Expand">
-                              <span className="sr-only">Expand</span>
-                            </Table.Column>
-                            <Table.Column id="name" isRowHeader className={COLUMN}>
-                              Name
-                            </Table.Column>
-                            <Table.Column
-                              className={cn(COLUMN, "md:min-w-[150px]", PHONE_COLLAPSED)}>
-                              Answer
-                            </Table.Column>
-                            <Table.Column className={COLUMN}>Status</Table.Column>
-                            <Table.Column
-                              className={cn(COLUMN, "w-0", DESKTOP_ONLY)}
-                              aria-label="Importance">
-                              <SignalIcon className="size-4" aria-hidden />
-                            </Table.Column>
-                            <Table.Column className={cn(COLUMN, DESKTOP_ONLY)}>Tags</Table.Column>
-                            <Table.Column
-                              data-tour="working-on"
-                              className={cn(COLUMN, DESKTOP_ONLY)}>
-                              Working on this
-                            </Table.Column>
-                            <Table.Column
-                              className={cn(COLUMN, "w-0", STICKY_ACTIONS)}
-                              aria-label="Actions">
-                              <div className="-my-1 flex items-center justify-end">
-                                {/* Its only item adds a round. */}
-                                {!isReadOnly && (
-                                  <Dropdown>
-                                    <Button
-                                      data-tour="board-menu"
-                                      variant="ghost"
-                                      isIconOnly
-                                      size="sm"
-                                      aria-label="Board menu">
-                                      <EllipsisIcon />
-                                    </Button>
-                                    <Dropdown.Popover className="w-fit" placement="bottom end">
-                                      <Dropdown.Menu>
-                                        <Dropdown.Item
-                                          id="add-new-round"
-                                          textValue="Add round"
-                                          onAction={() => setIsAddNewRoundDialogOpen(true)}>
-                                          <Label>Add round</Label>
-                                        </Dropdown.Item>
-                                      </Dropdown.Menu>
-                                    </Dropdown.Popover>
-                                  </Dropdown>
-                                )}
-                              </div>
-                            </Table.Column>
-                          </Table.Header>
-                          <Table.Body
-                            items={boardRounds}
-                            dependencies={[
-                              workspace.tags,
-                              favoriteSet,
-                              roundProgress,
-                              expandedKeys,
-                              isArranging,
-                              isReadOnly,
-                            ]}>
-                            {round => (
-                              <BlackboardRound
-                                workspaceSlug={workspaceSlug}
-                                round={round}
-                                solvedCount={roundProgress.get(round.id)?.solved ?? 0}
-                                puzzleCount={roundProgress.get(round.id)?.total ?? 0}
-                                tags={workspace.tags}
-                                favoritePuzzleIds={favoriteSet}
-                              />
-                            )}
-                          </Table.Body>
-                        </Table.Content>
-                      </Table.ScrollContainer>
-                    </Table>
-                  </ArrangingContext.Provider>
+                  <RoundProgressContext.Provider value={roundProgress}>
+                    <ArrangingContext.Provider value={isArranging}>
+                      {/* Virtualized: only the rows in view are rendered, so an update (yours or a
+                          teammate's) doesn't redraw the whole board. Scrolling reuses a row's elements
+                          for another puzzle, so anything in a row that keeps state or animates a
+                          change (answer draft, status spark, progress) is keyed by its puzzle or
+                          round, to start fresh instead of carrying over or animating. The table is its own scroll box,
+                          so it needs a definite height. */}
+                      <div
+                        ref={boardBoxRef}
+                        className={cn(
+                          "relative",
+                          workspace.rounds.length === 0
+                            ? "h-10 shrink-0"
+                            : nothingMatches
+                              ? "max-h-1/2 shrink-0"
+                              : "min-h-0 flex-1"
+                        )}
+                        style={
+                          nothingMatches
+                            ? {height: HEADING_HEIGHT + boardRounds.length * ROW_HEIGHT}
+                            : undefined
+                        }>
+                        <Virtualizer
+                          layout={boardLayout}
+                          layoutOptions={{rowHeight: ROW_HEIGHT, headingHeight: HEADING_HEIGHT}}>
+                          <Table
+                            data-tour="board"
+                            data-narrow={isNarrow || undefined}
+                            variant="secondary"
+                            className="absolute inset-0 grid-rows-[minmax(0,1fr)] overflow-visible">
+                            <Table.ScrollContainer className="h-full overflow-visible">
+                              <Table.Content
+                                ref={boardScrollRef}
+                                aria-label="Blackboard"
+                                className="h-full overflow-auto text-xs"
+                                treeColumn="tree"
+                                expandedKeys={expandedKeys}
+                                onExpandedChange={onExpandedChange}
+                                // Always passed (React Aria can't add or drop them later); off outside Arrange.
+                                dragAndDropHooks={dragAndDropHooks}>
+                                <Table.Header className="bg-background">
+                                  <Table.Column
+                                    {...columnWidth(isPhone ? 0 : 32)}
+                                    className={cn("h-full p-0", DESKTOP_ONLY)}
+                                    aria-label="Hunt link">
+                                    <span className="sr-only">Hunt link</span>
+                                  </Table.Column>
+                                  <Table.Column
+                                    id="tree"
+                                    {...columnWidth(28)}
+                                    className="h-full p-0"
+                                    aria-label="Expand">
+                                    <span className="sr-only">Expand</span>
+                                  </Table.Column>
+                                  <Table.Column
+                                    id="name"
+                                    isRowHeader
+                                    width={isPhone ? "1fr" : "2fr"}
+                                    minWidth={isPhone ? 0 : 140}
+                                    className={COLUMN}>
+                                    Name
+                                  </Table.Column>
+                                  <Table.Column
+                                    width={isPhone ? 0 : "1fr"}
+                                    minWidth={isPhone ? 0 : 100}
+                                    maxWidth={isPhone ? 0 : 200}
+                                    className={cn(COLUMN, PHONE_COLLAPSED)}>
+                                    <span>Answer</span>
+                                  </Table.Column>
+                                  <Table.Column {...columnWidth(112)} className={COLUMN}>
+                                    Status
+                                  </Table.Column>
+                                  <Table.Column
+                                    {...columnWidth(isPhone ? 0 : 44)}
+                                    className={cn(COLUMN, DESKTOP_ONLY)}
+                                    aria-label="Importance">
+                                    <SignalIcon className="size-4" aria-hidden />
+                                  </Table.Column>
+                                  <Table.Column
+                                    width={isPhone ? 0 : "1fr"}
+                                    minWidth={isPhone ? 0 : 72}
+                                    className={cn(COLUMN, DESKTOP_ONLY)}>
+                                    Tags
+                                  </Table.Column>
+                                  <Table.Column
+                                    data-tour="working-on"
+                                    {...columnWidth(isPhone || isNarrow ? 0 : 112)}
+                                    className={cn(COLUMN, DESKTOP_ONLY, NARROW_HIDDEN)}>
+                                    Working on this
+                                  </Table.Column>
+                                  <Table.Column
+                                    {...columnWidth(isPhone ? PHONE_ACTIONS_WIDTH : ACTIONS_WIDTH)}
+                                    className={COLUMN}
+                                    aria-label="Actions">
+                                    <div className="ml-auto flex items-center justify-end">
+                                      {!isReadOnly && (
+                                        <Tooltip delay={300}>
+                                          <Button
+                                            data-tour="add-round"
+                                            variant="ghost"
+                                            isIconOnly
+                                            aria-label="Add a round"
+                                            onPress={() => openDialog({kind: "add-round"})}>
+                                            <PlusIcon />
+                                          </Button>
+                                          <Tooltip.Content>Add a round</Tooltip.Content>
+                                        </Tooltip>
+                                      )}
+                                      {/* Holds the ⋯ menus' place so this + lines up with the rows' + buttons (phones have none). */}
+                                      {!isReadOnly && (
+                                        <span
+                                          aria-hidden
+                                          className={cn(
+                                            buttonVariants({variant: "ghost", isIconOnly: true}),
+                                            "invisible max-md:hidden"
+                                          )}
+                                        />
+                                      )}
+                                    </div>
+                                  </Table.Column>
+                                </Table.Header>
+                                <Table.Body
+                                  items={boardRounds}
+                                  // Only what the rows are rendered from: a change here re-renders every
+                                  // row and cell. Round progress comes by context (only round rows read
+                                  // it) and expansion through React Aria, so neither is listed.
+                                  dependencies={[
+                                    workspace.tags,
+                                    favoriteSet,
+                                    isArranging,
+                                    isReadOnly,
+                                  ]}>
+                                  {round => (
+                                    <BlackboardRound
+                                      workspaceSlug={workspaceSlug}
+                                      round={round}
+                                      tags={workspace.tags}
+                                      favoritePuzzleIds={favoriteSet}
+                                    />
+                                  )}
+                                </Table.Body>
+                              </Table.Content>
+                            </Table.ScrollContainer>
+                          </Table>
+                        </Virtualizer>
+                      </div>
+                    </ArrangingContext.Provider>
+                  </RoundProgressContext.Provider>
                 </ReadOnlyContext.Provider>
-                {/* Mounted only while open. */}
-                {isAddNewRoundDialogOpen && (
-                  <AddNewRoundDialog
-                    workspaceSlug={workspaceSlug}
-                    open={isAddNewRoundDialogOpen}
-                    setOpen={setIsAddNewRoundDialogOpen}
-                  />
-                )}
                 {nothingMatches && (
                   <EmptyState className="py-16">
                     <EmptyState.Header>
@@ -1315,11 +1600,12 @@ function RouteComponent() {
                         <ListPlusIcon />
                       </EmptyState.Media>
                       <EmptyState.Title>No rounds yet</EmptyState.Title>
-                      {/* How to add rounds, unless none can be added. */}
+                      {/* How to start, unless nothing can be added. */}
                       {!isReadOnly && (
                         <EmptyState.Description>
-                          Add a round, then add its puzzles as they unlock. Everyone in the
-                          workspace sees them here as they're added.
+                          Puzzles are grouped by round, like on the hunt site. Add a round when it
+                          unlocks, then its puzzles with Add puzzle. Everyone sees them here as soon
+                          as they're added.
                         </EmptyState.Description>
                       )}
                     </EmptyState.Header>
@@ -1327,7 +1613,7 @@ function RouteComponent() {
                       <EmptyState.Content>
                         <Button
                           data-tour="add-first-round"
-                          onPress={() => setIsAddNewRoundDialogOpen(true)}>
+                          onPress={() => openDialog({kind: "add-round"})}>
                           <PlusIcon />
                           Add a round
                         </Button>
@@ -1350,28 +1636,23 @@ function RouteComponent() {
 const BlackboardRound = memo(function BlackboardRound({
   workspaceSlug,
   round,
-  solvedCount,
-  puzzleCount,
   tags,
   favoritePuzzleIds,
 }: {
   workspaceSlug: string;
   round: WorkspaceRoomState["rounds"][0];
-  /** Progress across the whole round, regardless of the active filters. */
-  solvedCount: number;
-  puzzleCount: number;
   tags: string[];
   favoritePuzzleIds: ReadonlySet<string>;
 }) {
   const {mutate: updateRound} = useMutation(workspaceMutations.rounds.update());
   const isBeingCreated = useIsBeingCreated(round.id, orpc.rounds.create.mutationKey());
-  const [isAddNewMetaPuzzleDialogOpen, setIsAddNewMetaPuzzleDialogOpen] = useState(false);
-  const [isAddNewUnassignedPuzzleDialogOpen, setIsAddNewUnassignedPuzzleDialogOpen] =
-    useState(false);
-  const [isEditRoundDialogOpen, setIsEditRoundDialogOpen] = useState(false);
-  const [isDeleteRoundDialogOpen, setIsDeleteRoundDialogOpen] = useState(false);
+  const openDialog = useContext(OpenBoardDialogContext);
   const isArranging = useContext(ArrangingContext);
   const isReadOnly = useContext(ReadOnlyContext);
+  // Across the whole round, regardless of the active filters.
+  const progress = useContext(RoundProgressContext).get(round.id);
+  const solvedCount = progress?.solved ?? 0;
+  const puzzleCount = progress?.total ?? 0;
 
   // Metas, then the unassigned puzzles as one group (kept stable so rows aren't rebuilt).
   const children = useMemo<RoundChild[]>(
@@ -1399,7 +1680,7 @@ const BlackboardRound = memo(function BlackboardRound({
       id={round.id}
       textValue={round.name}
       className="bg-surface-secondary text-foreground group">
-      <Table.Cell className={cn("p-0", DESKTOP_ONLY)}>
+      <Table.Cell className={cn("flex items-center p-0", DESKTOP_ONLY)}>
         {isArranging && <DragHandle label={round.name} />}
       </Table.Cell>
       <Table.Cell className={TREE_CELL}>
@@ -1414,14 +1695,13 @@ const BlackboardRound = memo(function BlackboardRound({
       {/* Over the Answer column too. */}
       <Table.Cell colSpan={2} className={CELL} textValue={round.name}>
         {() => (
-          <div className={cn("flex min-w-0 items-center gap-2", NAME_ON_PHONES)}>
-            {/* Target of the sidebar's round links. */}
-            <span id={round.id} className="scroll-mt-20" />
+          <div className="flex min-w-0 items-center gap-2">
             {round.status === "solved" && <CheckIcon className="text-success size-3.5 shrink-0" />}
             <span className="text-foreground truncate text-sm font-semibold">{round.name}</span>
             {puzzleCount > 0 && (
               <div className="flex shrink-0 items-center gap-2">
                 <ProgressBar
+                  key={round.id}
                   aria-label={`${round.name}: ${solvedCount} of ${puzzleCount} puzzles solved`}
                   value={(solvedCount / puzzleCount) * 100}
                   size="sm"
@@ -1434,7 +1714,7 @@ const BlackboardRound = memo(function BlackboardRound({
                   </ProgressBar.Track>
                 </ProgressBar>
                 <span className="text-muted text-xs tabular-nums" aria-hidden="true">
-                  <NumberFlow value={solvedCount} />/{puzzleCount}
+                  <NumberFlow key={round.id} value={solvedCount} />/{puzzleCount}
                 </span>
               </div>
             )}
@@ -1443,6 +1723,7 @@ const BlackboardRound = memo(function BlackboardRound({
       </Table.Cell>
       <Table.Cell className={CELL}>
         <DeferredSelect
+          key={round.id}
           aria-label="Round status"
           valueText={round.status === "solved" ? "Solved" : "None"}
           value={round.status === "solved" ? "Solved" : "None"}
@@ -1479,8 +1760,8 @@ const BlackboardRound = memo(function BlackboardRound({
       <Table.Cell colSpan={3} className={cn(CELL, DESKTOP_ONLY)}>
         {null}
       </Table.Cell>
-      <Table.Cell className={cn(CELL, STICKY_ACTIONS, "max-md:bg-surface-secondary")}>
-        <div className="-my-3 flex items-center justify-end">
+      <Table.Cell className={CELL}>
+        <div className="-my-3 ml-auto flex items-center justify-end">
           {!isReadOnly && (
             <Tooltip delay={300}>
               <Button
@@ -1490,7 +1771,7 @@ const BlackboardRound = memo(function BlackboardRound({
                 aria-label={`Add a puzzle to ${round.name}`}
                 // Phones have the toolbar's Add puzzle, and little room in the row.
                 className="max-md:hidden"
-                onPress={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                onPress={() => openDialog({kind: "add-puzzle", roundId: round.id})}>
                 <PlusIcon />
               </Button>
               <Tooltip.Content>Add a puzzle to {round.name}</Tooltip.Content>
@@ -1513,25 +1794,32 @@ const BlackboardRound = memo(function BlackboardRound({
                   <Dropdown.Item
                     id="add-meta"
                     textValue="Add a meta"
-                    onAction={() => setIsAddNewMetaPuzzleDialogOpen(true)}>
+                    onAction={() => openDialog({kind: "add-meta", roundId: round.id})}>
                     <Label>Add a meta</Label>
                   </Dropdown.Item>
                   <Dropdown.Item
                     id="add-unassigned"
                     textValue="Add a puzzle (no meta)"
-                    onAction={() => setIsAddNewUnassignedPuzzleDialogOpen(true)}>
+                    onAction={() => openDialog({kind: "add-puzzle", roundId: round.id})}>
                     <Label>Add a puzzle (no meta)</Label>
                   </Dropdown.Item>
                   <Dropdown.Item
                     id="edit-round"
                     textValue="Edit round"
-                    onAction={() => setIsEditRoundDialogOpen(true)}>
+                    onAction={() => openDialog({kind: "edit-round", round})}>
                     <Label>Edit round</Label>
                   </Dropdown.Item>
                   <Dropdown.Item
                     id="delete-round"
                     textValue="Delete round"
-                    onAction={() => setIsDeleteRoundDialogOpen(true)}>
+                    onAction={() =>
+                      openDialog({
+                        kind: "delete-round",
+                        roundId: round.id,
+                        roundName: round.name,
+                        puzzleCount,
+                      })
+                    }>
                     <Label>Delete round</Label>
                   </Dropdown.Item>
                 </Dropdown.Menu>
@@ -1539,40 +1827,6 @@ const BlackboardRound = memo(function BlackboardRound({
             </Dropdown>
           )}
         </div>
-        {isAddNewMetaPuzzleDialogOpen && (
-          <AddNewMetaPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            roundId={round.id}
-            open={isAddNewMetaPuzzleDialogOpen}
-            setOpen={setIsAddNewMetaPuzzleDialogOpen}
-          />
-        )}
-        {isAddNewUnassignedPuzzleDialogOpen && (
-          <AddNewPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            roundId={round.id}
-            open={isAddNewUnassignedPuzzleDialogOpen}
-            setOpen={setIsAddNewUnassignedPuzzleDialogOpen}
-          />
-        )}
-        {isEditRoundDialogOpen && (
-          <EditRoundDialog
-            workspaceSlug={workspaceSlug}
-            round={round}
-            open={isEditRoundDialogOpen}
-            setOpen={setIsEditRoundDialogOpen}
-          />
-        )}
-        {isDeleteRoundDialogOpen && (
-          <DeleteRoundDialog
-            workspaceSlug={workspaceSlug}
-            roundId={round.id}
-            roundName={round.name}
-            puzzleCount={puzzleCount}
-            open={isDeleteRoundDialogOpen}
-            setOpen={setIsDeleteRoundDialogOpen}
-          />
-        )}
       </Table.Cell>
       <Table.Collection items={children} dependencies={[tags, favoritePuzzleIds]}>
         {child =>
@@ -1609,11 +1863,11 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
   tags: string[];
   favoritePuzzleIds: ReadonlySet<string>;
 }) {
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const openDialog = useContext(OpenBoardDialogContext);
   const isReadOnly = useContext(ReadOnlyContext);
   return (
     <Table.Row id={group.id} textValue="Unassigned puzzles" className="group">
-      <Table.Cell className={cn("p-0", DESKTOP_ONLY)}>{null}</Table.Cell>
+      <Table.Cell className={cn("flex items-center p-0", DESKTOP_ONLY)}>{null}</Table.Cell>
       <Table.Cell className={TREE_CELL}>
         {({isExpanded}) => (
           <span className="flex justify-center">
@@ -1624,8 +1878,8 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
       <Table.Cell colSpan={6} className={CELL} textValue="Unassigned puzzles">
         <span className="font-semibold italic">Unassigned puzzles</span>
       </Table.Cell>
-      <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
-        <div className="-my-3 flex items-center justify-end">
+      <Table.Cell className={CELL}>
+        <div className="-my-3 ml-auto flex items-center justify-end">
           {/* Its only item moves puzzles. */}
           {!isReadOnly && (
             <Dropdown>
@@ -1637,7 +1891,9 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
                   <Dropdown.Item
                     id="assign-all"
                     textValue="Assign all unassigned puzzles"
-                    onAction={() => setIsAssignDialogOpen(true)}>
+                    onAction={() =>
+                      openDialog({kind: "assign-unassigned", roundId: group.roundId})
+                    }>
                     <Label>Assign all unassigned puzzles</Label>
                   </Dropdown.Item>
                 </Dropdown.Menu>
@@ -1645,19 +1901,14 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
             </Dropdown>
           )}
         </div>
-        {isAssignDialogOpen && (
-          <AssignUnassignedPuzzlesDialog
-            workspaceSlug={workspaceSlug}
-            roundId={group.roundId}
-            open={isAssignDialogOpen}
-            setOpen={setIsAssignDialogOpen}
-          />
-        )}
       </Table.Cell>
-      <Table.Collection items={group.puzzles} dependencies={[tags, favoritePuzzleIds]}>
+      <Table.Collection
+        items={group.puzzles}
+        dependencies={[tags, favoritePuzzleIds, group.puzzles.at(-1)?.id]}>
         {puzzle => (
           <BlackboardPuzzle
             color="grey"
+            isLast={puzzle.id === group.puzzles.at(-1)?.id}
             workspaceSlug={workspaceSlug}
             puzzle={puzzle}
             tags={tags}
@@ -1674,28 +1925,52 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   metaPuzzle,
   tags,
   favoritePuzzleIds,
+  parentId,
+  outer = "",
+  isLast = false,
 }: {
   workspaceSlug: string;
   metaPuzzle: WorkspaceRoomState["rounds"][0]["topLevelMetaPuzzles"][0];
   tags: string[];
   favoritePuzzleIds: ReadonlySet<string>;
+  /** The meta this one feeds, if it's inside another meta. */
+  parentId?: string;
+  outer?: OuterLines;
+  /** The last of its parent's feeders. */
+  isLast?: boolean;
 }) {
   const {mutate: updatePuzzle} = useMutation(workspaceMutations.puzzles.update());
   const isPhone = useIsPhone();
   const update = (patch: Omit<RouterInputs["puzzles"]["update"], "workspaceSlug" | "id">) =>
     updatePuzzle({workspaceSlug, id: metaPuzzle.id, ...patch});
   const isBeingCreated = useIsBeingCreated(metaPuzzle.id);
-  const [isAddNewPuzzleFeedingThisMetaDialogOpen, setIsAddNewPuzzleFeedingThisMetaDialogOpen] =
-    useState(false);
-  const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
-  const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
-  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const openDialog = useContext(OpenBoardDialogContext);
   const isFavorite = favoritePuzzleIds.has(metaPuzzle.id);
   const toggleFavorite = useToggleFavorite(workspaceSlug);
   const color = metaColor(metaPuzzle.id);
   const isArranging = useContext(ArrangingContext);
   const isReadOnly = useContext(ReadOnlyContext);
   const presences = useAppSelector(state => state.presences.value[metaPuzzle.id]) ?? NO_PRESENCES;
+  // Inside another meta: its parent's line runs to it, after any lines from further out.
+  const lines = parentId
+    ? [
+        ...outerLineKinds(outer),
+        {color: metaColor(parentId), kind: isLast ? ("last" as const) : ("branch" as const)},
+      ]
+    : [];
+  // What its feeders show in front of its own line: its parent's carries on unless it was last.
+  const childOuter = parentId ? [outer, isLast ? "-" : parentId].filter(Boolean).join(" ") : "";
+  const lastChildId = metaPuzzle.childPuzzles.at(-1)?.id;
+  const chevron = ({isExpanded, hasChildItems}: {isExpanded: boolean; hasChildItems: boolean}) =>
+    hasChildItems ? (
+      <RowChevron
+        label={`Toggle meta puzzle ${metaPuzzle.name}`}
+        isExpanded={isExpanded}
+        color={color}
+      />
+    ) : (
+      <span className="size-2 rounded-full" style={{backgroundColor: color}} />
+    );
 
   return (
     <Table.Row
@@ -1708,7 +1983,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
         isBeingCreated && "pointer-events-none cursor-wait opacity-70"
       )}>
       {/* Phones: no room for it; the row menu opens the hunt site instead. */}
-      <Table.Cell className={cn("p-0", DESKTOP_ONLY)}>
+      <Table.Cell className={cn("flex items-center p-0", DESKTOP_ONLY)}>
         {isArranging ? (
           <DragHandle label={metaPuzzle.name} />
         ) : (
@@ -1725,29 +2000,23 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
         )}
       </Table.Cell>
       <Table.Cell className={TREE_CELL}>
-        {({isExpanded, hasChildItems}) => (
-          <span className="flex justify-center">
-            {hasChildItems ? (
-              <RowChevron
-                label={`Toggle meta puzzle ${metaPuzzle.name}`}
-                isExpanded={isExpanded}
-                color={color}
-              />
-            ) : (
-              <span className="size-2 rounded-full" style={{backgroundColor: color}} />
-            )}
-          </span>
-        )}
+        {state =>
+          lines.length > 0 ? (
+            lines[0] && <TreeLine {...lines[0]} />
+          ) : (
+            <span className="flex justify-center">{chevron(state)}</span>
+          )
+        }
       </Table.Cell>
-      <Table.Cell
-        className={cn(CELL, "relative font-semibold", NAME_CELL_ON_PHONES)}
-        textValue={metaPuzzle.name}>
-        {() => (
+      <Table.Cell className={cn(CELL, "relative font-semibold")} textValue={metaPuzzle.name}>
+        {state => (
           <>
-            <TeammateChangeFlash puzzleId={metaPuzzle.id} />
-            <div className={cn("flex min-w-0 items-center gap-2", NAME_ON_PHONES)}>
-              {/* Target of the sidebar's puzzle links. */}
-              <span id={metaPuzzle.id} className="scroll-mt-20" />
+            <TeammateChangeFlash key={metaPuzzle.id} puzzleId={metaPuzzle.id} />
+            <NameIndent lines={lines.slice(1)} />
+            {lines.length > 0 && (
+              <span className="me-1 flex w-6 shrink-0 justify-center">{chevron(state)}</span>
+            )}
+            <div className="flex min-w-0 items-center gap-2">
               <Link
                 data-tour="puzzle-link"
                 data-tour-id={metaPuzzle.id}
@@ -1766,6 +2035,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
       {/* Phones: shown under the name instead, so Status fits on screen. */}
       <Table.Cell className={cn(CELL, "relative", PHONE_COLLAPSED)}>
         <AnswerInput
+          key={metaPuzzle.id}
           puzzleName={metaPuzzle.name}
           value={metaPuzzle.answer}
           count={metaPuzzle.answerCount}
@@ -1774,6 +2044,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
       </Table.Cell>
       <Table.Cell className={CELL}>
         <PuzzleStatusSelect
+          key={metaPuzzle.id}
           value={metaPuzzle.status}
           onChange={status => {
             if (status !== metaPuzzle.status) update({status});
@@ -1783,6 +2054,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
       </Table.Cell>
       <Table.Cell className={cn(CELL, DESKTOP_ONLY)}>
         <PuzzleImportanceSelect
+          key={metaPuzzle.id}
           value={metaPuzzle.importance}
           onChange={importance => {
             if (importance !== metaPuzzle.importance) update({importance});
@@ -1795,17 +2067,18 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
       </Table.Cell>
       <Table.Cell className={cn(CELL, "p-0", DESKTOP_ONLY)}>
         <TagsCell
+          key={metaPuzzle.id}
           puzzleName={metaPuzzle.name}
           value={metaPuzzle.tags}
           tags={tags}
           onCommit={next => update({tags: next})}
         />
       </Table.Cell>
-      <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY)}>
+      <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY, NARROW_HIDDEN)}>
         <UserPresenceAvatars users={presences} />
       </Table.Cell>
-      <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
-        <div className="-my-3 flex items-center justify-end">
+      <Table.Cell className={CELL}>
+        <div className="-my-3 ml-auto flex items-center justify-end">
           <ToggleButton
             variant="ghost"
             isIconOnly
@@ -1815,6 +2088,27 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
             <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
           </ToggleButton>
+          {/* Lines up with the round row's +. */}
+          {!isReadOnly && (
+            <Tooltip delay={300}>
+              <Button
+                variant="ghost"
+                isIconOnly
+                aria-label={`Add a feeder to ${metaPuzzle.name}`}
+                // Phones have the toolbar's Add puzzle, and little room in the row.
+                className="max-md:hidden"
+                onPress={() =>
+                  openDialog({
+                    kind: "add-puzzle",
+                    roundId: metaPuzzle.roundId,
+                    parentPuzzleId: metaPuzzle.id,
+                  })
+                }>
+                <PlusIcon />
+              </Button>
+              <Tooltip.Content>Add a feeder to {metaPuzzle.name}</Tooltip.Content>
+            </Tooltip>
+          )}
           {/* Read-only, only phones' favorite item is left (or nothing, so no menu). */}
           {(!isReadOnly || isPhone) && (
             <Dropdown>
@@ -1851,7 +2145,13 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
                     <Dropdown.Item
                       id="add-feeding"
                       textValue="Add a feeder"
-                      onAction={() => setIsAddNewPuzzleFeedingThisMetaDialogOpen(true)}>
+                      onAction={() =>
+                        openDialog({
+                          kind: "add-puzzle",
+                          roundId: metaPuzzle.roundId,
+                          parentPuzzleId: metaPuzzle.id,
+                        })
+                      }>
                       <Label>Add a feeder</Label>
                     </Dropdown.Item>
                   )}
@@ -1859,7 +2159,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
                     <Dropdown.Item
                       id="edit-meta"
                       textValue="Edit meta"
-                      onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                      onAction={() => openDialog({kind: "edit-puzzle", puzzle: metaPuzzle})}>
                       <Label>Edit meta</Label>
                     </Dropdown.Item>
                   )}
@@ -1867,7 +2167,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
                     <Dropdown.Item
                       id="move-meta"
                       textValue="Move to…"
-                      onAction={() => setIsMoveDialogOpen(true)}>
+                      onAction={() => openDialog({kind: "move-puzzle", puzzle: metaPuzzle})}>
                       <Label>Move to…</Label>
                     </Dropdown.Item>
                   )}
@@ -1875,7 +2175,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
                     <Dropdown.Item
                       id="delete-meta"
                       textValue="Delete meta"
-                      onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                      onAction={() => openDialog({kind: "delete-puzzle", puzzle: metaPuzzle})}>
                       <Label>Delete meta</Label>
                     </Dropdown.Item>
                   )}
@@ -1884,43 +2184,10 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
             </Dropdown>
           )}
         </div>
-        {isAddNewPuzzleFeedingThisMetaDialogOpen && (
-          <AddNewPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            roundId={metaPuzzle.roundId}
-            parentPuzzleId={metaPuzzle.id}
-            open={isAddNewPuzzleFeedingThisMetaDialogOpen}
-            setOpen={setIsAddNewPuzzleFeedingThisMetaDialogOpen}
-          />
-        )}
-        {isEditPuzzleDialogOpen && (
-          <EditPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzle={metaPuzzle}
-            open={isEditPuzzleDialogOpen}
-            setOpen={setIsEditPuzzleDialogOpen}
-          />
-        )}
-        {isMoveDialogOpen && (
-          <MovePuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzle={metaPuzzle}
-            open={isMoveDialogOpen}
-            setOpen={setIsMoveDialogOpen}
-          />
-        )}
-        {isDeletePuzzleDialogOpen && (
-          <DeletePuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzleId={metaPuzzle.id}
-            puzzleName={metaPuzzle.name}
-            isMetaPuzzle
-            open={isDeletePuzzleDialogOpen}
-            setOpen={setIsDeletePuzzleDialogOpen}
-          />
-        )}
       </Table.Cell>
-      <Table.Collection items={metaPuzzle.childPuzzles} dependencies={[tags, favoritePuzzleIds]}>
+      <Table.Collection
+        items={metaPuzzle.childPuzzles}
+        dependencies={[tags, favoritePuzzleIds, childOuter, lastChildId]}>
         {puzzle =>
           // A meta can feed another meta: it nests here, with its own feeders.
           puzzle.isMetaPuzzle ? (
@@ -1929,11 +2196,16 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
               metaPuzzle={puzzle}
               tags={tags}
               favoritePuzzleIds={favoritePuzzleIds}
+              parentId={metaPuzzle.id}
+              outer={childOuter}
+              isLast={puzzle.id === lastChildId}
             />
           ) : (
             <BlackboardPuzzle
               workspaceSlug={workspaceSlug}
               color={color}
+              outer={childOuter}
+              isLast={puzzle.id === lastChildId}
               puzzle={puzzle}
               tags={tags}
               isFavorite={favoritePuzzleIds.has(puzzle.id)}
@@ -1949,6 +2221,8 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   workspaceSlug,
   puzzle,
   color,
+  outer = "",
+  isLast,
   tags,
   isFavorite,
 }: {
@@ -1956,6 +2230,9 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   puzzle: WorkspaceRoomState["rounds"][0]["puzzles"][0];
   /** The colour of the meta it feeds (grey when unassigned). */
   color: string;
+  outer?: OuterLines;
+  /** The last of its meta's feeders. */
+  isLast: boolean;
   tags: string[];
   isFavorite: boolean;
 }) {
@@ -1964,13 +2241,15 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
   const update = (patch: Omit<RouterInputs["puzzles"]["update"], "workspaceSlug" | "id">) =>
     updatePuzzle({workspaceSlug, id: puzzle.id, ...patch});
   const isBeingCreated = useIsBeingCreated(puzzle.id);
-  const [isEditPuzzleDialogOpen, setIsEditPuzzleDialogOpen] = useState(false);
-  const [isDeletePuzzleDialogOpen, setIsDeletePuzzleDialogOpen] = useState(false);
-  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const toggleFavorite = useToggleFavorite(workspaceSlug);
   const presences = useAppSelector(state => state.presences.value[puzzle.id]) ?? NO_PRESENCES;
   const isArranging = useContext(ArrangingContext);
   const isReadOnly = useContext(ReadOnlyContext);
+  const openDialog = useContext(OpenBoardDialogContext);
+  const lines = [
+    ...outerLineKinds(outer),
+    {color, kind: isLast ? ("last" as const) : ("branch" as const)},
+  ];
 
   return (
     <Table.Row
@@ -1983,7 +2262,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
         isBeingCreated && "pointer-events-none cursor-wait opacity-70"
       )}>
       {/* Phones: no room for it; the row menu opens the hunt site instead. */}
-      <Table.Cell className={cn("p-0", DESKTOP_ONLY)}>
+      <Table.Cell className={cn("flex items-center p-0", DESKTOP_ONLY)}>
         {isArranging ? (
           <DragHandle label={puzzle.name} />
         ) : (
@@ -1999,14 +2278,11 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           )
         )}
       </Table.Cell>
-      <Table.Cell className={TREE_CELL}>
-        <FeederLine color={color} />
-      </Table.Cell>
-      <Table.Cell className={cn(CELL, "relative", NAME_CELL_ON_PHONES)} textValue={puzzle.name}>
-        <TeammateChangeFlash puzzleId={puzzle.id} />
-        <div className={cn("flex min-w-0 items-center gap-2", NAME_ON_PHONES)}>
-          {/* Target of the sidebar's puzzle links. */}
-          <span id={puzzle.id} className="scroll-mt-20" />
+      <Table.Cell className={TREE_CELL}>{lines[0] && <TreeLine {...lines[0]} />}</Table.Cell>
+      <Table.Cell className={cn(CELL, "relative")} textValue={puzzle.name}>
+        <TeammateChangeFlash key={puzzle.id} puzzleId={puzzle.id} />
+        <NameIndent lines={lines.slice(1)} />
+        <div className="flex min-w-0 items-center gap-2">
           <Link
             data-tour="puzzle-link"
             data-tour-id={puzzle.id}
@@ -2024,6 +2300,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       {/* Phones: shown under the name instead, so Status fits on screen. */}
       <Table.Cell className={cn(CELL, "relative", PHONE_COLLAPSED)}>
         <AnswerInput
+          key={puzzle.id}
           puzzleName={puzzle.name}
           value={puzzle.answer}
           count={puzzle.answerCount}
@@ -2032,6 +2309,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       </Table.Cell>
       <Table.Cell className={CELL}>
         <PuzzleStatusSelect
+          key={puzzle.id}
           value={puzzle.status}
           onChange={status => {
             if (status !== puzzle.status) update({status});
@@ -2041,6 +2319,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       </Table.Cell>
       <Table.Cell className={cn(CELL, DESKTOP_ONLY)}>
         <PuzzleImportanceSelect
+          key={puzzle.id}
           value={puzzle.importance}
           onChange={importance => {
             if (importance !== puzzle.importance) update({importance});
@@ -2053,17 +2332,18 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       </Table.Cell>
       <Table.Cell className={cn(CELL, "p-0", DESKTOP_ONLY)}>
         <TagsCell
+          key={puzzle.id}
           puzzleName={puzzle.name}
           value={puzzle.tags}
           tags={tags}
           onCommit={next => update({tags: next})}
         />
       </Table.Cell>
-      <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY)}>
+      <Table.Cell className={cn(CELL, "py-1", DESKTOP_ONLY, NARROW_HIDDEN)}>
         <UserPresenceAvatars users={presences} />
       </Table.Cell>
-      <Table.Cell className={cn(CELL, STICKY_ACTIONS)}>
-        <div className="-my-3 flex items-center justify-end">
+      <Table.Cell className={CELL}>
+        <div className="-my-3 ml-auto flex items-center justify-end">
           <ToggleButton
             variant="ghost"
             isIconOnly
@@ -2104,7 +2384,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
                     <Dropdown.Item
                       id="edit-puzzle"
                       textValue="Edit puzzle"
-                      onAction={() => setIsEditPuzzleDialogOpen(true)}>
+                      onAction={() => openDialog({kind: "edit-puzzle", puzzle})}>
                       <Label>Edit puzzle</Label>
                     </Dropdown.Item>
                   )}
@@ -2112,7 +2392,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
                     <Dropdown.Item
                       id="move-puzzle"
                       textValue="Move to…"
-                      onAction={() => setIsMoveDialogOpen(true)}>
+                      onAction={() => openDialog({kind: "move-puzzle", puzzle})}>
                       <Label>Move to…</Label>
                     </Dropdown.Item>
                   )}
@@ -2120,7 +2400,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
                     <Dropdown.Item
                       id="delete-puzzle"
                       textValue="Delete puzzle"
-                      onAction={() => setIsDeletePuzzleDialogOpen(true)}>
+                      onAction={() => openDialog({kind: "delete-puzzle", puzzle})}>
                       <Label>Delete puzzle</Label>
                     </Dropdown.Item>
                   )}
@@ -2129,32 +2409,6 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             </Dropdown>
           )}
         </div>
-        {isEditPuzzleDialogOpen && (
-          <EditPuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzle={puzzle}
-            open={isEditPuzzleDialogOpen}
-            setOpen={setIsEditPuzzleDialogOpen}
-          />
-        )}
-        {isMoveDialogOpen && (
-          <MovePuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzle={puzzle}
-            open={isMoveDialogOpen}
-            setOpen={setIsMoveDialogOpen}
-          />
-        )}
-        {isDeletePuzzleDialogOpen && (
-          <DeletePuzzleDialog
-            workspaceSlug={workspaceSlug}
-            puzzleId={puzzle.id}
-            puzzleName={puzzle.name}
-            isMetaPuzzle={false}
-            open={isDeletePuzzleDialogOpen}
-            setOpen={setIsDeletePuzzleDialogOpen}
-          />
-        )}
       </Table.Cell>
     </Table.Row>
   );

@@ -324,17 +324,18 @@ const CAPTAIN: TourStep[] = [
     id: "add-round",
     page: "board",
     target: ctx =>
-      ctx.workspace.rounds.length === 0 ? "[data-tour=add-first-round]" : "[data-tour=board-menu]",
+      ctx.workspace.rounds.length === 0 ? "[data-tour=add-first-round]" : "[data-tour=add-round]",
     title: "Add a round",
     body: ctx =>
       ctx.workspace.rounds.length === 0 ? (
         <>
           Hunts unlock puzzles in rounds. Click <B>Add a round</B> and give it the round's name.
-          (Later, it's in the <B>⋯</B> menu at the top of the board.)
+          (Later, it's the <B>+</B> at the right end of the board's header row.)
         </>
       ) : (
         <>
-          Hunts unlock puzzles in rounds. Click <B>⋯</B>, then <B>Add round</B>.
+          Hunts unlock puzzles in rounds. Click the <B>+</B> at the right end of the board's header
+          row.
         </>
       ),
     task: {isDone: ctx => ctx.workspace.rounds.length > 0, doItForMe: "round"},
