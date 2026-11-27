@@ -10,6 +10,7 @@ import {
   MegaphoneIcon,
   PartyPopperIcon,
   SettingsIcon,
+  StarIcon,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
@@ -24,6 +25,7 @@ import {formatAnswers} from "@/lib/answers";
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
 import {orpc} from "@/lib/orpc";
+import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
 import {useWebSocket} from "@/lib/use-websocket";
 import {workspaceMutations, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import type {
@@ -43,6 +45,8 @@ type Prefs = {
   announcements: boolean;
   mentions: boolean;
   emails: boolean;
+  /** Puzzles you starred: a status change, a guess queued, a wrong or partial answer. */
+  favorites: boolean;
   desktop: boolean;
 };
 const DEFAULT_PREFS: Prefs = {
@@ -50,6 +54,7 @@ const DEFAULT_PREFS: Prefs = {
   announcements: true,
   mentions: true,
   emails: true,
+  favorites: true,
   desktop: false,
 };
 /** Settings saved before a kind of notification existed get its default. */
@@ -77,6 +82,25 @@ function useNotifications(workspaceSlug: string) {
   );
 }
 
+const statusLabel = (status: string | null) =>
+  getPuzzleStatusOptions().find(option => option.value === status)?.label ?? status ?? "None";
+
+/** What happened on a starred puzzle, as a sentence. */
+function describeFavorite(change: Extract<WorkspaceNotification, {type: "favorite"}>["change"]) {
+  switch (change.kind) {
+    case "status":
+      return `Now ${statusLabel(change.status)}`;
+    case "guessQueued":
+      return `Guess queued: ${change.answer}`;
+    case "guessResult":
+      return change.result === "partial"
+        ? `${change.answer}: keep going (partial)`
+        : `${change.answer} was wrong`;
+    default:
+      return change satisfies never;
+  }
+}
+
 const driveFolderUrl = (folderId: string) => `https://drive.google.com/drive/folders/${folderId}`;
 
 function describe(notification: WorkspaceNotification) {
@@ -98,6 +122,11 @@ function describe(notification: WorkspaceNotification) {
       return {
         title: `Email from ${notification.from}`,
         body: [notification.subject, notification.preview].filter(Boolean).join(" — "),
+      };
+    case "favorite":
+      return {
+        title: `★ ${notification.puzzleName}: ${describeFavorite(notification.change)}`,
+        body: `By ${notification.by.name}`,
       };
     case "driveShareFailed":
       // What to do first: the bell shows only two lines.
@@ -234,7 +263,9 @@ export function NotificationsWebSocket({
               ? prefs.mentions
               : message.type === "email"
                 ? prefs.emails
-                : true;
+                : message.type === "favorite"
+                  ? prefs.favorites
+                  : true;
       if (!wanted) return;
       const {title, body} = describe(message);
 
@@ -293,6 +324,12 @@ export function NotificationsWebSocket({
             onClick: () => open(message),
           },
         });
+      } else if (message.type === "favorite") {
+        toast(title, {
+          description: body,
+          icon: <StarIcon className="text-warning size-4" />,
+          action: {label: "Open", onClick: () => open(message)},
+        });
       } else {
         toast(title, {
           description: body,
@@ -311,6 +348,7 @@ const ICONS = {
   mention: <AtSignIcon className="text-warning size-4" />,
   email: <MailIcon className="text-accent size-4" />,
   driveShareFailed: <FolderLockIcon className="text-danger size-4" />,
+  favorite: <StarIcon className="text-warning size-4" />,
 };
 
 /** Opens the bell from elsewhere (e.g. the "while you were away" summary). */
@@ -444,6 +482,7 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                   ["announcements", "There's an announcement"],
                   ["mentions", "Someone mentions you"],
                   ["emails", "The workspace gets an email"],
+                  ["favorites", "A puzzle you starred changes"],
                 ] as const
               ).map(([key, label]) => (
                 <Switch
@@ -568,6 +607,7 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
       const announcements = recent.filter(n => n.type === "announcement").length;
       const mentions = recent.filter(n => n.type === "mention").length;
       const emails = recent.filter(n => n.type === "email").length;
+      const starred = recent.filter(n => n.type === "favorite").length;
       const rounds = activityRef.current.filter(
         entry =>
           entry.round_activity_log_entry?.subType === "create" &&
@@ -579,6 +619,7 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
         announcements &&
           `${announcements} ${announcements === 1 ? "announcement" : "announcements"}`,
         emails && `${emails} ${emails === 1 ? "email" : "emails"}`,
+        starred && `${starred} ${starred === 1 ? "update" : "updates"} on puzzles you starred`,
         mentions && `you were mentioned ${mentions === 1 ? "once" : `${mentions} times`}`,
       ].filter(Boolean);
       if (parts.length === 0) return;

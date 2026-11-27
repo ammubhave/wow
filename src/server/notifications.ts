@@ -35,6 +35,22 @@ export type MentionNotification = NotificationBase & {
   text: string;
 };
 
+/**
+ * Something happened on a puzzle you starred (only the people who starred it get it, not whoever
+ * did it). Solves aren't sent this way: everyone hears about those.
+ */
+export type FavoriteNotification = NotificationBase & {
+  type: "favorite";
+  toUserIds: string[];
+  puzzleId: string;
+  puzzleName: string;
+  by: {id: string; name: string};
+  change:
+    | {kind: "status"; status: string | null}
+    | {kind: "guessQueued"; answer: string}
+    | {kind: "guessResult"; answer: string; result: "incorrect" | "partial"};
+};
+
 /** An email arrived at the workspace's contact address (it's in the workspace's Inbox). */
 export type EmailNotification = NotificationBase & {
   type: "email";
@@ -70,7 +86,8 @@ export type WorkspaceNotification =
   | AnnouncementNotification
   | MentionNotification
   | EmailNotification
-  | DriveShareFailedNotification;
+  | DriveShareFailedNotification
+  | FavoriteNotification;
 
 /**
  * What you've read (per person, kept by the room, so it follows you across browsers): everything

@@ -307,6 +307,17 @@ export const puzzlesRouter = {
 
         const inputSolved = input.status === "solved" || input.status === "backsolved";
         const puzzleSolved = puzzle.status === "solved" || puzzle.status === "backsolved";
+        // Anyone who starred it hears about other status changes (everyone hears about solves).
+        if (!inputSolved) {
+          waitUntil(
+            context.notification.favorite(workspaceId, {
+              puzzleId: puzzle.id,
+              puzzleName: input.name ?? puzzle.name,
+              by: {id: context.session.user.id, name: context.session.user.name},
+              change: {kind: "status", status: input.status},
+            })
+          );
+        }
         if (inputSolved && inputSolved !== puzzleSolved) {
           waitUntil(
             context.notification.broadcast(workspaceId, {

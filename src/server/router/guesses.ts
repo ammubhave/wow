@@ -1,4 +1,5 @@
 import {ORPCError} from "@orpc/server";
+import {waitUntil} from "cloudflare:workers";
 import {and, eq} from "drizzle-orm";
 import {z} from "zod";
 
@@ -6,8 +7,10 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 import {invalidateWorkspace} from "../do/workspace";
+import type {FavoriteNotification} from "../notifications";
 import {isPuzzleInWorkspace} from "../workspace-access";
 import {preauthorize, procedure} from "./base";
+import type {NotificationService} from "./services/notification";
 
 export const GUESS_STATUSES = [
   "queued",
@@ -52,6 +55,9 @@ export const guessesRouter = {
           createdBy: context.session.user.id,
         });
       await invalidateWorkspace(context.workspace.id);
+      waitUntil(
+        notifyStarred(context, input.puzzleId, {kind: "guessQueued", answer: input.answer})
+      );
     }),
 
   /** Moves a guess along: submitted, the hunt's verdict, a backoff (retryAt), or a note. */
@@ -87,8 +93,47 @@ export const guessesRouter = {
             eq(schema.puzzleGuess.workspaceId, context.workspace.id)
           )
         )
-        .returning({id: schema.puzzleGuess.id});
+        .returning({
+          id: schema.puzzleGuess.id,
+          puzzleId: schema.puzzleGuess.puzzleId,
+          answer: schema.puzzleGuess.answer,
+        });
       if (!updated) throw new ORPCError("NOT_FOUND");
       await invalidateWorkspace(context.workspace.id);
+      // A wrong or partial answer is news to whoever starred the puzzle (a correct one solves it,
+      // which everyone hears about).
+      if (input.status === "incorrect" || input.status === "partial") {
+        waitUntil(
+          notifyStarred(context, updated.puzzleId, {
+            kind: "guessResult",
+            answer: updated.answer,
+            result: input.status,
+          })
+        );
+      }
     }),
 };
+
+/** Tells whoever starred the puzzle about its guess (by the puzzle's current name). */
+async function notifyStarred(
+  context: {
+    workspace: {id: string};
+    session: {user: {id: string; name: string}};
+    notification: NotificationService;
+  },
+  puzzleId: string,
+  change: FavoriteNotification["change"]
+) {
+  const puzzle = await db
+    .select({name: schema.puzzle.name})
+    .from(schema.puzzle)
+    .where(eq(schema.puzzle.id, puzzleId))
+    .get();
+  if (!puzzle) return;
+  await context.notification.favorite(context.workspace.id, {
+    puzzleId,
+    puzzleName: puzzle.name,
+    by: {id: context.session.user.id, name: context.session.user.name},
+    change,
+  });
+}
