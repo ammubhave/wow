@@ -85,8 +85,6 @@ const FILTER_SAVE_MS = 300;
 const COMPACT_TOOLBAR_WIDTH = 640;
 // After scrolling stops, how long until the new top-left cell is shared (for followers).
 const VIEW_SETTLE_MS = 250;
-/** The longest the sheet stays hidden behind its skeleton waiting for Univer to settle. */
-const REVEAL_TIMEOUT_MS = 4000;
 
 type Engine = {univer: Univer; api: FUniver; sync: SheetSync};
 
@@ -237,24 +235,28 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     // Each instance gets its own element, since the previous one is torn down after this mounts.
     const container = document.createElement("div");
     container.className = "absolute inset-0";
-    // Hidden until Univer has laid itself out: its formula bar mounts after the grid and pushed it
-    // down 28px in view (a layout shift). The skeleton stands in meanwhile (see `shown`); hidden
-    // elements don't count as shifting.
+    // Hidden, with the skeleton over it (see `shown`), until Univer has built its UI: while it does,
+    // its toolbar grows and its formula bar mounts above the grid, pushing it down 28px — a layout
+    // shift in view. Hidden elements don't count as shifting. Univer reaches its Rendered stage
+    // once the UI is up and the workbook's grid is attached (it drops its own placeholder then, two
+    // frames later, as this does). That's after the room's first message creates the workbook: until
+    // then there's no sheet to show, so the skeleton is the truth.
     container.style.visibility = "hidden";
+    // This instance is torn down (another puzzle, or unmounting): its reveal must not touch the
+    // skeleton, which by then stands in for the next instance.
+    let current = true;
     let revealed = false;
     const reveal = () => {
       if (revealed) return;
       revealed = true;
-      // Two frames: Univer paints the stage it just reached on the next one.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
+          if (!current) return;
           container.style.visibility = "";
           setShown(true);
         })
       );
     };
-    // In case it never gets there (a hidden tab doesn't render): never leave the sheet hidden.
-    const revealAnyway = setTimeout(reveal, REVEAL_TIMEOUT_MS);
     parent.appendChild(container);
     const {univer, univerAPI} = createUniver({
       locale: LocaleType.EN_US,
@@ -389,7 +391,8 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
         event.cancel = true;
       }),
       univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, ({stage}) => {
-        if (stage >= LifecycleStages.Steady) reveal();
+        // Replayed for a stage already reached (the lifecycle is a BehaviorSubject), so it's never missed.
+        if (stage >= LifecycleStages.Rendered) reveal();
         if (functionsRegistered || stage < LifecycleStages.Rendered) return;
         functionsRegistered = true;
         registerPuzzleFunctions(univerAPI);
@@ -452,7 +455,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     if (import.meta.env.DEV) Object.assign(window, {__sheet: next});
 
     return () => {
-      clearTimeout(revealAnyway);
+      current = false;
       setShown(false);
       if (presenceTimer.current) clearTimeout(presenceTimer.current);
       presenceTimer.current = null;
