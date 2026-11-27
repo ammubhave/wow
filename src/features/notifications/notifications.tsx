@@ -125,8 +125,8 @@ function describe(notification: WorkspaceNotification) {
       };
     case "favorite":
       return {
-        title: `★ ${notification.puzzleName}: ${describeFavorite(notification.change)}`,
-        body: `By ${notification.by.name}`,
+        title: `${notification.puzzleName}: ${describeFavorite(notification.change)}`,
+        body: `By ${notification.by.name} · you starred it`,
       };
     case "driveShareFailed":
       // What to do first: the bell shows only two lines.

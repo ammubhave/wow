@@ -21,7 +21,8 @@ const hoverTime = new Intl.DateTimeFormat(undefined, {
 const dayTick = new Intl.DateTimeFormat(undefined, {weekday: "short", hour: "numeric"});
 const hourTick = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit"});
 
-const rate = (n: number) => (n >= 10 ? Math.round(n).toString() : n.toFixed(1));
+const rate = (n: number) =>
+  n >= 10 ? Math.round(n).toString() : n >= 1 ? n.toFixed(1) : n.toFixed(2);
 
 /** How many quickest and longest solves to list. */
 const LIST = 5;
