@@ -8,16 +8,18 @@ import {z} from "zod";
 import {AuthLayout, FormError, GoogleButton, OrDivider} from "@/components/auth-layout";
 import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
+import {AuthSkeleton} from "@/components/page-skeletons";
 import {authClient} from "@/lib/auth-client";
 import {authErrorMessage, keepRedirect, redirectToSearch} from "@/lib/auth-helpers";
 import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_public/signup")({
   component: RouteComponent,
+  pendingComponent: () => <AuthSkeleton fields={3} buttons={1} />,
   head: () => ({meta: [{title: "Sign up | WOW"}]}),
   validateSearch: redirectToSearch,
   beforeLoad: async ({search}) => {
-    if (await getSession()) throw redirect({href: search.redirectTo});
+    if (await getSession("signed-out")) throw redirect({href: search.redirectTo});
   },
 });
 

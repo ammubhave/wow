@@ -13,6 +13,7 @@ import {
 } from "@/components/auth-layout";
 import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
+import {AuthSkeleton} from "@/components/page-skeletons";
 import {authClient} from "@/lib/auth-client";
 import {
   authErrorMessage,
@@ -24,11 +25,12 @@ import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_public/login")({
   component: RouteComponent,
+  pendingComponent: () => <AuthSkeleton fields={2} buttons={2} hint />,
   head: () => ({meta: [{title: "Log in | WOW"}]}),
   validateSearch: loginSearch,
   // Already signed in (e.g. another tab): go where the link was headed.
   beforeLoad: async ({search}) => {
-    if (await getSession()) throw redirect({href: search.redirectTo});
+    if (await getSession("signed-out")) throw redirect({href: search.redirectTo});
   },
 });
 

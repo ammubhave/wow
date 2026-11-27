@@ -200,11 +200,13 @@ function FeaturedHuntCard({hunt, now}: {hunt: Hunt; now: number}) {
  * Shortcuts to set up a workspace for the hunts you're most likely to play next (ongoing or
  * coming up soon, that you don't have a workspace for yet). Nothing when there are none.
  */
+export const huntsComingUpQueryOptions = () => ({
+  ...orpc.huntListings.forYou.queryOptions(),
+  staleTime: 10 * 60 * SECOND_MS,
+});
+
 export function HuntsComingUp() {
-  const {data: hunts} = useQuery({
-    ...orpc.huntListings.forYou.queryOptions(),
-    staleTime: 10 * 60 * SECOND_MS,
-  });
+  const {data: hunts} = useQuery(huntsComingUpQueryOptions());
   const now = useNow(hunts);
   if (!hunts || hunts.length === 0) return null;
   return (

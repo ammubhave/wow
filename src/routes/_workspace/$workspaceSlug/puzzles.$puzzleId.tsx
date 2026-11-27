@@ -40,6 +40,7 @@ import {useAppForm} from "@/components/form";
 import {PuzzleGuesses} from "@/components/guess-queue";
 import {IconButton} from "@/components/icon-button";
 import {NotFoundPage} from "@/components/not-found-page";
+import {PuzzlePageSkeleton, SheetSkeleton} from "@/components/page-skeletons";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contributors";
 import {PuzzleSheet} from "@/components/sheet/sheet";
@@ -60,20 +61,24 @@ import {
   getPuzzleStatusOptions,
 } from "@/lib/puzzleStatuses";
 import {usePuzzle} from "@/lib/usePuzzle";
-import {workspaceMutations} from "@/lib/workspace-mutations";
+import {findPuzzle, workspaceMutations, workspaceQueryOptions} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzleId")({
   // Which surface the left pane shows; in the URL so a shared link opens the same view.
   // On phones, chat and the puzzle's details are views too (on desktop they're always shown).
   validateSearch: z.object({view: z.enum(["sheet", "whiteboard", "chat", "info"]).optional()}),
   component: RouteComponent,
-  head: async ({params}) => {
-    const puzzle = await client.puzzles.get({
-      workspaceSlug: params.workspaceSlug,
-      puzzleId: params.puzzleId,
-    });
-    return {meta: [{title: `${puzzle.name} | WOW`}]};
+  // The puzzle comes with the workspace's state (the layout's loader, so usually cached): its name
+  // for the tab's title from there, rather than a request the navigation would wait on. (A
+  // failure is the layout's to handle.)
+  loader: async ({context: {queryClient}, params: {workspaceSlug, puzzleId}}) => {
+    const wire = await queryClient
+      .ensureQueryData(workspaceQueryOptions(workspaceSlug))
+      .catch(() => undefined);
+    return {name: wire && findPuzzle(wire, puzzleId)?.name};
   },
+  head: ({loaderData}) => ({meta: [{title: `${loaderData?.name ?? "Puzzle"} | WOW`}]}),
+  pendingComponent: PuzzlePageSkeleton,
 });
 
 /** The puzzle's Google Sheet, without the editor or preview part. */
@@ -933,32 +938,35 @@ function WorksheetFrame({title, src, openHref}: {title: string; src: string; ope
         className="h-full w-full flex-1"
       />
       {!loaded && (
-        <div className="bg-surface absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-          <Spinner aria-label="Loading the sheet" />
-          <p className="text-muted text-sm">
-            {slow ? "Google is taking a while…" : "Loading the sheet…"}
-          </p>
-          {slow && (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => {
-                  setSlow(false);
-                  setStartedAt(Date.now());
-                }}>
-                Retry
-              </Button>
-              <a
-                href={openHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonVariants({size: "sm", variant: "ghost"})}>
-                Open in a new tab
-                <ExternalLinkIcon />
-              </a>
-            </div>
-          )}
+        <div className="bg-background absolute inset-0 flex flex-col">
+          {/* The sheet's outline (instead of a blank frame or a spinner), and a word on it. */}
+          <SheetSkeleton />
+          <div className="absolute inset-x-0 top-1/3 flex flex-col items-center gap-3 p-6 text-center">
+            <p className="text-muted bg-background px-2 text-sm">
+              {slow ? "Google is taking a while…" : "Loading the sheet…"}
+            </p>
+            {slow && (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onPress={() => {
+                    setSlow(false);
+                    setStartedAt(Date.now());
+                  }}>
+                  Retry
+                </Button>
+                <a
+                  href={openHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({size: "sm", variant: "ghost"})}>
+                  Open in a new tab
+                  <ExternalLinkIcon />
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

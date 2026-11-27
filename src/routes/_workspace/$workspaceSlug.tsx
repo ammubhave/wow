@@ -90,7 +90,9 @@ function RouteComponent() {
                   <WorkspaceHeader />
                   <ArchivedBanner />
                   <div className="relative flex flex-1">
-                    <div className="absolute inset-0 flex overflow-auto">
+                    <div
+                      className="absolute inset-0 flex overflow-auto"
+                      data-scroll-restoration-id="workspace-page">
                       <Outlet />
                     </div>
                   </div>

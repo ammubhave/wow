@@ -6,15 +6,17 @@ import {useRef, useState} from "react";
 import {AuthLayout, BackToLogin, FormError} from "@/components/auth-layout";
 import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
+import {AuthSkeleton} from "@/components/page-skeletons";
 import {authClient} from "@/lib/auth-client";
 import {authErrorMessage} from "@/lib/auth-helpers";
 import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_public/forgot-password")({
   component: RouteComponent,
+  pendingComponent: () => <AuthSkeleton fields={1} buttons={0} />,
   head: () => ({meta: [{title: "Forgot password | WOW"}]}),
   loader: async () => {
-    const session = await getSession();
+    const session = await getSession("signed-out");
     if (session) throw redirect({to: "/workspaces"});
   },
 });

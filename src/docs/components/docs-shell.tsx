@@ -1,4 +1,4 @@
-import {Button, Kbd, Skeleton, Typography} from "@heroui/react";
+import {Button, Kbd, Typography} from "@heroui/react";
 import {Link} from "@tanstack/react-router";
 import {
   ArrowLeftIcon,
@@ -12,9 +12,18 @@ import {lazy, Suspense, useEffect, useRef, useState} from "react";
 import {cn} from "tailwind-variants";
 
 import {IconButton} from "@/components/icon-button";
+import {DocTextSkeleton} from "@/components/page-skeletons";
 import {PROSE_FLOW} from "@/lib/prose";
 
-import {DOC_PAGES, DOC_SECTIONS, type DocPage, findDoc, loadDoc, neighbours} from "../registry";
+import {
+  DOC_PAGES,
+  DOC_SECTIONS,
+  type DocPage,
+  findDoc,
+  loadDoc,
+  loadedDoc,
+  neighbours,
+} from "../registry";
 import {DocsBaseContext, useDocHref} from "./docs-base";
 import {DocsSearch} from "./docs-search";
 import {MDX_COMPONENTS} from "./mdx-components";
@@ -206,7 +215,8 @@ export function DocsShell({base, slug}: {base: string; slug: string}) {
     return () => document.removeEventListener("keydown", onKey);
   }, [isPublic]);
 
-  const Content = page ? contentFor(page.slug) : undefined;
+  // Preloaded by the route (so it renders at once), else loaded here.
+  const Content = page ? (loadedDoc(page.slug) ?? contentFor(page.slug)) : undefined;
   const searchButton = (
     <Button
       variant="secondary"
@@ -265,14 +275,7 @@ export function DocsShell({base, slug}: {base: string; slug: string}) {
                   <p className="text-muted text-lg leading-relaxed">{page.description}</p>
                 </header>
                 <div ref={articleRef}>
-                  <Suspense
-                    fallback={
-                      <div className="flex flex-col gap-3" aria-busy="true">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-11/12" />
-                        <Skeleton className="h-4 w-4/5" />
-                      </div>
-                    }>
+                  <Suspense fallback={<DocTextSkeleton />}>
                     <Typography.Prose
                       className={cn(
                         PROSE_FLOW,

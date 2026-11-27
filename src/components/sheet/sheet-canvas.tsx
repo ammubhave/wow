@@ -47,6 +47,7 @@ import {useEffect, useRef, useState} from "react";
 import {ReadyState} from "react-use-websocket/dist/lib/constants";
 import {toast} from "sonner";
 
+import {SheetSkeleton} from "@/components/page-skeletons";
 import {useResolvedTheme} from "@/components/theme-provider";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
@@ -84,6 +85,8 @@ const FILTER_SAVE_MS = 300;
 const COMPACT_TOOLBAR_WIDTH = 640;
 // After scrolling stops, how long until the new top-left cell is shared (for followers).
 const VIEW_SETTLE_MS = 250;
+/** The longest the sheet stays hidden behind its skeleton waiting for Univer to settle. */
+const REVEAL_TIMEOUT_MS = 4000;
 
 type Engine = {univer: Univer; api: FUniver; sync: SheetSync};
 
@@ -126,6 +129,8 @@ function lockWorkbook(
 export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const theme = useResolvedTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Whether Univer is showing yet (until then, the skeleton covers it).
+  const [shown, setShown] = useState(false);
   const unitId = `puzzle-${puzzleId}`;
   const [engine, setEngine] = useState<Engine | null>(null);
   // Socket, DOM and Univer callbacks run outside render, so they read these through refs.
@@ -232,6 +237,24 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     // Each instance gets its own element, since the previous one is torn down after this mounts.
     const container = document.createElement("div");
     container.className = "absolute inset-0";
+    // Hidden until Univer has laid itself out: its formula bar mounts after the grid and pushed it
+    // down 28px in view (a layout shift). The skeleton stands in meanwhile (see `shown`); hidden
+    // elements don't count as shifting.
+    container.style.visibility = "hidden";
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      // Two frames: Univer paints the stage it just reached on the next one.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          container.style.visibility = "";
+          setShown(true);
+        })
+      );
+    };
+    // In case it never gets there (a hidden tab doesn't render): never leave the sheet hidden.
+    const revealAnyway = setTimeout(reveal, REVEAL_TIMEOUT_MS);
     parent.appendChild(container);
     const {univer, univerAPI} = createUniver({
       locale: LocaleType.EN_US,
@@ -366,6 +389,7 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
         event.cancel = true;
       }),
       univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, ({stage}) => {
+        if (stage >= LifecycleStages.Steady) reveal();
         if (functionsRegistered || stage < LifecycleStages.Rendered) return;
         functionsRegistered = true;
         registerPuzzleFunctions(univerAPI);
@@ -428,6 +452,8 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     if (import.meta.env.DEV) Object.assign(window, {__sheet: next});
 
     return () => {
+      clearTimeout(revealAnyway);
+      setShown(false);
       if (presenceTimer.current) clearTimeout(presenceTimer.current);
       presenceTimer.current = null;
       for (const timer of timers) clearTimeout(timer);
@@ -529,6 +555,11 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
 
   return (
     <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
+      {!shown && (
+        <div className="absolute inset-0 z-10 flex">
+          <SheetSkeleton />
+        </div>
+      )}
       {engine && <CrosswordOverlay api={engine.api} layout={layout} />}
       {engine && <PresenceOverlay api={engine.api} peers={peers} layout={layout} />}
       <CollabBar

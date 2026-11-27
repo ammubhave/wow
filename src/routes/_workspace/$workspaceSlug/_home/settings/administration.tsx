@@ -8,6 +8,7 @@ import {z} from "zod";
 
 import {ConfirmDialog} from "@/components/confirm-dialog";
 import {useAppForm} from "@/components/form";
+import {AdministrationSkeleton} from "@/components/page-skeletons";
 import {SpreadsheetChoice, VoiceChoice} from "@/components/workspace-tools";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -17,6 +18,7 @@ import {workspaceMutations} from "@/lib/workspace-mutations";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/administration")({
   component: RouteComponent,
+  pendingComponent: AdministrationSkeleton,
   head: () => ({meta: [{title: "Administration | Workspace settings | WOW"}]}),
 });
 

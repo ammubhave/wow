@@ -3,9 +3,11 @@ import {createFileRoute, Outlet, useChildMatches} from "@tanstack/react-router";
 import {useMediaQuery} from "usehooks-ts";
 
 import {Page} from "@/components/page";
+import {SettingsSkeleton} from "@/components/page-skeletons";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings")({
   component: RouteComponent,
+  pendingComponent: SettingsSkeleton,
   head: () => ({meta: [{title: "Workspace settings | WOW"}]}),
 });
 

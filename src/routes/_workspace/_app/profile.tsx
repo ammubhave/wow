@@ -6,18 +6,21 @@ import {cn} from "tailwind-variants";
 import {DangerZoneCard, SessionsCard, SignInMethodsCard} from "@/components/account-settings";
 import {useAppForm} from "@/components/form";
 import {Page, READING_WIDTH} from "@/components/page";
+import {ProfileSkeleton} from "@/components/page-skeletons";
 import {PasskeysCard} from "@/components/passkeys-card";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {authClient} from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_workspace/_app/profile")({
   component: RouteComponent,
+  pendingComponent: ProfileSkeleton,
   head: () => ({meta: [{title: "Account | WOW"}]}),
 });
 
 function RouteComponent() {
   const {data} = authClient.useSession();
-  if (!data) return null;
+  // Right after a fresh load the session may still be on its way.
+  if (!data) return <ProfileSkeleton />;
   return (
     <Page title="Account">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>

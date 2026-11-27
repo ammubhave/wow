@@ -20,7 +20,7 @@ const ACTIVITY_EVENTS = ["pointermove", "pointerdown", "keydown", "wheel", "touc
 
 type PuzzleTimes = {puzzleId: string; seconds: number}[];
 
-const myTimesQueryOptions = (workspaceSlug: string) =>
+export const myTimesQueryOptions = (workspaceSlug: string) =>
   orpc.puzzles.myTimes.queryOptions({input: {workspaceSlug}});
 
 /** Your time on each puzzle in the workspace (most first). */

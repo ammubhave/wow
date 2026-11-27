@@ -8,6 +8,7 @@ import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
 import {Page, READING_WIDTH} from "@/components/page";
+import {CreateWorkspaceSkeleton} from "@/components/page-skeletons";
 import {
   huntDetails,
   huntWebsiteLink,
@@ -30,6 +31,7 @@ const TEAM_NAME_SCHEMA = z.string().trim().min(1, "Enter your team's name.");
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/create/")({
   component: RouteComponent,
+  pendingComponent: CreateWorkspaceSkeleton,
   // From a hunt shortcut (My workspaces): the hunt listing, and its name to start the form with.
   validateSearch: z.object({hunt: z.string().optional(), event: z.string().optional()}),
   head: () => ({meta: [{title: "Create workspace | WOW"}]}),

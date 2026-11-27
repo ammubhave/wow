@@ -35,10 +35,28 @@ export const getRouter = () => {
     routeTree,
     context: {queryClient},
     scrollRestoration: true,
+    // Pages scroll inside these containers, not the window: a new page starts at their top (and
+    // Back/Forward restores where you were), as the router already does for the window.
+    scrollToTopSelectors: [
+      '[data-scroll-restoration-id="public-page"]',
+      '[data-scroll-restoration-id="workspace-page"]',
+      '[data-scroll-restoration-id="workspace-home"]',
+    ],
     // Start loading a route's data when its link is hovered or focused, so navigation is instant.
     defaultPreload: "intent",
-    // Any route that takes over ~1s to load shows a page outline instead of a blank screen.
+    // A route without a skeleton of its own shows a generic page outline while it loads.
     defaultPendingComponent: PageSkeleton,
+    // Every navigation responds at once: a route that has to wait (its data isn't cached, or its
+    // code hasn't loaded) shows its skeleton straight away instead of leaving the old page up
+    // (the default waits 1s). A route whose loader resolves from the query cache doesn't flash
+    // it: the router only offers the skeleton when a loader actually has to run, and offers it
+    // in a React transition, so when the loader settles within the same task (ensureQueryData
+    // resolving from the cache in a microtask) the finished page lands in that same render and
+    // the skeleton never paints. Hover/focus preloading (above) usually has it cached by the
+    // click. No minimum either (the default holds a skeleton for 500ms once shown): content that
+    // arrives sooner shows sooner. (See offerPending in @tanstack/router-core's load-client.ts.)
+    defaultPendingMs: 0,
+    defaultPendingMinMs: 0,
     // Unknown URLs, workspaces and puzzles.
     defaultNotFoundComponent: () => <NotFoundPage />,
     // A page that failed to load or crashed (instead of the router's developer error screen).

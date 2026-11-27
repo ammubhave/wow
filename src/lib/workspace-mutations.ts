@@ -133,7 +133,7 @@ const mapRounds = (wire: Wire, fn: (round: WireRound) => WireRound): Wire => ({
 const mapPuzzles = (wire: Wire, fn: (puzzle: WirePuzzle) => WirePuzzle): Wire =>
   mapRounds(wire, round => ({...round, puzzles: round.puzzles.map(fn)}));
 
-const findPuzzle = (wire: Wire, id: string) =>
+export const findPuzzle = (wire: Wire, id: string) =>
   wire.rounds.flatMap(round => round.puzzles).find(puzzle => puzzle.id === id);
 
 /** Only the keys the caller actually set (`undefined` means "leave unchanged"). */

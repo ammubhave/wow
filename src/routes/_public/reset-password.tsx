@@ -6,11 +6,13 @@ import {z} from "zod";
 
 import {AuthLayout, FormError} from "@/components/auth-layout";
 import {useAppForm} from "@/components/form";
+import {AuthSkeleton} from "@/components/page-skeletons";
 import {authClient} from "@/lib/auth-client";
 import {authErrorMessage} from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/_public/reset-password")({
   component: RouteComponent,
+  pendingComponent: () => <AuthSkeleton fields={1} buttons={0} />,
   head: () => ({meta: [{title: "Reset password | WOW"}]}),
   validateSearch: z.object({token: z.string()}),
 });

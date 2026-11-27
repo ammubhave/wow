@@ -1,8 +1,12 @@
 import {createFileRoute, Outlet} from "@tanstack/react-router";
 
+import {AppSkeleton} from "@/components/page-skeletons";
 import {SiteHeader} from "@/components/site-header";
 
-export const Route = createFileRoute("/_workspace/_app")({component: RouteComponent});
+export const Route = createFileRoute("/_workspace/_app")({
+  component: RouteComponent,
+  pendingComponent: AppSkeleton,
+});
 
 function RouteComponent() {
   return (

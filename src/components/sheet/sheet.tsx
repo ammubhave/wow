@@ -1,6 +1,8 @@
-import {Button, Spinner} from "@heroui/react";
+import {Button} from "@heroui/react";
 import {posthog} from "posthog-js";
 import {Component, lazy, type ReactNode, Suspense} from "react";
+
+import {SheetSkeleton} from "@/components/page-skeletons";
 
 // Univer is large (a few MB), so it's in its own chunk, loaded by the first sheet opened (or
 // ahead of time, by preloadSheet).
@@ -68,12 +70,7 @@ class SheetErrorBoundary extends Component<
 export function PuzzleSheet({puzzleId}: {puzzleId: string}) {
   return (
     <SheetErrorBoundary>
-      <Suspense
-        fallback={
-          <div className="flex flex-1 items-center justify-center">
-            <Spinner aria-label="Loading spreadsheet" />
-          </div>
-        }>
+      <Suspense fallback={<SheetSkeleton label="Loading spreadsheet" />}>
         <SheetCanvas puzzleId={puzzleId} />
       </Suspense>
     </SheetErrorBoundary>

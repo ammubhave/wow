@@ -22,7 +22,7 @@ import {z} from "zod";
 import {ConfirmDialog} from "@/components/confirm-dialog";
 import {ControlledAlertDialog} from "@/components/controlled-dialog";
 import {IconButton, IconTooltip} from "@/components/icon-button";
-import {PeopleCardSkeleton} from "@/components/page-skeletons";
+import {MembersSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -33,11 +33,24 @@ import {orpc} from "@/lib/orpc";
 import {workspaceMembershipChanged} from "@/lib/workspace-membership";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/members")({
-  loader: ({context: {queryClient}, params: {workspaceSlug}}) =>
-    queryClient.ensureQueryData(
-      orpc.workspaces.members.list.queryOptions({input: {workspaceSlug}})
-    ),
-  pendingComponent: () => <PeopleCardSkeleton />,
+  loader: ({context: {queryClient}, params: {workspaceSlug}}) => {
+    // Owners also see the invitations still pending (in the invite card, above the members), so
+    // fetch those alongside rather than after. (Only owners may list them.)
+    const isOwner =
+      queryClient.getQueryData(
+        orpc.workspaces.members.get.queryOptions({input: {workspaceSlug}}).queryKey
+      )?.role === "owner";
+    return Promise.all([
+      queryClient.ensureQueryData(
+        orpc.workspaces.members.list.queryOptions({input: {workspaceSlug}})
+      ),
+      isOwner &&
+        queryClient.prefetchQuery(
+          orpc.workspaces.invitations.list.queryOptions({input: {workspaceSlug}})
+        ),
+    ]);
+  },
+  pendingComponent: MembersSkeleton,
   component: RouteComponent,
   head: () => ({meta: [{title: "Members | Workspace settings | WOW"}]}),
 });

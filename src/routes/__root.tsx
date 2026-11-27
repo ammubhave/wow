@@ -1,3 +1,4 @@
+import notoSansLatin from "@fontsource-variable/noto-sans/files/noto-sans-latin-wght-normal.woff2?url";
 import {RouterProvider} from "@heroui/react";
 import {TanStackDevtools} from "@tanstack/react-devtools";
 import type {QueryClient} from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import {IntlProvider} from "use-intl";
 
 import {PostHogIdentity} from "@/components/posthog-identity";
 import {ThemeProvider, useTheme} from "@/components/theme-provider";
+import {useAnchorPreload} from "@/hooks/use-anchor-preload";
 import {captureJoinPassword} from "@/lib/join-password";
 import {store} from "@/store";
 
@@ -64,6 +66,16 @@ export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
     ],
     links: [
       {rel: "stylesheet", href: appCss},
+      // The app's font (latin, which nearly every page needs), fetched alongside the stylesheet
+      // rather than once it has been parsed, so it's usually there for the first paint instead of
+      // swapping in after it.
+      {
+        rel: "preload",
+        href: notoSansLatin,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
       // Icons from brand/icons. /favicon.ico stays as the fallback (the headers also show it as the logo).
       {rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png"},
       {rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png"},
@@ -80,6 +92,7 @@ export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
 
 function RootDocument({children}: {children: React.ReactNode}) {
   const router = useRouter();
+  useAnchorPreload();
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

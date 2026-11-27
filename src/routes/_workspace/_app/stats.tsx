@@ -1,18 +1,22 @@
 import {ChartTooltip, KPIGroup} from "@heroui-pro/react";
 import {BarChart} from "@heroui-pro/react/bar-chart";
 import {KPI} from "@heroui-pro/react/kpi";
-import {Avatar, Card, Skeleton} from "@heroui/react";
+import {Avatar, Card} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {cn} from "tailwind-variants";
 
 import {Page, READING_WIDTH} from "@/components/page";
+import {StatsBodySkeleton, StatsSkeleton} from "@/components/page-skeletons";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {formatPuzzleTime} from "@/hooks/use-puzzle-time";
 import {orpc} from "@/lib/orpc";
 import type {RouterOutputs} from "@/server/router";
 
 export const Route = createFileRoute("/_workspace/_app/stats")({
+  // Fetched before the page shows (and on link hover); a failure is still the page's to show.
+  loader: ({context: {queryClient}}) => queryClient.prefetchQuery(orpc.me.stats.queryOptions()),
+  pendingComponent: StatsSkeleton,
   component: RouteComponent,
   head: () => ({meta: [{title: "My stats | WOW"}]}),
 });
@@ -90,14 +94,7 @@ function RouteComponent() {
   return (
     <Page title="My stats">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
-        {data ? (
-          <StatsBody stats={data} />
-        ) : (
-          <>
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </>
-        )}
+        {data ? <StatsBody stats={data} /> : <StatsBodySkeleton />}
       </div>
     </Page>
   );

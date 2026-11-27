@@ -1,6 +1,6 @@
 import {KPIGroup} from "@heroui-pro/react";
 import {KPI} from "@heroui-pro/react/kpi";
-import {Avatar, Button, buttonVariants, Card, Chip, Skeleton} from "@heroui/react";
+import {Avatar, Button, buttonVariants, Card, Chip} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {DownloadIcon, HeartIcon, XIcon} from "lucide-react";
@@ -11,12 +11,13 @@ import {useNow} from "use-intl";
 
 import {IconButton} from "@/components/icon-button";
 import {Page, READING_WIDTH} from "@/components/page";
+import {RecapSkeleton} from "@/components/page-skeletons";
 import {TeamStatsSection} from "@/components/team-stats";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {HelpLink} from "@/docs/components/help-link";
 import {computeRecap, HOUR, isSolve, type Standing, type User} from "@/features/awards/compute";
 import {computeTeamStats} from "@/features/awards/team-stats";
-import {formatPuzzleTime, useMyPuzzleTimes} from "@/hooks/use-puzzle-time";
+import {formatPuzzleTime, myTimesQueryOptions, useMyPuzzleTimes} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {authClient} from "@/lib/auth-client";
@@ -24,6 +25,14 @@ import {orpc} from "@/lib/orpc";
 import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/recap")({
+  // Fetched before the page shows (and on link hover), so it opens whole; prefetching (unlike
+  // ensuring) leaves a failure to the page, as before.
+  loader: ({context: {queryClient}, params: {workspaceSlug}}) =>
+    Promise.all([
+      queryClient.prefetchQuery(orpc.workspaces.recap.queryOptions({input: {workspaceSlug}})),
+      queryClient.prefetchQuery(myTimesQueryOptions(workspaceSlug)),
+    ]),
+  pendingComponent: RecapSkeleton,
   component: RouteComponent,
   head: () => ({meta: [{title: "Stats | WOW"}]}),
 });
@@ -247,16 +256,7 @@ function RouteComponent() {
   const solvedNow = new Set(puzzles.filter(p => isSolve(p.status)).map(p => p.id));
   const metaIds = new Set(puzzles.filter(p => p.isMetaPuzzle).map(p => p.id));
 
-  if (!data) {
-    return (
-      <Page title={pageTitle}>
-        <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
-          <Skeleton className="h-72 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-      </Page>
-    );
-  }
+  if (!data) return <RecapSkeleton />;
   const recap = computeRecap(data, solvedNow, metaIds);
   const teamStats = computeTeamStats({
     events: data.events,

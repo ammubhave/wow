@@ -307,16 +307,35 @@ export function neighbours(slug: string) {
   return {previous: DOC_PAGES[index - 1], next: index >= 0 ? DOC_PAGES[index + 1] : undefined};
 }
 
+type DocContent = React.ComponentType<{components?: object}>;
+
 /** Each page's content, loaded when it's first opened. */
-const CONTENT = import.meta.glob<{default: React.ComponentType<{components?: object}>}>(
-  "./content/**/*.mdx"
-);
+const CONTENT = import.meta.glob<{default: DocContent}>("./content/**/*.mdx");
 
 export const contentPath = (slug: string) => `./content/${slug || "index"}.mdx`;
 
 export function loadDoc(slug: string) {
   const load = CONTENT[contentPath(slug)];
   return load ? load() : Promise.reject(new Error(`No content for docs page "${slug}"`));
+}
+
+const loaded = new Map<string, DocContent>();
+
+/** A page's content, if preloadDoc has loaded it: it renders straight away, without suspending. */
+export const loadedDoc = (slug: string) => loaded.get(slug);
+
+/**
+ * Loads a page's content before it's shown (the docs routes' loaders, also on link hover), so
+ * the page opens whole instead of its text arriving after the rest. A page that fails to load
+ * here tries again when shown (and reports it there).
+ */
+export async function preloadDoc(slug: string) {
+  if (loaded.has(slug) || !CONTENT[contentPath(slug)]) return;
+  try {
+    loaded.set(slug, (await loadDoc(slug)).default);
+  } catch {
+    // Shown by the page.
+  }
 }
 
 /** Pages' raw text (for search), loaded the first time someone searches. */

@@ -4,6 +4,18 @@
 @import "@fontsource-variable/noto-sans";
 
 @import "./styles/_variables.scss";
+
+/* Noto Sans swaps in once it has loaded (font-display: swap). Until then text is in this local
+   stand-in, sized to Noto Sans's metrics (widths, ascent, descent; measured against Arial), so
+   lines don't rewrap or move when it arrives. */
+@font-face {
+  font-family: "Noto Sans Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  size-adjust: 104.52%;
+  ascent-override: 102.28%;
+  descent-override: 28.03%;
+  line-gap-override: 0%;
+}
 @import "./styles/_keyframe-animations.scss";
 
 @custom-variant dark (&:is(.dark *));
@@ -29,7 +41,7 @@
   --radius: 0;
   --field-radius: 0;
 
-  --font-sans: "Noto Sans Variable", sans-serif;
+  --font-sans: "Noto Sans Variable", "Noto Sans Fallback", sans-serif;
 }
 
 .dark,

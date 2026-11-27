@@ -1,4 +1,4 @@
-import {Avatar, Button, ScrollShadow, SearchField, Skeleton, Spinner, Tooltip} from "@heroui/react";
+import {Avatar, Button, ScrollShadow, SearchField, Skeleton, Tooltip} from "@heroui/react";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
@@ -470,8 +470,23 @@ function EmailDetail({
 
         <ScrollShadow hideScrollBar className="min-h-0 flex-1 overflow-y-auto lg:px-6">
           {email.isPending ? (
-            <div className="flex justify-center py-10">
-              <Spinner size="sm" aria-label="Loading the email" />
+            // Shaped like the email (subject, sender, then text) so it lands without moving.
+            <div className="flex flex-col gap-6 pb-5" aria-busy aria-label="Loading the email">
+              <Skeleton className="h-6 w-2/3 rounded-lg" />
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-9 shrink-0 rounded-full" />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Skeleton className="h-4 w-40 rounded-md" />
+                  <Skeleton className="h-3 w-56 rounded-md" />
+                </div>
+                <Skeleton className="h-3 w-28 rounded-md" />
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-11/12 rounded-md" />
+                <Skeleton className="h-4 w-4/5 rounded-md" />
+                <Skeleton className="h-4 w-2/3 rounded-md" />
+              </div>
             </div>
           ) : !data ? (
             <p className="text-danger py-10 text-center text-sm">Couldn't load this email.</p>
@@ -539,14 +554,45 @@ const formatSize = (bytes: number) =>
       ? `${Math.round(bytes / 1024)} KB`
       : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
+/** The page's own layout (list column beside the reading pane), so nothing moves when it loads. */
 function InboxSkeleton() {
   return (
-    <div className="flex flex-col gap-2 px-4 py-4 lg:w-[380px]">
-      <Skeleton className="h-8 w-32 rounded-lg" />
-      {Array.from({length: 5}, (_, index) => (
-        // oxlint-disable-next-line react/no-array-index-key -- placeholders, never reordered.
-        <Skeleton key={index} className="h-16 rounded-2xl" />
-      ))}
+    <div
+      aria-busy="true"
+      aria-label="Loading the inbox"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(320px,380px)_1fr]">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-clip px-2 pt-4 pb-2">
+        <div className="flex flex-col gap-1 px-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
+          <div className="flex h-6 items-center">
+            <Skeleton className="h-3 w-44" />
+          </div>
+        </div>
+        <div className="px-1">
+          <Skeleton className="h-9 w-full" />
+        </div>
+        <ul className="flex flex-col gap-0.5">
+          {Array.from({length: 6}, (_, index) => (
+            // oxlint-disable-next-line react/no-array-index-key -- placeholders, never reordered.
+            <li key={index} className="flex items-start gap-3 p-3">
+              <Skeleton className="size-9 shrink-0 rounded-full" />
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
+                <div className="flex justify-between gap-2">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-3 w-10" />
+                </div>
+                <Skeleton className="h-3 w-48" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="hidden min-h-0 flex-col items-center justify-center gap-3 px-6 py-16 lg:flex">
+        <Skeleton className="size-12 rounded-2xl" />
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-80" />
+      </div>
     </div>
   );
 }

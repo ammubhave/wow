@@ -7,7 +7,6 @@ import {
   EmptyState,
   ProgressBar,
   Separator,
-  Skeleton,
 } from "@heroui/react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {createFileRoute, Link, useRouter} from "@tanstack/react-router";
@@ -26,13 +25,21 @@ import {toast} from "sonner";
 import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
-import {HuntsComingUp} from "@/components/hunts-coming-up";
+import {HuntsComingUp, huntsComingUpQueryOptions} from "@/components/hunts-coming-up";
 import {Page} from "@/components/page";
+import {WorkspaceListSkeleton, WorkspacesSkeleton} from "@/components/page-skeletons";
 import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
 import {workspaceMembershipChanged} from "@/lib/workspace-membership";
 
 export const Route = createFileRoute("/_workspace/_app/workspaces/")({
+  // Your workspaces are fetched before the page shows (and on link hover), so it opens whole; a
+  // failure is still the page's to show. The hunts coming up (below the list) don't hold it up.
+  loader: ({context: {queryClient}}) => {
+    void queryClient.prefetchQuery(huntsComingUpQueryOptions());
+    return queryClient.prefetchQuery(orpc.me.workspaces.queryOptions());
+  },
+  pendingComponent: WorkspacesSkeleton,
   component: RouteComponent,
   head: () => ({meta: [{title: "My workspaces | WOW"}]}),
 });
@@ -253,7 +260,7 @@ function RouteComponent() {
       }>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         {!workspaces ? (
-          <Skeleton className="h-36" />
+          <WorkspaceListSkeleton />
         ) : !hasWorkspaces ? (
           <EmptyState className="border-separator flex flex-col items-center gap-3 border border-dashed px-6 py-12 text-center">
             <UsersIcon className="text-muted size-8" aria-hidden="true" />

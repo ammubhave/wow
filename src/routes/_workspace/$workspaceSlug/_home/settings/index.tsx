@@ -7,6 +7,7 @@ import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
 import {IconButton} from "@/components/icon-button";
+import {SettingsGeneralSkeleton} from "@/components/page-skeletons";
 import {LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
 import {huntDetails, huntWebsiteLink, useHuntSuggestions} from "@/hooks/use-hunt-suggestions";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
@@ -69,6 +70,7 @@ const useWorkspaceUpdate = () => useMutation(workspaceMutations.workspaces.updat
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/settings/")({
   component: RouteComponent,
+  pendingComponent: SettingsGeneralSkeleton,
 });
 
 function RouteComponent() {

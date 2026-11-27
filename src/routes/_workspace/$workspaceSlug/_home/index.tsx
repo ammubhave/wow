@@ -63,6 +63,7 @@ import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
 import {IconButton, IconTooltip, NativeTooltip} from "@/components/icon-button";
 import {MovePuzzleDialog} from "@/components/move-puzzle-dialog";
+import {BoardSkeleton} from "@/components/page-skeletons";
 import {SolveSpark} from "@/components/solve-spark";
 import {TeammateChangeFlash} from "@/components/teammate-change-flash";
 import {UserPresenceAvatars} from "@/components/user-hover-card";
@@ -89,6 +90,8 @@ import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
   component: RouteComponent,
+  // Its data comes with the workspace (the layout's loader); this covers its code loading.
+  pendingComponent: BoardSkeleton,
 });
 
 // The board is HeroUI's Table (React Aria's): rounds, their metas and feeders form a tree, so rows

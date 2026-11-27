@@ -1,13 +1,4 @@
-import {
-  Button,
-  buttonVariants,
-  Card,
-  Chip,
-  EmptyState,
-  SearchField,
-  Skeleton,
-  Tabs,
-} from "@heroui/react";
+import {Button, buttonVariants, Card, Chip, EmptyState, SearchField, Tabs} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {
@@ -25,11 +16,17 @@ import {z} from "zod";
 
 import {IconButton, NativeTooltip} from "@/components/icon-button";
 import {Page} from "@/components/page";
+import {HuntListingsSkeleton, HuntsSkeleton} from "@/components/page-skeletons";
 import {when, where} from "@/hooks/use-hunt-suggestions";
 import {orpc} from "@/lib/orpc";
 import type {RouterOutputs} from "@/server/router";
 
 export const Route = createFileRoute("/_workspace/_app/hunts")({
+  // The list (the usual view) is fetched before the page shows, and on link hover; a failure is
+  // still the page's to show. The calendar fetches its months itself.
+  loader: ({context: {queryClient}}) =>
+    queryClient.prefetchQuery(listingsQueryOptions(listRange(Date.now()))),
+  pendingComponent: HuntsSkeleton,
   component: RouteComponent,
   head: () => ({meta: [{title: "Puzzle hunts | WOW"}]}),
   // The view and filters live in the URL, so a link shows what you saw.
@@ -46,6 +43,21 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** The list shows hunts that ended this recently, and up to this far ahead. */
 const LIST_BEHIND_MS = 3 * DAY_MS;
 const LIST_AHEAD_MS = 400 * DAY_MS;
+const HOUR_MS = 60 * 60 * 1000;
+
+/**
+ * The list's range around `now`, from the hour (so it's the same query, cached and preloadable,
+ * for the hour rather than new every visit).
+ */
+function listRange(now: number) {
+  const hour = Math.floor(now / HOUR_MS) * HOUR_MS;
+  return {from: hour - LIST_BEHIND_MS, to: hour + LIST_AHEAD_MS};
+}
+
+const listingsQueryOptions = (range: {from: number; to: number}) => ({
+  ...orpc.huntListings.range.queryOptions({input: range}),
+  staleTime: 10 * 60 * 1000,
+});
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** A local calendar day, as "2026-11-27" (sorts as text). */
@@ -351,17 +363,13 @@ function RouteComponent() {
   // The list: what's on now and coming up. The calendar: the shown month (past ones too).
   const range =
     view === "list"
-      ? {from: now - LIST_BEHIND_MS, to: now + LIST_AHEAD_MS}
+      ? listRange(now)
       : {
           // A week either side covers the grid's spill-over days.
           from: month.getTime() - 7 * DAY_MS,
           to: new Date(month.getFullYear(), month.getMonth() + 1, 1).getTime() + 7 * DAY_MS,
         };
-  const {data} = useQuery({
-    ...orpc.huntListings.range.queryOptions({input: range}),
-    staleTime: 10 * 60 * 1000,
-    placeholderData: previous => previous,
-  });
+  const {data} = useQuery({...listingsQueryOptions(range), placeholderData: previous => previous});
   const hunts = data?.filter(hunt => matches(hunt, kind, query));
 
   return (
@@ -463,7 +471,7 @@ function RouteComponent() {
       {view === "calendar" ? (
         <CalendarView month={month} hunts={hunts} now={now} />
       ) : !hunts ? (
-        <Skeleton className="h-64" />
+        <HuntListingsSkeleton />
       ) : hunts.length === 0 ? (
         <EmptyState className="border-separator border border-dashed py-12">
           No hunts match. Try another search, or All.
