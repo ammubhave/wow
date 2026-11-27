@@ -64,7 +64,8 @@ export async function sendWebPush(
       const busy = response.status === 429 || response.status >= 500;
       if (!busy || attempt >= ATTEMPTS) return "failed";
     }
-    const wait = retryAfterSeconds(response?.headers.get("retry-after") ?? null) ?? 2 ** attempt;
+    const wait =
+      retryAfterSeconds(response?.headers.get("retry-after") ?? null) ?? 2 ** (attempt - 1);
     if (wait > MAX_WAIT_SECONDS) return "failed";
     // oxlint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, wait * 1000));

@@ -1,8 +1,15 @@
 import {createPublicKey, verify} from "node:crypto";
 
-import {describe, expect, it} from "vite-plus/test";
+import {afterEach, describe, expect, it, vi} from "vite-plus/test";
 
-import {encryptPayload, fromBase64Url, retryAfterSeconds, toBase64Url, vapidJwt} from "./web-push";
+import {
+  encryptPayload,
+  fromBase64Url,
+  retryAfterSeconds,
+  sendWebPush,
+  toBase64Url,
+  vapidJwt,
+} from "./web-push";
 
 describe("encryptPayload", () => {
   // RFC 8291, Appendix A: the worked example, byte for byte.
@@ -75,5 +82,70 @@ describe("retryAfterSeconds", () => {
     const inFive = new Date(Date.now() + 5000).toUTCString();
     expect(retryAfterSeconds(inFive)).toBeGreaterThan(3);
     expect(retryAfterSeconds(inFive)).toBeLessThanOrEqual(5);
+  });
+});
+
+/** The push service answers with these, in turn (a number: that status, no wait asked). */
+function answers(...replies: (number | Response | Error)[]) {
+  const fetch = vi.fn(() => {
+    const reply = replies.shift();
+    if (reply instanceof Error) return Promise.reject(reply);
+    if (reply instanceof Response) return Promise.resolve(reply);
+    return Promise.resolve(
+      new Response(null, {status: reply ?? 500, headers: {"retry-after": "0"}})
+    );
+  });
+  vi.stubGlobal("fetch", fetch);
+  return fetch;
+}
+
+describe("sendWebPush", () => {
+  // The RFC's browser, and a throwaway VAPID key pair.
+  const target = {
+    endpoint: "https://fcm.googleapis.com/fcm/send/abc",
+    p256dh:
+      "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    auth: "BTBZMqHH6r4Tts7J_aSIgg",
+  };
+  const vapid = {
+    publicKey:
+      "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8",
+    privateKey: "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
+  };
+  const options = {ttl: 60, subject: "https://example.com"};
+
+  afterEach(() => void vi.unstubAllGlobals());
+
+  it("sends once when it goes through", async () => {
+    const fetch = answers(201);
+    expect(await sendWebPush(target, "{}", vapid, options)).toBe("sent");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("tries again while the push service is busy or down", async () => {
+    const fetch = answers(new Error("network"), 429, 201);
+    expect(await sendWebPush(target, "{}", vapid, options)).toBe("sent");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("gives up after three tries", async () => {
+    const fetch = answers(503, 503, 503, 201);
+    expect(await sendWebPush(target, "{}", vapid, options)).toBe("failed");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("doesn't wait longer than it's worth", async () => {
+    const fetch = answers(new Response(null, {status: 429, headers: {"retry-after": "120"}}), 201);
+    expect(await sendWebPush(target, "{}", vapid, options)).toBe("failed");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't retry what won't change", async () => {
+    let fetch = answers(410);
+    expect(await sendWebPush(target, "{}", vapid, options)).toBe("gone");
+    expect(fetch).toHaveBeenCalledTimes(1);
+    fetch = answers(400, 201);
+    expect(await sendWebPush(target, "{}", vapid, options)).toBe("failed");
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

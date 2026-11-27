@@ -321,6 +321,11 @@ export const auth = betterAuth({
       clientPrivileges: () => false,
       resourcePrivileges: () => false,
       cachedTrustedClients: new Set([EXTENSION_CLIENT_ID]),
+      // Refresh tokens rotate on every use, and using an old one again revokes them all (theft
+      // protection). A refresh whose answer never arrived (the extension's service worker stopped,
+      // or the network dropped) would then sign the extension out; within a minute, asking again
+      // with the old token gets the same answer instead.
+      refreshTokenReuseInterval: 60,
     }),
     tanstackStartCookies(),
   ],

@@ -1,3 +1,5 @@
+import {z} from "zod";
+
 import {setApiEndpoint} from "@/lib/api-endpoint";
 import {client} from "@/lib/orpc";
 import {findPuzzleForUrl} from "@/lib/puzzle-url";
@@ -25,6 +27,9 @@ export default defineBackground(() => {
     token = current.token;
     return call();
   }
+
+  /** Whether this browser's push subscription brings @mentions, as WOW last said (cached). */
+  let pushStatus: {at: number; brings: Promise<boolean>} | undefined;
 
   // The puzzles of a workspace, briefly: a page asks on every navigation.
   const PUZZLES_MS = 30_000;
@@ -59,12 +64,14 @@ export default defineBackground(() => {
       case "signIn":
         try {
           puzzles.clear();
+          pushStatus = undefined;
           return {user: await signIn()};
         } catch (error) {
           return {error: error instanceof Error ? error.message : "Couldn't sign in."};
         }
       case "signOut":
         puzzles.clear();
+        pushStatus = undefined;
         await signOut();
         return null;
       case "matchUrl": {
@@ -120,9 +127,49 @@ export default defineBackground(() => {
     await tell(tab.id, {type: "recheck"});
   });
 
+  // WOW's site tells the extension which push subscription this browser has (src/lib/extension.ts):
+  // when it brings your @mentions, the extension doesn't show them too.
+  browser.runtime.onMessageExternal.addListener((message: unknown, sender) => {
+    if (sender.origin !== import.meta.env.WOW_ORIGIN) return undefined;
+    const parsed = webPushMessageSchema.safeParse(message);
+    if (!parsed.success) return undefined;
+    pushStatus = undefined;
+    const {endpoint} = parsed.data;
+    void (endpoint
+      ? browser.storage.local.set({[WEB_PUSH]: endpoint})
+      : browser.storage.local.remove(WEB_PUSH));
+    return undefined;
+  });
+
+  // Asked about once every few minutes at most: push can be turned off on another device, or
+  // stop when the browser withdraws it, so the server's word is the one that counts.
+  const PUSH_STATUS_MS = 5 * 60_000;
+  function pushBringsMentions() {
+    if (pushStatus && Date.now() - pushStatus.at < PUSH_STATUS_MS) return pushStatus.brings;
+    const brings = (async () => {
+      const endpoint: unknown = (await browser.storage.local.get(WEB_PUSH))[WEB_PUSH];
+      if (typeof endpoint !== "string") return false;
+      const status = await signedIn(() => client.push.status({endpoint}));
+      return status?.kinds.includes("mention") ?? false;
+    })().catch(() => {
+      // Not sure: notify (twice, at worst) rather than miss the mention.
+      pushStatus = undefined;
+      return false;
+    });
+    pushStatus = {at: Date.now(), brings};
+    return brings;
+  }
+
   browser.runtime.onStartup.addListener(() => void syncImageAuth());
   void syncImageAuth();
-  startMentionNotifications();
+  startMentionNotifications({pushBringsMentions});
+});
+
+/** Storage key for this browser's push subscription endpoint, as WOW's site last said. */
+const WEB_PUSH = "webPushEndpoint";
+const webPushMessageSchema = z.object({
+  type: z.literal("webPush"),
+  endpoint: z.string().max(2048).nullable(),
 });
 
 // A mark on the toolbar icon on a page that's one of your puzzles.

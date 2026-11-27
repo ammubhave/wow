@@ -133,6 +133,8 @@ export type PushPayload = {
   body: string;
   /** Where clicking it goes: a path in WOW, or a full URL elsewhere (Google Drive). */
   url: string;
+  /** The workspace it's from (its slug): a WOW tab open on it already shows it. */
+  workspace: string;
 };
 
 /** A notification as passed in, before the room stamps it. */

@@ -4,8 +4,11 @@ import {
   channelName,
   desiredRounds,
   type ExistingChannel,
+  planRetry,
   planSync,
+  RETRY_DELAYS_SECONDS,
   retryAfterSeconds,
+  type SyncRetry,
   type SyncRound,
 } from "./discord-sync-plan";
 
@@ -205,5 +208,37 @@ describe("retryAfterSeconds", () => {
     expect(retryAfterSeconds({retry_after: 2.5, global: false}, "3")).toBe(2.5);
     expect(retryAfterSeconds(undefined, "3")).toBe(3);
     expect(retryAfterSeconds({message: "x"}, null)).toBe(1);
+  });
+});
+
+describe("planRetry", () => {
+  it("forgets the retry once a sync works, or fails for good", () => {
+    const current = {guildId: "g", attempts: 3};
+    expect(planRetry(current, "g", "none")).toEqual({kind: "clear"});
+    expect(planRetry(current, "g", "lasting")).toEqual({kind: "clear"});
+  });
+
+  it("waits longer after each failure, then gives up", () => {
+    let current: SyncRetry | undefined;
+    const delays: number[] = [];
+    for (;;) {
+      const step = planRetry(current, "g", "passing");
+      if (step.kind !== "retry") {
+        expect(step).toEqual({kind: "giveUp", attempts: RETRY_DELAYS_SECONDS.length});
+        break;
+      }
+      delays.push(step.delaySeconds);
+      current = step.retry;
+    }
+    expect(delays).toEqual(RETRY_DELAYS_SECONDS);
+    expect(delays.reduce((a, b) => a + b) / 3600).toBeGreaterThan(2.5);
+  });
+
+  it("starts over for another server", () => {
+    expect(planRetry({guildId: "old", attempts: 5}, "new", "passing")).toEqual({
+      kind: "retry",
+      retry: {guildId: "new", attempts: 1},
+      delaySeconds: RETRY_DELAYS_SECONDS[0],
+    });
   });
 });

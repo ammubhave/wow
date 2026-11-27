@@ -77,6 +77,7 @@ export async function pushNotification(workspaceId: string, notification: Worksp
     title,
     body: body.length > MAX_BODY ? `${body.slice(0, MAX_BODY - 1)}…` : body,
     url: notificationUrl(workspace.slug, notification),
+    workspace: workspace.slug,
   } satisfies PushPayload);
   const options = {
     ttl: TTL_SECONDS,

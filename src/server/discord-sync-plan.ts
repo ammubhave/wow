@@ -223,3 +223,33 @@ export function retryAfterSeconds(body: unknown, header: string | null): number 
   if (Number.isFinite(value) && value >= 0) return value;
   return 1;
 }
+
+/** A failed sync waiting on its retry (DiscordClient keeps it in storage, with an alarm). */
+export type SyncRetry = {guildId: string; attempts: number};
+
+/** Retries wait 30 seconds, doubling up to half an hour: about 3 hours before giving up. */
+export const RETRY_DELAYS_SECONDS = [30, 60, 120, 240, 480, 960, 1800, 1800, 1800, 1800];
+
+export type RetryStep =
+  /** Synced (or failed for good): forget any retry. */
+  | {kind: "clear"}
+  /** Failed again with no retries left. */
+  | {kind: "giveUp"; attempts: number}
+  /** Try again in `delaySeconds`. */
+  | {kind: "retry"; retry: SyncRetry; delaySeconds: number};
+
+/**
+ * What to do after a sync of `guildId`: `failure` is "none", "lasting" (Discord refused: a retry
+ * won't change that) or "passing" (Discord down or rate-limiting, or the network).
+ */
+export function planRetry(
+  current: SyncRetry | undefined,
+  guildId: string,
+  failure: "none" | "lasting" | "passing"
+): RetryStep {
+  if (failure !== "passing") return {kind: "clear"};
+  const attempts = current?.guildId === guildId ? current.attempts : 0;
+  const delaySeconds = RETRY_DELAYS_SECONDS[attempts];
+  if (delaySeconds === undefined) return {kind: "giveUp", attempts};
+  return {kind: "retry", retry: {guildId, attempts: attempts + 1}, delaySeconds};
+}

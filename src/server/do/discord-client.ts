@@ -14,8 +14,10 @@ import * as schema from "@/lib/db/schema";
 import {
   CATEGORY,
   desiredRounds,
+  planRetry,
   planSync,
   retryAfterSeconds,
+  type SyncRetry,
   type SyncRound,
   VOICE,
 } from "../discord-sync-plan";
@@ -91,11 +93,8 @@ type SyncWorkspace = {discordGuildId: string; rounds: SyncRound[]};
 /** Storage key for the puzzle id → voice channel id mapping. */
 const PUZZLE_CHANNELS_KEY = "puzzleChannels";
 
-/** Storage key for a failed sync waiting on its retry (the alarm): `RetryState`. */
+/** Storage key for a failed sync waiting on its retry (the alarm): a SyncRetry. */
 const RETRY_KEY = "syncRetry";
-type RetryState = {guildId: string; attempts: number};
-/** Retries wait 30 seconds, doubling up to half an hour: about 3 hours before giving up. */
-const RETRY_DELAYS_SECONDS = [30, 60, 120, 240, 480, 960, 1800, 1800, 1800, 1800];
 
 /**
  * Whether trying again later could help: Discord being down or rate-limiting us, or the network.
@@ -152,28 +151,29 @@ export class DiscordClient extends DurableObject {
    * is idempotent, so a retry just syncs the board as it is then.
    */
   private async settle(guildId: string, failure: unknown) {
-    const retry = await this.ctx.storage.get<RetryState>(RETRY_KEY);
-    if (failure === undefined || !isRetryable(failure)) {
-      if (retry) {
-        await this.ctx.storage.delete(RETRY_KEY);
-        await this.ctx.storage.deleteAlarm();
-      }
+    const current = await this.ctx.storage.get<SyncRetry>(RETRY_KEY);
+    const step = planRetry(
+      current,
+      guildId,
+      failure === undefined ? "none" : isRetryable(failure) ? "passing" : "lasting"
+    );
+    if (step.kind === "retry") {
+      await this.ctx.storage.put(RETRY_KEY, step.retry);
+      await this.ctx.storage.setAlarm(Date.now() + step.delaySeconds * 1000);
       return;
     }
-    const attempts = retry?.guildId === guildId ? retry.attempts : 0;
-    const delay = RETRY_DELAYS_SECONDS[attempts];
-    if (delay === undefined) {
-      console.error(`Discord sync of ${guildId}: giving up after ${attempts} retries`);
+    if (step.kind === "giveUp") {
+      console.error(`Discord sync of ${guildId}: giving up after ${step.attempts} retries`);
+    }
+    if (current) {
       await this.ctx.storage.delete(RETRY_KEY);
-      return;
+      await this.ctx.storage.deleteAlarm();
     }
-    await this.ctx.storage.put(RETRY_KEY, {guildId, attempts: attempts + 1} satisfies RetryState);
-    await this.ctx.storage.setAlarm(Date.now() + delay * 1000);
   }
 
   /** Retrying a failed sync: with the board as it is now, if the server still mirrors one. */
   async alarm() {
-    const retry = await this.ctx.storage.get<RetryState>(RETRY_KEY);
+    const retry = await this.ctx.storage.get<SyncRetry>(RETRY_KEY);
     if (!retry) return;
     const board = await discordBoard({discordGuildId: retry.guildId});
     if (!board) {
@@ -318,7 +318,7 @@ export class DiscordClient extends DurableObject {
   /** WOW's channels in the server (names without the 🧩); throws a DiscordApiError if it can't. */
   private async channels(guildId: string) {
     const response = await discordRequest(`/guilds/${guildId}/channels`);
-    const schema = z.object({
+    const channelSchema = z.object({
       id: z.string(),
       name: z.string(),
       type: z.number(),
@@ -328,7 +328,7 @@ export class DiscordClient extends DurableObject {
       .array(z.any())
       .transform(as =>
         as.flatMap(a => {
-          const parsed = schema.safeParse(a);
+          const parsed = channelSchema.safeParse(a);
           if (parsed.success) {
             return [parsed.data];
           }

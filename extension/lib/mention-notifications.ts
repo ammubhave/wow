@@ -26,7 +26,8 @@ import {getDefaultWorkspace, getMentionNotifications, wowChatUrl} from "./settin
  * connecting, so they're shown then, unless you've read them in WOW since.
  *
  * Each mention is shown once (handled ids are kept), and not at all while you're already looking
- * at its chat: WOW's own tab for the workspace, or that puzzle's sidebar.
+ * at its chat (WOW's own tab for the workspace, or that puzzle's sidebar), nor when this browser
+ * gets WOW's push notifications for mentions (they'd pop up twice).
  */
 
 const ORIGIN = import.meta.env.WOW_ORIGIN;
@@ -59,9 +60,12 @@ let connection: Connection | undefined;
 let retry: ReturnType<typeof setTimeout> | undefined;
 let retryMs = RETRY_MIN_MS;
 let syncing: Promise<void> = Promise.resolve();
+/** Whether this browser gets mentions as WOW's own push notifications (set at startup). */
+let pushBringsMentions: () => Promise<boolean> = () => Promise.resolve(false);
 
 /** Starts notifying (at the background's startup), and keeps in step with what it depends on. */
-export function startMentionNotifications() {
+export function startMentionNotifications(options: {pushBringsMentions: () => Promise<boolean>}) {
+  pushBringsMentions = options.pushBringsMentions;
   void browser.alarms.create(ALARM, {periodInMinutes: 1});
   browser.alarms.onAlarm.addListener(alarm => {
     if (alarm.name === ALARM) syncMentionNotifications();
@@ -196,6 +200,7 @@ function handle(
 }
 
 async function show(workspaceSlug: string, mentions: MentionNotification[]) {
+  if (mentions.length === 0 || (await pushBringsMentions().catch(() => false))) return;
   await Promise.all(
     mentions.map(async mention => {
       if (await lookingAt(workspaceSlug, mention.puzzleId)) return;

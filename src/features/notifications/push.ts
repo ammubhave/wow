@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 
+import {EXTENSION_ID} from "@/lib/extension";
 import {client} from "@/lib/orpc";
 import type {PushKind} from "@/server/notifications";
 
@@ -47,7 +48,13 @@ export function useServiceWorker(navigate: (path: string) => void) {
   });
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return undefined;
-    navigator.serviceWorker.register(SERVICE_WORKER).catch((error: unknown) => {
+    void (async () => {
+      const registration = await navigator.serviceWorker.register(SERVICE_WORKER);
+      // On every visit, so the extension hears when push was turned off or withdrawn meanwhile.
+      const granted = "Notification" in window && Notification.permission === "granted";
+      const subscription = granted ? await registration.pushManager?.getSubscription() : null;
+      tellExtension(subscription?.endpoint ?? null);
+    })().catch((error: unknown) => {
       console.warn("Couldn't register the service worker", error);
     });
     const onMessage = (event: MessageEvent<unknown>) => {
@@ -68,6 +75,23 @@ export function useServiceWorker(navigate: (path: string) => void) {
     navigator.serviceWorker.addEventListener("message", onMessage);
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
   }, []);
+}
+
+/**
+ * Tells WOW's Chrome extension, if it's installed, this browser's push subscription (null: none),
+ * so it doesn't show the @mentions push already brings a second time.
+ */
+function tellExtension(endpoint: string | null) {
+  const runtime: unknown = Reflect.get(Reflect.get(globalThis, "chrome") ?? {}, "runtime");
+  const send: unknown = runtime && Reflect.get(runtime, "sendMessage");
+  if (typeof send !== "function") return;
+  try {
+    // A promise in Chrome, rejected when the extension isn't installed: nothing to tell then.
+    const sent: unknown = send.call(runtime, EXTENSION_ID, {type: "webPush", endpoint});
+    if (sent instanceof Promise) sent.catch(() => undefined);
+  } catch {
+    // Not installed.
+  }
 }
 
 async function currentSubscription() {
@@ -93,15 +117,18 @@ export function usePush(kinds: PushKind[]) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const subscription =
+        isSupported() && Notification.permission === "granted" ? await currentSubscription() : null;
       const next: PushStatus = !isSupported()
         ? isIos() && !isInstalled()
           ? "needsInstall"
           : "unsupported"
         : Notification.permission === "denied"
           ? "blocked"
-          : Notification.permission === "granted" && (await currentSubscription())
+          : subscription
             ? "on"
             : "off";
+      tellExtension(subscription?.endpoint ?? null);
       if (!cancelled) setStatus(next);
     })();
     return () => {
@@ -134,6 +161,7 @@ export function usePush(kinds: PushKind[]) {
         applicationServerKey: base64UrlToBytes(VAPID_KEY),
       }));
     await save(subscription, kinds);
+    tellExtension(subscription.endpoint);
     setStatus("on");
   }, [kinds]);
 
@@ -143,6 +171,7 @@ export function usePush(kinds: PushKind[]) {
       await client.push.unsubscribe({endpoint: subscription.endpoint});
       await subscription.unsubscribe();
     }
+    tellExtension(null);
     setStatus("off");
   }, []);
 
@@ -157,6 +186,7 @@ export async function forgetPushOnSignOut() {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
   const subscription = await currentSubscription().catch(() => null);
   if (!subscription) return;
+  tellExtension(null);
   await client.push.unsubscribe({endpoint: subscription.endpoint}).catch(() => undefined);
   await subscription.unsubscribe().catch(() => false);
 }

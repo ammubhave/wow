@@ -53,6 +53,8 @@ export default defineConfig({
       {resources: ["sidebar.html", "icon/32.png"], matches: ["<all_urls>"]},
     ],
     action: {default_title: "WOW"},
+    // WOW's site tells the extension about this browser's push notifications (src/lib/extension.ts).
+    externally_connectable: {matches: [`${originFor(mode)}/*`]},
   }),
   vite: ({mode}) => ({
     plugins: [tailwindcss(), authClientForExtension(), noDocs()],

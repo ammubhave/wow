@@ -16,6 +16,13 @@ const mustAlwaysShow =
   /iPhone|iPad|iPod|Macintosh/.test(self.navigator.userAgent) &&
   !/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS/.test(self.navigator.userAgent);
 
+/** Whether a window is in view on one of a workspace's pages (`/<slug>` and below). */
+const showsWorkspace = (client, workspace) => {
+  if (client.visibilityState !== "visible") return false;
+  const path = new URL(client.url).pathname;
+  return path === `/${workspace}` || path.startsWith(`/${workspace}/`);
+};
+
 const windows = () => self.clients.matchAll({type: "window", includeUncontrolled: true});
 
 self.addEventListener("push", event => {
@@ -27,10 +34,13 @@ self.addEventListener("push", event => {
   }
   event.waitUntil(
     (async () => {
-      // WOW open and in front of you: the page already pops it up itself.
-      if (!mustAlwaysShow) {
+      // WOW open on that workspace and in front of you: the page already pops it up itself.
+      // (Open on another workspace, it doesn't: that page only hears its own.)
+      if (!mustAlwaysShow && message.workspace) {
         const open = await windows();
-        if (open.some(client => client.focused && client.visibilityState === "visible")) return;
+        if (open.some(client => client.focused && showsWorkspace(client, message.workspace))) {
+          return;
+        }
       }
       await self.registration.showNotification(message.title, {
         body: message.body,

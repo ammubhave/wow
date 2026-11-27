@@ -14,6 +14,10 @@ describe("findHuntSolve", () => {
     ["LANTERN\tCorrect\t2:14 PM", "LANTERN"],
     ["LANTERN | Correct", "LANTERN"],
     ["Answer: R2D2", "R2D2"],
+    // Guesses shown as typed.
+    ["lantern is correct!", "LANTERN"],
+    ["Correct! The answer was paper lantern.", "PAPER LANTERN"],
+    ["paper lantern\tCorrect", "PAPER LANTERN"],
   ])("finds the answer in %j", (text, answer) => {
     expect(findHuntSolve(text)).toBe(answer);
   });
@@ -28,6 +32,14 @@ describe("findHuntSolve", () => {
     "Answer: UNSOLVED",
     "LAMP\tIncorrect",
     "Puzzles solved: 3 / 40",
+    "Your answer is correct!",
+    "That is correct.",
+    "Correct! The answer is in the grid somewhere if you look very hard",
+    "Answer: LOCKED",
+    "Answer: SUBMIT",
+    "lamp - correct",
+    "Correct! The answer is in the grid.",
+    "Correct! That answer was correct.",
   ])("finds nothing in %j", text => {
     expect(findHuntSolve(text)).toBeNull();
   });

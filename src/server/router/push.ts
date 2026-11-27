@@ -59,6 +59,26 @@ export const pushRouter = {
         });
     }),
 
+  /**
+   * What a device of yours gets pushed (null if nothing). The Chrome extension asks about its own
+   * browser's subscription, so it doesn't notify you of @mentions push already brings.
+   */
+  status: procedure
+    .input(z.object({endpoint: z.string().max(2048)}))
+    .handler(async ({context, input}) => {
+      const subscription = await db
+        .select({kinds: schema.pushSubscription.kinds})
+        .from(schema.pushSubscription)
+        .where(
+          and(
+            eq(schema.pushSubscription.endpoint, input.endpoint),
+            eq(schema.pushSubscription.userId, context.session.user.id)
+          )
+        )
+        .get();
+      return subscription ? {kinds: subscription.kinds} : null;
+    }),
+
   /** Turns off push for this device. */
   unsubscribe: procedure
     .input(z.object({endpoint: z.string().max(2048)}))

@@ -168,11 +168,17 @@ function refresh(stored: Stored) {
         // Rotated on every use: the old one stops working.
         refreshToken: tokens.refresh_token ?? stored.refreshToken,
         expiresAt: Date.now() + tokens.expires_in * 1000,
-        // Your name or picture may have changed since; if WOW doesn't say, keep the last.
-        user: await fetchUser(tokens.access_token).catch(() => stored.user),
+        user: stored.user,
       };
+      // Saved straight away: the old refresh token is spent, and Chrome may stop the service
+      // worker at any moment.
       await save(next);
-      return next;
+      // Your name or picture may have changed since; if WOW doesn't say, keep the last.
+      const user = await fetchUser(tokens.access_token).catch(() => null);
+      if (!user || JSON.stringify(user) === JSON.stringify(stored.user)) return next;
+      const updated = {...next, user};
+      await save(updated);
+      return updated;
     } catch (error) {
       // Revoked, expired or reused: you're signed out. (A network failure keeps you signed in.)
       if (error instanceof TokenError && error.code === "invalid_grant") {
