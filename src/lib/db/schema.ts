@@ -340,3 +340,33 @@ export const deletedPuzzle = sqliteTable(
   },
   t => [index("deleted_puzzle_cleanedAt_idx").on(t.cleanedAt)]
 );
+
+/** A file attached to an email sent to a workspace (its details only; the file is in the raw email). */
+export type EmailAttachment = {filename: string | null; mimeType: string; size: number};
+
+/**
+ * An email sent to a workspace's contact address, `<slug>@wafflehaus.io`: the team is notified,
+ * and the workspace's Inbox lists them. Saved by InboundEmailWorkflow (src/server/inbound-email.ts);
+ * the message as received is kept in R2 at `rawKey`.
+ */
+export const workspaceEmail = sqliteTable(
+  "workspace_email",
+  {
+    /** Also the workflow instance's id, so a retried save never adds the email twice. */
+    id: text().primaryKey(),
+    workspaceId: text()
+      .notNull()
+      .references(() => auth.organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    receivedAt: integer({mode: "timestamp_ms"}).notNull(),
+    fromAddress: text().notNull(),
+    fromName: text(),
+    subject: text(),
+    /** The plain-text body (from the HTML part when there's no text part). */
+    text: text(),
+    /** The HTML body, shown only inside a sandboxed frame that can't run scripts or load anything. */
+    html: text(),
+    attachments: text({mode: "json"}).$type<EmailAttachment[]>().default([]).notNull(),
+    rawKey: text().notNull(),
+  },
+  t => [index("workspace_email_workspaceId_receivedAt_idx").on(t.workspaceId, t.receivedAt)]
+);

@@ -9,7 +9,17 @@ describe("workspaceSlugProblem", () => {
     }
   });
   it("refuses the app's own addresses, in any case", () => {
-    for (const slug of ["docs", "API", "Login", "stats", "exchange", "cdn-cgi", "workspaces"]) {
+    for (const slug of [
+      "docs",
+      "API",
+      "Login",
+      "stats",
+      "exchange",
+      "cdn-cgi",
+      "workspaces",
+      "Contact",
+      "noreply",
+    ]) {
       expect(workspaceSlugProblem(slug)).toMatch(/reserved/);
     }
   });

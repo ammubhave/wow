@@ -59,6 +59,8 @@ const ALLOWED_WHEN_ARCHIVED = new Set([
   "workspaces.getGoogleTokenState",
   "workspaces.state",
   "workspaces.activityLog",
+  "workspaces.emails.list",
+  "workspaces.emails.get",
   "workspaces.solves",
   "workspaces.recap",
   "workspaces.getDiscordInfo",

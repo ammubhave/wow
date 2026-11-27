@@ -5,7 +5,7 @@ import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
 import {captcha, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
-import {and, eq, isNotNull} from "drizzle-orm";
+import {and, eq, isNotNull, sql} from "drizzle-orm";
 import {z} from "zod";
 
 import {startDriveAccess} from "../server/drive-access";
@@ -212,6 +212,16 @@ export const auth = betterAuth({
           // Its address is /<slug>: not one of the app's own, and a working URL.
           const slugProblem = workspaceSlugProblem(org.slug ?? "");
           if (slugProblem) throw new APIError("BAD_REQUEST", {message: slugProblem});
+          // Email addresses ignore case, so the contact email <slug>@wafflehaus.io needs a slug no
+          // other workspace has in any case ("NightOwls" and "nightowls" would share one).
+          const sameAddress = await db
+            .select({id: schema.organization.id})
+            .from(schema.organization)
+            .where(sql`lower(${schema.organization.slug}) = ${org.slug?.toLowerCase() ?? ""}`)
+            .get();
+          if (sameAddress) {
+            throw new APIError("BAD_REQUEST", {message: "That ID is taken. Choose another one."});
+          }
           // The same rule as changing it later (workspaces.update).
           if (typeof org.password !== "string" || org.password.length < 8) {
             throw new APIError("BAD_REQUEST", {

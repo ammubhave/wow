@@ -35,6 +35,17 @@ export type MentionNotification = NotificationBase & {
   text: string;
 };
 
+/** An email arrived at the workspace's contact address (it's in the workspace's Inbox). */
+export type EmailNotification = NotificationBase & {
+  type: "email";
+  emailId: string;
+  /** The sender's name, or their address when the email gives no name. */
+  from: string;
+  subject: string | null;
+  /** The start of the body, as plain text on one line. */
+  preview: string;
+};
+
 /**
  * WOW couldn't share the workspace's Google Drive folder with someone who joined (usually a file
  * in it wasn't created through WOW, which the app's Drive access can't touch), or couldn't take
@@ -58,6 +69,7 @@ export type WorkspaceNotification =
   | SolvedNotification
   | AnnouncementNotification
   | MentionNotification
+  | EmailNotification
   | DriveShareFailedNotification;
 
 /**

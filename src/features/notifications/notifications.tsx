@@ -6,6 +6,7 @@ import {
   BellIcon,
   CheckCheckIcon,
   FolderLockIcon,
+  MailIcon,
   MegaphoneIcon,
   PartyPopperIcon,
   SettingsIcon,
@@ -36,9 +37,25 @@ const toastDismissBroadcastChannel =
 toastDismissBroadcastChannel?.addEventListener("message", event => toast.dismiss(event.data));
 
 /** Per-person notification settings (this browser). */
-type Prefs = {solves: boolean; announcements: boolean; mentions: boolean; desktop: boolean};
-const DEFAULT_PREFS: Prefs = {solves: true, announcements: true, mentions: true, desktop: false};
-const usePrefs = () => useLocalStorage<Prefs>("notificationPrefs", DEFAULT_PREFS);
+type Prefs = {
+  solves: boolean;
+  announcements: boolean;
+  mentions: boolean;
+  emails: boolean;
+  desktop: boolean;
+};
+const DEFAULT_PREFS: Prefs = {
+  solves: true,
+  announcements: true,
+  mentions: true,
+  emails: true,
+  desktop: false,
+};
+/** Settings saved before a kind of notification existed get its default. */
+const usePrefs = () => {
+  const [saved, setPrefs] = useLocalStorage<Partial<Prefs>>("notificationPrefs", DEFAULT_PREFS);
+  return [{...DEFAULT_PREFS, ...saved}, setPrefs] as const;
+};
 
 const notificationsQueryKey = (workspaceSlug: string) => ["notifications", workspaceSlug] as const;
 /** Your read state (per person, kept by the server; see ReadState). */
@@ -76,6 +93,11 @@ function describe(notification: WorkspaceNotification) {
         title: `${notification.from.name} mentioned you in ${notification.puzzleName}`,
         body: notification.text,
       };
+    case "email":
+      return {
+        title: `Email from ${notification.from}`,
+        body: [notification.subject, notification.preview].filter(Boolean).join(" — "),
+      };
     case "driveShareFailed":
       // What to do first: the bell shows only two lines.
       return notification.access === "unshare"
@@ -94,7 +116,8 @@ function describe(notification: WorkspaceNotification) {
 
 /**
  * Goes where a notification is about: its puzzle (for a mention, the puzzle's chat), the
- * blackboard for the team chat, or the Drive folder to share. Announcements go nowhere.
+ * blackboard for the team chat, the email in the Inbox, or the Drive folder to share.
+ * Announcements go nowhere.
  */
 function goTo(
   navigate: ReturnType<typeof useNavigate>,
@@ -102,6 +125,14 @@ function goTo(
   notification: WorkspaceNotification
 ) {
   if (notification.type === "announcement") return;
+  if (notification.type === "email") {
+    void navigate({
+      to: "/$workspaceSlug/inbox",
+      params: {workspaceSlug},
+      search: {email: notification.emailId},
+    });
+    return;
+  }
   if (notification.type === "driveShareFailed") {
     // The file blocking the share, when known: it's what the owner needs to move.
     window.open(
@@ -187,6 +218,10 @@ export function NotificationsWebSocket({
         message,
         ...(current ?? []).filter(n => n.id !== message.id),
       ]);
+      // The Inbox, if it's open or cached, shows the new email.
+      if (message.type === "email") {
+        void queryClient.invalidateQueries({queryKey: orpc.workspaces.emails.key()});
+      }
       if (!popupsAllowed) return;
       // A Drive sharing problem needs an owner to act, so it always pops up.
       const wanted =
@@ -196,7 +231,9 @@ export function NotificationsWebSocket({
             ? prefs.announcements
             : message.type === "mention"
               ? prefs.mentions
-              : true;
+              : message.type === "email"
+                ? prefs.emails
+                : true;
       if (!wanted) return;
       const {title, body} = describe(message);
 
@@ -234,6 +271,18 @@ export function NotificationsWebSocket({
             toastDismissBroadcastChannel?.postMessage(t.id);
           },
         });
+      } else if (message.type === "email") {
+        // Like an announcement: it stays until it's dismissed.
+        toast.info(title, {
+          description: body,
+          icon: <MailIcon className="size-4" />,
+          duration: Infinity,
+          action: {label: "Open", onClick: () => open(message)},
+          onDismiss: t => {
+            // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel.postMessage takes no targetOrigin (same-origin only).
+            toastDismissBroadcastChannel?.postMessage(t.id);
+          },
+        });
       } else if (message.type === "driveShareFailed") {
         toast.warning(title, {
           description: body,
@@ -259,6 +308,7 @@ const ICONS = {
   solved: <PartyPopperIcon className="text-success size-4" />,
   announcement: <MegaphoneIcon className="text-accent size-4" />,
   mention: <AtSignIcon className="text-warning size-4" />,
+  email: <MailIcon className="text-accent size-4" />,
   driveShareFailed: <FolderLockIcon className="text-danger size-4" />,
 };
 
@@ -394,6 +444,7 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                   ["solves", "A puzzle is solved"],
                   ["announcements", "There's an announcement"],
                   ["mentions", "Someone mentions you"],
+                  ["emails", "The workspace gets an email"],
                 ] as const
               ).map(([key, label]) => (
                 <Switch
@@ -517,6 +568,7 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
       const solves = recent.filter(n => n.type === "solved").length;
       const announcements = recent.filter(n => n.type === "announcement").length;
       const mentions = recent.filter(n => n.type === "mention").length;
+      const emails = recent.filter(n => n.type === "email").length;
       const rounds = activityRef.current.filter(
         entry =>
           entry.round_activity_log_entry?.subType === "create" &&
@@ -527,6 +579,7 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
         rounds && `${rounds} new ${rounds === 1 ? "round" : "rounds"}`,
         announcements &&
           `${announcements} ${announcements === 1 ? "announcement" : "announcements"}`,
+        emails && `${emails} ${emails === 1 ? "email" : "emails"}`,
         mentions && `you were mentioned ${mentions === 1 ? "once" : `${mentions} times`}`,
       ].filter(Boolean);
       if (parts.length === 0) return;

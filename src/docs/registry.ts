@@ -160,6 +160,13 @@ export const DOC_PAGES: DocPage[] = [
     section: "During the hunt",
   },
   {
+    slug: "guides/inbox",
+    title: "The workspace inbox",
+    description:
+      "The workspace's own email address for the hunt: emails land in the Inbox and notify everyone.",
+    section: "During the hunt",
+  },
+  {
     slug: "guides/voice",
     title: "Voice and screen sharing",
     description:

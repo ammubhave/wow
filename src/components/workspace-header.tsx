@@ -4,6 +4,7 @@ import {Link, useChildMatches} from "@tanstack/react-router";
 import {
   ExternalLinkIcon,
   HistoryIcon,
+  InboxIcon,
   InfoIcon,
   PuzzleIcon,
   SettingsIcon,
@@ -36,6 +37,8 @@ const SECTIONS = [
     label: "Activity log",
     Icon: HistoryIcon,
   },
+  // Emails to the workspace's contact address.
+  {routeId: "/$workspaceSlug/inbox", path: "/inbox", label: "Inbox", Icon: InboxIcon},
   // The awards race: live standings during the hunt, the recap after.
   {routeId: "/$workspaceSlug/recap", path: "/recap", label: "Leaderboard", Icon: TrophyIcon},
   {routeId: "/$workspaceSlug/help", path: "/help", label: "Help", Icon: InfoIcon},

@@ -129,6 +129,13 @@
       "binding": "PUZZLE_SHEET_WORKFLOW",
       "class_name": "PuzzleSheetWorkflow",
     },
+    {
+      // Saves an email sent to a workspace's contact address and tells the team
+      // (src/server/inbound-email.ts).
+      "name": "InboundEmailWorkflow",
+      "binding": "INBOUND_EMAIL_WORKFLOW",
+      "class_name": "InboundEmailWorkflow",
+    },
   ],
   "env": {
     "production": {
@@ -230,6 +237,13 @@
           "name": "PuzzleSheetWorkflow-production",
           "binding": "PUZZLE_SHEET_WORKFLOW",
           "class_name": "PuzzleSheetWorkflow",
+        },
+        {
+          // Saves an email sent to a workspace's contact address and tells the team
+          // (src/server/inbound-email.ts).
+          "name": "InboundEmailWorkflow-production",
+          "binding": "INBOUND_EMAIL_WORKFLOW",
+          "class_name": "InboundEmailWorkflow",
         },
       ],
     },

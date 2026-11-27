@@ -26,6 +26,7 @@ import {toWorkspaceRole} from "../workspace-access";
 import {type AuthedContext, preauthorize, procedure, requireOwner} from "./base";
 
 const ACTIVITY_LOG_PAGE_SIZE = 50;
+const EMAILS_PAGE_SIZE = 30;
 
 /** A date input in ms: undefined leaves it alone, null clears it. */
 const toDate = (ms: number | null | undefined) =>
@@ -482,6 +483,74 @@ export const workspacesRouter = {
             : null,
       };
     }),
+
+  /// Emails sent to the workspace's contact address (src/server/inbound-email.ts).
+  emails: {
+    /// Newest first, a page at a time: who sent each, its subject and the start of its text.
+    list: procedure
+      .input(
+        z.object({
+          workspaceSlug: z.string(),
+          cursor: z.object({receivedAt: z.number(), id: z.string()}).nullish(),
+        })
+      )
+      .use(preauthorize)
+      .handler(async ({context, input}) => {
+        const e = schema.workspaceEmail;
+        const emails = await db
+          .select({
+            id: e.id,
+            receivedAt: e.receivedAt,
+            fromAddress: e.fromAddress,
+            fromName: e.fromName,
+            subject: e.subject,
+            preview: sql<string | null>`substr(${e.text}, 1, 300)`,
+            hasAttachments: sql<boolean>`json_array_length(${e.attachments}) > 0`.mapWith(Boolean),
+          })
+          .from(e)
+          .where(
+            and(
+              eq(e.workspaceId, context.workspace.id),
+              input.cursor
+                ? sql`(${e.receivedAt}, ${e.id}) < (${input.cursor.receivedAt}, ${input.cursor.id})`
+                : undefined
+            )
+          )
+          .orderBy(sql`${e.receivedAt} desc`, sql`${e.id} desc`)
+          .limit(EMAILS_PAGE_SIZE);
+        const last = emails.at(-1);
+        return {
+          emails,
+          nextCursor:
+            emails.length === EMAILS_PAGE_SIZE && last
+              ? {receivedAt: last.receivedAt.getTime(), id: last.id}
+              : null,
+        };
+      }),
+    /// One email in full.
+    get: procedure
+      .input(z.object({workspaceSlug: z.string(), id: z.string()}))
+      .use(preauthorize)
+      .handler(async ({context, input}) => {
+        const e = schema.workspaceEmail;
+        const email = await db
+          .select({
+            id: e.id,
+            receivedAt: e.receivedAt,
+            fromAddress: e.fromAddress,
+            fromName: e.fromName,
+            subject: e.subject,
+            text: e.text,
+            html: e.html,
+            attachments: e.attachments,
+          })
+          .from(e)
+          .where(and(eq(e.id, input.id), eq(e.workspaceId, context.workspace.id)))
+          .get();
+        if (!email) throw new ORPCError("NOT_FOUND");
+        return email;
+      }),
+  },
 
   /// When each puzzle was (most recently) marked solved, from the activity log, for the solves
   /// chart. Clients keep only puzzles that are still solved, so un-solves drop out.

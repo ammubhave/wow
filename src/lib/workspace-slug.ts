@@ -1,7 +1,9 @@
 /**
  * Workspace IDs (slugs): a workspace's address is `/<slug>`, so a new one can't take a name the
  * app's own pages, API or files use. Checked when creating one (the create form and, for anyone
- * calling the API directly, `beforeCreateOrganization` in auth.ts).
+ * calling the API directly, `beforeCreateOrganization` in auth.ts). It's also the workspace's
+ * contact email, `<slug>@wafflehaus.io` (src/server/inbound-email.ts), so the usual role addresses
+ * are kept out too.
  */
 
 /** Top-level paths of the app, its API and static files, and a few kept for later. */
@@ -25,7 +27,54 @@ const RESERVED = new Set([
   "api",
   "assets",
   "cdn-cgi",
-  // Kept for later
+  // Email addresses (<slug>@wafflehaus.io) people expect to reach the site, not a team: the
+  // standard role addresses (RFC 2142), mail-system ones, and ones that could pass for WOW's own
+  "contact",
+  "noreply",
+  "no-reply",
+  "donotreply",
+  "do-not-reply",
+  "postmaster",
+  "hostmaster",
+  "webmaster",
+  "mailer-daemon",
+  "bounce",
+  "bounces",
+  "dmarc",
+  "unsubscribe",
+  "abuse",
+  "security",
+  "support",
+  "hello",
+  "info",
+  "mail",
+  "noc",
+  "www",
+  "ftp",
+  "smtp",
+  "imap",
+  "billing",
+  "privacy",
+  "legal",
+  "press",
+  "news",
+  "sales",
+  "marketing",
+  "feedback",
+  "jobs",
+  "careers",
+  "notifications",
+  "alerts",
+  "system",
+  "root",
+  "administrator",
+  "moderator",
+  "staff",
+  "team",
+  "official",
+  "wow",
+  "wafflehaus",
+  // Kept for later (pages the site may grow, and common sign-in paths)
   "admin",
   "settings",
   "help",
@@ -33,6 +82,25 @@ const RESERVED = new Set([
   "pricing",
   "donate",
   "new",
+  "account",
+  "accounts",
+  "auth",
+  "oauth",
+  "signin",
+  "sign-in",
+  "sign-up",
+  "register",
+  "logout",
+  "dashboard",
+  "home",
+  "search",
+  "status",
+  "blog",
+  "static",
+  "public",
+  "robots",
+  "sitemap",
+  "manifest",
 ]);
 
 /** Letters, digits, "-" and "_", starting with a letter or digit (existing IDs use capitals). */
