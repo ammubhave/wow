@@ -126,10 +126,7 @@ function UpdateLinksCard() {
     <Card>
       <Card.Header>
         <Card.Title>Links</Card.Title>
-        <Card.Description>
-          Add links to this workspace to be displayed in the navigation bar. For example, you can
-          add a link to the puzzle hunt website.
-        </Card.Description>
+        <Card.Description>Shown in the header, beside the hunt website.</Card.Description>
       </Card.Header>
       <form.AppForm>
         <Card.Content>
@@ -272,8 +269,7 @@ function DetailsCard() {
       <Card.Header>
         <Card.Title>Details</Card.Title>
         <Card.Description>
-          The team, and the hunt: when and where it is. With dates, the header counts the hunt down
-          and up, and the solves chart covers it.
+          With dates, the header counts the hunt down and up, and the solves chart covers it.
         </Card.Description>
       </Card.Header>
       <form.AppForm>
@@ -393,7 +389,7 @@ function UpdateTagsCard() {
       <Card.Header>
         <Card.Title>Tags</Card.Title>
         <Card.Description>
-          Add tags to this workspace to help categorize and organize the puzzles.
+          The tags a puzzle can be given when it is added or edited.
         </Card.Description>
       </Card.Header>
       <form.AppForm>

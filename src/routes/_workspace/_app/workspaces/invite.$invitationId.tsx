@@ -6,6 +6,7 @@ import {toast} from "sonner";
 
 import {CardFormSkeleton} from "@/components/page-skeletons";
 import PixelBlast from "@/components/pixel-blast";
+import {forgetPushOnSignOut} from "@/features/notifications/push";
 import {authClient} from "@/lib/auth-client";
 import {errorMessage} from "@/lib/errors";
 import {orpc} from "@/lib/orpc";
@@ -73,12 +74,10 @@ function RouteComponent() {
     })
   );
   const team = (
-    <Card variant="secondary">
-      <Card.Header>
-        <Card.Title>{invite.teamName}</Card.Title>
-        <Card.Description>{invite.eventName}</Card.Description>
-      </Card.Header>
-    </Card>
+    <div className="flex flex-col gap-0.5">
+      <p className="font-semibold">{invite.teamName}</p>
+      <p className="text-muted text-sm">{invite.eventName}</p>
+    </div>
   );
   const goToWorkspace = (
     <Button
@@ -129,8 +128,8 @@ function RouteComponent() {
           variant="secondary"
           fullWidth
           onPress={() =>
-            void authClient
-              .signOut()
+            void forgetPushOnSignOut()
+              .then(() => authClient.signOut())
               .then(() =>
                 router.navigate({
                   to: "/login",

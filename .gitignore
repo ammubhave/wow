@@ -18,3 +18,8 @@ src/lib/db/auth-schema.ts
 src/lib/db/seed.ts
 src/lib/db/dump.json
 
+
+# The Chrome extension: its signing key (fixes its ID; keep it, never commit it) and build output.
+extension/key.pem
+extension/.output
+extension/.wxt

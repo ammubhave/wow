@@ -4,6 +4,7 @@ import {ARCHIVED_MESSAGE_START} from "@/lib/archived";
 import {auth} from "@/lib/auth";
 
 import {trackServerEvent} from "../posthog";
+import {getHeadersSession} from "../request-session";
 import {recordRequest} from "../usage";
 import {getMemberWorkspace, type WorkspaceRole} from "../workspace-access";
 import {ActivityLogService} from "./services/activity-log";
@@ -28,7 +29,7 @@ export type AuthedContext = {
 };
 
 export const procedure = base.use(async ({context, next}) => {
-  const session = await auth.api.getSession({headers: context.headers});
+  const session = await getHeadersSession(context.headers);
   if (!session) {
     throw new ORPCError("UNAUTHORIZED");
   }

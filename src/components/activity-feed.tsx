@@ -170,10 +170,14 @@ function EventText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}
     case "updateImportance":
       return (
         <>
-          marked {name}{" "}
-          <Chip size="sm" variant="secondary">
-            {puzzle.field ?? "normal"}
-          </Chip>
+          marked {name} {/* Back to normal is the quiet default: words, not a chip. */}
+          {puzzle.field && puzzle.field !== "normal" ? (
+            <Chip size="sm" variant="secondary">
+              {puzzle.field}
+            </Chip>
+          ) : (
+            "normal"
+          )}
         </>
       );
     case "updateStatus":
@@ -183,10 +187,14 @@ function EventText({workspaceSlug, entry}: {workspaceSlug: string; entry: Entry}
         </>
       ) : (
         <>
-          moved {name} to{" "}
-          <Chip size="sm" variant="soft" color={statusTone(puzzle.field)}>
-            {statusLabel(puzzle.field)}
-          </Chip>
+          moved {name} to {/* No status is the quiet default: words, not a chip. */}
+          {puzzle.field ? (
+            <Chip size="sm" variant="soft" color={statusTone(puzzle.field)}>
+              {statusLabel(puzzle.field)}
+            </Chip>
+          ) : (
+            statusLabel(puzzle.field)
+          )}
         </>
       );
     default:
@@ -258,7 +266,9 @@ function FeedItem({
       <Timeline.Marker aria-hidden="true">
         <Icon />
       </Timeline.Marker>
-      <Timeline.Content>
+      {/* The timeline keeps an empty third column (for content on the other side) a gap away:
+          reach across it, so the times end on the same right edge as the header and chart. */}
+      <Timeline.Content className="-me-2.5">
         <div className="flex min-w-0 items-center justify-between gap-4">
           {/* Baseline-aligned, so the name, the words and a chip's text (an answer, a status) all
               sit on one line; only the avatar is centered. A div, not a p: it holds avatar groups. */}
@@ -601,7 +611,6 @@ export function ActivityFeed() {
             <h2 className="text-muted m-0 shrink-0 text-xs font-medium tracking-wide uppercase">
               {day.label}
             </h2>
-            <div className="bg-separator h-px flex-1" />
           </div>
           <Timeline density="compact" size="sm">
             {day.entries.map(entry => (

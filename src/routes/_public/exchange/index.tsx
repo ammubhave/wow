@@ -1,4 +1,4 @@
-import {Accordion, Button, buttonVariants, Card, Code, Kbd, SearchField} from "@heroui/react";
+import {Accordion, Button, buttonVariants, Code, Kbd, SearchField} from "@heroui/react";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {PlusIcon} from "lucide-react";
@@ -293,39 +293,37 @@ function MonthDot({hunt}: {hunt: Hunt}) {
 /** Invitations to solve together and to write: the community side of the Exchange. */
 function Invitations() {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card variant="secondary" className="gap-4 p-6">
-        <Card.Header className="gap-2">
-          <Card.Title className="text-lg font-semibold">Interested in solving?</Card.Title>
-          <Card.Description>
+    <div className="grid gap-8 md:grid-cols-2">
+      <section className="flex flex-col items-start gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">Interested in solving?</h2>
+          <p className="text-muted text-sm">
             Solve by yourself or with friends, then react to the puzzle's Discord message! To solve
             as a team, use the shared WPE workspace (password <Code>sumhint</Code>). Please be
             courteous: you're sharing it with the whole team.
-          </Card.Description>
-        </Card.Header>
-        <Card.Footer className="mt-auto">
-          <a
-            href="https://www.wafflehaus.io/wpe"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonVariants()}>
-            Open the WPE workspace
-          </a>
-        </Card.Footer>
-      </Card>
-      <Card variant="secondary" className="gap-4 p-6">
-        <Card.Header className="gap-2">
-          <Card.Title className="text-lg font-semibold">Interested in writing?</Card.Title>
-          <Card.Description>
+          </p>
+        </div>
+        <a
+          href="https://www.wafflehaus.io/wpe"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({className: "mt-auto"})}>
+          Open the WPE workspace
+        </a>
+      </section>
+      <section className="flex flex-col items-start gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">Interested in writing?</h2>
+          <p className="text-muted text-sm">
             We'd love more puzzles. Reach out to Allen on Discord!
-          </Card.Description>
-        </Card.Header>
-        <Card.Footer className="mt-auto">
-          <Link to="/exchange/writing" className={buttonVariants({variant: "secondary"})}>
-            Learn about writing WPE puzzles
-          </Link>
-        </Card.Footer>
-      </Card>
+          </p>
+        </div>
+        <Link
+          to="/exchange/writing"
+          className={buttonVariants({variant: "secondary", className: "mt-auto"})}>
+          Learn about writing WPE puzzles
+        </Link>
+      </section>
     </div>
   );
 }

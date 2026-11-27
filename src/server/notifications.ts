@@ -111,6 +111,30 @@ export const notificationClientMessageSchema = z.discriminatedUnion("type", [
 ]);
 export type NotificationClientMessage = z.infer<typeof notificationClientMessageSchema>;
 
+/**
+ * What a client may send to keep its connection (and, in the Chrome extension, its service worker)
+ * alive. The room answers PONG itself, without waking up (setWebSocketAutoResponse).
+ */
+export const NOTIFICATION_PING = "ping";
+export const NOTIFICATION_PONG = "pong";
+
+/**
+ * The kinds of notification a device can choose to get as Web Push (the bell's settings on that
+ * device decide). Drive sharing problems always come: an owner has to act on them.
+ */
+export const PUSH_KINDS = ["solved", "announcement", "mention", "email", "favorite"] as const;
+export type PushKind = (typeof PUSH_KINDS)[number];
+
+/** What a push carries to the service worker (public/sw.js), which shows it. */
+export type PushPayload = {
+  /** The notification's id: also the shown notification's tag, so it's never shown twice. */
+  id: string;
+  title: string;
+  body: string;
+  /** Where clicking it goes: a path in WOW, or a full URL elsewhere (Google Drive). */
+  url: string;
+};
+
 /** A notification as passed in, before the room stamps it. */
 export type NewNotification = WorkspaceNotification extends infer N
   ? N extends WorkspaceNotification

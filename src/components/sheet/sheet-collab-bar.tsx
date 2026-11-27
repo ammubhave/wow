@@ -1,4 +1,5 @@
 import {CheckIcon, CloudOffIcon, LoaderIcon, SquareFunctionIcon} from "lucide-react";
+import {cn} from "tailwind-variants";
 
 import type {SheetPeer} from "@/server/do/sheet";
 
@@ -89,7 +90,11 @@ export function CollabBar({
         })}
       </div>
       <output
-        className="text-muted flex items-center gap-1 text-[11px]"
+        className={cn(
+          "flex items-center gap-1 text-[11px]",
+          // Only offline needs noticing: everything else is the quiet default.
+          status === "offline" ? "text-warning font-medium" : "text-muted"
+        )}
         aria-live="polite"
         title={label}>
         <Icon className={spin ? "size-3.5 animate-spin" : "size-3.5"} />

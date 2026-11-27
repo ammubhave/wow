@@ -11,6 +11,7 @@ import {
 } from "partytracks/client";
 import {map, Observable, of, type Subscription} from "rxjs";
 
+import {apiUrl, liveApiAuthHeaders} from "@/lib/api-endpoint";
 import type {VoiceTrack} from "@/server/voice";
 
 // Cost and quality: the SFU bills only for data sent out (past a free terabyte a month), so video
@@ -46,7 +47,11 @@ export class VoiceEngine {
   readonly #subscriptions: Subscription[] = [];
 
   constructor(workspaceSlug: string, audioElement: HTMLAudioElement) {
-    this.partyTracks = new PartyTracks({prefix: `/api/voice/${workspaceSlug}`});
+    // The extension's access token, kept current (see api-endpoint.ts); none on the website.
+    this.partyTracks = new PartyTracks({
+      prefix: apiUrl(`/api/voice/${workspaceSlug}`),
+      headers: liveApiAuthHeaders(),
+    });
     this.#audioSink = createAudioSink({audioElement});
   }
 

@@ -254,3 +254,12 @@
 html[data-app] #ph-conversations-widget-container button[aria-label="Open chat"] {
   display: none !important;
 }
+
+/* The built-in sheet (src/components/sheet/sheet-canvas.tsx): Univer centers its ribbon's tabs
+   (Start, Insert, …) while its toolbar, name box and grid all start at the left edge. Put the
+   tabs on that same left edge, so the row reads like the rest: tabs on the left, puzzle tools and
+   save status on the right. */
+.wow-sheet header > .univer-h-9 > div {
+  justify-content: flex-start;
+  padding-inline: 0.75rem;
+}

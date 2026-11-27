@@ -148,7 +148,7 @@ function WorkspacePasswordCard({canEdit}: {canEdit: boolean}) {
     <Card>
       <Card.Header>
         <Card.Title>Workspace password</Card.Title>
-        <Card.Description>The workspace password is used to join the workspace.</Card.Description>
+        <Card.Description>Teammates join with it and the invitation link.</Card.Description>
       </Card.Header>
       <form.AppForm>
         <Card.Content>

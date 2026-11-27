@@ -141,7 +141,7 @@ export function TourCard({
         />
       ) : (
         isReady && (
-          <div aria-hidden className="pointer-events-none fixed inset-0 z-60 bg-black/50" />
+          <div aria-hidden className="bg-backdrop pointer-events-none fixed inset-0 z-60" />
         )
       )}
       <div

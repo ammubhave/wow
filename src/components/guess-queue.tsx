@@ -153,7 +153,8 @@ function GuessRow({
           )}>
           {guess.answer}
         </span>
-        <Chip size="sm" variant="soft" color={STATUS[status].color}>
+        {/* Where it stands, on the right edge (the guess is read first, on the left). */}
+        <Chip size="sm" variant="soft" color={STATUS[status].color} className="ms-auto">
           {STATUS[status].label}
         </Chip>
         {waitLeft > 0 && (
@@ -305,7 +306,7 @@ export function PuzzleGuesses({
   // Archived with no guesses: nothing to show, and none can be queued.
   if (isReadOnly && guesses.length === 0) return null;
   return (
-    <section className="border-separator flex flex-col gap-1.5 border-t p-3" aria-label="Guesses">
+    <section className="flex flex-col gap-1.5 p-3" aria-label="Guesses">
       <h3 className="m-0">
         <button
           type="button"
@@ -317,7 +318,8 @@ export function PuzzleGuesses({
             aria-hidden="true"
           />
           Guesses
-          <span className="tabular-nums">({guesses.length})</span>
+          {/* No count while there are none: a "(0)" says nothing the collapsed section doesn't. */}
+          {guesses.length > 0 && <span className="tabular-nums">({guesses.length})</span>}
           {waiting > 0 && (
             <Chip size="sm" variant="soft" color="accent" className="ms-auto">
               {waiting} waiting

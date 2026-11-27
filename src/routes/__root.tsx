@@ -20,6 +20,7 @@ import {IntlProvider} from "use-intl";
 
 import {PostHogIdentity} from "@/components/posthog-identity";
 import {ThemeProvider, useTheme} from "@/components/theme-provider";
+import {useServiceWorker} from "@/features/notifications/push";
 import {useAnchorPreload} from "@/hooks/use-anchor-preload";
 import {captureJoinPassword} from "@/lib/join-password";
 import {store} from "@/store";
@@ -93,6 +94,7 @@ export const Route = createRootRouteWithContext<{queryClient: QueryClient}>()({
 function RootDocument({children}: {children: React.ReactNode}) {
   const router = useRouter();
   useAnchorPreload();
+  useServiceWorker(path => router.history.push(path));
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

@@ -54,18 +54,20 @@ export const ActivityLogItem = memo(function ActivityLogItem({
         <div className="relative flex size-6 flex-none items-center justify-center">
           <div
             className={cn(
-              "size-5 rounded-full flex items-center justify-center *:size-3 *:text-gray-100",
+              "size-5 rounded-full flex items-center justify-center *:size-3",
               (activityItem.round_activity_log_entry?.subType === "create" ||
                 activityItem.puzzle_activity_log_entry?.subType === "create") &&
-                "bg-amber-600",
+                "bg-accent text-accent-foreground",
               (activityItem.round_activity_log_entry?.subType === "delete" ||
                 activityItem.puzzle_activity_log_entry?.subType === "delete") &&
-                "bg-rose-600",
+                "bg-danger text-danger-foreground",
               (activityItem.puzzle_activity_log_entry?.subType === "updateStatus" ||
                 activityItem.puzzle_activity_log_entry?.subType === "updateImportance") &&
-                "bg-teal-600",
-              activityItem.puzzle_activity_log_entry?.subType === "updateAnswer" && "bg-sky-600",
-              activityItem.workspace_activity_log_entry?.subType === "join" && "bg-emerald-600"
+                "bg-default text-default-foreground",
+              activityItem.puzzle_activity_log_entry?.subType === "updateAnswer" &&
+                "bg-success text-success-foreground",
+              activityItem.workspace_activity_log_entry?.subType === "join" &&
+                "bg-accent-soft text-accent-soft-foreground"
             )}>
             {(activityItem.round_activity_log_entry?.subType === "create" ||
               activityItem.puzzle_activity_log_entry?.subType === "create") && (
@@ -173,7 +175,7 @@ export const ActivityLogItem = memo(function ActivityLogItem({
       </p>
       <time
         dateTime={activityItem.activity_log_entry.createdAt.toString()}
-        className="text-muted flex-none py-0.5 text-xs/5">
+        className="text-muted flex-none py-0.5 text-xs/5 tabular-nums">
         {relativeTime ? (
           <RelativeTime date={activityItem.activity_log_entry.createdAt} />
         ) : (

@@ -19,6 +19,7 @@ import {
   type SyncRound,
   VOICE,
 } from "../discord-sync-plan";
+import {discordBoard} from "../router/services/discord";
 
 /** Attempts per request when Discord rate-limits it (429), and the longest wait we'll sit out. */
 const MAX_ATTEMPTS = 5;
@@ -90,6 +91,19 @@ type SyncWorkspace = {discordGuildId: string; rounds: SyncRound[]};
 /** Storage key for the puzzle id → voice channel id mapping. */
 const PUZZLE_CHANNELS_KEY = "puzzleChannels";
 
+/** Storage key for a failed sync waiting on its retry (the alarm): `RetryState`. */
+const RETRY_KEY = "syncRetry";
+type RetryState = {guildId: string; attempts: number};
+/** Retries wait 30 seconds, doubling up to half an hour: about 3 hours before giving up. */
+const RETRY_DELAYS_SECONDS = [30, 60, 120, 240, 480, 960, 1800, 1800, 1800, 1800];
+
+/**
+ * Whether trying again later could help: Discord being down or rate-limiting us, or the network.
+ * Not Discord refusing (the bot removed from the server, say), which a retry won't change.
+ */
+const isRetryable = (error: unknown) =>
+  !(error instanceof DiscordApiError) || error.status === 429 || error.status >= 500;
+
 export class DiscordClient extends DurableObject {
   /** The running sync, if any: there is never more than one at a time. */
   private running: Promise<void> | undefined;
@@ -113,24 +127,66 @@ export class DiscordClient extends DurableObject {
   }
 
   private async drain() {
+    let workspace: SyncWorkspace | undefined;
+    let failure: unknown;
     while (this.pending) {
-      const workspace = this.pending;
+      workspace = this.pending;
       this.pending = undefined;
+      failure = undefined;
       try {
         // Sequential on purpose: each run must finish before the next starts.
         // oxlint-disable-next-line no-await-in-loop
         await this.syncOnce(workspace);
       } catch (error) {
-        // The next trigger retries from scratch; the sync is idempotent.
         console.error("Discord sync failed", error);
+        failure = error;
       }
     }
+    // Only the last run counts: it synced the latest board, so it covers any that failed before.
+    if (workspace) await this.settle(workspace.discordGuildId, failure);
+  }
+
+  /**
+   * After a sync: if it failed for a reason that may pass, tries again later (an alarm, so it
+   * happens even if nobody touches the board, and survives this object being restarted). The sync
+   * is idempotent, so a retry just syncs the board as it is then.
+   */
+  private async settle(guildId: string, failure: unknown) {
+    const retry = await this.ctx.storage.get<RetryState>(RETRY_KEY);
+    if (failure === undefined || !isRetryable(failure)) {
+      if (retry) {
+        await this.ctx.storage.delete(RETRY_KEY);
+        await this.ctx.storage.deleteAlarm();
+      }
+      return;
+    }
+    const attempts = retry?.guildId === guildId ? retry.attempts : 0;
+    const delay = RETRY_DELAYS_SECONDS[attempts];
+    if (delay === undefined) {
+      console.error(`Discord sync of ${guildId}: giving up after ${attempts} retries`);
+      await this.ctx.storage.delete(RETRY_KEY);
+      return;
+    }
+    await this.ctx.storage.put(RETRY_KEY, {guildId, attempts: attempts + 1} satisfies RetryState);
+    await this.ctx.storage.setAlarm(Date.now() + delay * 1000);
+  }
+
+  /** Retrying a failed sync: with the board as it is now, if the server still mirrors one. */
+  async alarm() {
+    const retry = await this.ctx.storage.get<RetryState>(RETRY_KEY);
+    if (!retry) return;
+    const board = await discordBoard({discordGuildId: retry.guildId});
+    if (!board) {
+      // Disconnected, or switched to WOW calls, since: nothing to sync.
+      await this.ctx.storage.delete(RETRY_KEY);
+      return;
+    }
+    await this.sync(board);
   }
 
   private async syncOnce(workspace: SyncWorkspace) {
     const guildId = workspace.discordGuildId;
-    const existing = await this.listChannels(guildId);
-    if (existing === undefined) return;
+    const existing = await this.channels(guildId);
 
     const rounds = desiredRounds(workspace.rounds);
     const stored = (await this.ctx.storage.get<Record<string, string>>(PUZZLE_CHANNELS_KEY)) ?? {};
@@ -251,11 +307,17 @@ export class DiscordClient extends DurableObject {
     }
   }
 
+  /** WOW's channels in the server, or undefined if Discord didn't list them. */
   public async listChannels(guildId: string) {
-    const response = await fetchDiscord(`/guilds/${guildId}/channels`);
-    if (response.status !== 200) {
+    return await this.channels(guildId).catch((error: unknown) => {
+      console.error("Couldn't list Discord channels", error);
       return undefined;
-    }
+    });
+  }
+
+  /** WOW's channels in the server (names without the 🧩); throws a DiscordApiError if it can't. */
+  private async channels(guildId: string) {
+    const response = await discordRequest(`/guilds/${guildId}/channels`);
     const schema = z.object({
       id: z.string(),
       name: z.string(),
@@ -273,7 +335,7 @@ export class DiscordClient extends DurableObject {
           return [];
         })
       )
-      .parse(await response.json())
+      .parse(response)
       .filter(channel => channel.name.startsWith("🧩 "))
       .map(channel => {
         // Freshly parsed objects, so mutating in place is safe.

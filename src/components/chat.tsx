@@ -24,6 +24,7 @@ import {NO_PRESENCES} from "@/features/presences/presences";
 import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {describeChatMessage, track} from "@/lib/analytics";
+import {apiSocketUrl, apiUrl} from "@/lib/api-endpoint";
 import {ARRIVE_FROM_BOTTOM, useMountedAt} from "@/lib/arrivals";
 import {authClient} from "@/lib/auth-client";
 import {orpc} from "@/lib/orpc";
@@ -150,7 +151,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
   const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
   const isArchived = useWorkspace().archivedAt !== null;
   const chatPath = puzzleId ? `/api/chat/${puzzleId}` : `/api/workspaces/${workspaceSlug}/chat`;
-  const imageUrl = (id: string) => `${chatPath}/images/${id}`;
+  const imageUrl = (id: string) => apiUrl(`${chatPath}/images/${id}`);
   // null until the room's snapshot arrives.
   const [messages, setMessages] = useState<ChatMessageData[] | null>(null);
   // The composer's text with @mention tokens (each carries the member it refers to).
@@ -226,7 +227,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
   // Reconnects when the workspace is archived or unarchived: the room decides on connecting
   // whether this connection may post.
   const {sendJsonMessage} = useWebSocket<ChatRoomReceivedMessage>(
-    isArchived ? `${chatPath}?archived` : chatPath,
+    apiSocketUrl(isArchived ? `${chatPath}?archived` : chatPath),
     {
       share: false,
       shouldReconnect: () => true,

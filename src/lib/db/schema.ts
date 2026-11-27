@@ -370,3 +370,28 @@ export const workspaceEmail = sqliteTable(
   },
   t => [index("workspace_email_workspaceId_receivedAt_idx").on(t.workspaceId, t.receivedAt)]
 );
+
+/**
+ * A browser or installed app that gets WOW's notifications as Web Push, even when WOW isn't open
+ * (src/server/push.ts). One per device and person: signing in as someone else on the device moves
+ * it to them. `kinds` are the notifications it wants (as the bell's settings on that device).
+ */
+export const pushSubscription = sqliteTable(
+  "push_subscription",
+  {
+    ...base,
+    userId: text()
+      .notNull()
+      .references(() => auth.user.id, {onDelete: "cascade", onUpdate: "cascade"}),
+    /** The push service's URL for this browser: unique to it, and secret (it's how to reach it). */
+    endpoint: text().notNull(),
+    /** The browser's keys for encrypting what's sent to it (base64url). */
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    kinds: text({mode: "json"}).$type<string[]>().default([]).notNull(),
+  },
+  t => [
+    uniqueIndex("push_subscription_endpoint_idx").on(t.endpoint),
+    index("push_subscription_userId_idx").on(t.userId),
+  ]
+);

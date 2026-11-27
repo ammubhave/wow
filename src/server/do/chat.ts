@@ -317,14 +317,17 @@ export class ChatRoom extends DurableObject {
       : null;
     const workspaceId = puzzle?.workspaceId ?? sender.workspaceId;
     if (!workspaceId) return;
-    await this.env.NOTIFICATION_ROOMS.getByName(workspaceId, {locationHint: "enam"}).broadcast({
-      type: "mention",
-      toUserIds,
-      from: {id: sender.userId, name: sender.name},
-      puzzleId: puzzle ? sender.puzzleId : null,
-      puzzleName: puzzle?.name ?? "Team chat",
-      text: plainMentions(text).slice(0, 280),
-    });
+    await this.env.NOTIFICATION_ROOMS.getByName(workspaceId, {locationHint: "enam"}).broadcast(
+      workspaceId,
+      {
+        type: "mention",
+        toUserIds,
+        from: {id: sender.userId, name: sender.name},
+        puzzleId: puzzle ? sender.puzzleId : null,
+        puzzleName: puzzle?.name ?? "Team chat",
+        text: plainMentions(text).slice(0, 280),
+      }
+    );
   }
 
   broadcast(data: ChatRoomReceivedMessage) {

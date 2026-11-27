@@ -1,11 +1,13 @@
 import type {WorkspaceRoomWireState} from "@/server/do/workspace";
 
+import {apiSocketUrl} from "./api-endpoint";
+
 /**
  * The workspace socket's URL. Every hook on it must use exactly this, so they share one socket.
  * `diffs` asks the room for changes rather than the whole board on every edit.
  */
 export const workspaceSocketUrl = (workspaceSlug: string) =>
-  `/api/workspaces/${workspaceSlug}?diffs`;
+  apiSocketUrl(`/api/workspaces/${workspaceSlug}?diffs`);
 
 /**
  * The state the workspace socket last delivered, by workspace slug: what the next patch applies

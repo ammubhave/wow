@@ -407,7 +407,7 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
             <h3 className="text-muted text-xs font-medium tracking-wide uppercase">
               Waiting to join ({pending.data.length})
             </h3>
-            <ul className="divide-separator flex flex-col divide-y">
+            <ul className="flex flex-col">
               {pending.data.map(invitation => (
                 <li key={invitation.id} className="flex items-center gap-2 py-2">
                   <div className="flex min-w-0 flex-1 flex-col">
@@ -500,7 +500,7 @@ function ShareLinkAndPassword({
   return (
     <section
       aria-label="Share the link and password"
-      className={cn("flex flex-col gap-2", heading && "border-separator border-t pt-4")}>
+      className={cn("flex flex-col gap-2", heading && "pt-4")}>
       {heading && (
         <h3 className="text-muted text-xs font-medium tracking-wide uppercase">{heading}</h3>
       )}

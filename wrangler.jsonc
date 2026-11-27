@@ -39,6 +39,8 @@
     "VITE_GOOGLE_API_CLIENT_ID": "933519172272-179lstu86fd5blof9d6las41m1r9mdt7.apps.googleusercontent.com",
     "GOOGLE_CLIENT_ID": "933519172272-h905jlmbp8m1egsjs5ocsri5fhihs94b.apps.googleusercontent.com",
     "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXjlC9B02DfnTb",
+    // Web Push: the public half of the VAPID key pair (VAPID_PRIVATE_KEY is a secret).
+    "VITE_PUBLIC_VAPID_KEY": "BIucW0kh-6IMEclSv2gMr9y4HTdL14ck2ah2AywO_7ChYqbyBKR6m1_VMPzc19zR6146RhwWvmeaIpxCgPOGB6I",
     "BETTER_AUTH_URL": "http://localhost:3000",
     "BETTER_AUTH_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "PNPM_VERSION": "12.8.1",
@@ -154,6 +156,8 @@
         "VITE_GOOGLE_API_CLIENT_ID": "933519172272-179lstu86fd5blof9d6las41m1r9mdt7.apps.googleusercontent.com",
         "GOOGLE_CLIENT_ID": "933519172272-h905jlmbp8m1egsjs5ocsri5fhihs94b.apps.googleusercontent.com",
         "VITE_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACJXqMR1-nXdolsi",
+        // Web Push: the public half of the VAPID key pair (VAPID_PRIVATE_KEY is a secret).
+        "VITE_PUBLIC_VAPID_KEY": "BIucW0kh-6IMEclSv2gMr9y4HTdL14ck2ah2AywO_7ChYqbyBKR6m1_VMPzc19zR6146RhwWvmeaIpxCgPOGB6I",
         "BETTER_AUTH_URL": "https://www.wafflehaus.io",
         "PNPM_VERSION": "12.8.1",
         "ADMIN_EMAILS": "amol@amolbhave.com,allenpark93@gmail.com",

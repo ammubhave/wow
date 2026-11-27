@@ -2,12 +2,15 @@ import {DurableObject} from "cloudflare:workers";
 import {v7 as uuidv7} from "uuid";
 
 import {
+  NOTIFICATION_PING,
+  NOTIFICATION_PONG,
   type NewNotification,
   type NotificationMessage,
   notificationClientMessageSchema,
   type ReadState,
   type WorkspaceNotification,
 } from "@/server/notifications";
+import {pushNotification} from "@/server/push";
 
 // Keys are uuidv7, so storage lists them in time order.
 const PREFIX = "n:";
@@ -35,6 +38,13 @@ const isFor = (notification: WorkspaceNotification, userId: string) =>
  * each person's read state, so "read" follows them across browsers and devices.
  */
 export class NotificationRoom extends DurableObject<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.ctx.setWebSocketAutoResponse(
+      new WebSocketRequestResponsePair(NOTIFICATION_PING, NOTIFICATION_PONG)
+    );
+  }
+
   async fetch(request: Request) {
     const userId = request.headers.get(NOTIFICATION_USER_HEADER);
     // Only the authorizing API route reaches the room, and it always says who's connecting.
@@ -55,7 +65,11 @@ export class NotificationRoom extends DurableObject<Env> {
     return new Response(null, {status: 101, webSocket: client});
   }
 
-  async broadcast(data: NewNotification) {
+  /**
+   * A new notification: kept, sent to the sockets of everyone it's for, and pushed to their
+   * devices (Web Push, for when WOW isn't open). `workspaceId` is this room's name.
+   */
+  async broadcast(workspaceId: string, data: NewNotification) {
     const id = uuidv7();
     const notification: WorkspaceNotification = {...data, id, timestamp: Date.now()};
     await this.ctx.storage.put(PREFIX + id, notification);
@@ -64,6 +78,12 @@ export class NotificationRoom extends DurableObject<Env> {
       const attachment: SocketAttachment | null = ws.deserializeAttachment();
       if (attachment && isFor(notification, attachment.userId)) ws.send(payload);
     }
+    // In the background: whoever sent it (a chat message, a solve) doesn't wait on push services.
+    this.ctx.waitUntil(
+      pushNotification(workspaceId, notification).catch((error: unknown) =>
+        console.error("Couldn't send push notifications", error)
+      )
+    );
     // Now and then, drop the oldest beyond what the bell shows.
     if (Math.random() < 0.1) {
       const all = await this.ctx.storage.list({prefix: PREFIX, reverse: true});

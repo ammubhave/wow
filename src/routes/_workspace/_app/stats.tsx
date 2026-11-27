@@ -130,12 +130,10 @@ function StatsBody({stats}: {stats: Stats}) {
   const s = computeStats(stats);
   if (s.total === 0 && s.solved === 0) {
     return (
-      <Card>
-        <Card.Content className="text-muted py-8 text-center text-sm">
-          Nothing here yet. Open a puzzle and start solving: your time on puzzles and the puzzles
-          you mark &ldquo;I helped&rdquo; show up here.
-        </Card.Content>
-      </Card>
+      <p className="text-muted py-8 text-center text-sm">
+        Nothing here yet. Open a puzzle and start solving: your time on puzzles and the puzzles you
+        mark &ldquo;I helped&rdquo; show up here.
+      </p>
     );
   }
   return (
@@ -231,7 +229,6 @@ function StatsBody({stats}: {stats: Stats}) {
         <Card>
           <Card.Header>
             <Card.Title>Favourite puzzle types</Card.Title>
-            <Card.Description>Time on puzzles, by tag.</Card.Description>
           </Card.Header>
           <Card.Content>
             <BarChart
@@ -266,7 +263,6 @@ function StatsBody({stats}: {stats: Stats}) {
         <Card>
           <Card.Header>
             <Card.Title>Who you solve with</Card.Title>
-            <Card.Description>Teammates who helped solve the same puzzles.</Card.Description>
           </Card.Header>
           <Card.Content>
             <ul className="flex flex-col gap-2 text-sm">

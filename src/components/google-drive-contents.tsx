@@ -89,9 +89,7 @@ export function GoogleDriveSetup({
               <Stepper.Content className="flex-1">
                 <Stepper.Title>Connect with Google</Stepper.Title>
                 <Stepper.Description>
-                  {state.data.state >= 1
-                    ? "You're successfully connected to Google."
-                    : "You need to connect your Google account."}
+                  {state.data.state >= 1 ? "Connected." : "Connect your Google account."}
                 </Stepper.Description>
               </Stepper.Content>
               <ConnectToGoogleForm workspaceSlug={workspaceSlug} redirectUrl={redirectUrl}>

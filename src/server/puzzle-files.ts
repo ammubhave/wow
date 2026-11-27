@@ -1,6 +1,6 @@
 import {env} from "cloudflare:workers";
 
-import {auth} from "@/lib/auth";
+import {getHeadersSession} from "@/server/request-session";
 import {meter} from "@/server/usage";
 import {isPuzzleMember, trackWorkspaceRequest} from "@/server/workspace-access";
 
@@ -11,7 +11,7 @@ export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const puzzleFilesPrefix = (area: string, puzzleId: string) => `${area}/${puzzleId}/`;
 
 async function authorize(request: Request, puzzleId: string) {
-  const session = await auth.api.getSession({headers: request.headers});
+  const session = await getHeadersSession(request.headers);
   if (!session) return {denied: new Response(null, {status: 401})} as const;
   const workspaceId = await isPuzzleMember(puzzleId, session.user.id);
   if (!workspaceId) return {denied: new Response(null, {status: 404})} as const;

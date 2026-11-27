@@ -297,12 +297,16 @@ export function ProfileSkeleton() {
   );
 }
 
-/** Create a workspace: the form card. */
+/** Create a workspace: the intro line, the form (no card), then Create. */
 export function CreateWorkspaceSkeleton() {
   return (
     <PageSkeleton title="Create workspace">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
-        <CardSkeleton fields={8} />
+        <Skeleton className="h-10 w-full" />
+        {rows(7, i => (
+          <FieldSkeleton key={i} />
+        ))}
+        <Skeleton className="mt-4 h-9 w-20" />
       </div>
     </PageSkeleton>
   );
@@ -568,8 +572,8 @@ function SettingsTabs() {
 export function SettingsGeneralSkeleton() {
   return (
     <>
-      <CardSkeleton description={2} fields={5} footer />
-      <CardSkeleton description={2} fields={2} footer />
+      <CardSkeleton description={1} fields={5} footer />
+      <CardSkeleton description={1} fields={2} footer />
       <CardSkeleton fields={1} />
     </>
   );

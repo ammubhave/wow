@@ -18,6 +18,7 @@ import {toast} from "sonner";
 
 import {IconButton} from "@/components/icon-button";
 import {useTheme} from "@/components/theme-provider";
+import {forgetPushOnSignOut} from "@/features/notifications/push";
 import {authClient} from "@/lib/auth-client";
 import {openHelpChat} from "@/lib/help-chat";
 import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
@@ -168,6 +169,8 @@ export function NavUser({children}: {children?: React.ReactNode}) {
               id="log-out"
               textValue="Log out"
               onAction={async () => {
+                // While still signed in: this device stops getting the account's pushes.
+                await forgetPushOnSignOut();
                 await authClient.signOut();
                 await router.navigate({to: "/login"});
                 // Nothing of this account's may show to whoever signs in next on this tab.

@@ -12,7 +12,7 @@ import {
   SettingsIcon,
   StarIcon,
 } from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
@@ -21,19 +21,21 @@ import {RelativeTime} from "@/components/activity-log";
 import {IconButton} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
-import {formatAnswers} from "@/lib/answers";
 import {authClient} from "@/lib/auth-client";
 import {celebrate} from "@/lib/confetti";
+import {describe, driveFolderUrl} from "@/lib/notification-text";
 import {orpc} from "@/lib/orpc";
-import {getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
 import {useWebSocket} from "@/lib/use-websocket";
 import {workspaceMutations, workspaceQueryOptions} from "@/lib/workspace-mutations";
 import type {
+  PushKind,
   NotificationClientMessage,
   NotificationMessage,
   ReadState,
   WorkspaceNotification,
 } from "@/server/notifications";
+
+import {usePush, useInstallPrompt} from "./push";
 
 const toastDismissBroadcastChannel =
   typeof window !== "undefined" ? new BroadcastChannel("sonner-dismiss") : null;
@@ -63,6 +65,73 @@ const usePrefs = () => {
   return [{...DEFAULT_PREFS, ...saved}, setPrefs] as const;
 };
 
+/** The kinds of notification this device wants pushed: the same choices as its pop-ups. */
+const pushKinds = (prefs: Omit<Prefs, "desktop">): PushKind[] => [
+  ...(prefs.solves ? (["solved"] as const) : []),
+  ...(prefs.announcements ? (["announcement"] as const) : []),
+  ...(prefs.mentions ? (["mention"] as const) : []),
+  ...(prefs.emails ? (["email"] as const) : []),
+  ...(prefs.favorites ? (["favorite"] as const) : []),
+];
+
+/**
+ * Push to this device: the same notifications (as chosen above) even when WOW is closed, and on a
+ * phone with WOW installed, like any app's. Where it can't yet, says what to do instead.
+ */
+function DevicePush({prefs}: {prefs: Prefs}) {
+  const {solves, announcements, mentions, emails, favorites} = prefs;
+  const kinds = useMemo(
+    () => pushKinds({solves, announcements, mentions, emails, favorites}),
+    [solves, announcements, mentions, emails, favorites]
+  );
+  const push = usePush(kinds);
+  const install = useInstallPrompt();
+  const [pending, setPending] = useState(false);
+  const toggle = (on: boolean) => {
+    setPending(true);
+    (on ? push.enable() : push.disable())
+      .then(() => track(on ? "push_enabled" : "push_disabled"))
+      .catch((error: unknown) => {
+        console.warn("Couldn't change push notifications", error);
+        toast.error(
+          on ? "Couldn't turn on notifications for this device." : "Couldn't turn them off."
+        );
+      })
+      .finally(() => setPending(false));
+  };
+  return (
+    <>
+      {(push.status === "on" || push.status === "off") && (
+        <Switch size="sm" isSelected={push.status === "on"} isDisabled={pending} onChange={toggle}>
+          <Switch.Content>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            <span className="text-sm">Notify this device even when WOW is closed</span>
+          </Switch.Content>
+        </Switch>
+      )}
+      {push.status === "needsInstall" && (
+        <p className="text-muted text-xs">
+          To get notifications on this iPhone or iPad, add WOW to your Home Screen: tap Share, then{" "}
+          <strong>Add to Home Screen</strong>. Open WOW from there and turn them on here.
+        </p>
+      )}
+      {push.status === "blocked" && (
+        <p className="text-muted text-xs">
+          Notifications are blocked for WOW. Allow them in your browser's site settings to get them
+          when WOW is closed.
+        </p>
+      )}
+      {install && (
+        <Button size="sm" variant="secondary" onPress={() => void install()}>
+          Install WOW as an app
+        </Button>
+      )}
+    </>
+  );
+}
+
 const notificationsQueryKey = (workspaceSlug: string) => ["notifications", workspaceSlug] as const;
 /** Your read state (per person, kept by the server; see ReadState). */
 const readStateQueryKey = (workspaceSlug: string) =>
@@ -80,68 +149,6 @@ function useNotifications(workspaceSlug: string) {
       enabled: false,
     }).data ?? NONE
   );
-}
-
-const statusLabel = (status: string | null) =>
-  getPuzzleStatusOptions().find(option => option.value === status)?.label ?? status ?? "None";
-
-/** What happened on a starred puzzle, as a sentence. */
-function describeFavorite(change: Extract<WorkspaceNotification, {type: "favorite"}>["change"]) {
-  switch (change.kind) {
-    case "status":
-      return `Now ${statusLabel(change.status)}`;
-    case "guessQueued":
-      return `Guess queued: ${change.answer}`;
-    case "guessResult":
-      return change.result === "partial"
-        ? `${change.answer}: keep going (partial)`
-        : `${change.answer} was wrong`;
-    default:
-      return change satisfies never;
-  }
-}
-
-const driveFolderUrl = (folderId: string) => `https://drive.google.com/drive/folders/${folderId}`;
-
-function describe(notification: WorkspaceNotification) {
-  switch (notification.type) {
-    case "solved":
-      return {
-        // A team effort: who marked it solved isn't who solved it, so no "by".
-        title: `${notification.isMeta ? "Meta solved" : "Solved"}: ${notification.puzzleName}`,
-        body: formatAnswers(notification.answer),
-      };
-    case "announcement":
-      return {title: `Announcement from ${notification.from}`, body: notification.message};
-    case "mention":
-      return {
-        title: `${notification.from.name} mentioned you in ${notification.puzzleName}`,
-        body: notification.text,
-      };
-    case "email":
-      return {
-        title: `Email from ${notification.from}`,
-        body: [notification.subject, notification.preview].filter(Boolean).join(" — "),
-      };
-    case "favorite":
-      return {
-        title: `${notification.puzzleName}: ${describeFavorite(notification.change)}`,
-        body: `By ${notification.by.name} · you starred it`,
-      };
-    case "driveShareFailed":
-      // What to do first: the bell shows only two lines.
-      return notification.access === "unshare"
-        ? {
-            title: `Couldn't remove ${notification.member.name} from the Google Drive folder`,
-            body: `Stop sharing it with ${notification.member.email} in Google Drive. ${notification.detail}`,
-          }
-        : {
-            title: `Couldn't share the Google Drive folder with ${notification.member.name}`,
-            body: `Share it with ${notification.member.email} in Google Drive. ${notification.detail}`,
-          };
-    default:
-      return notification satisfies never;
-  }
 }
 
 /**
@@ -506,6 +513,7 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                   <span className="text-sm">Desktop notifications when the tab is hidden</span>
                 </Switch.Content>
               </Switch>
+              <DevicePush prefs={prefs} />
             </div>
           )}
           <ul className="min-h-0 flex-1 overflow-y-auto py-1" aria-label="Notifications">

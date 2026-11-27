@@ -1,5 +1,7 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
+  // The Chrome extension type-checks with its own config (extension/tsconfig.json).
+  "exclude": ["node_modules", "extension"],
   "compilerOptions": {
     "target": "ES2024",
     "jsx": "react-jsx",

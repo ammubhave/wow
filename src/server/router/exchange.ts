@@ -5,9 +5,9 @@ import {v7 as uuidv7} from "uuid";
 import {z} from "zod";
 
 import {normalizeAnswer} from "@/lib/answers";
-import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {getHeadersSession} from "@/server/request-session";
 
 import {base, procedure, type Session} from "./base";
 
@@ -26,7 +26,7 @@ const preauthorize = os.$context<{session: Session}>().middleware(async ({contex
 });
 
 const isAdmin = async (headers: Headers) => {
-  const session = await auth.api.getSession({headers});
+  const session = await getHeadersSession(headers);
   if (!session) return false;
   return isAdminUser(session.user);
 };

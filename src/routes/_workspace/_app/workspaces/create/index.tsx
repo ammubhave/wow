@@ -1,4 +1,3 @@
-import {Card} from "@heroui/react";
 import {useQueryClient} from "@tanstack/react-query";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {useEffect, useRef} from "react";
@@ -160,136 +159,130 @@ function RouteComponent() {
   return (
     <Page title="Create workspace">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
+        <p className="text-muted text-sm">
+          Your team, and the hunt you're playing. Once it's made, invite teammates by email, or
+          share the invitation link and password.
+        </p>
         <form.AppForm>
-          <Card>
-            <Card.Header>
-              <Card.Description>
-                Your team, and the hunt you're playing. Once it's made, invite teammates by email,
-                or share the invitation link and password.
-              </Card.Description>
-            </Card.Header>
-            <Card.Content>
-              <form.Form>
-                <form.AppField
-                  name="teamName"
-                  validators={{onBlur: TEAM_NAME_SCHEMA, onSubmit: TEAM_NAME_SCHEMA}}
-                  listeners={{onChange: suggestId}}
-                  children={field => (
-                    <field.TextField variant="secondary" label="Team name" isRequired />
-                  )}
+          <form.Form>
+            <form.AppField
+              name="teamName"
+              validators={{onBlur: TEAM_NAME_SCHEMA, onSubmit: TEAM_NAME_SCHEMA}}
+              listeners={{onChange: suggestId}}
+              children={field => (
+                <field.TextField variant="secondary" label="Team name" isRequired />
+              )}
+            />
+            <form.AppField
+              name="eventName"
+              validators={{
+                onSubmit: z.string().trim().min(1, "Enter the hunt's name, or pick one."),
+              }}
+              children={field => (
+                <field.SuggestField
+                  variant="secondary"
+                  label="Event name"
+                  isRequired
+                  placeholder="e.g. MIT Mystery Hunt 2027"
+                  description="Start typing to pick an upcoming hunt (it fills in the rest of the hunt details), or enter any name."
+                  suggestions={huntSuggestions}
+                  onPick={fillFrom}
                 />
-                <form.AppField
-                  name="eventName"
-                  validators={{
-                    onSubmit: z.string().trim().min(1, "Enter the hunt's name, or pick one."),
-                  }}
-                  children={field => (
-                    <field.SuggestField
-                      variant="secondary"
-                      label="Event name"
-                      isRequired
-                      placeholder="e.g. MIT Mystery Hunt 2027"
-                      description="Start typing to pick an upcoming hunt (it fills in the rest of the hunt details), or enter any name."
-                      suggestions={huntSuggestions}
-                      onPick={fillFrom}
-                    />
-                  )}
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <form.AppField
+                name="huntStartsAt"
+                children={field => (
+                  <field.TextField variant="secondary" label="Starts" type="datetime-local" />
+                )}
+              />
+              <form.AppField
+                name="huntEndsAt"
+                validators={{
+                  onSubmit: ({value, fieldApi}) => {
+                    const starts = fromLocalInput(fieldApi.form.getFieldValue("huntStartsAt"));
+                    const ends = fromLocalInput(value);
+                    return starts && ends && ends <= starts
+                      ? {message: "The hunt has to end after it starts."}
+                      : undefined;
+                  },
+                }}
+                children={field => (
+                  <field.TextField variant="secondary" label="Ends" type="datetime-local" />
+                )}
+              />
+            </div>
+            <form.AppField
+              name="huntLocation"
+              children={field => (
+                <field.TextField
+                  variant="secondary"
+                  label="Location"
+                  placeholder="Online, or a city"
                 />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <form.AppField
-                    name="huntStartsAt"
-                    children={field => (
-                      <field.TextField variant="secondary" label="Starts" type="datetime-local" />
-                    )}
-                  />
-                  <form.AppField
-                    name="huntEndsAt"
-                    validators={{
-                      onSubmit: ({value, fieldApi}) => {
-                        const starts = fromLocalInput(fieldApi.form.getFieldValue("huntStartsAt"));
-                        const ends = fromLocalInput(value);
-                        return starts && ends && ends <= starts
-                          ? {message: "The hunt has to end after it starts."}
-                          : undefined;
-                      },
-                    }}
-                    children={field => (
-                      <field.TextField variant="secondary" label="Ends" type="datetime-local" />
-                    )}
-                  />
-                </div>
-                <form.AppField
-                  name="huntLocation"
-                  children={field => (
-                    <field.TextField
-                      variant="secondary"
-                      label="Location"
-                      placeholder="Online, or a city"
-                    />
-                  )}
+              )}
+            />
+            <form.AppField
+              name="huntWebsite"
+              validators={{onBlur: HUNT_WEBSITE_SCHEMA, onSubmit: HUNT_WEBSITE_SCHEMA}}
+              children={field => (
+                <field.TextField
+                  variant="secondary"
+                  label="Hunt website"
+                  type="url"
+                  placeholder="https://"
+                  description="Linked from the workspace's header."
                 />
-                <form.AppField
-                  name="huntWebsite"
-                  validators={{onBlur: HUNT_WEBSITE_SCHEMA, onSubmit: HUNT_WEBSITE_SCHEMA}}
-                  children={field => (
-                    <field.TextField
-                      variant="secondary"
-                      label="Hunt website"
-                      type="url"
-                      placeholder="https://"
-                      description="Linked from the workspace's header."
-                    />
-                  )}
+              )}
+            />
+            <form.AppField
+              name="workspaceSlug"
+              validators={{
+                onSubmit: ({value}) => {
+                  const problem = workspaceSlugProblem(value);
+                  return problem ? {message: problem} : undefined;
+                },
+                onSubmitAsync: async ({value}) =>
+                  (await authClient.organization.checkSlug({slug: value})).data
+                    ? undefined
+                    : {message: "That ID is taken. Choose another one."},
+              }}
+              listeners={{
+                onChange: () => {
+                  idEdited.current = true;
+                },
+              }}
+              children={field => (
+                <field.TextField
+                  variant="secondary"
+                  label="Workspace ID"
+                  isRequired
+                  placeholder="e.g. myteam2027"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  description="Its web address (www.wafflehaus.io/…) and how teammates find it. Suggested from your team's name; change it if you like."
                 />
-                <form.AppField
-                  name="workspaceSlug"
-                  validators={{
-                    onSubmit: ({value}) => {
-                      const problem = workspaceSlugProblem(value);
-                      return problem ? {message: problem} : undefined;
-                    },
-                    onSubmitAsync: async ({value}) =>
-                      (await authClient.organization.checkSlug({slug: value})).data
-                        ? undefined
-                        : {message: "That ID is taken. Choose another one."},
-                  }}
-                  listeners={{
-                    onChange: () => {
-                      idEdited.current = true;
-                    },
-                  }}
-                  children={field => (
-                    <field.TextField
-                      variant="secondary"
-                      label="Workspace ID"
-                      isRequired
-                      placeholder="e.g. myteam2027"
-                      autoComplete="off"
-                      autoCapitalize="off"
-                      autoCorrect="off"
-                      description="Its web address (www.wafflehaus.io/…) and how teammates find it. Suggested from your team's name; change it if you like."
-                    />
-                  )}
+              )}
+            />
+            <form.AppField
+              name="password"
+              // The same rule as changing it later (Settings › Administration).
+              validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}
+              children={field => (
+                <field.PasswordField
+                  variant="secondary"
+                  label="Workspace password"
+                  isRequired
+                  description="At least 8 characters. Teammates enter it to join."
                 />
-                <form.AppField
-                  name="password"
-                  // The same rule as changing it later (Settings › Administration).
-                  validators={{onSubmit: z.string().min(8, "Use at least 8 characters.")}}
-                  children={field => (
-                    <field.PasswordField
-                      variant="secondary"
-                      label="Workspace password"
-                      isRequired
-                      description="At least 8 characters. Teammates enter it to join."
-                    />
-                  )}
-                />
-              </form.Form>
-            </Card.Content>
-            <Card.Footer className="mt-4">
-              <form.SubmitButton>Create</form.SubmitButton>
-            </Card.Footer>
-          </Card>
+              )}
+            />
+          </form.Form>
+          <div className="mt-4">
+            <form.SubmitButton>Create</form.SubmitButton>
+          </div>
         </form.AppForm>
       </div>
     </Page>

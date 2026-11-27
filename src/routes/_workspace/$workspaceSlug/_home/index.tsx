@@ -438,29 +438,6 @@ function DragHandle({label}: {label: string}) {
   );
 }
 
-const TAG_COLORS = [
-  "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
-  "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
-  "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-  "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-  "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
-];
-
-function hashTag(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function getTagColor(tag: string): string {
-  const index = hashTag(tag) % TAG_COLORS.length;
-  return TAG_COLORS[index]!;
-}
-
 // Trigger classes for the in-cell Selects (shared by each stand-in and its real Select).
 const SELECT_TRIGGER_CLASS =
   "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
@@ -600,7 +577,7 @@ function TagsCell({
     return (
       <div className="flex h-full w-full items-center gap-1 overflow-hidden p-1">
         {value.map(tag => (
-          <Chip key={tag} size="sm" className={getTagColor(tag)}>
+          <Chip key={tag} size="sm">
             {tag}
           </Chip>
         ))}
@@ -620,7 +597,7 @@ function TagsCell({
         }}
         className="hover:bg-accent-soft flex h-full w-full cursor-text items-center gap-1 overflow-hidden p-1">
         {value.map(tag => (
-          <Chip key={tag} size="sm" className={getTagColor(tag)}>
+          <Chip key={tag} size="sm">
             {tag}
           </Chip>
         ))}
@@ -741,6 +718,15 @@ function DeferredSelect({
 
 const PUZZLE_STATUS_OPTIONS = getPuzzleStatusOptions();
 
+// No status yet: instead of "None" on every row, just room for the Select's muted chevron (which
+// sits over the value), so the statuses that matter stand out and the cell still reads as a picker.
+// "None" stays in the trigger's accessible name.
+const NO_STATUS = (
+  <span className="inline-block w-4">
+    <span className="sr-only">None</span>
+  </span>
+);
+
 function PuzzleStatusSelect({
   value,
   onChange,
@@ -756,7 +742,7 @@ function PuzzleStatusSelect({
       <DeferredSelect
         aria-label="Status"
         valueText={label}
-        value={label}
+        value={value === null ? NO_STATUS : label}
         triggerClassName={triggerClassName}>
         {deferred => (
           <Select
@@ -765,7 +751,11 @@ function PuzzleStatusSelect({
             value={value ?? NONE_KEY}
             onChange={key => onChange(fromKey(key))}>
             <Select.Trigger className={triggerClassName}>
-              <Select.Value />
+              <Select.Value>
+                {({state, defaultChildren}) =>
+                  state.selectedKey === NONE_KEY ? NO_STATUS : defaultChildren
+                }
+              </Select.Value>
               <Select.Indicator />
             </Select.Trigger>
             <Select.Popover>
@@ -1275,6 +1265,7 @@ function BlackboardPage() {
                 className="order-last -mx-2 flex min-w-0 basis-full [scrollbar-width:none] items-center gap-1.5 overflow-x-auto px-2 sm:order-none sm:mx-0 sm:flex-1 sm:basis-0 sm:px-0">
                 <ToggleButton
                   size="sm"
+                  variant="ghost"
                   className={FILTER_TOGGLE}
                   isSelected={hideSolved}
                   onChange={setHideSolved}>
@@ -1283,6 +1274,7 @@ function BlackboardPage() {
                 </ToggleButton>
                 <ToggleButton
                   size="sm"
+                  variant="ghost"
                   className={FILTER_TOGGLE}
                   isSelected={hideSolvedMetas}
                   onChange={setHideSolvedMetas}>
@@ -1291,6 +1283,7 @@ function BlackboardPage() {
                 </ToggleButton>
                 <ToggleButton
                   size="sm"
+                  variant="ghost"
                   className={FILTER_TOGGLE}
                   isSelected={onlyShowFavorites}
                   onChange={setOnlyShowFavorites}>
@@ -1299,6 +1292,7 @@ function BlackboardPage() {
                 </ToggleButton>
                 <ToggleButton
                   size="sm"
+                  variant="ghost"
                   className={FILTER_TOGGLE}
                   isSelected={hideObsolete}
                   onChange={setHideObsolete}>
@@ -1308,7 +1302,7 @@ function BlackboardPage() {
                 <Dropdown>
                   <Button
                     size="sm"
-                    variant="tertiary"
+                    variant="ghost"
                     className={cn("shrink-0", tags.length > 0 && FILTER_ON)}>
                     <TagIcon />
                     {tags.length > 0 ? `Tags · ${tags.length}` : "Tags"}
@@ -1348,7 +1342,7 @@ function BlackboardPage() {
                 <Dropdown>
                   <Button
                     size="sm"
-                    variant="tertiary"
+                    variant="ghost"
                     className={cn("shrink-0", importances.length > 0 && FILTER_ON)}>
                     <SignalIcon />
                     {importances.length > 0 ? `Importance · ${importances.length}` : "Importance"}
@@ -1420,6 +1414,7 @@ function BlackboardPage() {
                 <ToggleButton
                   data-tour="arrange"
                   size="sm"
+                  variant="ghost"
                   className={cn(FILTER_TOGGLE, "max-sm:hidden")}
                   isSelected={isArranging}
                   onChange={setIsArranging}>
@@ -1723,11 +1718,12 @@ const BlackboardRound = memo(function BlackboardRound({
       {/* Over the Answer column too. */}
       <Table.Cell colSpan={2} className={CELL} textValue={round.name}>
         {() => (
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex w-full min-w-0 items-center gap-2">
             {round.status === "solved" && <CheckIcon className="text-success size-3.5 shrink-0" />}
             <span className="text-foreground truncate text-sm font-semibold">{round.name}</span>
+            {/* Locked to the cell's right edge, so every round's progress lines up. */}
             {puzzleCount > 0 && (
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="ml-auto flex shrink-0 items-center gap-2">
                 <ProgressBar
                   key={round.id}
                   aria-label={`${round.name}: ${solvedCount} of ${puzzleCount} puzzles solved`}
@@ -1741,7 +1737,9 @@ const BlackboardRound = memo(function BlackboardRound({
                     <ProgressBar.Fill className="transition-[width] duration-700 ease-out motion-reduce:transition-none" />
                   </ProgressBar.Track>
                 </ProgressBar>
-                <span className="text-muted text-xs tabular-nums" aria-hidden="true">
+                <span
+                  className="text-muted min-w-[4ch] text-right text-xs tabular-nums"
+                  aria-hidden="true">
                   <NumberFlow key={round.id} value={solvedCount} />/{puzzleCount}
                 </span>
               </div>
@@ -1754,7 +1752,7 @@ const BlackboardRound = memo(function BlackboardRound({
           key={round.id}
           aria-label="Round status"
           valueText={round.status === "solved" ? "Solved" : "None"}
-          value={round.status === "solved" ? "Solved" : "None"}
+          value={round.status === "solved" ? "Solved" : NO_STATUS}
           triggerClassName={SELECT_TRIGGER_CLASS}>
           {deferred => (
             <Select
@@ -1763,7 +1761,11 @@ const BlackboardRound = memo(function BlackboardRound({
               value={round.status ?? NONE_KEY}
               onChange={value => onStatusChange(fromKey(value))}>
               <Select.Trigger className={SELECT_TRIGGER_CLASS}>
-                <Select.Value />
+                <Select.Value>
+                  {({state, defaultChildren}) =>
+                    state.selectedKey === NONE_KEY ? NO_STATUS : defaultChildren
+                  }
+                </Select.Value>
                 <Select.Indicator />
               </Select.Trigger>
               <Select.Popover>

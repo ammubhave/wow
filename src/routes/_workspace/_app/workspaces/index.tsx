@@ -298,7 +298,7 @@ function RouteComponent() {
         <Card className="lg:sticky lg:top-4">
           <Card.Header>
             <Card.Title className="flex items-center gap-2">
-              <LogInIcon className="text-accent size-4" aria-hidden="true" />
+              <LogInIcon className="text-muted size-4" aria-hidden="true" />
               Join a workspace
             </Card.Title>
           </Card.Header>
@@ -328,7 +328,7 @@ function RouteComponent() {
                     <field.PasswordField variant="secondary" label="Workspace password" />
                   )}
                 />
-                <form.SubmitButton fullWidth>
+                <form.SubmitButton fullWidth variant="secondary">
                   <ArrowRightIcon />
                   Join workspace
                 </form.SubmitButton>

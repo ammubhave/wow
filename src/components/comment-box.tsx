@@ -177,7 +177,8 @@ export function CommentBox({
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted w-full justify-start"
+          // Pulled out by the button's padding, so the pencil lines up with the heading above.
+          className="text-muted -mx-2.5 w-[calc(100%+1.25rem)] justify-start"
           onPress={startEditing}>
           <PencilIcon />
           Add a note…

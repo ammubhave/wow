@@ -195,6 +195,13 @@ export const DOC_PAGES: DocPage[] = [
     section: "During the hunt",
   },
   {
+    slug: "guides/chrome-extension",
+    title: "Chrome extension",
+    description:
+      "Your puzzle's details, chat and call beside the hunt's own page, and one-click adding of puzzles.",
+    section: "During the hunt",
+  },
+  {
     slug: "guides/phone",
     title: "WOW on your phone",
     description: "What changes on a small screen, and how to get around.",

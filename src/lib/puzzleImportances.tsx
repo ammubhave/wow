@@ -6,7 +6,7 @@ const puzzleImportances = [
     label: "Important",
     icon: <SignalIcon />,
     smallIcon: <SignalIcon className="inline py-1" />,
-    // Theme tokens: important stands out (accent), normal is the neutral fill, obsolete fades.
+    // Theme tokens: important stands out (accent); normal, the default, stays quiet; obsolete fades.
     color: "bg-accent-soft text-accent-soft-foreground",
   },
   {
@@ -14,7 +14,7 @@ const puzzleImportances = [
     label: "Normal",
     icon: <SignalHighIcon />,
     smallIcon: <SignalHighIcon className="inline py-1" />,
-    color: "bg-default text-default-foreground",
+    color: "text-muted",
   },
   {
     value: "obsolete",

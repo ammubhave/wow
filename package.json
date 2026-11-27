@@ -9,6 +9,10 @@
     "test": "vp test run",
     "test:unit": "vp test run --config vitest.unit.config.ts",
     "deploy": "wrangler deploy --env production",
+    "ext:dev": "wxt extension",
+    "ext:build": "wxt build extension",
+    "ext:zip": "wxt zip extension",
+    "ext:check": "wxt prepare extension && tsc -p extension --noEmit",
     "format": "vp fmt",
     "lint": "vp lint --type-check --type-aware",
     "postinstall": "concurrently 'wrangler types --strict-vars=false' 'pnpm auth:generate'",
@@ -24,6 +28,7 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.20",
+    "@better-auth/oauth-provider": "1.7.20",
     "@better-auth/passkey": "1.7.20",
     "@cloudflare/vite-plugin": "^1.68.0",
     "@excalidraw/excalidraw": "0.18.1",
@@ -90,6 +95,7 @@
     "github-slugger": "^2.0.0",
     "hono": "^4.13.17",
     "html-to-image": "^1.11.13",
+    "jose": "^6.2.17",
     "js-sha256": "^1.0.0",
     "lodash.throttle": "^4.1.1",
     "lucide-react": "^1.71.0",
@@ -144,6 +150,7 @@
     "@types/three": "^0.187.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "^6.3.0",
+    "@wxt-dev/module-react": "1.2.2",
     "auth": "1.7.20",
     "concurrently": "^10.0.7",
     "dotenv": "^18.0.10",
@@ -156,7 +163,8 @@
     "vite": "catalog:",
     "vite-plus": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.160.0"
+    "wrangler": "^4.160.0",
+    "wxt": "0.21.5"
   },
   "packageManager": "pnpm@12.8.1"
 }

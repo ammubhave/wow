@@ -10,6 +10,8 @@ import type {
 } from "react-use-websocket/dist/lib/types";
 import {useWebSocket as useWebSocketBase} from "react-use-websocket/dist/lib/use-websocket";
 
+import {apiSocketProtocols} from "./api-endpoint";
+
 /**
  * react-use-websocket, reconnecting with backoff for as long as it takes, and with its
  * `instanceof WebSocket` check off. Some browser extensions replace
@@ -26,7 +28,14 @@ export function useWebSocket<T = unknown>(
 ): WebSocketHook<T> {
   const socket = useWebSocketBase<T>(
     url,
-    {skipAssert: true, reconnectAttempts: Infinity, reconnectInterval, ...options},
+    {
+      skipAssert: true,
+      reconnectAttempts: Infinity,
+      reconnectInterval,
+      // Signs in with the extension's access token, if it has one (see api-endpoint.ts).
+      protocols: apiSocketProtocols(),
+      ...options,
+    },
     connect
   );
   // The library keys shared sockets by the URL as given (unless it rewrites it, as for these).

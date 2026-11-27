@@ -1,0 +1,15 @@
+/* The website's theme (HeroUI, the WOW colours and fonts), and Tailwind classes from the shared
+   components in ../src as well as the extension's own. */
+@import "../../src/styles.css";
+@source "../../src";
+@source "..";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

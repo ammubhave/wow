@@ -3,6 +3,8 @@
  * ones are shrunk first, the id is computed here, and the server checks it matches.
  */
 
+import {apiAuthHeaders} from "./api-endpoint";
+
 /** Shrinks an image to fit `maxBytes` (and `maxSide` pixels), keeping it legible. */
 async function fitImage(file: File, maxBytes: number, maxSide: number): Promise<Blob> {
   if (file.size <= maxBytes) return file;
@@ -30,7 +32,7 @@ export async function uploadImage(
   const id = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
   const response = await fetch(urlFor(id), {
     method: "PUT",
-    headers: {"Content-Type": blob.type},
+    headers: {"Content-Type": blob.type, ...apiAuthHeaders()},
     body: blob,
   });
   if (!response.ok) throw new Error("Couldn't upload the image.");

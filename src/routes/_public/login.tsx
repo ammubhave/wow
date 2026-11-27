@@ -18,6 +18,7 @@ import {authClient} from "@/lib/auth-client";
 import {
   authErrorMessage,
   keepRedirect,
+  leavesApp,
   loginSearch,
   socialSignInErrorMessage,
 } from "@/lib/auth-helpers";
@@ -30,7 +31,9 @@ export const Route = createFileRoute("/_public/login")({
   validateSearch: loginSearch,
   // Already signed in (e.g. another tab): go where the link was headed.
   beforeLoad: async ({search}) => {
-    if (await getSession("signed-out")) throw redirect({href: search.redirectTo});
+    if (await getSession("signed-out")) {
+      throw redirect({href: search.redirectTo, reloadDocument: leavesApp(search.redirectTo)});
+    }
   },
 });
 
@@ -43,7 +46,11 @@ function RouteComponent() {
   );
   const turnstileRef = useRef<TurnstileInstance>(null);
   // `href`, not `to`: redirectTo may carry a query string and hash (e.g. `?hunt=…`, `?view=chat`).
-  const onSignedIn = () => router.navigate({href: searchParams.redirectTo});
+  const onSignedIn = () =>
+    router.navigate({
+      href: searchParams.redirectTo,
+      reloadDocument: leavesApp(searchParams.redirectTo),
+    });
 
   const form = useAppForm({
     defaultValues: {email: "", password: "", token: ""},

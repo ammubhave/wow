@@ -10,7 +10,7 @@ import {Captcha, captchaHeaders} from "@/components/captcha";
 import {useAppForm} from "@/components/form";
 import {AuthSkeleton} from "@/components/page-skeletons";
 import {authClient} from "@/lib/auth-client";
-import {authErrorMessage, keepRedirect, redirectToSearch} from "@/lib/auth-helpers";
+import {authErrorMessage, keepRedirect, leavesApp, redirectToSearch} from "@/lib/auth-helpers";
 import {getSession} from "@/lib/session";
 
 export const Route = createFileRoute("/_public/signup")({
@@ -19,7 +19,9 @@ export const Route = createFileRoute("/_public/signup")({
   head: () => ({meta: [{title: "Sign up | WOW"}]}),
   validateSearch: redirectToSearch,
   beforeLoad: async ({search}) => {
-    if (await getSession("signed-out")) throw redirect({href: search.redirectTo});
+    if (await getSession("signed-out")) {
+      throw redirect({href: search.redirectTo, reloadDocument: leavesApp(search.redirectTo)});
+    }
   },
 });
 
@@ -47,7 +49,7 @@ function RouteComponent() {
           // Sign-up also signs in, so go straight on to where they were headed.
           onSuccess: async () => {
             toast.success("Welcome to WOW!");
-            await router.navigate({href: redirectTo});
+            await router.navigate({href: redirectTo, reloadDocument: leavesApp(redirectTo)});
           },
           onError: context => {
             turnstileRef.current?.reset();

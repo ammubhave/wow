@@ -85,6 +85,13 @@ const FILTER_SAVE_MS = 300;
 const COMPACT_TOOLBAR_WIDTH = 640;
 // After scrolling stops, how long until the new top-left cell is shared (for followers).
 const VIEW_SETTLE_MS = 250;
+/**
+ * Edits are confirmed by the room in a fraction of a second: a "Saving…" spinner flashing on every
+ * Enter made each edit look like it waited on the network. The status stays a quiet "Saved" while
+ * saves go through, and says "Saving…" only once one is slow enough to be worth noticing.
+ * (Whether an edit is saved is tracked exactly as before; this only decides what to show.)
+ */
+const SLOW_SAVE_MS = 1500;
 
 type Engine = {univer: Univer; api: FUniver; sync: SheetSync};
 
@@ -136,6 +143,14 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
   const [peers, setPeers] = useState<ReadonlyMap<string, SheetPeer>>(new Map());
   const [following, setFollowing] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // Whether unconfirmed edits have been waiting long enough to say so (see SLOW_SAVE_MS).
+  const [slowSave, setSlowSave] = useState(false);
+  useEffect(() => {
+    setSlowSave(false);
+    if (!pending) return undefined;
+    const timer = setTimeout(() => setSlowSave(true), SLOW_SAVE_MS);
+    return () => clearTimeout(timer);
+  }, [pending]);
   /** Bumped when cells move on screen (edits, resizing), to redraw the overlay. */
   const [layout, setLayout] = useState(0);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -400,7 +415,9 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
       }),
       univerAPI.addEvent(univerAPI.Event.CommandExecuted, event => {
         if (event.type !== CommandType.MUTATION) return;
-        redraw();
+        // The cell editor and formula bar are documents of their own: their keystrokes move no
+        // cell, so the overlays (presence, crossword) needn't re-render for them.
+        if (isForUnit(event.params, unitId)) redraw();
         const options = event.options;
         if (options?.fromCollab || options?.onlyLocal || options?.fromChangeset) return;
         // This person's filters: kept in their browser, not shared.
@@ -552,12 +569,12 @@ export default function SheetCanvas({puzzleId}: {puzzleId: string}) {
     ? "connecting"
     : readyState !== ReadyState.OPEN
       ? "offline"
-      : pending
+      : pending && slowSave
         ? "saving"
         : "saved";
 
   return (
-    <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
+    <div ref={containerRef} className="wow-sheet relative min-h-0 flex-1 overflow-hidden">
       {!shown && (
         <div className="absolute inset-0 z-10 flex">
           <SheetSkeleton />

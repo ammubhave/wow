@@ -1,6 +1,7 @@
 import {z} from "zod";
 
 import {joinPresence, leavePresence, setPresences} from "@/features/presences/presences";
+import {apiSocketUrl} from "@/lib/api-endpoint";
 import {useWebSocket} from "@/lib/use-websocket";
 import {useAppDispatch} from "@/store";
 
@@ -30,7 +31,7 @@ export function PresencesWebSocket({
   const dispatch = useAppDispatch();
   const params = new URLSearchParams({workspaceSlug});
   if (puzzleId) params.set("puzzleId", puzzleId);
-  useWebSocket(`/api/presence?${params}`, {
+  useWebSocket(apiSocketUrl(`/api/presence?${params}`), {
     share: false,
     shouldReconnect: () => true,
     // Dispatch straight from the message handler instead of mirroring `lastJsonMessage` through an

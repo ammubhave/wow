@@ -157,7 +157,7 @@ function StandingRow({
       <span className={cn("min-w-0 truncate", isMe && "font-semibold")}>
         {isMe ? "You" : user.name}
       </span>
-      <span className="text-muted ms-auto shrink-0 text-xs">{stat}</span>
+      <span className="text-muted ms-auto shrink-0 text-xs tabular-nums">{stat}</span>
     </li>
   );
 }

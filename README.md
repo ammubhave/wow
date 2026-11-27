@@ -70,6 +70,16 @@ pnpm lint
 pnpm build
 ```
 
+## Chrome Extension
+
+`extension/` is the WOW Chrome extension ([WXT](https://wxt.dev/) + React). It reuses the website's code (`@/` is `src/`): the oRPC client, the puzzle panel, chat, voice and presence. It signs in through WOW's OAuth provider (better-auth's OAuth 2.1 provider, `/api/auth/oauth2/*`) as a first-party public client, and calls the same API and websocket rooms with its access token instead of the session cookie (see `src/lib/extension.ts`, `src/lib/api-endpoint.ts` and `src/server/request-session.ts`).
+
+- `pnpm ext:dev` builds it against a local WOW (`WOW_ORIGIN`, default `http://localhost:3140`) and opens Chrome with it loaded.
+- `pnpm ext:build` builds it for production (`extension/.output/chrome-mv3`). `pnpm ext:zip` packs it for the Chrome Web Store.
+- `pnpm ext:check` type-checks it.
+
+The extension's ID is fixed by the public key in `extension/.pubkey`, whose private half is `extension/key.pem`. That file isn't committed: keep it safe, and include it as `key.pem` in the first upload to the Chrome Web Store so the listing keeps this ID. The ID is in the OAuth client's redirect URI (a migration) and in the server's trusted origins.
+
 ## Database Migrations
 
 Schema changes go through Drizzle migrations in `migrations/`:

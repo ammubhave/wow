@@ -1,11 +1,11 @@
 import {Hono} from "hono";
 import {createMiddleware} from "hono/factory";
 
-import {auth} from "@/lib/auth";
 import {type HonoEnv} from "@/server/context";
+import {getHeadersSession} from "@/server/request-session";
 
 export const authMiddleware = createMiddleware(async (c, next) => {
-  const session = await auth.api.getSession({headers: c.req.raw.headers});
+  const session = await getHeadersSession(c.req.raw.headers);
   if (session) {
     c.set("session", session);
   }

@@ -34,8 +34,7 @@ export function LookCard({workspaceSlug}: {workspaceSlug: string}) {
       <Card.Header>
         <Card.Title>Look</Card.Title>
         <Card.Description>
-          Give the workspace your hunt's colors: an accent color for buttons, progress and
-          highlights, and an emoji beside your team name.
+          The accent colors buttons, progress and highlights; the emoji sits beside your team name.
         </Card.Description>
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">
@@ -138,7 +137,7 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
       <Card.Header>
         <Card.Title>Custom emoji</Card.Title>
         <Card.Description>
-          Your own reaction emoji (an image and a name). Anyone in the workspace can add them.
+          Reaction emoji for your team. Anyone in the workspace can add them.
         </Card.Description>
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">

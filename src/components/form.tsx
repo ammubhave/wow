@@ -468,7 +468,9 @@ function SaveChangesButton({
       isPending={isSubmitting}
       isDisabled={isSubmitting || !isDirty}
       form={formId}
-      {...props}>
+      {...props}
+      // Nothing to save: a quiet button, so a page of forms has no bright Saves until one's needed.
+      variant={isDirty || isSubmitting ? props.variant : "secondary"}>
       {justSaved && !isDirty ? (
         <>
           <CheckIcon />

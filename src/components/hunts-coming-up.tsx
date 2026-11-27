@@ -20,6 +20,11 @@ const HOUR_MS = 60 * 60 * SECOND_MS;
 const DAY_MS = 24 * HOUR_MS;
 /** Closer than this, a timed hunt counts down to the second. */
 const COUNTDOWN_MS = 2 * DAY_MS;
+/**
+ * Closer than this, a hunt stands out like a live one: teams set their workspace up ahead of time,
+ * so a hunt a few weeks out is one to act on now. Further out, it stays quiet.
+ */
+const SOON_MS = 30 * DAY_MS;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -81,6 +86,7 @@ function LiveNow({color}: {color?: string}) {
 
 function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
   const isLive = hunt.startsAt.getTime() <= now;
+  const isSoon = !isLive && hunt.startsAt.getTime() - now < SOON_MS;
   const place = where(hunt);
   return (
     <SpotlightCard
@@ -94,7 +100,14 @@ function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
         {isLive ? (
           <LiveNow />
         ) : (
-          <span className="text-accent font-semibold tabular-nums">{startsIn(hunt, now)}</span>
+          <span
+            className={
+              isSoon
+                ? "text-accent font-semibold tabular-nums"
+                : "text-muted font-medium tabular-nums"
+            }>
+            {startsIn(hunt, now)}
+          </span>
         )}
       </div>
       <div className="flex min-w-0 flex-col gap-1">
@@ -110,7 +123,10 @@ function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
           search={{hunt: hunt.id, event: hunt.name}}
           aria-label={`Set up workspace: ${hunt.name}`}
           onClick={() => track("hunt_shortcut_clicked", {hunt: hunt.name, live: isLive})}
-          className={buttonVariants({size: "sm", variant: isLive ? "primary" : "secondary"})}>
+          className={buttonVariants({
+            size: "sm",
+            variant: isLive || isSoon ? "primary" : "secondary",
+          })}>
           <SparklesIcon />
           Set up workspace
         </Link>
@@ -211,13 +227,10 @@ export function HuntsComingUp() {
   if (!hunts || hunts.length === 0) return null;
   return (
     <section aria-labelledby="hunts-coming-up" className="flex flex-col gap-3">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2 id="hunts-coming-up" className="font-semibold tracking-tight">
-            Hunts coming up
-          </h2>
-          <p className="text-muted text-xs">Set one up for your team in a click.</p>
-        </div>
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 id="hunts-coming-up" className="font-semibold tracking-tight">
+          Hunts coming up
+        </h2>
         <Link
           to="/hunts"
           className="text-muted hover:text-foreground flex shrink-0 items-center gap-0.5 text-xs">

@@ -1,3 +1,4 @@
+import {oauthProviderClient} from "@better-auth/oauth-provider/client";
 import {passkeyClient} from "@better-auth/passkey/client";
 import {inferOrgAdditionalFields, lastLoginMethodClient} from "better-auth/client/plugins";
 import {organizationClient} from "better-auth/client/plugins";
@@ -12,5 +13,7 @@ export const authClient = createAuthClient({
     organizationClient({schema: inferOrgAdditionalFields<typeof auth>()}),
     passkeyClient(),
     lastLoginMethodClient(),
+    // The OAuth consent page (/oauth/consent).
+    oauthProviderClient(),
   ],
 });

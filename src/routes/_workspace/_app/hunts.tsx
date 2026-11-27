@@ -128,8 +128,11 @@ function HuntActions({hunt}: {hunt: Hunt}) {
   );
 }
 
-/** A hunt as a row: a date tile, its name and details, and what to do about it. */
-function HuntRow({hunt, now}: {hunt: Hunt; now: number}) {
+/**
+ * A hunt as a row: a date tile, its name and details, and what to do about it. In the list, the
+ * "Happening now" heading already says it's live, so the row leaves out its Live chip.
+ */
+function HuntRow({hunt, now, liveChip = true}: {hunt: Hunt; now: number; liveChip?: boolean}) {
   const isLive = hunt.startsAt.getTime() <= now && now < hunt.endsAt.getTime();
   const start = hunt.startsAt;
   const tz = hunt.allDay ? "UTC" : undefined;
@@ -152,7 +155,7 @@ function HuntRow({hunt, now}: {hunt: Hunt; now: number}) {
       <div className="flex min-w-0 flex-1 basis-48 flex-col gap-0.5 sm:basis-auto">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate font-semibold">{hunt.name}</span>
-          {isLive && (
+          {isLive && liveChip && (
             <Chip size="sm" color="success" variant="soft">
               Live
             </Chip>
@@ -202,7 +205,7 @@ function ListView({hunts, now}: {hunts: Hunt[]; now: number}) {
             </h2>
             <Card className="divide-separator gap-0 divide-y p-0">
               {group.hunts.map(hunt => (
-                <HuntRow key={hunt.id} hunt={hunt} now={now} />
+                <HuntRow key={hunt.id} hunt={hunt} now={now} liveChip={false} />
               ))}
             </Card>
           </section>
@@ -219,9 +222,9 @@ const PER_DAY = 3;
 /** Longer than this, a hunt (a months-long trail, say) goes above the grid, not in every day. */
 const LONG_RUNNING_DAYS = 14;
 
-/** Its pill colours: online (or online too) in the accent, in person only in teal. */
+/** Its pill colours (theme tokens): online (or online too) in the accent, in person only neutral. */
 const pillTone = (hunt: Hunt) =>
-  hunt.isOnline ? "bg-accent/20 text-accent" : "bg-teal-500/20 text-teal-700 dark:text-teal-300";
+  hunt.isOnline ? "bg-accent/20 text-accent" : "bg-default text-default-foreground";
 
 /** A month grid: each day lists the hunts running then; pick one to see it below. */
 function CalendarView({month, hunts, now}: {month: Date; hunts: Hunt[] | undefined; now: number}) {
@@ -334,7 +337,7 @@ function CalendarView({month, hunts, now}: {month: Date; hunts: Hunt[] | undefin
           Online (or online too)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-teal-500/40" aria-hidden="true" />
+          <span className="bg-default size-2.5 rounded-sm" aria-hidden="true" />
           In person only
         </span>
         {!hunts && <span>Loading…</span>}

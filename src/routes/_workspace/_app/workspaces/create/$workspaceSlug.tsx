@@ -27,18 +27,18 @@ function RouteComponentInner() {
     <Page title="Set up your workspace">
       <div className={cn(READING_WIDTH, "flex flex-col gap-4")}>
         {/* The workspace exists: the next steps come first, the optional extras after. */}
-        <Card>
-          <Card.Header>
-            <Card.Title className="flex items-center gap-2">
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <h2 className="flex items-center gap-2 font-semibold">
               <PartyPopperIcon className="text-accent size-4" aria-hidden="true" />
               Your workspace is ready
-            </Card.Title>
-            <Card.Description>
+            </h2>
+            <p className="text-muted text-sm">
               Open the blackboard to add your first round (a short tour shows you around), and
               invite your team by email or with the link and password.
-            </Card.Description>
-          </Card.Header>
-          <Card.Footer className="flex-wrap gap-3">
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
             <Link
               to="/$workspaceSlug"
               params={{workspaceSlug}}
@@ -53,8 +53,8 @@ function RouteComponentInner() {
               <MailIcon />
               Invite your team
             </Link>
-          </Card.Footer>
-        </Card>
+          </div>
+        </section>
         <h2 className="text-muted mt-4 text-xs font-medium tracking-wide uppercase">
           Your team's tools
         </h2>

@@ -1,9 +1,10 @@
 import {drizzleAdapter} from "@better-auth/drizzle-adapter/relations-v2";
+import {oauthProvider} from "@better-auth/oauth-provider";
 import {passkey} from "@better-auth/passkey";
 import {APIError} from "better-auth/api";
 import {betterAuth} from "better-auth/minimal";
 import {organization} from "better-auth/plugins";
-import {captcha, lastLoginMethod} from "better-auth/plugins";
+import {captcha, jwt, lastLoginMethod} from "better-auth/plugins";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {and, eq, isNotNull, sql} from "drizzle-orm";
 import {z} from "zod";
@@ -14,6 +15,7 @@ import {trackServerEvent} from "../server/posthog";
 import {authRateLimit} from "./auth-rate-limit";
 import {db} from "./db";
 import * as schema from "./db/schema";
+import {EXTENSION_CLIENT_ID, EXTENSION_ID} from "./extension";
 import {newTourState} from "./tour-state";
 import {workspaceSlugProblem} from "./workspace-slug";
 
@@ -138,7 +140,11 @@ export const auth = betterAuth({
   trustedOrigins: [
     "https://www.wafflehaus.io",
     ...(import.meta.env?.DEV ? ["http://localhost:*"] : ["http://localhost:3000"]),
+    // The Chrome extension, which exchanges and refreshes its OAuth tokens from its own pages.
+    `chrome-extension://${EXTENSION_ID}`,
   ],
+  // The JWT plugin's own session-token endpoint: unused (the OAuth provider issues the tokens).
+  disabledPaths: ["/token"],
   plugins: [
     // Passkeys are bound to the registrable domain, so one works on www.wafflehaus.io and the apex.
     passkey({rpID: import.meta.env?.DEV ? "localhost" : "wafflehaus.io", rpName: "WOW"}),
@@ -298,6 +304,23 @@ export const auth = betterAuth({
           },
         },
       },
+    }),
+    // Signs the OAuth provider's access tokens (JWTs for API_RESOURCE), verified in-process by
+    // src/server/request-session.ts. No JWT header on ordinary session requests.
+    jwt({disableSettingJwtHeader: true}),
+    // OAuth 2.1 provider, for first-party clients: the Chrome extension (src/lib/extension.ts).
+    // A migration registers it, and the API (API_RESOURCE) as the resource its tokens are for,
+    // rather than the `resources` option, which seeds at startup: I/O a Worker can't do there.
+    // /oauth/login sends someone not signed in to the login page and back; the extension skips
+    // the consent page, which is here for any other client.
+    oauthProvider({
+      loginPage: "/oauth/login",
+      consentPage: "/oauth/consent",
+      // Clients and resources only come from migrations: nobody registers, edits or lists them
+      // through the API (by default any signed-in user could create clients).
+      clientPrivileges: () => false,
+      resourcePrivileges: () => false,
+      cachedTrustedClients: new Set([EXTENSION_CLIENT_ID]),
     }),
     tanstackStartCookies(),
   ],

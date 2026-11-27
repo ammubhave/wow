@@ -1,0 +1,15 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "types": ["vite-plus/client", "../worker-configuration.d.ts"],
+    "paths": {"@/*": ["../src/*"]},
+    "verbatimModuleSyntax": false,
+    "noImplicitOverride": false
+  }
+}

@@ -131,15 +131,18 @@ async function tellOwners(
     .where(and(eq(schema.member.organizationId, workspaceId), eq(schema.member.role, "owner")))
     .all();
   if (owners.length === 0) return;
-  await env.NOTIFICATION_ROOMS.getByName(workspaceId, {locationHint: "enam"}).broadcast({
-    type: "driveShareFailed",
-    access,
-    toUserIds: owners.map(owner => owner.id),
-    member: {id: userId, name, email},
-    folderId,
-    detail: outcome.detail,
-    ...(outcome.blockingFileId ? {blockingFileId: outcome.blockingFileId} : {}),
-  });
+  await env.NOTIFICATION_ROOMS.getByName(workspaceId, {locationHint: "enam"}).broadcast(
+    workspaceId,
+    {
+      type: "driveShareFailed",
+      access,
+      toUserIds: owners.map(owner => owner.id),
+      member: {id: userId, name, email},
+      folderId,
+      detail: outcome.detail,
+      ...(outcome.blockingFileId ? {blockingFileId: outcome.blockingFileId} : {}),
+    }
+  );
 }
 
 /**

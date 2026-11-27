@@ -1,9 +1,9 @@
 import {and, eq, getColumns} from "drizzle-orm";
 
-import {auth} from "@/lib/auth";
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
+import {getHeadersSession} from "./request-session";
 import {recordRequest} from "./usage";
 
 // Every organization column except the server-only Google OAuth credentials.
@@ -189,10 +189,7 @@ const isWebSocketUpgrade = (request: Request) =>
  * some ordinary request refreshed the cookie.
  */
 export function getRequestSession(request: Request) {
-  return auth.api.getSession({
-    headers: request.headers,
-    query: isWebSocketUpgrade(request) ? {disableCookieCache: true, disableRefresh: true} : {},
-  });
+  return getHeadersSession(request.headers, {fresh: isWebSocketUpgrade(request)});
 }
 
 /** Whether `puzzleId` belongs to a round of `workspaceId`. */

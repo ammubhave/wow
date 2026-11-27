@@ -125,7 +125,7 @@ function Features() {
       <ul className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map(({Icon, title, text}) => (
           <li key={title} className="flex gap-4">
-            <span className="bg-accent/15 text-accent flex size-10 shrink-0 items-center justify-center">
+            <span className="bg-default text-foreground flex size-10 shrink-0 items-center justify-center">
               <Icon className="size-5" aria-hidden="true" />
             </span>
             <div className="flex flex-col gap-1">

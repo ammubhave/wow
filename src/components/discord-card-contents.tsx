@@ -94,7 +94,7 @@ export function DiscordSetup({
               <Stepper.Description>
                 {discordInfo.data?.ok === true ? (
                   <>
-                    You're successfully connected to Discord. Server Name:{" "}
+                    Connected to{" "}
                     <Link
                       href={`https://discord.com/channels/${discordInfo.data.data?.id}`}
                       target="_blank"

@@ -1,4 +1,4 @@
-import {Avatar, Button, ScrollShadow, SearchField, Skeleton, Tooltip} from "@heroui/react";
+import {Avatar, Button, ScrollShadow, SearchField, Skeleton} from "@heroui/react";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
 import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
@@ -98,7 +98,7 @@ function RouteComponent() {
           name="inbox-search"
           value={search}
           onChange={setSearch}
-          className="px-1">
+          className="px-2">
           <SearchField.Group>
             <SearchField.SearchIcon />
             <SearchField.Input placeholder="Search…" />
@@ -107,7 +107,12 @@ function RouteComponent() {
         </SearchField>
         <ScrollShadow hideScrollBar className="min-h-0 flex-1 overflow-y-auto">
           {shown.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+            // With nothing to search, the reading pane beside it says the same on wide screens.
+            <div
+              className={cn(
+                "flex flex-col items-center gap-2 px-6 py-10 text-center",
+                !query && "lg:hidden"
+              )}>
               <p className="text-sm font-medium">
                 {query ? "No matching emails" : "No emails yet"}
               </p>
@@ -170,18 +175,14 @@ function AddressLine({workspaceSlug}: {workspaceSlug: string}) {
   return (
     <div className="text-muted flex min-w-0 items-center gap-1 text-xs">
       <span className="truncate select-all">{address}</span>
-      <Tooltip delay={300}>
-        <Button
-          size="sm"
-          isIconOnly
-          variant="ghost"
-          aria-label="Copy the email address"
-          className="size-6 min-w-6"
-          onPress={() => void copyAddress(address)}>
-          <CopyIcon className="size-3.5" />
-        </Button>
-        <Tooltip.Content>Copy the email address</Tooltip.Content>
-      </Tooltip>
+      <IconButton
+        size="sm"
+        variant="ghost"
+        label="Copy the email address"
+        className="size-6 min-w-6"
+        onPress={() => void copyAddress(address)}>
+        <CopyIcon className="size-3.5" />
+      </IconButton>
     </div>
   );
 }
@@ -213,7 +214,7 @@ function EmailListItem({
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex items-center justify-between gap-2">
             <span className="truncate text-sm leading-tight font-medium">{name}</span>
-            <span className="text-muted flex shrink-0 items-center gap-1.5 text-xs leading-tight whitespace-nowrap">
+            <span className="text-muted flex shrink-0 items-center gap-1.5 text-xs leading-tight whitespace-nowrap tabular-nums">
               {email.hasAttachments && (
                 <PaperclipIcon className="size-3.5" aria-label="Has attachments" />
               )}
@@ -240,7 +241,6 @@ function NothingOpen({workspaceSlug, hasEmails}: {workspaceSlug: string; hasEmai
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-semibold">{hasEmails ? "Nothing open" : "No emails yet"}</h2>
         <p className="text-muted max-w-[360px] text-sm">
-          {hasEmails && "Pick an email to read it here. "}
           Emails to <span className="text-foreground font-medium">{address}</span> land in this
           inbox, and everyone in the workspace gets a notification. Give it to the hunt as your
           team's contact email.
@@ -511,7 +511,7 @@ function EmailDetail({
                     )}
                   </div>
                 </div>
-                <span className="text-muted shrink-0 text-xs whitespace-nowrap">
+                <span className="text-muted shrink-0 text-xs whitespace-nowrap tabular-nums">
                   {format.dateTime(data.receivedAt, {dateStyle: "medium", timeStyle: "short"})}
                 </span>
               </div>
@@ -568,7 +568,7 @@ function InboxSkeleton() {
             <Skeleton className="h-3 w-44" />
           </div>
         </div>
-        <div className="px-1">
+        <div className="px-2">
           <Skeleton className="h-9 w-full" />
         </div>
         <ul className="flex flex-col gap-0.5">

@@ -47,7 +47,7 @@ export function TeammateChangeFlash({puzzleId}: {puzzleId: string}) {
       />
       <span
         key={`${change.id}-who`}
-        className="animate-teammate-badge pointer-events-none absolute end-1 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-full bg-black/60 py-0.5 ps-0.5 pe-2 text-[10px] text-white"
+        className="animate-teammate-badge bg-foreground/80 text-background pointer-events-none absolute end-1 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-full py-0.5 ps-0.5 pe-2 text-[10px]"
         aria-live="polite">
         <Avatar size="sm" className="size-4 text-[7px]">
           <Avatar.Image src={userAvatarSrc(change.user)} alt="" />

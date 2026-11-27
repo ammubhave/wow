@@ -15,6 +15,12 @@ export const redirectToSearch = z.object({
     ),
 });
 
+/**
+ * Whether `redirectTo` is a server path rather than a page: the OAuth authorization endpoint, which
+ * /oauth/login sends people back to after signing in. The router can't go there, the browser must.
+ */
+export const leavesApp = (redirectTo: string) => redirectTo.startsWith("/api/");
+
 /** Passes `redirectTo` on to another auth page's link, leaving the default out of the URL. */
 export function keepRedirect(redirectTo: string) {
   return redirectTo === "/workspaces" ? {} : {redirectTo};
