@@ -13,7 +13,7 @@ import {
   PuzzleIcon,
   UserCogIcon,
   SettingsIcon,
-  TrophyIcon,
+  ChartColumnIcon,
 } from "lucide-react";
 import {useEffect, useState} from "react";
 
@@ -166,13 +166,13 @@ export function WorkspaceCommandDialog({workspaceSlug}: {workspaceSlug: string})
                   <span>Blackboard</span>
                 </Command.Item>
                 <Command.Item
-                  textValue="Leaderboard recap standings awards"
+                  textValue="Stats leaderboard recap standings awards solve rate"
                   onAction={() => {
                     void navigate({to: "/$workspaceSlug/recap", params: {workspaceSlug}});
                     setOpen(false);
                   }}>
-                  <TrophyIcon />
-                  <span>Leaderboard</span>
+                  <ChartColumnIcon />
+                  <span>Stats</span>
                 </Command.Item>
                 <Command.Item
                   textValue="Settings"

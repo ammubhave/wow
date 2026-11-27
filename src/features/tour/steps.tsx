@@ -280,7 +280,7 @@ const wrapUp = (kind: TourKind): TourStep => ({
     ].map(item => item.name);
     return (
       <>
-        These tabs lead to the <B>Leaderboard</B>, the <B>Activity log</B>,{" "}
+        These tabs lead to <B>Stats</B>, the <B>Activity log</B>,{" "}
         {kind === "captain" ? (
           <>
             <B>Settings</B> (copy the invitation link for your team, connect Google Drive or
@@ -409,7 +409,7 @@ const CAPTAIN: TourStep[] = [
     title: "The rest of the workspace",
     body: () => (
       <>
-        These tabs switch between the blackboard, the <B>Leaderboard</B>, the <B>Activity log</B>,{" "}
+        These tabs switch between the blackboard, <B>Stats</B>, the <B>Activity log</B>,{" "}
         <B>Settings</B> and <B>Help</B>. The puzzle you last opened sits at the end, one click away.
       </>
     ),

@@ -1,6 +1,6 @@
 import leaderboardImage from "../../images/leaderboard.webp";
 
-The **Leaderboard** tab (the trophy icon in the workspace header) celebrates the people behind your team's hunt. While the hunt is on, it's a live race for a set of fun awards. Once the hunt ends, the same page becomes the recap, with final standings and a card you can save and share.
+The **Stats** tab (the bar chart icon in the workspace header) shows how your team's hunt is going and celebrates the people behind it. It has the team's pace (how fast puzzles get solved, and how long they take), and a leaderboard: while the hunt is on, a live race for a set of fun awards. Once the hunt ends, the same page becomes the recap, with final standings and a card you can save and share.
 
 ## Live leaderboard or recap
 
@@ -12,12 +12,12 @@ Which one you see depends on the hunt's dates in <UiPath path="Settings > Genera
   caption="During the hunt: the race for every award, updated every minute."
 />
 
-| When                             | Page title                                  | What you see                                                                  |
-| -------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------- |
-| Between the hunt's start and end | **Leaderboard**, with a green **Live** chip | "The race so far", updating every minute, then your hunt, then the team card  |
-| After the end time               | **Leaderboard**                             | The team card first, then your hunt, then "Final standings"                   |
-| Before the start time            | **Leaderboard**                             | The same layout as after the hunt. Most awards will still say "Up for grabs." |
-| No dates set                     | **Leaderboard**, with **Live**              | Live standings, all the time                                                  |
+| When                             | Page title                            | What you see                                                                                  |
+| -------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Between the hunt's start and end | **Stats**, with a green **Live** chip | Team stats, then "The race so far", updating every minute, then your hunt, then the team card |
+| After the end time               | **Stats**                             | The team card first, then team stats, your hunt and "Final standings"                         |
+| Before the start time            | **Stats**                             | The same layout as after the hunt. Most awards will still say "Up for grabs."                 |
+| No dates set                     | **Stats**, with **Live**              | Live standings, all the time                                                                  |
 
 The page decides when you open it, so if the hunt ends while you're looking at the live leaderboard, reload to see the recap.
 
@@ -27,7 +27,32 @@ The page decides when you open it, so if the hunt ends while you're looking at t
   <UiPath path="Settings > General > Details" />.
 </Callout>
 
-You can also reach the page from the **Leaderboard** button at the top of the [activity log](/docs/guides/activity-log).
+You can also reach the page from the **Stats** button at the top of the [activity log](/docs/guides/activity-log).
+
+## Team stats
+
+**Team stats** is about the whole team's pace, not any one person.
+
+| Stat                     | What it shows                                                                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Solves an hour**       | Puzzles solved per hour since the hunt started (or since the first puzzle was added, without a start time). During the hunt, also the last 3 hours' rate. |
+| **Median time to solve** | The typical time from a puzzle being added to WOW to it being solved. Backsolves are left out, since they say little about how long a puzzle takes.       |
+| **Solved**               | Solved out of all puzzles on the board, split into forward solves and backsolves.                                                                         |
+| **Still open**           | Puzzles on the board that aren't solved yet.                                                                                                              |
+
+Under the numbers, a chart shows puzzles **unlocked** and **solved** over the hunt. The gap between the two lines is the work still open: when it widens, the team has more puzzles than it's keeping up with. Hover the chart for the counts at any moment.
+
+Below that:
+
+- **Quickest solves** and **Longest solves**: the five fastest and slowest forward solves, timed from when each puzzle was added. Hover a time to see when the puzzle was added and solved.
+- **Metas, in the order solved**, with how long each took.
+- **By round**: each round's solved count and its median time to solve.
+
+<Callout type="note">
+  WOW counts a puzzle as unlocked when it's added to the board, so times are only as good as how
+  quickly puzzles get added. Puzzles added before WOW kept a history, and solves since undone, are
+  left out of the times.
+</Callout>
 
 ## The awards
 

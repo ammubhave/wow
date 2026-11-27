@@ -21,7 +21,7 @@ import {
   KeyRoundIcon,
   LogInIcon,
   OctagonAlertIcon,
-  TrophyIcon,
+  ChartColumnIcon,
   PlusIcon,
   SignalIcon,
   TrashIcon,
@@ -510,8 +510,8 @@ export function ActivityFeed() {
             to="/$workspaceSlug/recap"
             params={{workspaceSlug}}
             className={buttonVariants({variant: "secondary"})}>
-            <TrophyIcon />
-            Leaderboard
+            <ChartColumnIcon />
+            Stats
           </Link>
           <Dropdown>
             <Button variant="outline">

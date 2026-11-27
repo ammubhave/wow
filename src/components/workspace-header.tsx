@@ -2,6 +2,7 @@ import {Navbar} from "@heroui-pro/react";
 import {Tabs, Tooltip} from "@heroui/react";
 import {Link, useChildMatches} from "@tanstack/react-router";
 import {
+  ChartColumnIcon,
   ExternalLinkIcon,
   HistoryIcon,
   InboxIcon,
@@ -9,7 +10,6 @@ import {
   PuzzleIcon,
   SettingsIcon,
   TableIcon,
-  TrophyIcon,
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
@@ -40,8 +40,8 @@ const SECTIONS = [
   },
   // Emails to the workspace's contact address.
   {routeId: "/$workspaceSlug/inbox", path: "/inbox", label: "Inbox", Icon: InboxIcon},
-  // The awards race: live standings during the hunt, the recap after.
-  {routeId: "/$workspaceSlug/recap", path: "/recap", label: "Leaderboard", Icon: TrophyIcon},
+  // The team's pace and the awards race: live during the hunt, the recap after.
+  {routeId: "/$workspaceSlug/recap", path: "/recap", label: "Stats", Icon: ChartColumnIcon},
   {routeId: "/$workspaceSlug/help", path: "/help", label: "Help", Icon: InfoIcon},
 ] as const;
 

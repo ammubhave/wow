@@ -203,8 +203,9 @@ export const DOC_PAGES: DocPage[] = [
   // After the hunt
   {
     slug: "guides/leaderboard",
-    title: "Leaderboard and recap",
-    description: "Live standings during the hunt, awards, and a shareable recap card afterwards.",
+    title: "Stats and leaderboard",
+    description:
+      "The team's solve rate and times, live standings and awards, and a shareable recap card afterwards.",
     section: "After the hunt",
   },
   {

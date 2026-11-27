@@ -7,12 +7,15 @@ import {DownloadIcon, HeartIcon, XIcon} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
+import {useNow} from "use-intl";
 
 import {IconButton} from "@/components/icon-button";
 import {Page, READING_WIDTH} from "@/components/page";
+import {TeamStatsSection} from "@/components/team-stats";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {HelpLink} from "@/docs/components/help-link";
 import {computeRecap, HOUR, isSolve, type Standing, type User} from "@/features/awards/compute";
+import {computeTeamStats} from "@/features/awards/team-stats";
 import {formatPuzzleTime, useMyPuzzleTimes} from "@/hooks/use-puzzle-time";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
@@ -22,7 +25,7 @@ import {SUPPORT_URL, trackSupportClick} from "@/lib/support";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/recap")({
   component: RouteComponent,
-  head: () => ({meta: [{title: "Leaderboard | WOW"}]}),
+  head: () => ({meta: [{title: "Stats | WOW"}]}),
 });
 
 function formatSpan(ms: number) {
@@ -228,11 +231,13 @@ function RouteComponent() {
   const cardRef = useRef<HTMLDivElement>(null);
   // During the hunt (not before it starts, nor after it ends) this is a live leaderboard.
   const [now] = useState(() => Date.now());
+  // The team stats' "now" (rates, the chart's end): moves on each minute, with the live refresh.
+  const statsNow = useNow({updateInterval: LIVE_REFRESH_MS}).getTime();
   const isOver = Boolean(workspace.huntEndsAt && now >= new Date(workspace.huntEndsAt).getTime());
   const isLive =
     !isOver && !(workspace.huntStartsAt && now < new Date(workspace.huntStartsAt).getTime());
-  // Always "Leaderboard", like its tab (after the hunt it also has the recap card to share).
-  const pageTitle = "Leaderboard";
+  // Always "Stats", like its tab: the team's pace, the awards race and (after the hunt) the recap.
+  const pageTitle = "Stats";
   const {data} = useQuery({
     ...orpc.workspaces.recap.queryOptions({input: {workspaceSlug}}),
     refetchInterval: isLive ? LIVE_REFRESH_MS : false,
@@ -253,6 +258,16 @@ function RouteComponent() {
     );
   }
   const recap = computeRecap(data, solvedNow, metaIds);
+  const teamStats = computeTeamStats({
+    events: data.events,
+    puzzles: workspace.rounds.flatMap(round =>
+      round.puzzles.map(puzzle => ({...puzzle, roundId: round.id}))
+    ),
+    rounds: workspace.rounds,
+    huntStartsAt: workspace.huntStartsAt ? new Date(workspace.huntStartsAt).getTime() : null,
+    huntEndsAt: workspace.huntEndsAt ? new Date(workspace.huntEndsAt).getTime() : null,
+    now: statsNow,
+  });
   const you = recap.you(me);
   const puzzleNames = new Map(puzzles.map(p => [p.id, p.name]));
   // Most time first (as the server sorts them), skipping deleted puzzles.
@@ -407,6 +422,9 @@ function RouteComponent() {
       )}
     </>
   );
+  const teamStatsSection = (
+    <TeamStatsSection stats={teamStats} workspaceSlug={workspaceSlug} isLive={isLive} />
+  );
   const standings = (
     <Standings standings={recap.standings} me={me} isLive={isLive} isOver={isOver} />
   );
@@ -443,6 +461,7 @@ function RouteComponent() {
       <div className={cn(READING_WIDTH, "flex flex-col gap-6")}>
         {isLive ? (
           <>
+            {teamStatsSection}
             {standings}
             {yourHunt}
             {card}
@@ -452,6 +471,7 @@ function RouteComponent() {
           <>
             {card}
             {askForSupport && support}
+            {teamStatsSection}
             {yourHunt}
             {standings}
           </>
