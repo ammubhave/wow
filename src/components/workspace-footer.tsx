@@ -22,7 +22,7 @@ export function WorkspaceFooter() {
         {/* No room on phones for the latest activity (the Activity log is in the menu). */}
         <div className="hidden flex-1 items-center justify-end overflow-hidden md:flex">
           {workspace.activityLogEntries[0] && (
-            <div className="flex items-center overflow-hidden px-3">
+            <div className="flex min-w-0 items-center overflow-hidden px-3">
               <Link
                 className={buttonVariants({variant: "ghost"})}
                 to="/$workspaceSlug/activity-log"
@@ -31,6 +31,7 @@ export function WorkspaceFooter() {
               </Link>
               <ActivityLogItem
                 relativeTime
+                truncate
                 showIcon={false}
                 activityItem={workspace.activityLogEntries[0]}
               />

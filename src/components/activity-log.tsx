@@ -7,7 +7,7 @@ import {
   OctagonAlertIcon,
   PuzzleIcon,
 } from "lucide-react";
-import {memo} from "react";
+import {memo, useState} from "react";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
@@ -35,15 +35,21 @@ export const ActivityLogItem = memo(function ActivityLogItem({
   activityItem,
   showIcon = true,
   relativeTime = false,
+  truncate = false,
 }: {
   activityItem: WorkspaceRoomState["activityLogEntries"][0];
   showIcon?: boolean;
   relativeTime?: boolean;
+  /** On one line, cut off with "…" when it doesn't fit, and shown in full on hover. */
+  truncate?: boolean;
 }) {
   const {workspaceSlug} = useParams({from: "/_workspace/$workspaceSlug"});
   const format = useFormatter();
+  // The whole sentence, as a native tooltip, only while it's cut off. (A tooltip component would
+  // wrap the text's own links and name card in a button.)
+  const [fullText, setFullText] = useState<string>();
   return (
-    <div className="flex items-center gap-x-4">
+    <div className={cn("flex items-center gap-x-4", truncate && "min-w-0")}>
       {showIcon && (
         <div className="relative flex size-6 flex-none items-center justify-center">
           <div
@@ -91,7 +97,19 @@ export const ActivityLogItem = memo(function ActivityLogItem({
           </div>
         </div>
       )}
-      <p className="text-muted flex-auto py-0.5 text-xs/5">
+      <p
+        className={cn("text-muted flex-auto py-0.5 text-xs/5", truncate && "min-w-0 truncate")}
+        title={truncate ? fullText : undefined}
+        onPointerEnter={
+          truncate
+            ? event => {
+                const text = event.currentTarget;
+                setFullText(
+                  text.scrollWidth > text.clientWidth ? text.textContent.trim() : undefined
+                );
+              }
+            : undefined
+        }>
         {activityItem.user && (
           <UserHoverCard user={activityItem.user}>
             <span className="hover:text-muted text-foreground cursor-default font-medium">
