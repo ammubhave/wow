@@ -14,7 +14,6 @@ import {
 import {useMutation} from "@tanstack/react-query";
 import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
-  BrushIcon,
   ChevronRightIcon,
   CopyIcon,
   EditIcon,
@@ -76,14 +75,9 @@ export const Route = createFileRoute("/_workspace/$workspaceSlug/puzzles/$puzzle
   },
 });
 
-/** The puzzle's Google file (its sheet, or else its drawing), without the editor or preview part. */
-const googleFileUrl = (puzzle: {
-  googleSpreadsheetId: string | null;
-  googleDrawingId: string | null;
-}) =>
-  puzzle.googleSpreadsheetId
-    ? `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}`
-    : `https://docs.google.com/drawings/d/${puzzle.googleDrawingId}`;
+/** The puzzle's Google Sheet, without the editor or preview part. */
+const googleFileUrl = (puzzle: {googleSpreadsheetId: string | null}) =>
+  `https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}`;
 
 function RouteComponent() {
   const {workspaceSlug, puzzleId} = Route.useParams();
@@ -158,7 +152,6 @@ function PuzzleInfoPanel({
     name: string;
     link: string | null;
     googleSpreadsheetId: string | null;
-    googleDrawingId: string | null;
     answer: string | null;
     answerCount: number;
     status: string | null;
@@ -231,13 +224,6 @@ function PuzzleInfoPanel({
             href={`https://docs.google.com/spreadsheets/d/${puzzle.googleSpreadsheetId}/${isReadOnly ? "preview" : "edit"}`}
             label="Open spreadsheet in a new tab"
             icon={<TableIcon />}
-          />
-        )}
-        {puzzle.googleDrawingId && (
-          <PanelLink
-            href={`https://docs.google.com/drawings/d/${puzzle.googleDrawingId}/${isReadOnly ? "preview" : "edit"}`}
-            label="Open drawing in a new tab"
-            icon={<BrushIcon />}
           />
         )}
         <Dropdown>
@@ -752,7 +738,7 @@ function PanelLink({href, label, icon}: {href: string; label: string; icon: Reac
 
 /**
  * The puzzle's working surface: its sheet and a shared whiteboard, switched from a tab bar. The
- * sheet is the puzzle's Google sheet (or drawing) if it has one; otherwise it's the built-in
+ * sheet is the puzzle's Google Sheet if it has one; otherwise it's the built-in
  * spreadsheet. Both stay mounted once opened, so
  * switching never reloads the sheet; the whiteboard only loads (and connects) when first opened.
  */
@@ -765,7 +751,6 @@ function WorksheetPane({
     name: string;
     link: string | null;
     googleSpreadsheetId: string | null;
-    googleDrawingId: string | null;
     googleFileJob: GoogleFileJob | null;
   };
   /** On phones, chat and the details panel become tabs here too. */
@@ -773,9 +758,9 @@ function WorksheetPane({
 }) {
   const navigate = useNavigate({from: Route.fullPath});
   const isReadOnly = useIsReadOnly();
-  // A Google sheet (or drawing) made for this puzzle is shown even if the workspace has since
+  // A Google Sheet made for this puzzle is shown even if the workspace has since
   // disconnected Drive (it still opens for anyone with access); other puzzles get the built-in one.
-  const googleWorksheet = Boolean(puzzle.googleSpreadsheetId || puzzle.googleDrawingId);
+  const googleWorksheet = Boolean(puzzle.googleSpreadsheetId);
   const defaultView = "sheet";
   const requested = Route.useSearch().view ?? defaultView;
   // Chat and details are only views on phones; a phone link opened on desktop shows the sheet.
@@ -783,10 +768,6 @@ function WorksheetPane({
   // Mount the whiteboard the first time it's shown, then keep it (and its connection) around.
   const [whiteboardOpened, setWhiteboardOpened] = useState(view === "whiteboard");
   if (view === "whiteboard" && !whiteboardOpened) setWhiteboardOpened(true);
-  const isDrawing = googleWorksheet
-    ? Boolean(puzzle.googleDrawingId && !puzzle.googleSpreadsheetId)
-    : puzzle.googleFileJob?.kind === "google_drawing";
-  const sheetLabel = isDrawing ? "Drawing" : "Sheet";
 
   return (
     <>
@@ -807,7 +788,7 @@ function WorksheetPane({
               <Tabs.Tab id="sheet" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
                 {/* Phones: words only, so all four tabs fit next to the timer. */}
                 {!phone && <SheetIcon className="me-1.5 size-3.5" />}
-                <span>{sheetLabel}</span>
+                <span>Sheet</span>
                 <Tabs.Indicator />
               </Tabs.Tab>
               <Tabs.Tab id="whiteboard" className={cn("h-7 px-3 text-xs", phone && "flex-1")}>
@@ -837,7 +818,7 @@ function WorksheetPane({
           <WorksheetFrame
             // A new puzzle gets a fresh frame (and loading state), and so does archiving.
             key={`${puzzle.id}${isReadOnly ? ":read-only" : ""}`}
-            title={`${puzzle.name} ${puzzle.googleSpreadsheetId ? "spreadsheet" : "drawing"}`}
+            title={`${puzzle.name} spreadsheet`}
             src={
               // Archived: Google's read-only preview, since WOW can't stop edits inside Google's own
               // editor (anyone with access to the file could still change it there).
@@ -889,7 +870,7 @@ const VIEWS = ["sheet", "whiteboard", "chat", "info"] as const;
 function GoogleFileJobPanel({puzzleId, job}: {puzzleId: string; job: GoogleFileJob}) {
   const {workspaceSlug} = Route.useParams();
   const isReadOnly = useIsReadOnly();
-  const what = job.kind === "google_drawing" ? "Google Drawing" : "Google Sheet";
+  const what = "Google Sheet";
   const retry = useMutation({
     mutationFn: () => client.puzzles.retrySheet({workspaceSlug, id: puzzleId}),
     // The room broadcasts the job going back to "creating".
@@ -926,7 +907,7 @@ function GoogleFileJobPanel({puzzleId, job}: {puzzleId: string; job: GoogleFileJ
 const SLOW_SHEET_MS = 15_000;
 
 /**
- * The Google Sheet/Drawing, with a placeholder until it has loaded (instead of a blank white
+ * The Google Sheet, with a placeholder until it has loaded (instead of a blank white
  * frame), and a way out if it's slow.
  */
 function WorksheetFrame({title, src, openHref}: {title: string; src: string; openHref: string}) {
@@ -941,7 +922,7 @@ function WorksheetFrame({title, src, openHref}: {title: string; src: string; ope
   }, [loaded, startedAt]);
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      {/* oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets/Drawings editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it. */}
+      {/* oxlint-disable-next-line react/iframe-missing-sandbox -- trusted Google Sheets editor that needs scripts, same-origin storage, popups (sign-in, share) and top navigation; any sandbox would break it. */}
       <iframe
         key={startedAt}
         title={title}

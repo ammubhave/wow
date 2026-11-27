@@ -32,7 +32,6 @@ const base = {
 /** A puzzle's Google file being made, or that couldn't be (see `puzzle.googleFileJob`). */
 export type GoogleFileJob = {
   status: "creating" | "failed";
-  kind: "google_spreadsheet" | "google_drawing";
   /** Why it failed, in plain words. */
   detail?: string;
 };
@@ -62,9 +61,8 @@ export const puzzle = sqliteTable(
     name: text().notNull(),
     link: text(),
     googleSpreadsheetId: text(),
-    googleDrawingId: text(),
     /**
-     * Its Google Sheet or Drawing while PuzzleSheetWorkflow makes it (src/server/puzzle-worksheet.ts),
+     * Its Google Sheet while PuzzleSheetWorkflow makes it (src/server/puzzle-worksheet.ts),
      * or why it couldn't; null once it's made (or when it gets none).
      */
     googleFileJob: text({mode: "json"}).$type<GoogleFileJob>(),

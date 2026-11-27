@@ -91,24 +91,21 @@ async function deleteGoogleFile(workspaceId: string, fileId: string) {
   console.error(`Puzzle cleanup: couldn't delete Google file ${fileId}: ${response.status}`);
 }
 
-/** The puzzle's Google file: its spreadsheet or drawing (an empty id counts as none). */
-const googleFileIdSql = sql<
-  string | null
->`coalesce(nullif(${schema.puzzle.googleSpreadsheetId}, ''), nullif(${schema.puzzle.googleDrawingId}, ''))`;
+/** The puzzle's Google Sheet (an empty id counts as none). */
+const googleFileIdSql = sql<string | null>`nullif(${schema.puzzle.googleSpreadsheetId}, '')`;
 
 /** Records one puzzle for cleanup. Put it in the same `db.batch` as the puzzle's delete. */
 export const recordDeletedPuzzle = (puzzle: {
   id: string;
   workspaceId: string;
   googleSpreadsheetId: string | null;
-  googleDrawingId: string | null;
 }) =>
   db
     .insert(schema.deletedPuzzle)
     .values({
       id: puzzle.id,
       workspaceId: puzzle.workspaceId,
-      googleFileId: puzzle.googleSpreadsheetId || puzzle.googleDrawingId || null,
+      googleFileId: puzzle.googleSpreadsheetId || null,
     });
 
 /**

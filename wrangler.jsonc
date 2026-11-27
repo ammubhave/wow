@@ -124,7 +124,7 @@
       "class_name": "EmailWorkflow",
     },
     {
-      // Makes a new puzzle's Google Sheet or Drawing (src/server/puzzle-worksheet.ts).
+      // Makes a new puzzle's Google Sheet (src/server/puzzle-worksheet.ts).
       "name": "PuzzleSheetWorkflow",
       "binding": "PUZZLE_SHEET_WORKFLOW",
       "class_name": "PuzzleSheetWorkflow",
@@ -226,7 +226,7 @@
           "class_name": "EmailWorkflow",
         },
         {
-          // Makes a new puzzle's Google Sheet or Drawing (src/server/puzzle-worksheet.ts).
+          // Makes a new puzzle's Google Sheet (src/server/puzzle-worksheet.ts).
           "name": "PuzzleSheetWorkflow-production",
           "binding": "PUZZLE_SHEET_WORKFLOW",
           "class_name": "PuzzleSheetWorkflow",

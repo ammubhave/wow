@@ -208,12 +208,9 @@ function createPuzzle(wire: Wire, input: RouterInputs["puzzles"]["create"]): Wir
     name: input.name,
     link: input.link,
     googleSpreadsheetId: null,
-    googleDrawingId: null,
     // As the server decides it (puzzles.create): a Google file is on its way.
     googleFileJob:
-      wire.sheetsTool === "google" && wire.googleFolderId
-        ? {status: "creating", kind: input.worksheetType}
-        : null,
+      wire.sheetsTool === "google" && wire.googleFolderId ? {status: "creating"} : null,
     answer: null,
     answerCount: 1,
     status: null,

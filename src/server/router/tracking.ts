@@ -19,7 +19,6 @@ export const TRACKED_PROCEDURES: Record<string, [event: string, describe: Descri
     "puzzle_created",
     input => ({
       isMeta: input.type === "meta-puzzle",
-      worksheetType: input.worksheetType,
       hasLink: Boolean(input.link),
       tagCount: Array.isArray(input.tags) ? input.tags.length : 0,
     }),

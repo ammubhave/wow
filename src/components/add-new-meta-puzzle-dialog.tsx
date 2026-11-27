@@ -26,14 +26,7 @@ export function AddNewMetaPuzzleDialog({
   const form = useAppForm({
     defaultValues: {name: "", assignUnassignedPuzzles: true, tags: [] as string[], link: ""},
     onSubmit: ({value}) => {
-      mutation.mutate({
-        workspaceSlug,
-        type: "meta-puzzle",
-        ...value,
-        id: newId(),
-        roundId,
-        worksheetType: "google_spreadsheet",
-      });
+      mutation.mutate({workspaceSlug, type: "meta-puzzle", ...value, id: newId(), roundId});
       form.reset();
       setOpen(false);
     },

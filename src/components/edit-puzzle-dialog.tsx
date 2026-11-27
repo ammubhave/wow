@@ -29,7 +29,6 @@ export function EditPuzzleDialog({
     status: string | null;
     link: string | null;
     googleSpreadsheetId: string | null;
-    googleDrawingId: string | null;
     isMetaPuzzle: boolean;
     tags: string[];
   };

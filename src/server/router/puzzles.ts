@@ -43,7 +43,6 @@ export const puzzlesRouter = {
           name: z.string(),
           tags: z.array(z.string()),
           link: z.url({protocol: /^https?$/}).or(z.string().length(0)),
-          worksheetType: z.enum(["google_spreadsheet", "google_drawing"]),
         })
       )
     )
@@ -100,7 +99,7 @@ export const puzzlesRouter = {
         // Its Google file is made next (PuzzleSheetWorkflow); its page says so meanwhile.
         googleFileJob:
           workspace.sheetsTool === "google" && workspace.googleFolderId
-            ? ({status: "creating", kind: input.worksheetType} as const)
+            ? ({status: "creating"} as const)
             : null,
       };
       // When a puzzle is released, several teammates often add it at once. One statement adds it
@@ -508,7 +507,6 @@ export const puzzlesRouter = {
           name: schema.puzzle.name,
           round: {workspaceId: schema.round.workspaceId},
           googleSpreadsheetId: schema.puzzle.googleSpreadsheetId,
-          googleDrawingId: schema.puzzle.googleDrawingId,
         })
         .from(schema.puzzle)
         .where(

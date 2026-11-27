@@ -9,14 +9,13 @@ import {DRIVE_DISCONNECTED_DETAIL} from "@/server/drive-share";
 import {GoogleService} from "@/server/router/services/google";
 
 /**
- * Makes a new puzzle's Google Sheet (or Drawing) in the team's Drive folder. The puzzle is saved
+ * Makes a new puzzle's Google Sheet in the team's Drive folder. The puzzle is saved
  * and shown first, with `googleFileJob` saying the file is being made; its page shows that and
  * switches to the file when the room broadcasts its id. Google's passing failures are retried;
  * one that won't go away marks the job failed, and the page offers to try again.
  */
 export type PuzzleSheetParams = {puzzleId: string};
 
-type Kind = schema.GoogleFileJob["kind"];
 type Made = {fileId: string} | {failed: string} | {skip: true};
 
 const RETRIES = {
@@ -68,7 +67,6 @@ async function makeFile(puzzleId: string): Promise<Made> {
   const puzzle = await load(puzzleId);
   // Deleted meanwhile, or no longer waiting for a file (made already, or the job was replaced).
   if (!puzzle || puzzle.job?.status !== "creating") return {skip: true};
-  const kind = puzzle.job.kind;
   // The team switched to built-in sheets, or Drive isn't set up or connected any more: the puzzle
   // uses the built-in sheet, as one made then would.
   if (puzzle.sheetsTool !== "google" || !puzzle.folderId) return {skip: true};
@@ -88,27 +86,25 @@ async function makeFile(puzzleId: string): Promise<Made> {
   const found = listSchema.parse(await existing.json()).files?.[0];
   if (found) return {fileId: found.id};
 
-  const response =
-    puzzle.templateFileId && kind === "google_spreadsheet"
-      ? await fetch(`https://www.googleapis.com/drive/v3/files/${puzzle.templateFileId}/copy`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({name, parents: [puzzle.folderId]}),
-        })
-      : await fetch("https://www.googleapis.com/drive/v3/files", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({name, parents: [puzzle.folderId], mimeType: mimeType(kind)}),
-        });
+  const response = puzzle.templateFileId
+    ? await fetch(`https://www.googleapis.com/drive/v3/files/${puzzle.templateFileId}/copy`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({name, parents: [puzzle.folderId]}),
+      })
+    : await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name,
+          parents: [puzzle.folderId],
+          mimeType: "application/vnd.google-apps.spreadsheet",
+        }),
+      });
   const problem = await check(response, "make the file");
   if (problem) return {failed: problem};
   return {fileId: fileSchema.parse(await response.json()).id};
 }
-
-const mimeType = (kind: Kind) =>
-  kind === "google_spreadsheet"
-    ? "application/vnd.google-apps.spreadsheet"
-    : "application/vnd.google-apps.drawing";
 
 /**
  * Throws for a failure worth retrying (rate limits, Google's own errors); returns what went wrong
@@ -155,22 +151,11 @@ async function save(puzzleId: string, made: Made) {
     await invalidateWorkspace(puzzle.workspaceId);
     return;
   }
-  const kind = puzzle?.job?.kind ?? "google_spreadsheet";
   const saved = await db
     .update(schema.puzzle)
-    .set({
-      googleSpreadsheetId: kind === "google_spreadsheet" ? made.fileId : null,
-      googleDrawingId: kind === "google_drawing" ? made.fileId : null,
-      googleFileJob: null,
-    })
+    .set({googleSpreadsheetId: made.fileId, googleFileJob: null})
     // Only while it still has no file (a retry may have raced this one).
-    .where(
-      and(
-        eq(schema.puzzle.id, puzzleId),
-        isNull(schema.puzzle.googleSpreadsheetId),
-        isNull(schema.puzzle.googleDrawingId)
-      )
-    )
+    .where(and(eq(schema.puzzle.id, puzzleId), isNull(schema.puzzle.googleSpreadsheetId)))
     .returning({id: schema.puzzle.id});
   if (saved.length > 0 && puzzle) {
     await invalidateWorkspace(puzzle.workspaceId);
@@ -194,7 +179,7 @@ async function save(puzzleId: string, made: Made) {
   }
 }
 
-/** Starts making the puzzle's Google file. Its `googleFileJob` must already say "creating". */
+/** Starts making the puzzle's Google Sheet. Its `googleFileJob` must already say "creating". */
 export async function startPuzzleSheet(puzzleId: string) {
   try {
     await env.PUZZLE_SHEET_WORKFLOW.create({params: {puzzleId}});

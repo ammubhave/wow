@@ -221,7 +221,6 @@ export function TourProvider({
         name: EXAMPLE_NAMES.meta,
         tags: [],
         link: "",
-        worksheetType: "google_spreadsheet",
       });
       examples.metaId = id;
       return id;
@@ -245,7 +244,6 @@ export function TourProvider({
             name,
             tags: [],
             link: "",
-            worksheetType: "google_spreadsheet",
           });
           return id;
         });
