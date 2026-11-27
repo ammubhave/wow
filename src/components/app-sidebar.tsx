@@ -13,6 +13,7 @@ import {WorkspaceRoomState} from "@/server/do/workspace";
 
 import {Chat} from "./chat";
 import {CommentBox, visibleComment} from "./comment-box";
+import {IconButton, IconTooltip} from "./icon-button";
 import {MakeAccouncementDialog} from "./make-announcement-dialog";
 
 /**
@@ -64,18 +65,19 @@ function TeamChat() {
 export function TeamChatDrawerButton() {
   return (
     <Drawer>
-      <Button
+      <IconButton
         data-tour="team-chat-button"
         variant="outline"
-        isIconOnly
-        aria-label="Team chat"
+        label="Team chat"
         className="md:hidden">
         <MessagesSquareIcon />
-      </Button>
+      </IconButton>
       <Drawer.Backdrop>
         <Drawer.Content placement="right">
           <Drawer.Dialog className="w-[min(24rem,90vw)]">
-            <Drawer.CloseTrigger />
+            <IconTooltip label="Close">
+              <Drawer.CloseTrigger />
+            </IconTooltip>
             <Drawer.Header>
               <Drawer.Heading>Team chat</Drawer.Heading>
             </Drawer.Header>
@@ -99,18 +101,19 @@ export function SidebarDrawerButton({
 }) {
   return (
     <Drawer>
-      <Button
+      <IconButton
         data-tour="sidebar-button"
         variant="outline"
-        isIconOnly
-        aria-label="Notes and progress"
+        label="Notes and progress"
         className="md:hidden">
         <NotebookPenIcon />
-      </Button>
+      </IconButton>
       <Drawer.Backdrop>
         <Drawer.Content placement="right">
           <Drawer.Dialog className="w-[min(20rem,85vw)]">
-            <Drawer.CloseTrigger />
+            <IconTooltip label="Close">
+              <Drawer.CloseTrigger />
+            </IconTooltip>
             <Drawer.Header>
               <Drawer.Heading>Notes and progress</Drawer.Heading>
             </Drawer.Header>

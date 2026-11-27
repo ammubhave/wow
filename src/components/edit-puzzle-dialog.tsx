@@ -2,6 +2,7 @@ import {ListBox, Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {parseTypedAnswers, splitAnswers} from "@/lib/answers";
 import {getPuzzleStatusGroups, getPuzzleStatusOptions} from "@/lib/puzzleStatuses";
@@ -85,7 +86,9 @@ export function EditPuzzleDialog({
       trigger={children}>
       <Modal.Container>
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Edit puzzle</Modal.Heading>
           </Modal.Header>

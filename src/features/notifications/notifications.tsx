@@ -17,6 +17,7 @@ import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
 
 import {RelativeTime} from "@/components/activity-log";
+import {IconButton} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
 import {formatAnswers} from "@/lib/answers";
@@ -394,13 +395,12 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
   return (
     <Popover isOpen={isOpen} onOpenChange={onOpenChange}>
       <Badge.Anchor>
-        <Button
+        <IconButton
           size="sm"
-          isIconOnly
           variant="ghost"
-          aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}>
+          label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}>
           <BellIcon />
-        </Button>
+        </IconButton>
         {unread > 0 && (
           <Badge color="danger" size="sm" placement="top-right">
             {unread > 99 ? "99+" : unread}
@@ -426,15 +426,14 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                 </Tabs.List>
               </Tabs.ListContainer>
             </Tabs>
-            <Button
+            <IconButton
               size="sm"
-              isIconOnly
               variant={showSettings ? "secondary" : "ghost"}
-              aria-label="Notification settings"
+              label="Notification settings"
               aria-pressed={showSettings}
               onPress={() => setShowSettings(s => !s)}>
               <SettingsIcon />
-            </Button>
+            </IconButton>
           </div>
           {showSettings && (
             <div className="border-separator flex flex-col gap-2 border-y px-3 py-3">

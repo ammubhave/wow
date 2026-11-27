@@ -8,6 +8,7 @@ import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
 import {Page, READING_WIDTH} from "@/components/page";
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {HelpLink} from "@/docs/components/help-link";
@@ -83,9 +84,9 @@ function SupportCard({
             made by Team Wafflehaüs. If you'd like to chip in, any amount helps keep it that way.
           </Card.Description>
         </div>
-        <Button size="sm" variant="ghost" isIconOnly aria-label="Not now" onPress={dismiss}>
+        <IconButton size="sm" variant="ghost" label="Not now" onPress={dismiss}>
           <XIcon />
-        </Button>
+        </IconButton>
       </Card.Header>
       <Card.Footer className="flex-wrap gap-2 ps-8">
         <a

@@ -14,6 +14,7 @@ import {
 import {useEffect, useRef, useState} from "react";
 
 import {GuessQueueButton} from "@/components/guess-queue";
+import {IconTooltip, NativeTooltip} from "@/components/icon-button";
 import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {NotificationBell} from "@/features/notifications/notifications";
 import {LobbyButton} from "@/features/voice/voice-ui";
@@ -107,16 +108,20 @@ export function WorkspaceHeader() {
   return (
     <Navbar aria-label="Workspace" maxWidth="full" size="sm" shouldBlockScroll={false}>
       <Navbar.Header>
-        <Navbar.MenuToggle className="md:hidden" />
+        <IconTooltip label="Toggle navigation menu">
+          <Navbar.MenuToggle className="md:hidden" />
+        </IconTooltip>
         <Navbar.Brand>
-          <Link to="/workspaces" aria-label="All workspaces">
-            {/* The team's emoji, if it picked one (Settings › Look). */}
-            {workspace.theme.emoji ? (
-              <span className="text-lg leading-none">{workspace.theme.emoji}</span>
-            ) : (
-              <img src="/favicon.ico" alt="" className="size-5 rounded-full" />
-            )}
-          </Link>
+          <NativeTooltip label="All workspaces">
+            <Link to="/workspaces" aria-label="All workspaces">
+              {/* The team's emoji, if it picked one (Settings › Look). */}
+              {workspace.theme.emoji ? (
+                <span className="text-lg leading-none">{workspace.theme.emoji}</span>
+              ) : (
+                <img src="/favicon.ico" alt="" className="size-5 rounded-full" />
+              )}
+            </Link>
+          </NativeTooltip>
         </Navbar.Brand>
         {/* Phones have no tabs: on a puzzle, its name says where you are. */}
         {newPuzzleId && puzzle && (

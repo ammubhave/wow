@@ -21,6 +21,7 @@ import {z} from "zod";
 
 import {ConfirmDialog} from "@/components/confirm-dialog";
 import {ControlledAlertDialog} from "@/components/controlled-dialog";
+import {IconButton, IconTooltip} from "@/components/icon-button";
 import {PeopleCardSkeleton} from "@/components/page-skeletons";
 import {gravatarUrl} from "@/components/user-hover-card";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
@@ -260,13 +261,15 @@ function RemoveMemberButton({
       isOpen={open}
       onOpenChange={setOpen}
       trigger={
-        <Button variant="ghost" size="sm" isIconOnly aria-label={`Remove ${name}`}>
+        <IconButton variant="ghost" size="sm" label={`Remove ${name}`}>
           <UserMinusIcon />
-        </Button>
+        </IconButton>
       }>
       <AlertDialog.Container size="sm">
         <AlertDialog.Dialog>
-          <AlertDialog.CloseTrigger />
+          <IconTooltip label="Close">
+            <AlertDialog.CloseTrigger />
+          </IconTooltip>
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />
             <AlertDialog.Heading>Remove {name}?</AlertDialog.Heading>
@@ -425,12 +428,11 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
                     <RotateCwIcon />
                     Resend
                   </Button>
-                  <Button
+                  <IconButton
                     size="sm"
                     variant="ghost"
-                    isIconOnly
                     isDisabled={cancel.isPending}
-                    aria-label={`Cancel the invitation to ${invitation.email}`}
+                    label={`Cancel the invitation to ${invitation.email}`}
                     onPress={() =>
                       cancel.mutate(
                         {workspaceSlug, invitationId: invitation.id},
@@ -448,7 +450,7 @@ function InviteCard({workspaceSlug}: {workspaceSlug: string}) {
                       )
                     }>
                     <XIcon />
-                  </Button>
+                  </IconButton>
                 </li>
               ))}
             </ul>
@@ -497,26 +499,24 @@ function ShareLinkAndPassword({
         <dt className="text-muted text-xs">Link</dt>
         <dd className="truncate font-mono text-xs">{link}</dd>
         <dd>
-          <Button
+          <IconButton
             size="sm"
             variant="ghost"
-            isIconOnly
-            aria-label="Copy invitation link"
+            label="Copy invitation link"
             onPress={() => void copy(link, "Invitation link")}>
             <CopyIcon />
-          </Button>
+          </IconButton>
         </dd>
         <dt className="text-muted text-xs">Password</dt>
         <dd className="truncate font-mono text-xs">{password}</dd>
         <dd>
-          <Button
+          <IconButton
             size="sm"
             variant="ghost"
-            isIconOnly
-            aria-label="Copy workspace password"
+            label="Copy workspace password"
             onPress={() => void copy(password, "Password")}>
             <CopyIcon />
-          </Button>
+          </IconButton>
         </dd>
       </dl>
       <div>

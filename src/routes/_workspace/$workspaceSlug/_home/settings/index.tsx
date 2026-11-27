@@ -6,6 +6,7 @@ import {toast} from "sonner";
 import {z} from "zod";
 
 import {useAppForm} from "@/components/form";
+import {IconButton} from "@/components/icon-button";
 import {LookCard, TeamEmojiCard} from "@/components/settings/workspace-look-cards";
 import {huntDetails, huntWebsiteLink, useHuntSuggestions} from "@/hooks/use-hunt-suggestions";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
@@ -169,14 +170,13 @@ function UpdateLinksCard() {
                       />
                       {!isReadOnly && (
                         <InputGroup.Suffix className="pe-0">
-                          <Button
-                            isIconOnly
+                          <IconButton
                             variant="secondary"
                             size="sm"
-                            aria-label="Remove link"
+                            label="Remove link"
                             onPress={() => field.removeValue(i)}>
                             <TrashIcon />
-                          </Button>
+                          </IconButton>
                         </InputGroup.Suffix>
                       )}
                     </InputGroup>
@@ -417,14 +417,13 @@ function UpdateTagsCard() {
                       />
                       {!isReadOnly && (
                         <InputGroup.Suffix className="pe-0">
-                          <Button
-                            isIconOnly
+                          <IconButton
                             variant="secondary"
                             size="sm"
-                            aria-label="Remove tag"
+                            label="Remove tag"
                             onPress={() => field.removeValue(i)}>
                             <TrashIcon />
-                          </Button>
+                          </IconButton>
                         </InputGroup.Suffix>
                       )}
                     </InputGroup>

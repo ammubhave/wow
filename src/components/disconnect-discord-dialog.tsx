@@ -3,6 +3,7 @@ import {useMutation} from "@tanstack/react-query";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {IconTooltip} from "@/components/icon-button";
 import {orpc} from "@/lib/orpc";
 
 import {ControlledAlertDialog} from "./controlled-dialog";
@@ -20,7 +21,9 @@ export function DisconnectDiscordDialog({
     <ControlledAlertDialog isOpen={open} onOpenChange={setOpen} trigger={children}>
       <AlertDialog.Container size="sm">
         <AlertDialog.Dialog>
-          <AlertDialog.CloseTrigger />
+          <IconTooltip label="Close">
+            <AlertDialog.CloseTrigger />
+          </IconTooltip>
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />
             <AlertDialog.Heading>Are you absolutely sure?</AlertDialog.Heading>

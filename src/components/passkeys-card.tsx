@@ -3,6 +3,7 @@ import {KeyRoundIcon, PlusIcon, TrashIcon} from "lucide-react";
 import {useState} from "react";
 import {toast} from "sonner";
 
+import {IconButton} from "@/components/icon-button";
 import {authClient} from "@/lib/auth-client";
 
 async function removePasskey(id: string) {
@@ -52,14 +53,13 @@ export function PasskeysCard() {
                     Added {new Date(passkey.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <Button
-                  isIconOnly
+                <IconButton
                   size="sm"
                   variant="ghost"
-                  aria-label={`Remove ${passkey.name || "passkey"}`}
+                  label={`Remove ${passkey.name || "passkey"}`}
                   onPress={() => void removePasskey(passkey.id)}>
                   <TrashIcon />
-                </Button>
+                </IconButton>
               </li>
             ))}
           </ul>

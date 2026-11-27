@@ -2,6 +2,7 @@ import {buttonVariants} from "@heroui/react";
 import {Link} from "@tanstack/react-router";
 import {HistoryIcon} from "lucide-react";
 
+import {NativeTooltip} from "@/components/icon-button";
 import {PresencesCard} from "@/components/presences-card";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
@@ -23,12 +24,15 @@ export function WorkspaceFooter() {
         <div className="hidden flex-1 items-center justify-end overflow-hidden md:flex">
           {workspace.activityLogEntries[0] && (
             <div className="flex min-w-0 items-center overflow-hidden px-3">
-              <Link
-                className={buttonVariants({variant: "ghost"})}
-                to="/$workspaceSlug/activity-log"
-                params={{workspaceSlug}}>
-                <HistoryIcon className="text-muted shrink-0" />
-              </Link>
+              <NativeTooltip label="Activity log">
+                <Link
+                  className={buttonVariants({variant: "ghost"})}
+                  to="/$workspaceSlug/activity-log"
+                  params={{workspaceSlug}}
+                  aria-label="Activity log">
+                  <HistoryIcon className="text-muted shrink-0" />
+                </Link>
+              </NativeTooltip>
               <ActivityLogItem
                 relativeTime
                 truncate

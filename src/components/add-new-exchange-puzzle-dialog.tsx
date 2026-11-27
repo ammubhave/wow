@@ -4,6 +4,7 @@ import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {orpc} from "@/lib/orpc";
 
 import {ControlledModal} from "./controlled-dialog";
@@ -40,7 +41,9 @@ export function AddNewExchangePuzzleDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Add new puzzle</Modal.Heading>
           </Modal.Header>

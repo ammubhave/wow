@@ -5,6 +5,7 @@ import {ArrowRightIcon, ArrowUpRightIcon, GlobeIcon, MapPinIcon, SparklesIcon} f
 import {useEffect, useState} from "react";
 
 import {Grainient} from "@/components/grainient";
+import {NativeTooltip} from "@/components/icon-button";
 import {ShinyText, SpotlightCard} from "@/components/spotlight-card";
 import {when, where} from "@/hooks/use-hunt-suggestions";
 import {track} from "@/lib/analytics";
@@ -114,15 +115,16 @@ function HuntCard({hunt, now}: {hunt: Hunt; now: number}) {
           Set up workspace
         </Link>
         {hunt.url && (
-          <a
-            href={hunt.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${hunt.name} website`}
-            title="Hunt website"
-            className={buttonVariants({size: "sm", variant: "ghost", isIconOnly: true})}>
-            <ArrowUpRightIcon />
-          </a>
+          <NativeTooltip label={`${hunt.name} website`}>
+            <a
+              href={hunt.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${hunt.name} website`}
+              className={buttonVariants({size: "sm", variant: "ghost", isIconOnly: true})}>
+              <ArrowUpRightIcon />
+            </a>
+          </NativeTooltip>
         )}
       </div>
     </SpotlightCard>

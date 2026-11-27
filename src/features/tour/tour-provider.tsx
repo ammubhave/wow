@@ -6,6 +6,7 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useRef} from
 import {toast} from "sonner";
 import {useMediaQuery} from "usehooks-ts";
 
+import {IconButton} from "@/components/icon-button";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {track} from "@/lib/analytics";
@@ -309,9 +310,9 @@ export function TourProvider({
               <Button size="sm" variant="ghost" onPress={() => goToPage(step)}>
                 Resume
               </Button>
-              <Button size="sm" variant="ghost" isIconOnly aria-label="End tour" onPress={close}>
+              <IconButton size="sm" variant="ghost" label="End tour" onPress={close}>
                 <XIcon />
-              </Button>
+              </IconButton>
             </div>
           </div>
         ))}

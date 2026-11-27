@@ -2,6 +2,7 @@ import {Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
 import {ControlledModal} from "./controlled-dialog";
@@ -42,7 +43,9 @@ export function EditRoundDialog({
       trigger={children}>
       <Modal.Container>
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Edit round</Modal.Heading>
           </Modal.Header>

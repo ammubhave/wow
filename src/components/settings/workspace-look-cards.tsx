@@ -5,6 +5,7 @@ import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {useIsWorkspaceOwner} from "@/hooks/use-workspace-role";
@@ -150,14 +151,13 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
                 <img src={customEmojiUrl(workspaceSlug, e.fileId)} alt="" className="size-5" />
                 <span className="text-sm">:{e.name}:</span>
                 {!isReadOnly && (
-                  <Button
+                  <IconButton
                     size="sm"
-                    isIconOnly
                     variant="ghost"
-                    aria-label={`Remove :${e.name}:`}
+                    label={`Remove :${e.name}:`}
                     onPress={() => remove.mutate({workspaceSlug, name: e.name})}>
                     <TrashIcon />
-                  </Button>
+                  </IconButton>
                 )}
               </li>
             ))}

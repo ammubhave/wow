@@ -23,6 +23,7 @@ import {useState} from "react";
 import {cn} from "tailwind-variants";
 import {z} from "zod";
 
+import {IconButton, NativeTooltip} from "@/components/icon-button";
 import {Page} from "@/components/page";
 import {when, where} from "@/hooks/use-hunt-suggestions";
 import {orpc} from "@/lib/orpc";
@@ -100,15 +101,16 @@ function HuntActions({hunt}: {hunt: Hunt}) {
         </Link>
       )}
       {hunt.url && (
-        <a
-          href={hunt.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${hunt.name} website`}
-          title="Hunt website"
-          className={buttonVariants({size: "sm", variant: "ghost", isIconOnly: true})}>
-          <ArrowUpRightIcon />
-        </a>
+        <NativeTooltip label={`${hunt.name} website`}>
+          <a
+            href={hunt.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${hunt.name} website`}
+            className={buttonVariants({size: "sm", variant: "ghost", isIconOnly: true})}>
+            <ArrowUpRightIcon />
+          </a>
+        </NativeTooltip>
       )}
     </div>
   );
@@ -431,23 +433,21 @@ function RouteComponent() {
         </div>
         {view === "calendar" && (
           <div className="flex items-center gap-1">
-            <Button
+            <IconButton
               size="sm"
               variant="ghost"
-              isIconOnly
-              aria-label="Previous month"
+              label="Previous month"
               onPress={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>
               <ChevronLeftIcon />
-            </Button>
+            </IconButton>
             <span className="min-w-36 text-center text-sm font-semibold">{monthTitle(month)}</span>
-            <Button
+            <IconButton
               size="sm"
               variant="ghost"
-              isIconOnly
-              aria-label="Next month"
+              label="Next month"
               onPress={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}>
               <ChevronRightIcon />
-            </Button>
+            </IconButton>
             <Button
               size="sm"
               variant="secondary"

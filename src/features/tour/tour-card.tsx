@@ -5,6 +5,8 @@ import {useEffect, useState} from "react";
 import {createPortal} from "react-dom";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
+
 import type {TourContext, TourStep} from "./steps";
 
 /** How long to wait for a step's target to show up before giving up on it. */
@@ -162,15 +164,14 @@ export function TourCard({
             <SparklesIcon className="size-3.5" aria-hidden />
             Tour · {position + 1} of {total}
           </span>
-          <Button
+          <IconButton
             size="sm"
             variant="ghost"
-            isIconOnly
-            aria-label="End tour"
+            label="End tour"
             className="ms-auto -me-2 -mt-1"
             onPress={onClose}>
             <XIcon />
-          </Button>
+          </IconButton>
         </div>
         <div className="flex flex-col gap-1.5">
           <h2 id={`tour-${step.id}`} className="text-base font-semibold">

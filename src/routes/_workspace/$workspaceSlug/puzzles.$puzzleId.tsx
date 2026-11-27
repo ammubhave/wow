@@ -38,6 +38,7 @@ import {DeletePuzzleDialog} from "@/components/delete-puzzle-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {PuzzleGuesses} from "@/components/guess-queue";
+import {IconButton} from "@/components/icon-button";
 import {NotFoundPage} from "@/components/not-found-page";
 import {PresencesWebSocket} from "@/components/presences-websocket";
 import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contributors";
@@ -227,9 +228,9 @@ function PuzzleInfoPanel({
           />
         )}
         <Dropdown>
-          <Button size="sm" isIconOnly variant="ghost" aria-label="Puzzle actions">
+          <IconButton size="sm" variant="ghost" label="Puzzle actions">
             <EllipsisIcon />
-          </Button>
+          </IconButton>
           <Dropdown.Popover placement="bottom end">
             <Dropdown.Menu>
               {!isReadOnly && (

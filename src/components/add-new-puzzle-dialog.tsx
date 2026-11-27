@@ -5,6 +5,7 @@ import {Link} from "@tanstack/react-router";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {newest} from "@/lib/board-order";
 import {errorMessage} from "@/lib/errors";
@@ -171,7 +172,9 @@ export function AddNewPuzzleDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
         <Modal.Dialog>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Add a puzzle</Modal.Heading>
           </Modal.Header>

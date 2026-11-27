@@ -2,6 +2,8 @@ import {AlertDialog, Button} from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import {IconTooltip} from "@/components/icon-button";
+
 import {ControlledAlertDialog} from "./controlled-dialog";
 
 export function ExchangePuzzleHintDialog({
@@ -19,7 +21,9 @@ export function ExchangePuzzleHintDialog({
     <ControlledAlertDialog isOpen={open} onOpenChange={setOpen}>
       <AlertDialog.Container size="sm">
         <AlertDialog.Dialog>
-          <AlertDialog.CloseTrigger />
+          <IconTooltip label="Close">
+            <AlertDialog.CloseTrigger />
+          </IconTooltip>
           <AlertDialog.Header>
             <AlertDialog.Heading>{title}</AlertDialog.Heading>
           </AlertDialog.Header>

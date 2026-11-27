@@ -15,6 +15,7 @@ import {
 import {Children, isValidElement} from "react";
 import {cn} from "tailwind-variants";
 
+import {NativeTooltip} from "@/components/icon-button";
 import {useTour} from "@/features/tour/tour-provider";
 import {GOOGLE_FORMULAS, PUZZLE_FORMULA_GROUPS} from "@/lib/formula-docs";
 import {getPuzzleImportances} from "@/lib/puzzleImportances";
@@ -64,12 +65,14 @@ function heading(Tag: "h2" | "h3") {
       <Tag id={id} className="group scroll-mt-6">
         {children}
         {id && (
-          <a
-            href={`#${id}`}
-            aria-label="Link to this section"
-            className="text-muted ms-2 inline-block align-middle opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100">
-            <LinkIcon className="size-4" />
-          </a>
+          <NativeTooltip label="Link to this section">
+            <a
+              href={`#${id}`}
+              aria-label="Link to this section"
+              className="text-muted ms-2 inline-block align-middle opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100">
+              <LinkIcon className="size-4" />
+            </a>
+          </NativeTooltip>
         )}
       </Tag>
     );

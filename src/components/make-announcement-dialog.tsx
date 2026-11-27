@@ -4,6 +4,7 @@ import {useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {orpc} from "@/lib/orpc";
 
@@ -61,7 +62,9 @@ export function MakeAccouncementDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
         <Modal.Dialog>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Make an announcement</Modal.Heading>
             <p className="text-muted text-sm">

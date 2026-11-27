@@ -1,4 +1,4 @@
-import {Avatar, Button, Dropdown, Header, Label, Separator, Skeleton} from "@heroui/react";
+import {Avatar, Dropdown, Header, Label, Separator, Skeleton} from "@heroui/react";
 import {useQueryClient} from "@tanstack/react-query";
 import {useRouter} from "@tanstack/react-router";
 import {
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import {toast} from "sonner";
 
+import {IconButton} from "@/components/icon-button";
 import {useTheme} from "@/components/theme-provider";
 import {authClient} from "@/lib/auth-client";
 import {openHelpChat} from "@/lib/help-chat";
@@ -37,7 +38,7 @@ export function NavUser({children}: {children?: React.ReactNode}) {
   return (
     <>
       <Dropdown>
-        <Button isIconOnly variant="ghost" aria-label="Account menu">
+        <IconButton variant="ghost" label="Account menu">
           <Avatar size="sm">
             <Avatar.Image src={src} alt="" />
             <Avatar.Fallback>
@@ -49,7 +50,7 @@ export function NavUser({children}: {children?: React.ReactNode}) {
                 .slice(0, 2)}
             </Avatar.Fallback>
           </Avatar>
-        </Button>
+        </IconButton>
         <Dropdown.Popover className="min-w-56" placement="bottom end">
           <Dropdown.Menu>
             <Dropdown.Section>

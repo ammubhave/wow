@@ -2,7 +2,7 @@
 
 import {ContextMenu} from "@heroui-pro/react";
 import {RichTextEditor, useRichTextEditor} from "@heroui-pro/react/rich-text-editor";
-import {Button, Kbd, Label, Popover} from "@heroui/react";
+import {Kbd, Label, Popover} from "@heroui/react";
 import type {ChainedCommands, Editor, JSONContent} from "@tiptap/core";
 import {Audio} from "@tiptap/extension-audio";
 import {Heading} from "@tiptap/extension-heading";
@@ -44,6 +44,7 @@ import {
 import {useMemo, useState} from "react";
 import {toast} from "sonner";
 
+import {IconButton} from "@/components/icon-button";
 import {ImageUploadNode} from "@/components/tiptap-node/image-upload-node/image-upload-node-extension";
 import {handleImageUpload, MAX_FILE_SIZE} from "@/lib/tiptap-utils";
 
@@ -174,7 +175,7 @@ export function PuzzleRichTextEditor({
                 <HighlighterIcon className={iconClassName} />
               </RichTextEditor.CommandButton>
               <RichTextEditor.LinkPopover>
-                <RichTextEditor.LinkPopover.Trigger>
+                <RichTextEditor.LinkPopover.Trigger tooltip="Link">
                   <LinkIcon className={iconClassName} />
                 </RichTextEditor.LinkPopover.Trigger>
                 <RichTextEditor.LinkPopover.Content>
@@ -299,14 +300,13 @@ function TableGridPicker() {
         setIsOpen(open);
         if (!open) setHover({rows: 0, cols: 0});
       }}>
-      <Button
-        isIconOnly
+      <IconButton
         size="sm"
         variant="tertiary"
         className="rich-text-editor__toolbar-button"
-        aria-label="Insert table">
+        label="Insert table">
         <TableIcon className={iconClassName} />
-      </Button>
+      </IconButton>
       <Popover.Content placement="bottom start">
         <Popover.Dialog aria-label="Insert table" className="flex flex-col gap-2 p-3">
           <div

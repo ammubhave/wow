@@ -7,6 +7,7 @@ import {Fragment, useRef, useState} from "react";
 import {toast} from "sonner";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {authClient} from "@/lib/auth-client";
 import {authErrorMessage} from "@/lib/auth-helpers";
 
@@ -180,7 +181,9 @@ function ChangePasswordDialog({
       }}>
       <Modal.Container size="sm">
         <Modal.Dialog>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Change password</Modal.Heading>
           </Modal.Header>
@@ -262,7 +265,9 @@ function SetPasswordDialog({
     <ControlledModal isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Container size="sm">
         <Modal.Dialog>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Set a password</Modal.Heading>
           </Modal.Header>
@@ -460,7 +465,9 @@ export function DangerZoneCard() {
         }}>
         <AlertDialog.Container size="sm">
           <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
+            <IconTooltip label="Close">
+              <AlertDialog.CloseTrigger />
+            </IconTooltip>
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />
               <AlertDialog.Heading>Delete your account?</AlertDialog.Heading>

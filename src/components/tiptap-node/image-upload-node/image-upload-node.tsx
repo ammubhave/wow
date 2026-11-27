@@ -4,11 +4,12 @@ import type {NodeViewProps} from "@tiptap/react";
 import {NodeViewWrapper} from "@tiptap/react";
 import {useEffect, useRef, useState} from "react";
 
+import {NativeTooltip} from "@/components/icon-button";
 import {CloseIcon} from "@/components/tiptap-icons/close-icon";
-import {Button} from "@/components/tiptap-ui-primitive/button";
 
 // oxlint-disable-next-line import/no-unassigned-import -- side-effect stylesheet import.
 import "@/components/tiptap-node/image-upload-node/image-upload-node.scss";
+import {Button} from "@/components/tiptap-ui-primitive/button";
 import {focusNextNode, isValidPosition} from "@/lib/tiptap-utils";
 
 export interface FileItem {
@@ -373,15 +374,17 @@ const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({fileItem, onRemo
           {fileItem.status === "uploading" && (
             <span className="tiptap-image-upload-progress-text">{fileItem.progress}%</span>
           )}
-          <Button
-            data-style="ghost"
-            aria-label={`Remove ${fileItem.file.name}`}
-            onClick={e => {
-              e.stopPropagation();
-              onRemove();
-            }}>
-            <CloseIcon className="tiptap-button-icon" aria-hidden="true" />
-          </Button>
+          <NativeTooltip label={`Remove ${fileItem.file.name}`}>
+            <Button
+              data-style="ghost"
+              aria-label={`Remove ${fileItem.file.name}`}
+              onClick={e => {
+                e.stopPropagation();
+                onRemove();
+              }}>
+              <CloseIcon className="tiptap-button-icon" aria-hidden="true" />
+            </Button>
+          </NativeTooltip>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import {ChevronDownIcon, PencilIcon, PinIcon, PinOffIcon, Trash2Icon} from "luci
 import {useEffect, useRef, useState} from "react";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
 import type {ChatMessage as ChatMessageData} from "@/server/do/chat";
 import {MENTION_PATTERN, mentionMarkdown, plainMentions} from "@/server/notifications";
 
@@ -175,15 +176,14 @@ export function PinnedBar({
                 {plainMentions(message.text) || (message.images?.length ? "🖼 an image" : "")}
               </span>
             </button>
-            <Button
+            <IconButton
               size="sm"
-              isIconOnly
               variant="ghost"
               className="h-6 w-6 min-w-6 opacity-60 group-hover/pin:opacity-100"
-              aria-label={`Unpin ${message.name}'s message`}
+              label={`Unpin ${message.name}'s message`}
               onPress={() => onUnpin(message.id)}>
               <PinOffIcon className="size-3.5" />
-            </Button>
+            </IconButton>
           </li>
         ))}
       </ul>

@@ -1,15 +1,6 @@
-import {
-  Avatar,
-  Button,
-  ScrollShadow,
-  SearchField,
-  Skeleton,
-  Spinner,
-  Tabs,
-  Tooltip,
-} from "@heroui/react";
+import {Avatar, Button, ScrollShadow, SearchField, Skeleton, Spinner, Tooltip} from "@heroui/react";
 import {useInfiniteQuery, useQuery} from "@tanstack/react-query";
-import {createFileRoute, Link} from "@tanstack/react-router";
+import {createFileRoute, Link, useNavigate} from "@tanstack/react-router";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -18,15 +9,17 @@ import {
   DownloadIcon,
   InboxIcon,
   PaperclipIcon,
+  TypeIcon,
   XIcon,
 } from "lucide-react";
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {useFormatter} from "use-intl";
 import {z} from "zod";
 
 import {RelativeTime} from "@/components/activity-log";
+import {IconButton} from "@/components/icon-button";
 import {contactEmail} from "@/lib/contact-email";
 import {orpc} from "@/lib/orpc";
 import type {RouterOutputs} from "@/server/router";
@@ -262,15 +255,121 @@ function NothingOpen({workspaceSlug, hasEmails}: {workspaceSlug: string; hasEmai
 }
 
 /**
- * Keeps an email's HTML from doing anything but show itself: no scripts, nothing loaded from the
- * web (which would tell the sender it was read), and links open in a new tab.
+ * Keeps an email's HTML from doing anything but show itself: no scripts (the frame's sandbox),
+ * nothing loaded from the web (which would tell the sender it was read), links in a new tab.
  */
 const SANDBOX_HEAD =
-  `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">` +
+  `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'self' data:">` +
   `<base target="_blank">` +
-  `<style>body{font-family:system-ui,sans-serif;font-size:14px;margin:12px;color:#18181b;background:#fff}</style>`;
+  // Images from the web are blocked: hide them rather than show a broken-image icon for each.
+  `<style>img:not([src^="data:"]){display:none}</style>`;
 
-/** The open email: its toolbar, who sent it, its text or formatted version, and attachments. */
+/**
+ * Whether an email sets its own colours. Those are shown as designed, on white, as their senders
+ * meant (a dark page would leave dark text on dark); plain ones follow the app's light or dark
+ * theme, like the rest of the page.
+ */
+const hasOwnColors = (html: string) =>
+  /bgcolor\s*=|background(-color)?\s*:|(^|[\s;"'{])color\s*:/i.test(html);
+
+/**
+ * The page's @font-face rules for `family` (with their files' full addresses), so a frame can use
+ * the app's font: a frame doesn't share the fonts its page has loaded.
+ */
+function fontFaces(family: string) {
+  const name = family
+    .split(",")[0]!
+    .trim()
+    .replace(/^["']|["']$/g, "");
+  const rules: string[] = [];
+  for (const sheet of document.styleSheets) {
+    let cssRules: CSSRuleList;
+    try {
+      cssRules = sheet.cssRules;
+    } catch {
+      continue; // Another site's stylesheet: its rules can't be read.
+    }
+    for (const rule of cssRules) {
+      if (!(rule instanceof CSSFontFaceRule)) continue;
+      if (rule.style.getPropertyValue("font-family").replace(/["']/g, "").trim() !== name) continue;
+      const base = sheet.href ?? document.baseURI;
+      rules.push(
+        rule.cssText.replace(/url\((["']?)([^"')]+)\1\)/g, (_, quote: string, url: string) =>
+          url.startsWith("data:")
+            ? `url(${quote}${url}${quote})`
+            : `url("${new URL(url, base).href}")`
+        )
+      );
+    }
+  }
+  return rules.join("");
+}
+
+/** An email's formatted version, in a sandboxed frame as tall as the email. */
+function EmailHtml({html, title}: {html: string; title: string}) {
+  const frame = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(160);
+  const designed = hasOwnColors(html);
+  // The page's light or dark scheme, text colour, accent and font, for emails that follow the
+  // theme: read again whenever the theme (a class on <html>) changes, rebuilding the frame.
+  const [colors, setColors] = useState<{
+    scheme: "light" | "dark";
+    text: string;
+    accent: string;
+    font: string;
+    fontFaces: string;
+  } | null>(null);
+  useEffect(() => {
+    const read = () => {
+      const parent = frame.current?.parentElement;
+      if (!parent) return;
+      setColors({
+        // The same class the page's own colours come from, so the frame always matches the page.
+        scheme: document.documentElement.classList.contains("dark") ? "dark" : "light",
+        text: getComputedStyle(parent).color,
+        font: getComputedStyle(parent).fontFamily,
+        fontFaces: fontFaces(getComputedStyle(parent).fontFamily),
+        accent: getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(),
+      });
+    };
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(document.documentElement, {attributes: true, attributeFilter: ["class"]});
+    return () => observer.disconnect();
+  }, []);
+  const style = designed
+    ? "body{margin:16px;background:#fff;color:#18181b;font-family:system-ui,sans-serif;font-size:14px}"
+    : `${colors?.fontFaces ?? ""}:root{color-scheme:${colors?.scheme ?? "normal"}}body{margin:0;background:transparent;color:${colors?.text ?? "inherit"};font-family:${colors?.font ?? "system-ui,sans-serif"};font-size:14px;line-height:1.6}a{color:${colors?.accent || "inherit"}}`;
+
+  // As tall as its content, so the email scrolls with the page instead of inside a box. The frame
+  // can't run scripts, so measuring it from here is the only way.
+  const measure = () => {
+    const doc = frame.current?.contentDocument;
+    if (doc?.documentElement) setHeight(doc.documentElement.scrollHeight);
+  };
+  useEffect(() => {
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  });
+
+  return (
+    <iframe
+      ref={frame}
+      title={title}
+      // No allow-scripts, so nothing in it runs; allow-same-origin only lets this page measure it.
+      sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+      srcDoc={`${SANDBOX_HEAD}<style>${style}</style>${html}`}
+      onLoad={measure}
+      style={{height}}
+      className={cn("w-full", designed && "rounded-xl")}
+    />
+  );
+}
+
+/** The toolbar's icon buttons: quiet until hovered. */
+const TOOL = "text-muted hover:text-foreground";
+
+/** The open email: its toolbar, who sent it, its formatted (or plain) text, and attachments. */
 function EmailDetail({
   workspaceSlug,
   id,
@@ -286,57 +385,84 @@ function EmailDetail({
   nextId?: string;
 }) {
   const format = useFormatter();
+  const navigate = useNavigate({from: Route.fullPath});
   const email = useQuery(orpc.workspaces.emails.get.queryOptions({input: {workspaceSlug, id}}));
-  const [view, setView] = useState<"text" | "formatted">("text");
+  // Formatted when it has a formatted version, as mail apps show it; plain text on request.
+  const [plain, setPlain] = useState(false);
   const data = email.data;
+  const open = (emailId: string | undefined) =>
+    void navigate({search: {email: emailId}, replace: emailId !== undefined});
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-clip lg:py-4 lg:pr-4 lg:pl-0.5">
       <div className="lg:bg-surface lg:shadow-surface flex max-h-full flex-1 flex-col gap-6 overflow-clip p-4 lg:rounded-2xl">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Link
-              to="/$workspaceSlug/inbox"
-              params={{workspaceSlug}}
-              search={{}}
-              aria-label="Back to the inbox"
-              className="text-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-full border transition-colors lg:hidden">
+          <div className="flex items-center gap-1">
+            <IconButton
+              size="sm"
+              variant="ghost"
+              label="Back to the inbox"
+              onPress={() => open(undefined)}
+              className={cn(TOOL, "lg:hidden")}>
               <ChevronLeftIcon className="size-4" />
-            </Link>
-            <Link
-              to="/$workspaceSlug/inbox"
-              params={{workspaceSlug}}
-              search={{}}
-              aria-label="Close"
-              className="bg-default text-muted hover:bg-default-hover hidden size-6 shrink-0 items-center justify-center rounded-xl transition-colors lg:inline-flex">
+            </IconButton>
+            <IconButton
+              size="sm"
+              variant="ghost"
+              label="Close"
+              onPress={() => open(undefined)}
+              className={cn(TOOL, "hidden lg:inline-flex")}>
               <XIcon className="size-4" />
-            </Link>
+            </IconButton>
             {data && (
-              <Tooltip delay={300}>
-                <a
-                  href={`/api/workspaces/${encodeURIComponent(workspaceSlug)}/emails/${encodeURIComponent(id)}`}
-                  aria-label="Download the email"
-                  className="text-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-full transition-colors">
-                  <DownloadIcon className="size-4" />
-                </a>
-                <Tooltip.Content>
-                  Download the email as received (.eml), attachments and all
-                </Tooltip.Content>
-              </Tooltip>
+              <IconButton
+                size="sm"
+                variant="ghost"
+                className={TOOL}
+                label="Download the email (.eml), attachments and all"
+                onPress={() => {
+                  // Sent as an attachment, so the browser saves it and stays on this page.
+                  window.location.href = `/api/workspaces/${encodeURIComponent(workspaceSlug)}/emails/${encodeURIComponent(id)}`;
+                }}>
+                <DownloadIcon className="size-4" />
+              </IconButton>
+            )}
+            {data?.html && (
+              <IconButton
+                size="sm"
+                variant="ghost"
+                label={plain ? "Show it formatted" : "Show it as plain text"}
+                aria-pressed={plain}
+                onPress={() => setPlain(on => !on)}
+                className={cn(TOOL, plain && "text-foreground bg-default")}>
+                <TypeIcon className="size-4" />
+              </IconButton>
             )}
           </div>
           {position && (
-            <div className="flex items-center gap-3 px-2">
+            <div className="flex items-center gap-2 px-2">
               <span className="text-muted text-xs tabular-nums">
                 {position.index + 1} of {position.count}
               </span>
               <div className="flex items-center">
-                <StepLink workspaceSlug={workspaceSlug} id={previousId} label="Newer email">
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  className={TOOL}
+                  label="Newer email"
+                  isDisabled={!previousId}
+                  onPress={() => open(previousId)}>
                   <ArrowLeftIcon className="size-4" />
-                </StepLink>
-                <StepLink workspaceSlug={workspaceSlug} id={nextId} label="Older email">
+                </IconButton>
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  className={TOOL}
+                  label="Older email"
+                  isDisabled={!nextId}
+                  onPress={() => open(nextId)}>
                   <ArrowRightIcon className="size-4" />
-                </StepLink>
+                </IconButton>
               </div>
             </div>
           )}
@@ -355,7 +481,7 @@ function EmailDetail({
                 {data.subject ?? "(no subject)"}
               </h2>
               <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar className="size-9 shrink-0">
                     <Avatar.Fallback>{initials(senderName(data))}</Avatar.Fallback>
                   </Avatar>
@@ -368,47 +494,14 @@ function EmailDetail({
                         {data.fromAddress}
                       </span>
                     )}
-                    <span className="text-muted text-xs leading-tight font-medium">
-                      to {contactEmail(workspaceSlug)}
-                    </span>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <span className="text-muted text-xs whitespace-nowrap">
-                    {format.dateTime(data.receivedAt, {dateStyle: "medium", timeStyle: "short"})}
-                  </span>
-                  {data.html && (
-                    <Tabs
-                      selectedKey={view}
-                      onSelectionChange={key =>
-                        setView(key === "formatted" ? "formatted" : "text")
-                      }>
-                      <Tabs.ListContainer>
-                        <Tabs.List aria-label="How to show the email">
-                          <Tabs.Tab id="text" className="h-6 px-2 text-xs">
-                            Text
-                            <Tabs.Indicator />
-                          </Tabs.Tab>
-                          <Tabs.Tab id="formatted" className="h-6 px-2 text-xs">
-                            Formatted
-                            <Tabs.Indicator />
-                          </Tabs.Tab>
-                        </Tabs.List>
-                      </Tabs.ListContainer>
-                    </Tabs>
-                  )}
-                </div>
+                <span className="text-muted shrink-0 text-xs whitespace-nowrap">
+                  {format.dateTime(data.receivedAt, {dateStyle: "medium", timeStyle: "short"})}
+                </span>
               </div>
-              {view === "formatted" && data.html ? (
-                <div className="flex flex-col gap-1">
-                  <iframe
-                    title={data.subject ?? "Email"}
-                    sandbox="allow-popups allow-popups-to-escape-sandbox"
-                    srcDoc={SANDBOX_HEAD + data.html}
-                    className="h-[32rem] w-full resize-y rounded-xl border bg-white"
-                  />
-                  <p className="text-muted text-xs">Images from the web aren't loaded.</p>
-                </div>
+              {data.html && !plain ? (
+                <EmailHtml html={data.html} title={data.subject ?? "Email"} />
               ) : (
                 <div className="text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap">
                   {data.text ?? "(no text)"}
@@ -436,40 +529,6 @@ function EmailDetail({
         </ScrollShadow>
       </div>
     </div>
-  );
-}
-
-/** Previous/next in the list (disabled at either end). */
-function StepLink({
-  workspaceSlug,
-  id,
-  label,
-  children,
-}: {
-  workspaceSlug: string;
-  id: string | undefined;
-  label: string;
-  children: React.ReactNode;
-}) {
-  const className =
-    "text-muted inline-flex size-8 items-center justify-center rounded-full transition-colors";
-  if (!id) {
-    return (
-      <span aria-label={label} aria-disabled className={cn(className, "opacity-40")}>
-        {children}
-      </span>
-    );
-  }
-  return (
-    <Link
-      to="/$workspaceSlug/inbox"
-      params={{workspaceSlug}}
-      search={{email: id}}
-      replace
-      aria-label={label}
-      className={cn(className, "hover:text-foreground")}>
-      {children}
-    </Link>
   );
 }
 

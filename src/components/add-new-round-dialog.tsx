@@ -2,6 +2,7 @@ import {Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {newId, workspaceMutations} from "@/lib/workspace-mutations";
 
 import {ControlledModal} from "./controlled-dialog";
@@ -32,7 +33,9 @@ export function AddNewRoundDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Add a round</Modal.Heading>
           </Modal.Header>

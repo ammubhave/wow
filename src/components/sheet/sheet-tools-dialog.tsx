@@ -1,6 +1,7 @@
 import {Button, Modal} from "@heroui/react";
 
 import {ControlledModal} from "@/components/controlled-dialog";
+import {IconTooltip} from "@/components/icon-button";
 import {HelpLink} from "@/docs/components/help-link";
 import {PUZZLE_FORMULA_GROUPS} from "@/lib/formula-docs";
 
@@ -22,7 +23,9 @@ export function SheetToolsDialog({
     <ControlledModal isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Container size="lg" scroll="inside">
         <Modal.Dialog>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Puzzle tools</Modal.Heading>
             <p className="text-muted text-sm">

@@ -24,6 +24,7 @@ import {useEffect, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
 import {HelpLink} from "@/docs/components/help-link";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -200,9 +201,9 @@ function GuessRow({
         )}
         {!isReadOnly && (
           <Dropdown>
-            <Button size="sm" isIconOnly variant="ghost" aria-label={`More for ${guess.answer}`}>
+            <IconButton size="sm" variant="ghost" label={`More for ${guess.answer}`}>
               <EllipsisIcon />
-            </Button>
+            </IconButton>
             <Dropdown.Popover placement="bottom end">
               <Dropdown.Menu
                 aria-label={`Update ${guess.answer}`}
@@ -392,13 +393,12 @@ export function GuessQueueButton({workspaceSlug}: {workspaceSlug: string}) {
   return (
     <Popover>
       <Badge.Anchor>
-        <Button
+        <IconButton
           size="sm"
-          isIconOnly
           variant="ghost"
-          aria-label={pending.length > 0 ? `Guess queue (${pending.length})` : "Guess queue"}>
+          label={pending.length > 0 ? `Guess queue (${pending.length})` : "Guess queue"}>
           <ListOrderedIcon />
-        </Button>
+        </IconButton>
         {queued.length > 0 && (
           <Badge color="accent" size="sm" placement="top-right">
             {queued.length}

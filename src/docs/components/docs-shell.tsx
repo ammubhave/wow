@@ -11,6 +11,7 @@ import {
 import {lazy, Suspense, useEffect, useRef, useState} from "react";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
 import {PROSE_FLOW} from "@/lib/prose";
 
 import {DOC_PAGES, DOC_SECTIONS, type DocPage, findDoc, loadDoc, neighbours} from "../registry";
@@ -241,13 +242,12 @@ export function DocsShell({base, slug}: {base: string; slug: string}) {
                     className={cn("transition-transform", isNavOpen && "rotate-180")}
                   />
                 </Button>
-                <Button
-                  isIconOnly
+                <IconButton
                   variant="secondary"
-                  aria-label="Search the docs"
+                  label="Search the docs"
                   onPress={() => setIsSearchOpen(true)}>
                   <SearchIcon />
-                </Button>
+                </IconButton>
               </div>
               {isNavOpen && (
                 <div className="border-separator border p-3">

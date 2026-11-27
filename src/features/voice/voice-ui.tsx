@@ -16,6 +16,7 @@ import {type ReactNode, useMemo, useRef, useState} from "react";
 import {share} from "rxjs";
 import {cn} from "tailwind-variants";
 
+import {IconTooltip} from "@/components/icon-button";
 import {UserHoverCard, userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {AwardBadges} from "@/features/awards/awards-provider";
 import {useWorkspace, voiceRoomsQueryKey, voiceSpeakingQueryKey} from "@/hooks/use-workspace";
@@ -314,16 +315,18 @@ function RemoteVideo({
         {label}
       </span>
       {isScreen && (
-        <Button
-          isIconOnly
-          size="sm"
-          variant="secondary"
-          aria-label={`Show ${label} fullscreen`}
-          // Always shown on touch screens, which can't hover.
-          className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-          onPress={() => void containerRef.current?.requestFullscreen()}>
-          <MaximizeIcon />
-        </Button>
+        <IconTooltip label={`Show ${label} fullscreen`}>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="secondary"
+            aria-label={`Show ${label} fullscreen`}
+            // Always shown on touch screens, which can't hover.
+            className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+            onPress={() => void containerRef.current?.requestFullscreen()}>
+            <MaximizeIcon />
+          </Button>
+        </IconTooltip>
       )}
     </div>
   );

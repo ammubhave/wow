@@ -61,6 +61,7 @@ import {DeleteRoundDialog} from "@/components/delete-round-dialog";
 import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {EditRoundDialog} from "@/components/edit-round-dialog";
 import {useAppForm} from "@/components/form";
+import {IconButton, IconTooltip, NativeTooltip} from "@/components/icon-button";
 import {MovePuzzleDialog} from "@/components/move-puzzle-dialog";
 import {SolveSpark} from "@/components/solve-spark";
 import {TeammateChangeFlash} from "@/components/teammate-change-flash";
@@ -141,16 +142,15 @@ function RowChevron({
   color?: string;
 }) {
   return (
-    <Button
+    <IconButton
       slot="chevron"
       variant="ghost"
-      isIconOnly
       size="sm"
-      aria-label={label}
+      label={label}
       className="-my-2 -ms-1 size-6 min-w-6 shrink-0 select-none"
       style={color ? {color} : undefined}>
       <ChevronRightIcon className={cn("size-3.5 transition", isExpanded && "rotate-90")} />
-    </Button>
+    </IconButton>
   );
 }
 
@@ -423,16 +423,15 @@ function animateRowMoves(scroller: HTMLElement) {
 /** The drag handle shown in Arrange mode (React Aria starts a drag from `slot="drag"`). */
 function DragHandle({label}: {label: string}) {
   return (
-    <Button
+    <IconButton
       slot="drag"
       variant="ghost"
-      isIconOnly
       size="sm"
-      aria-label={`Drag ${label}`}
+      label={`Drag ${label}`}
       // `!`: HeroUI's button sets its own cursor, which would otherwise win.
       className="text-muted !cursor-grab active:!cursor-grabbing">
       <GripVerticalIcon className="size-4" />
-    </Button>
+    </IconButton>
   );
 }
 
@@ -1389,15 +1388,17 @@ function BlackboardPage() {
                   </Dropdown.Popover>
                 </Dropdown>
                 {filterCount > 0 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="shrink-0"
-                    aria-label="Clear filters"
-                    onPress={clearFilters}>
-                    <XIcon />
-                    <span className="hidden xl:inline">Clear</span>
-                  </Button>
+                  <IconTooltip label="Clear filters">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0"
+                      aria-label="Clear filters"
+                      onPress={clearFilters}>
+                      <XIcon />
+                      <span className="hidden xl:inline">Clear</span>
+                    </Button>
+                  </IconTooltip>
                 )}
               </div>
               {/* The most common action, one click away (it asks where the puzzle goes). */}
@@ -1804,15 +1805,14 @@ const BlackboardRound = memo(function BlackboardRound({
           {/* Everything in it changes the round. */}
           {!isReadOnly && (
             <Dropdown>
-              <Button
-                aria-label={`Actions for ${round.name}`}
+              <IconButton
+                label={`Actions for ${round.name}`}
                 data-tour="round-menu"
                 data-tour-id={round.id}
                 isDisabled={isBeingCreated}
-                variant="ghost"
-                isIconOnly>
+                variant="ghost">
                 <EllipsisIcon />
-              </Button>
+              </IconButton>
               <Dropdown.Popover className="w-fit" placement="bottom end">
                 <Dropdown.Menu>
                   <Dropdown.Item
@@ -1907,9 +1907,9 @@ const BlackboardUnassigned = memo(function BlackboardUnassigned({
           {/* Its only item moves puzzles. */}
           {!isReadOnly && (
             <Dropdown>
-              <Button aria-label="Actions for unassigned puzzles" variant="ghost" isIconOnly>
+              <IconButton label="Actions for unassigned puzzles" variant="ghost">
                 <EllipsisIcon />
-              </Button>
+              </IconButton>
               <Dropdown.Popover className="w-fit" placement="bottom end">
                 <Dropdown.Menu>
                   <Dropdown.Item
@@ -2012,14 +2012,16 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
           <DragHandle label={metaPuzzle.name} />
         ) : (
           metaPuzzle.link && (
-            <a
-              className={buttonVariants({variant: "ghost", isIconOnly: true})}
-              aria-label={`Hunt link to ${metaPuzzle.name}`}
-              href={metaPuzzle.link}
-              target="_blank"
-              rel="noopener noreferrer">
-              <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
-            </a>
+            <NativeTooltip label={`Hunt link to ${metaPuzzle.name}`}>
+              <a
+                className={buttonVariants({variant: "ghost", isIconOnly: true})}
+                aria-label={`Hunt link to ${metaPuzzle.name}`}
+                href={metaPuzzle.link}
+                target="_blank"
+                rel="noopener noreferrer">
+                <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
+              </a>
+            </NativeTooltip>
           )
         )}
       </Table.Cell>
@@ -2103,15 +2105,17 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
       </Table.Cell>
       <Table.Cell className={CELL}>
         <div className="-my-3 ml-auto flex items-center justify-end">
-          <ToggleButton
-            variant="ghost"
-            isIconOnly
-            aria-label="Favorite"
-            isSelected={isFavorite}
-            onChange={value => toggleFavorite(metaPuzzle.id, value)}
-            className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
-            <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
-          </ToggleButton>
+          <IconTooltip label="Favorite">
+            <ToggleButton
+              variant="ghost"
+              isIconOnly
+              aria-label="Favorite"
+              isSelected={isFavorite}
+              onChange={value => toggleFavorite(metaPuzzle.id, value)}
+              className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
+              <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
+            </ToggleButton>
+          </IconTooltip>
           {/* Lines up with the round row's +. */}
           {!isReadOnly && (
             <Tooltip delay={300}>
@@ -2136,14 +2140,13 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
           {/* Read-only, only phones' favorite item is left (or nothing, so no menu). */}
           {(!isReadOnly || isPhone) && (
             <Dropdown>
-              <Button
-                aria-label={`Actions for ${metaPuzzle.name}`}
+              <IconButton
+                label={`Actions for ${metaPuzzle.name}`}
                 data-tour="meta-menu"
                 data-tour-id={metaPuzzle.id}
-                variant="ghost"
-                isIconOnly>
+                variant="ghost">
                 <EllipsisIcon />
-              </Button>
+              </IconButton>
               <Dropdown.Popover className="w-fit" placement="bottom end">
                 <Dropdown.Menu>
                   {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not
@@ -2291,14 +2294,16 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
           <DragHandle label={puzzle.name} />
         ) : (
           puzzle.link && (
-            <a
-              className={buttonVariants({variant: "ghost", isIconOnly: true})}
-              aria-label={`Hunt link to ${puzzle.name}`}
-              href={puzzle.link}
-              target="_blank"
-              rel="noopener noreferrer">
-              <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
-            </a>
+            <NativeTooltip label={`Hunt link to ${puzzle.name}`}>
+              <a
+                className={buttonVariants({variant: "ghost", isIconOnly: true})}
+                aria-label={`Hunt link to ${puzzle.name}`}
+                href={puzzle.link}
+                target="_blank"
+                rel="noopener noreferrer">
+                <PuzzleIcon className="text-muted group-hover/row:text-accent group-focus-within/row:text-accent transition-colors" />
+              </a>
+            </NativeTooltip>
           )
         )}
       </Table.Cell>
@@ -2368,21 +2373,23 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
       </Table.Cell>
       <Table.Cell className={CELL}>
         <div className="-my-3 ml-auto flex items-center justify-end">
-          <ToggleButton
-            variant="ghost"
-            isIconOnly
-            aria-label="Favorite"
-            isSelected={isFavorite}
-            onChange={value => toggleFavorite(puzzle.id, value)}
-            className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
-            <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
-          </ToggleButton>
+          <IconTooltip label="Favorite">
+            <ToggleButton
+              variant="ghost"
+              isIconOnly
+              aria-label="Favorite"
+              isSelected={isFavorite}
+              onChange={value => toggleFavorite(puzzle.id, value)}
+              className={cn("group/toggle", !isFavorite && FAVORITE_HIDDEN_CLASS)}>
+              <StarIcon className="stroke-muted group-data-selected/toggle:fill-accent group-data-selected/toggle:stroke-accent" />
+            </ToggleButton>
+          </IconTooltip>
           {/* Read-only, only phones' favorite item is left (or nothing, so no menu). */}
           {(!isReadOnly || isPhone) && (
             <Dropdown>
-              <Button aria-label={`Actions for ${puzzle.name}`} variant="ghost" isIconOnly>
+              <IconButton label={`Actions for ${puzzle.name}`} variant="ghost">
                 <EllipsisIcon />
-              </Button>
+              </IconButton>
               <Dropdown.Popover className="w-fit" placement="bottom end">
                 <Dropdown.Menu>
                   {/* Phones: the star isn't shown in the row (to keep it narrow), so it's here. Not

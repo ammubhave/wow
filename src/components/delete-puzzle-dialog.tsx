@@ -1,6 +1,7 @@
 import {AlertDialog, Button} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 
+import {IconTooltip} from "@/components/icon-button";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
 import {ControlledAlertDialog} from "./controlled-dialog";
@@ -30,7 +31,9 @@ export function DeletePuzzleDialog({
     <ControlledAlertDialog isOpen={open} onOpenChange={setOpen} trigger={children}>
       <AlertDialog.Container size="sm">
         <AlertDialog.Dialog>
-          <AlertDialog.CloseTrigger />
+          <IconTooltip label="Close">
+            <AlertDialog.CloseTrigger />
+          </IconTooltip>
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />
             <AlertDialog.Heading>Delete {puzzleName}?</AlertDialog.Heading>

@@ -3,6 +3,8 @@ import {ExternalLinkIcon, MinusIcon, PlusIcon, RotateCcwIcon} from "lucide-react
 import type {ReactNode} from "react";
 import {TransformComponent, TransformWrapper} from "react-zoom-pan-pinch";
 
+import {IconTooltip} from "@/components/icon-button";
+
 function ControlButton({
   label,
   onPress,
@@ -42,7 +44,9 @@ export function ImageLightbox({src, alt}: {src: string; alt: string}) {
       <Modal.Backdrop variant="blur">
         <Modal.Container size="cover">
           <Modal.Dialog aria-label={alt} className="relative h-full overflow-hidden p-0">
-            <Modal.CloseTrigger className="z-10" />
+            <IconTooltip label="Close">
+              <Modal.CloseTrigger className="z-10" />
+            </IconTooltip>
             <TransformWrapper doubleClick={{mode: "toggle"}} centerOnInit>
               {({zoomIn, zoomOut, resetTransform}) => (
                 <>

@@ -10,6 +10,7 @@ import {ControlledAlertDialog} from "@/components/controlled-dialog";
 import {ExchangePuzzleSkeleton} from "@/components/exchange-skeletons";
 import {ExchangeTopBar} from "@/components/exchange-top-bar";
 import {useAppForm} from "@/components/form";
+import {IconButton, IconTooltip} from "@/components/icon-button";
 import {PuzzleRichTextEditor} from "@/components/rich-text-editor";
 import {orpc} from "@/lib/orpc";
 
@@ -201,14 +202,13 @@ function RouteComponent() {
                                     </form.AppField>
                                   </td>
                                   <td className="w-px">
-                                    <Button
+                                    <IconButton
                                       variant="outline"
                                       size="sm"
-                                      isIconOnly
-                                      aria-label="Remove partial"
+                                      label="Remove partial"
                                       onPress={() => field.removeValue(i)}>
                                       <TrashIcon />
-                                    </Button>
+                                    </IconButton>
                                   </td>
                                 </tr>
                               ))}
@@ -273,14 +273,13 @@ function RouteComponent() {
                                     </form.AppField>
                                   </td>
                                   <td className="w-px">
-                                    <Button
+                                    <IconButton
                                       variant="outline"
                                       size="sm"
-                                      isIconOnly
-                                      aria-label="Remove hint"
+                                      label="Remove hint"
                                       onPress={() => field.removeValue(i)}>
                                       <TrashIcon />
-                                    </Button>
+                                    </IconButton>
                                   </td>
                                 </tr>
                               ))}
@@ -353,7 +352,9 @@ function RouteComponent() {
       <ControlledAlertDialog isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialog.Container size="sm">
           <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
+            <IconTooltip label="Close">
+              <AlertDialog.CloseTrigger />
+            </IconTooltip>
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />
               <AlertDialog.Heading>Delete “{puzzle.hunt_puzzles.title}”?</AlertDialog.Heading>

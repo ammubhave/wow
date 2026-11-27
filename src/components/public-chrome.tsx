@@ -1,8 +1,9 @@
 import {Navbar} from "@heroui-pro/react";
-import {Button, buttonVariants, Dropdown, Header, Label, Separator} from "@heroui/react";
+import {buttonVariants, Dropdown, Header, Label, Separator} from "@heroui/react";
 import {Link, useRouterState} from "@tanstack/react-router";
 import {MonitorIcon, MoonIcon, PaletteIcon, SunIcon} from "lucide-react";
 
+import {IconButton, IconTooltip} from "@/components/icon-button";
 import {findDoc} from "@/docs/registry";
 import {authClient} from "@/lib/auth-client";
 import {openHelpChat} from "@/lib/help-chat";
@@ -25,9 +26,9 @@ function ThemeMenu() {
   const {theme, setTheme} = useTheme();
   return (
     <Dropdown>
-      <Button variant="ghost" size="sm" isIconOnly aria-label="Theme">
+      <IconButton variant="ghost" size="sm" label="Theme">
         {theme === "light" ? <SunIcon /> : theme === "dark" ? <MoonIcon /> : <PaletteIcon />}
-      </Button>
+      </IconButton>
       <Dropdown.Popover className="min-w-48" placement="bottom end">
         <Dropdown.Menu
           selectedKeys={[theme]}
@@ -90,7 +91,9 @@ export function PublicNavbar({className}: {className?: string}) {
   return (
     <Navbar aria-label="Site" maxWidth="xl" className={className}>
       <Navbar.Header>
-        <Navbar.MenuToggle className="md:hidden" />
+        <IconTooltip label="Toggle navigation menu">
+          <Navbar.MenuToggle className="md:hidden" />
+        </IconTooltip>
         <Navbar.Brand>
           <Link to="/" className="flex items-center gap-2">
             <img src="/favicon.ico" alt="" className="size-6 shrink-0 rounded-full" />

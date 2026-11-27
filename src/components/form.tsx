@@ -24,6 +24,8 @@ import {CheckIcon, EyeIcon, EyeOffIcon} from "lucide-react";
 import React, {useState} from "react";
 import {cn} from "tailwind-variants";
 
+import {IconButton} from "@/components/icon-button";
+
 const {fieldContext, formContext, useFieldContext, useFormContext} = createFormHookContexts();
 
 function InputGroupInputField(props: React.ComponentProps<typeof InputGroup.Input>) {
@@ -81,14 +83,13 @@ function PasswordField({
       <InputGroup>
         <InputGroup.Input {...props} type={isVisible ? "text" : "password"} />
         <InputGroup.Suffix className="pe-0">
-          <Button
-            isIconOnly
+          <IconButton
             size="sm"
             variant="ghost"
-            aria-label={isVisible ? "Hide password" : "Show password"}
+            label={isVisible ? "Hide password" : "Show password"}
             onPress={() => setIsVisible(visible => !visible)}>
             {isVisible ? <EyeOffIcon /> : <EyeIcon />}
-          </Button>
+          </IconButton>
         </InputGroup.Suffix>
       </InputGroup>
       {description && <Description>{description}</Description>}

@@ -1,5 +1,7 @@
 import {AlertDialog, Button} from "@heroui/react";
 
+import {IconTooltip} from "@/components/icon-button";
+
 import {ControlledAlertDialog} from "./controlled-dialog";
 
 /**
@@ -30,7 +32,9 @@ export function ConfirmDialog({
     <ControlledAlertDialog isOpen={isOpen} onOpenChange={onOpenChange}>
       <AlertDialog.Container size="sm">
         <AlertDialog.Dialog>
-          <AlertDialog.CloseTrigger />
+          <IconTooltip label="Close">
+            <AlertDialog.CloseTrigger />
+          </IconTooltip>
           <AlertDialog.Header>
             <AlertDialog.Icon status={status} />
             <AlertDialog.Heading>{heading}</AlertDialog.Heading>

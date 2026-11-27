@@ -1,6 +1,7 @@
 import {ListBox, Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 
+import {IconTooltip} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -36,7 +37,9 @@ export function AssignUnassignedPuzzlesDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Assign unassigned puzzles</Modal.Heading>
           </Modal.Header>

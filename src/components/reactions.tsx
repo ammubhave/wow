@@ -5,6 +5,7 @@ import {EmojiPicker, type EmojiPickerListComponents} from "frimousse";
 import {SmilePlusIcon} from "lucide-react";
 import {useState} from "react";
 
+import {IconButton} from "@/components/icon-button";
 import {customEmojiUrl} from "@/components/settings/workspace-look-cards";
 import {useWorkspace} from "@/hooks/use-workspace";
 
@@ -113,15 +114,14 @@ export function ReactionPicker({onReact}: {onReact: (reaction: string) => void})
           {(theme.customEmoji?.length ?? 0) > 0 && (
             <div className="border-separator flex flex-wrap gap-0.5 border-t pt-1">
               {theme.customEmoji!.map(e => (
-                <Button
+                <IconButton
                   key={e.name}
-                  isIconOnly
                   size="sm"
                   variant="ghost"
-                  aria-label={`:${e.name}:`}
+                  label={`:${e.name}:`}
                   onPress={() => pick(`:${e.name}:`)}>
                   <Glyph reaction={`:${e.name}:`} className="size-5" />
-                </Button>
+                </IconButton>
               ))}
             </div>
           )}

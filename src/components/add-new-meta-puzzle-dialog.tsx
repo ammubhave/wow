@@ -2,6 +2,7 @@ import {Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {z} from "zod";
 
+import {IconTooltip} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {newId, workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -36,7 +37,9 @@ export function AddNewMetaPuzzleDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen} trigger={children}>
       <Modal.Container>
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Add a meta</Modal.Heading>
           </Modal.Header>

@@ -18,6 +18,7 @@ import {TokenFieldValue} from "react-aria-components/TokenField";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
+import {IconTooltip} from "@/components/icon-button";
 import {AwardBadges} from "@/features/awards/awards-provider";
 import {NO_PRESENCES} from "@/features/presences/presences";
 import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
@@ -524,10 +525,12 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                                   size={image.file.size}
                                   src={image.src}>
                                   <ChatAttachment.Preview />
-                                  <ChatAttachment.Remove
-                                    aria-label="Remove image"
-                                    onPress={() => removeImage(image.key)}
-                                  />
+                                  <IconTooltip label="Remove image">
+                                    <ChatAttachment.Remove
+                                      aria-label="Remove image"
+                                      onPress={() => removeImage(image.key)}
+                                    />
+                                  </IconTooltip>
                                 </ChatAttachment>
                               ))}
                             </ChatAttachmentGroup>
@@ -566,11 +569,13 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
                     </PromptInput.Tokens>
                     <PromptInput.Toolbar>
                       <PromptInput.ToolbarEnd>
-                        <PromptInput.Send
-                          aria-label="Send message"
-                          // The composer only enables Send for text; an image on its own is a message too.
-                          isDisabled={isUploading || (!input.trim() && images.length === 0)}
-                        />
+                        <IconTooltip label="Send message">
+                          <PromptInput.Send
+                            aria-label="Send message"
+                            // The composer only enables Send for text; an image on its own is a message too.
+                            isDisabled={isUploading || (!input.trim() && images.length === 0)}
+                          />
+                        </IconTooltip>
                       </PromptInput.ToolbarEnd>
                     </PromptInput.Toolbar>
                   </PromptInput.Shell>

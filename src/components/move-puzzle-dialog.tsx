@@ -1,6 +1,7 @@
 import {Modal} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 
+import {IconTooltip} from "@/components/icon-button";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {workspaceMutations} from "@/lib/workspace-mutations";
 
@@ -36,7 +37,9 @@ export function MovePuzzleDialog({
     <ControlledModal isOpen={open} onOpenChange={setOpen}>
       <Modal.Container size="sm">
         <Modal.Dialog aria-describedby={undefined}>
-          <Modal.CloseTrigger />
+          <IconTooltip label="Close">
+            <Modal.CloseTrigger />
+          </IconTooltip>
           <Modal.Header>
             <Modal.Heading>Move {puzzle.name}</Modal.Heading>
           </Modal.Header>
