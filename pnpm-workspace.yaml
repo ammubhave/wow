@@ -45,3 +45,7 @@ allowBuilds:
 # Released the day we upgraded (the 1.0 GA). Drop once it is older than the minimum release age.
 minimumReleaseAgeExclude:
   - "@heroui-pro/react@1.0.1"
+  # Released 2026-11-27, the day the Workers tests were added (pnpm test:workers): drop both once
+  # they're older than the minimum release age.
+  - "@cloudflare/vitest-plugin@1.10.0"
+  - miniflare@5.20261127.0-beta
