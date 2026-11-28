@@ -15,12 +15,10 @@ import {useEffect, useRef, useState} from "react";
 
 import {GuessQueueButton} from "@/components/guess-queue";
 import {IconTooltip, NativeTooltip} from "@/components/icon-button";
-import {setLastActivePuzzle} from "@/features/lastActivePuzzle/lastActivePuzzle";
 import {NotificationBell} from "@/features/notifications/notifications";
 import {LobbyButton} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {Route} from "@/routes/_workspace/$workspaceSlug";
-import {useAppDispatch, useAppSelector} from "@/store";
 
 import {HuntClock} from "./hunt-clock";
 import {NavUser} from "./nav-user";
@@ -91,14 +89,11 @@ export function WorkspaceHeader() {
     match?.routeId === "/_workspace/$workspaceSlug/puzzles/$puzzleId"
       ? match.params.puzzleId
       : undefined;
-  const dispatch = useAppDispatch();
-  useEffect(() => {
-    if (newPuzzleId) {
-      dispatch(setLastActivePuzzle(newPuzzleId));
-    }
-  }, [dispatch, newPuzzleId]);
-  const lastActivePuzzleId = useAppSelector(state => state.lastActivePuzzle.value);
-  const puzzleId = newPuzzleId ?? lastActivePuzzleId;
+  // The last puzzle you had open, for the header's way back to it (the header stays mounted while
+  // you move around the workspace).
+  const [lastPuzzleId, setLastPuzzleId] = useState(newPuzzleId);
+  if (newPuzzleId && newPuzzleId !== lastPuzzleId) setLastPuzzleId(newPuzzleId);
+  const puzzleId = newPuzzleId ?? lastPuzzleId;
   const puzzle = workspace.rounds.flatMap(round => round.puzzles).find(p => p.id === puzzleId);
   const puzzleHref = puzzle && `/${workspaceSlug}/puzzles/${puzzle.id}`;
   const sectionHint = useSectionHint();

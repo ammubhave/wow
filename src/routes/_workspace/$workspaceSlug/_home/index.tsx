@@ -67,7 +67,7 @@ import {BoardSkeleton} from "@/components/page-skeletons";
 import {SolveSpark} from "@/components/solve-spark";
 import {TeammateChangeFlash} from "@/components/teammate-change-flash";
 import {UserPresenceAvatars} from "@/components/user-hover-card";
-import {NO_PRESENCES} from "@/features/presences/presences";
+import {usePresences} from "@/features/presences/presences";
 import {VoiceRoomBadge} from "@/features/voice/voice-ui";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -86,7 +86,6 @@ import {
 import {setFavoritesMutationOptions, workspaceMutations} from "@/lib/workspace-mutations";
 import {WorkspaceRoomState} from "@/server/do/workspace";
 import type {RouterInputs} from "@/server/router";
-import {useAppSelector} from "@/store";
 
 export const Route = createFileRoute("/_workspace/$workspaceSlug/_home/")({
   component: RouteComponent,
@@ -1979,7 +1978,7 @@ const BlackboardMetaPuzzle = memo(function BlackboardMetaPuzzle({
   const color = metaColor(metaPuzzle.id);
   const isArranging = useContext(ArrangingContext);
   const isReadOnly = useContext(ReadOnlyContext);
-  const presences = useAppSelector(state => state.presences.value[metaPuzzle.id]) ?? NO_PRESENCES;
+  const presences = usePresences(metaPuzzle.id);
   // Inside another meta: its parent's line runs to it, after any lines from further out.
   const lines = parentId
     ? [
@@ -2274,7 +2273,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
     updatePuzzle({workspaceSlug, id: puzzle.id, ...patch});
   const isBeingCreated = useIsBeingCreated(puzzle.id);
   const toggleFavorite = useToggleFavorite(workspaceSlug);
-  const presences = useAppSelector(state => state.presences.value[puzzle.id]) ?? NO_PRESENCES;
+  const presences = usePresences(puzzle.id);
   const isArranging = useContext(ArrangingContext);
   const isReadOnly = useContext(ReadOnlyContext);
   const openDialog = useContext(OpenBoardDialogContext);

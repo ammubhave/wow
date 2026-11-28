@@ -13,14 +13,14 @@ import {Avatar, Menu} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {useParams} from "@tanstack/react-router";
 import {MessagesSquareIcon, PinIcon} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useEffectEvent, useRef, useState} from "react";
 import {TokenFieldValue} from "react-aria-components/TokenField";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
 import {IconTooltip} from "@/components/icon-button";
 import {AwardBadges} from "@/features/awards/awards-provider";
-import {NO_PRESENCES} from "@/features/presences/presences";
+import {usePresences} from "@/features/presences/presences";
 import {PuzzleVoiceStrip} from "@/features/voice/voice-ui";
 import {useWorkspace} from "@/hooks/use-workspace";
 import {describeChatMessage, track} from "@/lib/analytics";
@@ -37,7 +37,6 @@ import type {
 } from "@/server/do/chat";
 import {mentionMarkdown} from "@/server/notifications";
 import {VOICE_LOBBY} from "@/server/voice";
-import {useAppSelector} from "@/store";
 
 import {MessageActions, MessageEditor, PinnedBar} from "./chat-message-tools";
 import {EggoText} from "./eggo";
@@ -201,11 +200,10 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
   const [typists, setTypists] = useState<Record<string, {name: string; until: number}>>({});
 
   // Previews are blob: URLs; release whatever is still pending when the chat closes.
-  const imagesRef = useRef(images);
-  useEffect(() => {
-    imagesRef.current = images;
-  }, [images]);
-  useEffect(() => () => imagesRef.current.forEach(image => URL.revokeObjectURL(image.src)), []);
+  const releaseImages = useEffectEvent(() =>
+    images.forEach(image => URL.revokeObjectURL(image.src))
+  );
+  useEffect(() => () => releaseImages(), []);
 
   const addImages = (files: File[]) => {
     const added = files
@@ -356,8 +354,7 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
   useStayAtNewest(rootRef);
 
   // Who's here: on this puzzle, or (team chat) on the workspace's other pages, like the board.
-  const presences =
-    useAppSelector(state => state.presences.value[puzzleId ?? workspaceSlug]) ?? NO_PRESENCES;
+  const presences = usePresences(puzzleId ?? workspaceSlug);
   // Messages only carry the sender's name; show the picture of whoever here goes by that name.
   const presenceByName = new Map(presences.map(user => [user.name, user]));
 

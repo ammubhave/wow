@@ -14,7 +14,6 @@ import {
 import {TanStackRouterDevtoolsPanel} from "@tanstack/react-router-devtools";
 import {LucideProvider} from "lucide-react";
 import {PostHogProvider} from "posthog-js/react";
-import {Provider as ReactReduxProvider} from "react-redux";
 import {Toaster} from "sonner";
 import {IntlProvider} from "use-intl";
 
@@ -23,7 +22,6 @@ import {ThemeProvider, useTheme} from "@/components/theme-provider";
 import {useServiceWorker} from "@/features/notifications/push";
 import {useAnchorPreload} from "@/hooks/use-anchor-preload";
 import {captureJoinPassword} from "@/lib/join-password";
-import {store} from "@/store";
 
 import appCss from "../styles.css?url";
 
@@ -123,13 +121,11 @@ function RootDocument({children}: {children: React.ReactNode}) {
                 debug: import.meta.env.MODE === "development",
               }}>
               <PostHogIdentity />
-              <ReactReduxProvider store={store}>
-                <RouterProvider navigate={(to, options) => router.navigate({...options, to})}>
-                  <IntlProvider locale="en" timeZone={TIME_ZONE}>
-                    {children}
-                  </IntlProvider>
-                </RouterProvider>
-              </ReactReduxProvider>
+              <RouterProvider navigate={(to, options) => router.navigate({...options, to})}>
+                <IntlProvider locale="en" timeZone={TIME_ZONE}>
+                  {children}
+                </IntlProvider>
+              </RouterProvider>
             </PostHogProvider>
             <ThemedToaster />
           </ThemeProvider>

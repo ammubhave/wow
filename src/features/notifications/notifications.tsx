@@ -12,7 +12,7 @@ import {
   SettingsIcon,
   StarIcon,
 } from "lucide-react";
-import {useEffect, useMemo, useRef, useState} from "react";
+import {useEffect, useEffectEvent, useMemo, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
@@ -593,11 +593,33 @@ const AWAY_MS = 30 * 60 * 1000;
 export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
   const notifications = useNotifications(workspaceSlug);
   const workspace = useWorkspace();
-  const notificationsRef = useRef(notifications);
-  const activityRef = useRef(workspace.activityLogEntries);
-  useEffect(() => {
-    notificationsRef.current = notifications;
-    activityRef.current = workspace.activityLogEntries;
+  // The notifications and activity as they are when it runs (it waits for the history to arrive).
+  const summarize = useEffectEvent((since: number) => {
+    const recent = notifications.filter(n => n.timestamp > since);
+    const solves = recent.filter(n => n.type === "solved").length;
+    const announcements = recent.filter(n => n.type === "announcement").length;
+    const mentions = recent.filter(n => n.type === "mention").length;
+    const emails = recent.filter(n => n.type === "email").length;
+    const starred = recent.filter(n => n.type === "favorite").length;
+    const rounds = workspace.activityLogEntries.filter(
+      entry =>
+        entry.round_activity_log_entry?.subType === "create" &&
+        new Date(entry.activity_log_entry.createdAt).getTime() > since
+    ).length;
+    const parts = [
+      solves && `${solves} ${solves === 1 ? "solve" : "solves"}`,
+      rounds && `${rounds} new ${rounds === 1 ? "round" : "rounds"}`,
+      announcements && `${announcements} ${announcements === 1 ? "announcement" : "announcements"}`,
+      emails && `${emails} ${emails === 1 ? "email" : "emails"}`,
+      starred && `${starred} ${starred === 1 ? "update" : "updates"} on puzzles you starred`,
+      mentions && `you were mentioned ${mentions === 1 ? "once" : `${mentions} times`}`,
+    ].filter(Boolean);
+    if (parts.length === 0) return;
+    toast("While you were away", {
+      description: parts.join(" · "),
+      duration: 15_000,
+      action: {label: "Show", onClick: () => window.dispatchEvent(new Event(OPEN_BELL_EVENT))},
+    });
   });
 
   useEffect(() => {
@@ -608,34 +630,6 @@ export function AwaySummary({workspaceSlug}: {workspaceSlug: string}) {
       } catch {
         // Storage unavailable (private mode): no summaries, nothing else breaks.
       }
-    };
-    const summarize = (since: number) => {
-      const recent = notificationsRef.current.filter(n => n.timestamp > since);
-      const solves = recent.filter(n => n.type === "solved").length;
-      const announcements = recent.filter(n => n.type === "announcement").length;
-      const mentions = recent.filter(n => n.type === "mention").length;
-      const emails = recent.filter(n => n.type === "email").length;
-      const starred = recent.filter(n => n.type === "favorite").length;
-      const rounds = activityRef.current.filter(
-        entry =>
-          entry.round_activity_log_entry?.subType === "create" &&
-          new Date(entry.activity_log_entry.createdAt).getTime() > since
-      ).length;
-      const parts = [
-        solves && `${solves} ${solves === 1 ? "solve" : "solves"}`,
-        rounds && `${rounds} new ${rounds === 1 ? "round" : "rounds"}`,
-        announcements &&
-          `${announcements} ${announcements === 1 ? "announcement" : "announcements"}`,
-        emails && `${emails} ${emails === 1 ? "email" : "emails"}`,
-        starred && `${starred} ${starred === 1 ? "update" : "updates"} on puzzles you starred`,
-        mentions && `you were mentioned ${mentions === 1 ? "once" : `${mentions} times`}`,
-      ].filter(Boolean);
-      if (parts.length === 0) return;
-      toast("While you were away", {
-        description: parts.join(" · "),
-        duration: 15_000,
-        action: {label: "Show", onClick: () => window.dispatchEvent(new Event(OPEN_BELL_EVENT))},
-      });
     };
     const check = () => {
       if (document.hidden) {

@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useEffectEvent, useState} from "react";
 
 import {EXTENSION_ID} from "@/lib/extension";
 import {client} from "@/lib/orpc";
@@ -42,10 +42,7 @@ const isSupported = () =>
  * clicked notification points when it asks this page to (`wow:navigate`, a path in WOW).
  */
 export function useServiceWorker(navigate: (path: string) => void) {
-  const navigateRef = useRef(navigate);
-  useEffect(() => {
-    navigateRef.current = navigate;
-  });
+  const onNavigate = useEffectEvent(navigate);
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return undefined;
     void (async () => {
@@ -69,7 +66,7 @@ export function useServiceWorker(navigate: (path: string) => void) {
         data.url.startsWith("/") &&
         !data.url.startsWith("//")
       ) {
-        navigateRef.current(data.url);
+        onNavigate(data.url);
       }
     };
     navigator.serviceWorker.addEventListener("message", onMessage);

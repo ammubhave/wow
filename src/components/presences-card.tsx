@@ -2,13 +2,12 @@ import {HoverCard} from "@heroui-pro/react";
 import {Avatar, Chip} from "@heroui/react";
 import {useState} from "react";
 
-import {NO_PRESENCES} from "@/features/presences/presences";
-import {useAppSelector} from "@/store";
+import {usePresences} from "@/features/presences/presences";
 
 import {UserHoverCard, userAvatarSrc, userInitials} from "./user-hover-card";
 
 export function PresencesCard({id}: {id: string}) {
-  const presences = useAppSelector(state => state.presences.value[id]) ?? NO_PRESENCES;
+  const presences = usePresences(id);
   const [isOpen, setIsOpen] = useState(false);
   return (
     <HoverCard openDelay={500} open={isOpen} onOpenChange={setIsOpen}>

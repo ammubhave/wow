@@ -1,7 +1,7 @@
 import {Button, Card, Input, Label, TextField, Tooltip} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {CheckIcon, ImagePlusIcon, TrashIcon} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useEffectEvent, useRef, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
@@ -115,11 +115,8 @@ export function TeamEmojiCard({workspaceSlug}: {workspaceSlug: string}) {
   const [file, setFile] = useState<File | null>(null);
   // Preview of the chosen image (released when replaced, or when the card goes away).
   const [preview, setPreview] = useState<string | null>(null);
-  const previewRef = useRef(preview);
-  useEffect(() => {
-    previewRef.current = preview;
-  }, [preview]);
-  useEffect(() => () => void (previewRef.current && URL.revokeObjectURL(previewRef.current)), []);
+  const releasePreview = useEffectEvent(() => void (preview && URL.revokeObjectURL(preview)));
+  useEffect(() => () => releasePreview(), []);
   const choose = (next: File | null) => {
     if (preview) URL.revokeObjectURL(preview);
     setFile(next);

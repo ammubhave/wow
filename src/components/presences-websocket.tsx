@@ -3,7 +3,6 @@ import {z} from "zod";
 import {joinPresence, leavePresence, setPresences} from "@/features/presences/presences";
 import {apiSocketUrl} from "@/lib/api-endpoint";
 import {useWebSocket} from "@/lib/use-websocket";
-import {useAppDispatch} from "@/store";
 
 const userSchema = z.object({
   id: z.string(),
@@ -28,7 +27,6 @@ export function PresencesWebSocket({
   puzzleId?: string;
   children: React.ReactNode;
 }) {
-  const dispatch = useAppDispatch();
   const params = new URLSearchParams({workspaceSlug});
   if (puzzleId) params.set("puzzleId", puzzleId);
   useWebSocket(apiSocketUrl(`/api/presence?${params}`), {
@@ -47,9 +45,9 @@ export function PresencesWebSocket({
       const payload = presenceMessageSchema.safeParse(data);
       if (!payload.success) return;
       const message = payload.data;
-      if (message.type === "snapshot") dispatch(setPresences(message.presences));
-      else if (message.type === "join") dispatch(joinPresence(message));
-      else dispatch(leavePresence(message));
+      if (message.type === "snapshot") setPresences(message.presences);
+      else if (message.type === "join") joinPresence(message);
+      else leavePresence(message);
     },
     // Nothing reads `lastMessage`; skip storing it so messages don't re-render this component.
     filter: () => false,

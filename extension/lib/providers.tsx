@@ -2,14 +2,12 @@ import {RouterProvider as AriaRouterProvider} from "@heroui/react";
 import {MutationCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {LucideProvider} from "lucide-react";
 import type {ReactNode} from "react";
-import {Provider as ReactReduxProvider} from "react-redux";
 import {Toaster} from "sonner";
 import {toast} from "sonner";
 import {IntlProvider} from "use-intl";
 
 import {ThemeProvider, useTheme} from "@/components/theme-provider";
 import {ARCHIVED_MESSAGE_START} from "@/lib/archived";
-import {store} from "@/store";
 
 // oxlint-disable-next-line import/no-unassigned-import -- the pages' stylesheet.
 import "../assets/app.css";
@@ -44,13 +42,11 @@ export function ExtensionProviders({children}: {children: ReactNode}) {
     <LucideProvider size={16}>
       <ThemeProvider defaultTheme="system" storageKey="ui-theme">
         <QueryClientProvider client={queryClient}>
-          <ReactReduxProvider store={store}>
-            <AriaRouterProvider navigate={openInNewTab}>
-              <IntlProvider locale="en" timeZone={TIME_ZONE}>
-                {children}
-              </IntlProvider>
-            </AriaRouterProvider>
-          </ReactReduxProvider>
+          <AriaRouterProvider navigate={openInNewTab}>
+            <IntlProvider locale="en" timeZone={TIME_ZONE}>
+              {children}
+            </IntlProvider>
+          </AriaRouterProvider>
         </QueryClientProvider>
         <ThemedToaster />
       </ThemeProvider>
