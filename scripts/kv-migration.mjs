@@ -53,7 +53,22 @@ const names = {
   ).map(row => row.id),
 };
 
+/** A batch, tried a few times (the Worker can fail briefly, as it did right after a deploy). */
 async function call(kind, action, batch) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      // oxlint-disable-next-line no-await-in-loop
+      return await post(kind, action, batch);
+    } catch (error) {
+      if (attempt === 3) throw error;
+      console.error(`\n${error.message}; trying again`);
+      // oxlint-disable-next-line no-await-in-loop
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+    }
+  }
+}
+
+async function post(kind, action, batch) {
   const response = await fetch(`${args.base}/api/admin/kv-migration`, {
     method: "POST",
     headers: {Authorization: `Bearer ${token}`, "Content-Type": "application/json"},
