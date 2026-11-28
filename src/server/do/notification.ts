@@ -92,6 +92,17 @@ export class NotificationRoom extends DurableObject<Env> {
     });
   }
 
+  /** For the one-off move (a script run once): what the room holds now. Temporary. */
+  storageReport() {
+    const notifications = this.sql
+      .exec<{data: string}>("SELECT data FROM notification ORDER BY id")
+      .toArray()
+      .map(row => row.data);
+    const readStates = this.sql.exec("SELECT * FROM read_state").toArray();
+    const oldKeys = [...this.ctx.storage.kv.list()].length;
+    return {oldKeys, notifications, readStates};
+  }
+
   async fetch(request: Request) {
     const userId = request.headers.get(NOTIFICATION_USER_HEADER);
     // Only the authorizing API route reaches the room, and it always says who's connecting.

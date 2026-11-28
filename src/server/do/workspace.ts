@@ -526,6 +526,13 @@ export class WorkspaceRoom extends DurableObject<Env> {
     });
   }
 
+  /// For the one-off move (a script run once): what the room holds now. Temporary.
+  storageReport() {
+    const voiceSessions = this.ctx.storage.sql.exec("SELECT * FROM voice_session").toArray();
+    const oldKeys = [...this.ctx.storage.kv.list({prefix: OLD_VOICE_SESSION_PREFIX})].length;
+    return {oldKeys, voiceSessions};
+  }
+
   /// Who created SFU session `sessionId`, if it's known.
   voiceSessionOwner(sessionId: string): string | undefined {
     return this.ctx.storage.sql
