@@ -307,7 +307,6 @@ const config = defineConfig({
     include: [
       "recharts",
       "@number-flow/react",
-      "@formkit/auto-animate/react",
       "frimousse",
       "html-to-image",
       "partytracks/client",

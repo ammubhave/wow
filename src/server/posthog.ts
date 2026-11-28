@@ -37,7 +37,9 @@ export function captureServerException(
 ) {
   const ph = posthog();
   if (!ph) return;
-  send(() => ph.captureExceptionImmediate(error, distinctId, {source: "worker", ...properties}));
+  send(() =>
+    ph.captureExceptionImmediate(error, {distinctId, properties: {source: "worker", ...properties}})
+  );
 }
 
 /**
