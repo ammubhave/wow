@@ -8,7 +8,6 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
-import {copyFromKv, kvMigrationStatus} from "@/server/do/kv-migration";
 import {MENTION_PATTERN, plainMentions} from "@/server/notifications";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
 import {isReadOnlyRequest} from "@/server/workspace-access";
@@ -80,12 +79,6 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS message_pinned ON message (pinned_at) WHERE pinned_at IS NOT NULL;
 `;
 
-/** In the old key-value storage: the ids of the room's pinned messages, as a JSON string. */
-const LEGACY_PINS_KEY = "pins";
-
-const isLegacyMessage = (value: unknown): value is ChatMessage =>
-  typeof value === "object" && value !== null && "text" in value;
-
 function send(ws: WebSocket, message: ChatRoomReceivedMessage) {
   ws.send(JSON.stringify(message));
 }
@@ -140,56 +133,7 @@ export class ChatRoom extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
-    void ctx.blockConcurrencyWhile(async () => {
-      this.sql.exec(SCHEMA);
-      await this.copyFromKv(ctx.id.name);
-    });
-  }
-
-  /**
-   * Brings over the room's messages from its old key-value storage (once; see kv-migration.ts).
-   * Messages already here are kept, and only those on the old pin list stay pinned.
-   */
-  async copyFromKv(name: string | undefined) {
-    return await copyFromKv(this.ctx, {
-      legacy: this.env.CHAT_ROOMS_KV,
-      name,
-      write: entries => {
-        for (const {key, value} of entries) {
-          if (isLegacyMessage(value)) {
-            this.sql.exec(
-              "INSERT OR IGNORE INTO message (id, data) VALUES (?, ?)",
-              key,
-              JSON.stringify(value)
-            );
-          } else if (key === LEGACY_PINS_KEY && typeof value === "string") {
-            const ids = z.string().array().catch([]).parse(JSON.parse(value));
-            ids.forEach((id, i) =>
-              this.sql.exec(
-                `UPDATE message SET pinned_at = coalesce(json_extract(data, '$.pinned.at'), ?)
-                 WHERE id = ? AND pinned_at IS NULL`,
-                i,
-                id
-              )
-            );
-          }
-        }
-      },
-      // A message can say it's pinned without being on the pin list (which is what the old room
-      // showed): it isn't.
-      finish: () =>
-        this.sql.exec(
-          `UPDATE message SET data = json_remove(data, '$.pinned')
-           WHERE pinned_at IS NULL AND json_extract(data, '$.pinned') IS NOT NULL`
-        ),
-    });
-  }
-
-  kvMigrationStatus() {
-    return {
-      ...kvMigrationStatus(this.ctx),
-      messages: this.sql.exec<{n: number}>("SELECT count(*) AS n FROM message").one().n,
-    };
+    this.sql.exec(SCHEMA);
   }
 
   message(id: string): ChatMessage | undefined {
@@ -411,8 +355,6 @@ export class ChatRoom extends DurableObject<Env> {
   async clear(puzzleId: string) {
     for (const ws of this.ctx.getWebSockets()) ws.close(1000, "Puzzle deleted");
     await deletePuzzleFiles(this.env.R2, puzzleFilesPrefix("chats", puzzleId));
-    // Its old key-value copy too, so nothing can bring the messages back.
-    await this.env.CHAT_ROOMS_KV.getByName(puzzleId).clear();
     await this.ctx.storage.deleteAll();
   }
 }

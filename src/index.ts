@@ -74,20 +74,13 @@ export default {
   },
 } satisfies ExportedHandler;
 
-// SQLite-backed, under new names: the old names are the key-value classes they replaced, still
-// deployed only so their data can be copied over (src/server/do/kv-migration.ts).
+// SQLite-backed, under new names: the old names were key-value classes, which Cloudflare can't
+// switch to SQLite (deleted in migration v6, after their data was copied over).
 export {DiscordClient as DiscordClientV2} from "./server/do/discord-client";
 export {ChatRoom as ChatRoomV2} from "./server/do/chat";
 export {NotificationRoom as NotificationRoomV2} from "./server/do/notification";
 export {PresenceRoom as PresenceRoomV2} from "./server/do/presence";
 export {WorkspaceRoom as WorkspaceRoomV2} from "./server/do/workspace";
-export {
-  ChatRoom,
-  DiscordClient,
-  NotificationRoom,
-  PresenceRoom,
-  WorkspaceRoom,
-} from "./server/do/kv-migration";
 export {
   DeleteChannelAfterDelayWorkflow,
   DiscordDisconnectWorkflow,

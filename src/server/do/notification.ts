@@ -1,7 +1,6 @@
 import {DurableObject} from "cloudflare:workers";
 import {v7 as uuidv7} from "uuid";
 
-import {copyFromKv, kvMigrationStatus, putMissing} from "@/server/do/kv-migration";
 import {
   NOTIFICATION_PING,
   NOTIFICATION_PONG,
@@ -44,22 +43,6 @@ export class NotificationRoom extends DurableObject<Env> {
     this.ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair(NOTIFICATION_PING, NOTIFICATION_PONG)
     );
-    void ctx.blockConcurrencyWhile(async () => {
-      await this.copyFromKv(ctx.id.name);
-    });
-  }
-
-  /** Brings over the old key-value storage's notifications and read states (see kv-migration.ts). */
-  async copyFromKv(name: string | undefined) {
-    return await copyFromKv(this.ctx, {
-      legacy: this.env.NOTIFICATION_ROOMS_KV,
-      name,
-      write: putMissing(this.ctx),
-    });
-  }
-
-  kvMigrationStatus() {
-    return {...kvMigrationStatus(this.ctx)};
   }
 
   async fetch(request: Request) {
