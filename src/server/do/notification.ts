@@ -37,10 +37,6 @@ const PAGE = 100;
 /** Bounded: only the newest individually-read ids are worth remembering. */
 const READ_IDS = 200;
 
-// Where the room kept things before it used SQL tables (moved over by moveFromKeyValue).
-const OLD_PREFIX = "n:";
-const OLD_READ_PREFIX = "read:";
-
 /** Header the API route uses to tell the room whose socket this is (set server-side only). */
 export const NOTIFICATION_USER_HEADER = "x-wow-user-id";
 
@@ -68,39 +64,6 @@ export class NotificationRoom extends DurableObject<Env> {
     );
     this.sql = ctx.storage.sql;
     this.sql.exec(SCHEMA);
-    this.moveFromKeyValue();
-  }
-
-  /**
-   * Notifications and read states kept with the key-value calls (before the room used tables)
-   * move into the tables, once: rooms move over as they next wake up.
-   */
-  moveFromKeyValue() {
-    const kv = this.ctx.storage.kv;
-    const notifications = [...kv.list<WorkspaceNotification>({prefix: OLD_PREFIX})];
-    const readStates = [...kv.list<ReadState>({prefix: OLD_READ_PREFIX})];
-    if (notifications.length === 0 && readStates.length === 0) return;
-    this.ctx.storage.transactionSync(() => {
-      for (const [key, notification] of notifications) {
-        this.save(notification);
-        kv.delete(key);
-      }
-      for (const [key, readState] of readStates) {
-        this.saveReadState(key.slice(OLD_READ_PREFIX.length), readState);
-        kv.delete(key);
-      }
-    });
-  }
-
-  /** For the one-off move (a script run once): what the room holds now. Temporary. */
-  storageReport() {
-    const notifications = this.sql
-      .exec<{data: string}>("SELECT data FROM notification ORDER BY id")
-      .toArray()
-      .map(row => row.data);
-    const readStates = this.sql.exec("SELECT * FROM read_state").toArray();
-    const oldKeys = [...this.ctx.storage.kv.list()].length;
-    return {oldKeys, notifications, readStates};
   }
 
   async fetch(request: Request) {

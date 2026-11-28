@@ -40,14 +40,4 @@ describe("voice session records", () => {
       expect(room.voiceSessionOwner("new")).toBe("ada");
     });
   });
-
-  it("moves records kept the old way into the table", async () => {
-    const stub = workspaceRoom();
-    await runInDurableObject(stub, (room: WorkspaceRoom, state) => {
-      state.storage.kv.put("voiceSession:s9", {userId: "carol", createdAt: Date.now()});
-      room.moveFromKeyValue();
-      expect(room.voiceSessionOwner("s9")).toBe("carol");
-      expect([...state.storage.kv.list({prefix: "voiceSession:"})]).toEqual([]);
-    });
-  });
 });

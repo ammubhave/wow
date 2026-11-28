@@ -161,7 +161,7 @@ describe("notifications", () => {
     const bob = await connect("bob");
     const bobFirst = await bob.next<History>(m => m.type === "history");
     const bobAll = [...bobFirst.notifications];
-    hasMore = bobFirst.hasMore ?? false;
+    hasMore = bobFirst.hasMore;
     while (hasMore) {
       bob.send({type: "older", before: bobAll.at(-1)!.id});
       // oxlint-disable-next-line no-await-in-loop
@@ -173,28 +173,6 @@ describe("notifications", () => {
     expect(bobAll.some(n => n.type === "mention")).toBe(false);
     ada.close();
     bob.close();
-  });
-
-  it("moves notifications and read state kept the old way into its tables", async () => {
-    const {stub, connect} = room();
-    const old = {...mention(["ada"], "from before"), id: uuidv7(), timestamp: 1_700_000_000_000};
-    // What the room does on starting (after a deploy, or waking up).
-    await runInDurableObject(stub, (r: NotificationRoom, state) => {
-      state.storage.kv.put(`n:${old.id}`, old);
-      state.storage.kv.put("read:ada", {seenAt: 5, readIds: [old.id]});
-      r.moveFromKeyValue();
-    });
-    const ada = await connect("ada");
-    expect((await ada.next<History>(m => m.type === "history")).notifications).toEqual([old]);
-    expect(await ada.next<ReadState>(m => m.type === "readState")).toMatchObject({
-      seenAt: 5,
-      readIds: [old.id],
-    });
-    const left = await runInDurableObject(stub, (_r: NotificationRoom, state) => [
-      ...state.storage.kv.list(),
-    ]);
-    expect(left).toEqual([]);
-    ada.close();
   });
 
   it("keeps the newest 5000", async () => {

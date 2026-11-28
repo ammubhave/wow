@@ -268,7 +268,7 @@ export function NotificationsWebSocket({
             ? [...message.notifications, ...loaded.filter(n => n.id < oldest.id)]
             : message.notifications
         );
-        if (!joins) queryClient.setQueryData(hasOlderKey, message.hasMore ?? false);
+        if (!joins) queryClient.setQueryData(hasOlderKey, message.hasMore);
         return;
       }
       if (message.type === "older") {

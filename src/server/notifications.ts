@@ -102,7 +102,7 @@ export type ReadState = {seenAt: number; readIds: string[]};
  */
 export type NotificationMessage =
   | WorkspaceNotification
-  | {type: "history"; notifications: WorkspaceNotification[]; hasMore?: boolean}
+  | {type: "history"; notifications: WorkspaceNotification[]; hasMore: boolean}
   | {type: "older"; notifications: WorkspaceNotification[]; hasMore: boolean}
   | ({type: "readState"} & ReadState);
 

@@ -73,8 +73,6 @@ CREATE TABLE IF NOT EXISTS voice_session (
 );
 CREATE INDEX IF NOT EXISTS voice_session_created_at ON voice_session (created_at);
 `;
-/// Where session records were kept before the table (moved over on waking; see the constructor).
-const OLD_VOICE_SESSION_PREFIX = "voiceSession:";
 /// Session records are only needed while a call can last; older ones are pruned.
 const VOICE_SESSION_TTL_MS = 1000 * 60 * 60 * 48;
 /// New SFU sessions allowed per user per minute (joining, reconnects), well under Cloudflare's
@@ -301,7 +299,6 @@ export class WorkspaceRoom extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, workerEnv: Env) {
     super(ctx, workerEnv);
     ctx.storage.sql.exec(VOICE_SESSION_SCHEMA);
-    this.moveFromKeyValue();
     void ctx.blockConcurrencyWhile(async () => {
       const saved = await ctx.storage.get<VoiceUsageSample>(VOICE_USAGE_KEY);
       if (!saved) return;
@@ -511,26 +508,6 @@ export class WorkspaceRoom extends DurableObject<Env> {
         now - VOICE_SESSION_TTL_MS
       );
     }
-  }
-
-  /// Voice session records kept with the key-value calls (before the table) move into it, once.
-  moveFromKeyValue() {
-    const kv = this.ctx.storage.kv;
-    const old = [...kv.list<VoiceSessionRecord>({prefix: OLD_VOICE_SESSION_PREFIX})];
-    if (old.length === 0) return;
-    this.ctx.storage.transactionSync(() => {
-      for (const [key, record] of old) {
-        this.#saveVoiceSession(key.slice(OLD_VOICE_SESSION_PREFIX.length), record);
-        kv.delete(key);
-      }
-    });
-  }
-
-  /// For the one-off move (a script run once): what the room holds now. Temporary.
-  storageReport() {
-    const voiceSessions = this.ctx.storage.sql.exec("SELECT * FROM voice_session").toArray();
-    const oldKeys = [...this.ctx.storage.kv.list({prefix: OLD_VOICE_SESSION_PREFIX})].length;
-    return {oldKeys, voiceSessions};
   }
 
   /// Who created SFU session `sessionId`, if it's known.
