@@ -60,6 +60,7 @@ WOW is a single-page React app served by one Cloudflare Worker. The Worker serve
 ### Tooling
 
 - [Vite+](https://viteplus.dev/) (`vp`) runs the dev server, build, tests ([Vitest](https://vitest.dev/)), linting ([Oxlint](https://oxc.rs/), with type checks) and formatting.
+- Tests: `pnpm test:unit` for pure modules (in Node), and `pnpm test:workers` for the Durable Objects and D1, inside the Workers runtime ([Workers Vitest integration](https://developers.cloudflare.com/workers/testing/vitest-integration/), `test/workers`). `pnpm build` runs both.
 - [pnpm](https://pnpm.io/) for packages, [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for Cloudflare, and [dotenvx](https://dotenvx.com/) for encrypted secrets.
 - Pushes to `main` deploy to production through [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/).
 

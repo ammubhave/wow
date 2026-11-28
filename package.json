@@ -4,10 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm decrypt && vp dev --port 3000",
-    "build": "pnpm test:unit && CLOUDFLARE_ENV=production vp build",
+    "build": "pnpm test:unit && pnpm test:workers && CLOUDFLARE_ENV=production vp build",
     "serve": "vp preview",
     "test": "vp test run",
     "test:unit": "vp test run --config vitest.unit.config.ts",
+    "test:workers": "vp test run --config vitest.workers.config.ts",
     "deploy": "wrangler deploy --env production",
     "ext:dev": "wxt extension",
     "ext:build": "wxt build extension",
@@ -133,6 +134,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.10.0",
     "@dotenvx/dotenvx": "^2.38.2",
     "@libsql/client": "^0.18.0",
     "@mdx-js/rollup": "^3.1.1",
