@@ -64,8 +64,17 @@ export const WORKSPACE_USER_HEADER = "x-wow-user";
 
 // Voice access control. The SFU itself has no permissions (anyone holding the app secret can pull
 // any track), so the voice proxy asks this room before letting anyone create sessions or pull.
-/// Storage key recording which user created an SFU session.
-const VOICE_SESSION_PREFIX = "voiceSession:";
+/// Which user created each SFU session.
+const VOICE_SESSION_SCHEMA = `
+CREATE TABLE IF NOT EXISTS voice_session (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS voice_session_created_at ON voice_session (created_at);
+`;
+/// Where session records were kept before the table (moved over on waking; see the constructor).
+const OLD_VOICE_SESSION_PREFIX = "voiceSession:";
 /// Session records are only needed while a call can last; older ones are pruned.
 const VOICE_SESSION_TTL_MS = 1000 * 60 * 60 * 48;
 /// New SFU sessions allowed per user per minute (joining, reconnects), well under Cloudflare's
@@ -291,6 +300,8 @@ export class WorkspaceRoom extends DurableObject<Env> {
 
   constructor(ctx: DurableObjectState, workerEnv: Env) {
     super(ctx, workerEnv);
+    ctx.storage.sql.exec(VOICE_SESSION_SCHEMA);
+    this.moveFromKeyValue();
     void ctx.blockConcurrencyWhile(async () => {
       const saved = await ctx.storage.get<VoiceUsageSample>(VOICE_USAGE_KEY);
       if (!saved) return;
@@ -442,12 +453,7 @@ export class WorkspaceRoom extends DurableObject<Env> {
     // Tracks can only be claimed from SFU sessions this person created (no posing as a teammate).
     const sessionIds = [...new Set(Object.values(update.tracks).map(track => track.sessionId))];
     if (sessionIds.length > 0) {
-      const owners = await this.ctx.storage.get<VoiceSessionRecord>(
-        sessionIds.map(id => VOICE_SESSION_PREFIX + id)
-      );
-      const ownsAll = sessionIds.every(
-        id => owners.get(VOICE_SESSION_PREFIX + id)?.userId === attachment.user.id
-      );
+      const ownsAll = sessionIds.every(id => this.voiceSessionOwner(id) === attachment.user.id);
       if (!ownsAll) return;
     }
     const unmuting = update.room !== null && !update.muted && (attachment.voice?.muted ?? true);
@@ -497,26 +503,43 @@ export class WorkspaceRoom extends DurableObject<Env> {
   /// Voice: records that `userId` created SFU session `sessionId` (before they learn its id).
   async registerVoiceSession(sessionId: string, userId: string) {
     const now = Date.now();
-    await this.ctx.storage.put<VoiceSessionRecord>(VOICE_SESSION_PREFIX + sessionId, {
-      userId,
-      createdAt: now,
-    });
+    this.#saveVoiceSession(sessionId, {userId, createdAt: now});
     // Now and then, drop records of sessions too old to still be in a call.
     if (Math.random() < 0.05) {
-      const records = await this.ctx.storage.list<VoiceSessionRecord>({
-        prefix: VOICE_SESSION_PREFIX,
-        limit: 1000,
-      });
-      const stale = [...records]
-        .filter(([, record]) => now - record.createdAt > VOICE_SESSION_TTL_MS)
-        .map(([key]) => key);
-      // Storage deletes take at most 128 keys at a time.
-      await Promise.all(
-        Array.from({length: Math.ceil(stale.length / 128)}, (_, i) =>
-          this.ctx.storage.delete(stale.slice(i * 128, (i + 1) * 128))
-        )
+      this.ctx.storage.sql.exec(
+        "DELETE FROM voice_session WHERE created_at < ?",
+        now - VOICE_SESSION_TTL_MS
       );
     }
+  }
+
+  /// Voice session records kept with the key-value calls (before the table) move into it, once.
+  moveFromKeyValue() {
+    const kv = this.ctx.storage.kv;
+    const old = [...kv.list<VoiceSessionRecord>({prefix: OLD_VOICE_SESSION_PREFIX})];
+    if (old.length === 0) return;
+    this.ctx.storage.transactionSync(() => {
+      for (const [key, record] of old) {
+        this.#saveVoiceSession(key.slice(OLD_VOICE_SESSION_PREFIX.length), record);
+        kv.delete(key);
+      }
+    });
+  }
+
+  /// Who created SFU session `sessionId`, if it's known.
+  voiceSessionOwner(sessionId: string): string | undefined {
+    return this.ctx.storage.sql
+      .exec<{user_id: string}>("SELECT user_id FROM voice_session WHERE id = ?", sessionId)
+      .toArray()[0]?.user_id;
+  }
+
+  #saveVoiceSession(sessionId: string, {userId, createdAt}: VoiceSessionRecord) {
+    this.ctx.storage.sql.exec(
+      "INSERT OR REPLACE INTO voice_session (id, user_id, created_at) VALUES (?, ?, ?)",
+      sessionId,
+      userId,
+      createdAt
+    );
   }
 
   /// Voice: whether `userId` may receive these tracks. Only tracks published by someone in a room

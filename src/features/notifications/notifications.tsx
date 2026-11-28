@@ -1,4 +1,4 @@
-import {Badge, Button, Popover, Switch, Tabs} from "@heroui/react";
+import {Badge, Button, Popover, Spinner, Switch, Tabs} from "@heroui/react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useNavigate} from "@tanstack/react-router";
 import {
@@ -133,10 +133,15 @@ const notificationsQueryKey = (workspaceSlug: string) => ["notifications", works
 /** Your read state (per person, kept by the server; see ReadState). */
 const readStateQueryKey = (workspaceSlug: string) =>
   ["notificationsReadState", workspaceSlug] as const;
+/** Whether the room has notifications older than the oldest one here. */
+const hasOlderQueryKey = (workspaceSlug: string) =>
+  ["notificationsHasOlder", workspaceSlug] as const;
 const NONE: WorkspaceNotification[] = [];
+/** From the bottom of the list, how close (in pixels) before older notifications are loaded. */
+const LOAD_OLDER_WITHIN_PX = 200;
 const NOTHING_READ: ReadState = {seenAt: 0, readIds: []};
 
-/** The workspace's recent notifications, newest first (pushed by the socket; never fetched). */
+/** The workspace's notifications loaded so far, newest first (from the socket; never fetched). */
 function useNotifications(workspaceSlug: string) {
   return (
     useQuery<WorkspaceNotification[]>({
@@ -145,6 +150,18 @@ function useNotifications(workspaceSlug: string) {
       staleTime: Infinity,
       enabled: false,
     }).data ?? NONE
+  );
+}
+
+/** Whether older notifications than those loaded can be asked for. */
+function useHasOlder(workspaceSlug: string) {
+  return (
+    useQuery<boolean>({
+      queryKey: hasOlderQueryKey(workspaceSlug),
+      queryFn: () => false,
+      staleTime: Infinity,
+      enabled: false,
+    }).data ?? false
   );
 }
 
@@ -239,8 +256,27 @@ export function NotificationsWebSocket({
         return;
       }
       const key = notificationsQueryKey(workspaceSlug);
+      const hasOlderKey = hasOlderQueryKey(workspaceSlug);
       if (message.type === "history") {
-        queryClient.setQueryData(key, message.notifications);
+        // On reconnecting: older pages already loaded stay, if the new history reaches them.
+        const loaded = queryClient.getQueryData<WorkspaceNotification[]>(key) ?? [];
+        const oldest = message.notifications.at(-1);
+        const joins = oldest !== undefined && loaded.some(n => n.id === oldest.id);
+        queryClient.setQueryData(
+          key,
+          joins
+            ? [...message.notifications, ...loaded.filter(n => n.id < oldest.id)]
+            : message.notifications
+        );
+        if (!joins) queryClient.setQueryData(hasOlderKey, message.hasMore ?? false);
+        return;
+      }
+      if (message.type === "older") {
+        queryClient.setQueryData<WorkspaceNotification[]>(key, current => {
+          const ids = new Set((current ?? []).map(n => n.id));
+          return [...(current ?? []), ...message.notifications.filter(n => !ids.has(n.id))];
+        });
+        queryClient.setQueryData(hasOlderKey, message.hasMore);
         return;
       }
       if (message.type === "readState") {
@@ -367,6 +403,7 @@ export const OPEN_BELL_EVENT = "wow:open-notifications";
 export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
   const me = authClient.useSession().data?.user.id;
   const notifications = useNotifications(workspaceSlug);
+  const hasOlder = useHasOlder(workspaceSlug);
   const queryClient = useQueryClient();
   const {seenAt, readIds} =
     useQuery<ReadState>({
@@ -398,6 +435,31 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
   const ofTab =
     tab === "mentions" ? notifications.filter(n => n.type === "mention") : notifications;
   const shown = showAll ? ofTab : ofTab.filter(isUnread);
+  // Older pages, while showing everything: the unread list is the recent ones.
+  const oldestId = notifications.at(-1)?.id;
+  const [requestedBefore, setRequestedBefore] = useState<string | null>(null);
+  const loadingOlder = showAll && hasOlder && requestedBefore === oldestId;
+  const loadOlder = () => {
+    if (!showAll || !hasOlder || !oldestId || requestedBefore === oldestId) return;
+    setRequestedBefore(oldestId);
+    sendJsonMessage({type: "older", before: oldestId} satisfies NotificationClientMessage);
+  };
+  /**
+   * The row at the end of the list loads the next page when it comes near view. It's a new row
+   * for each page (keyed by the oldest loaded), so one still in view after a page arrives (few
+   * mentions among the new ones) asks again, until the list fills or there's nothing older.
+   */
+  const watchEnd = (row: HTMLLIElement | null) => {
+    if (!row) return undefined;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries.some(entry => entry.isIntersecting)) loadOlder();
+      },
+      {root: row.parentElement, rootMargin: `${LOAD_OLDER_WITHIN_PX}px`}
+    );
+    observer.observe(row);
+    return () => observer.disconnect();
+  };
   const markRead = (id: string) => {
     if (readIds.includes(id)) return;
     setReadState({seenAt, readIds: [...readIds, id]});
@@ -563,6 +625,19 @@ export function NotificationBell({workspaceSlug}: {workspaceSlug: string}) {
                 </li>
               );
             })}
+            {showAll && hasOlder && (
+              <li
+                key={oldestId}
+                ref={watchEnd}
+                className="text-muted flex min-h-px items-center justify-center gap-2 text-xs">
+                {loadingOlder && (
+                  <span className="flex items-center gap-2 py-3">
+                    <Spinner size="sm" aria-label="Loading earlier notifications" />
+                    Loading earlier notifications…
+                  </span>
+                )}
+              </li>
+            )}
           </ul>
           <div className="border-separator flex items-center justify-between gap-2 border-t px-2 py-1.5">
             <Button size="sm" variant="ghost" onPress={() => setShowAll(all => !all)}>

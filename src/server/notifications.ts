@@ -96,18 +96,24 @@ export type WorkspaceNotification =
 export type ReadState = {seenAt: number; readIds: string[]};
 
 /**
- * What the server sends: a new notification; the recent history when a socket connects; your read
+ * What the server sends: a new notification; the recent history when a socket connects (newest
+ * first; `hasMore`: older ones exist, ask with "older"); a page of older ones, as asked; your read
  * state (on connect, and whenever it changes on any of your devices).
  */
 export type NotificationMessage =
   | WorkspaceNotification
-  | {type: "history"; notifications: WorkspaceNotification[]}
+  | {type: "history"; notifications: WorkspaceNotification[]; hasMore?: boolean}
+  | {type: "older"; notifications: WorkspaceNotification[]; hasMore: boolean}
   | ({type: "readState"} & ReadState);
 
-/** What a client sends: mark some notifications read, or all of them. */
+/**
+ * What a client sends: mark some notifications read, or all of them; or ask for the notifications
+ * older than one it has (newest first).
+ */
 export const notificationClientMessageSchema = z.discriminatedUnion("type", [
   z.object({type: z.literal("read"), ids: z.string().max(64).array().min(1).max(50)}),
   z.object({type: z.literal("readAll")}),
+  z.object({type: z.literal("older"), before: z.string().max(64)}),
 ]);
 export type NotificationClientMessage = z.infer<typeof notificationClientMessageSchema>;
 

@@ -1,16 +1,20 @@
+import {runInDurableObject} from "cloudflare:test";
 import {env} from "cloudflare:workers";
-import {beforeAll, describe, expect, it} from "vite-plus/test";
+import {v7 as uuidv7} from "uuid";
+import {afterEach, beforeAll, describe, expect, it, vi} from "vite-plus/test";
 
-import {NOTIFICATION_USER_HEADER} from "@/server/do/notification";
+import {NOTIFICATION_USER_HEADER, type NotificationRoom} from "@/server/do/notification";
 import type {NotificationMessage, WorkspaceNotification} from "@/server/notifications";
 
 import {migrate} from "./db";
 import {openSocket} from "./socket";
 
 beforeAll(migrate);
+afterEach(() => vi.restoreAllMocks());
 
 type History = Extract<NotificationMessage, {type: "history"}>;
 type ReadState = Extract<NotificationMessage, {type: "readState"}>;
+type Older = Extract<NotificationMessage, {type: "older"}>;
 
 /** A workspace's notification room, with a socket for each person. */
 function room() {
@@ -20,6 +24,10 @@ function room() {
     openSocket(stub, "https://wow.test/", {[NOTIFICATION_USER_HEADER]: userId});
   return {workspaceId, stub, connect};
 }
+
+/** What a test notification says (a mention's text, a solve's message). */
+const label = (n: WorkspaceNotification) =>
+  n.type === "mention" ? n.text : n.type === "solved" ? n.message : n.type;
 
 const mention = (toUserIds: string[], text: string) =>
   ({
@@ -107,5 +115,106 @@ describe("notifications", () => {
     const {stub} = room();
     const response = await stub.fetch("https://wow.test/", {headers: {Upgrade: "websocket"}});
     expect(response.status).toBe(400);
+  });
+
+  it("pages back through older notifications, each person's own mentions only", async () => {
+    const {stub, connect} = room();
+    // 250 solves, with a mention of Ada every 10th (stored as made long ago, oldest first).
+    await runInDurableObject(stub, (r: NotificationRoom) => {
+      for (let i = 1; i <= 250; i++) {
+        const at = 1_700_000_000_000 + i;
+        const common = {id: uuidv7({msecs: at}), timestamp: at};
+        r.save(
+          i % 10 === 0
+            ? {...common, ...mention(["ada"], `#${i}`)}
+            : {
+                ...common,
+                type: "solved",
+                message: `#${i}`,
+                puzzleId: "p",
+                puzzleName: "P",
+                answer: "A",
+                isMeta: false,
+                by: null,
+              }
+        );
+      }
+    });
+
+    const ada = await connect("ada");
+    const first = await ada.next<History>(m => m.type === "history");
+    expect(first.notifications).toHaveLength(100);
+    expect(label(first.notifications[0]!)).toBe("#250");
+    expect(first.hasMore).toBe(true);
+    const all = [...first.notifications];
+    let hasMore = first.hasMore;
+    while (hasMore) {
+      ada.send({type: "older", before: all.at(-1)!.id});
+      // oxlint-disable-next-line no-await-in-loop
+      const page = await ada.next<Older>(m => m.type === "older");
+      all.push(...page.notifications);
+      hasMore = page.hasMore;
+    }
+    expect(all.map(label)).toEqual(Array.from({length: 250}, (_, i) => `#${250 - i}`));
+
+    // Bob never gets Ada's mentions, in any page.
+    const bob = await connect("bob");
+    const bobFirst = await bob.next<History>(m => m.type === "history");
+    const bobAll = [...bobFirst.notifications];
+    hasMore = bobFirst.hasMore ?? false;
+    while (hasMore) {
+      bob.send({type: "older", before: bobAll.at(-1)!.id});
+      // oxlint-disable-next-line no-await-in-loop
+      const page = await bob.next<Older>(m => m.type === "older");
+      bobAll.push(...page.notifications);
+      hasMore = page.hasMore;
+    }
+    expect(bobAll).toHaveLength(225);
+    expect(bobAll.some(n => n.type === "mention")).toBe(false);
+    ada.close();
+    bob.close();
+  });
+
+  it("moves notifications and read state kept the old way into its tables", async () => {
+    const {stub, connect} = room();
+    const old = {...mention(["ada"], "from before"), id: uuidv7(), timestamp: 1_700_000_000_000};
+    // What the room does on starting (after a deploy, or waking up).
+    await runInDurableObject(stub, (r: NotificationRoom, state) => {
+      state.storage.kv.put(`n:${old.id}`, old);
+      state.storage.kv.put("read:ada", {seenAt: 5, readIds: [old.id]});
+      r.moveFromKeyValue();
+    });
+    const ada = await connect("ada");
+    expect((await ada.next<History>(m => m.type === "history")).notifications).toEqual([old]);
+    expect(await ada.next<ReadState>(m => m.type === "readState")).toMatchObject({
+      seenAt: 5,
+      readIds: [old.id],
+    });
+    const left = await runInDurableObject(stub, (_r: NotificationRoom, state) => [
+      ...state.storage.kv.list(),
+    ]);
+    expect(left).toEqual([]);
+    ada.close();
+  });
+
+  it("keeps the newest 5000", async () => {
+    const {workspaceId, stub} = room();
+    await runInDurableObject(stub, (r: NotificationRoom) => {
+      for (let i = 1; i <= 5010; i++) {
+        const at = 1_700_000_000_000 + i;
+        r.save({...mention(["ada"], `#${i}`), id: uuidv7({msecs: at}), timestamp: at});
+      }
+    });
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    await stub.broadcast(workspaceId, mention(["ada"], "newest"));
+    const kept = await runInDurableObject(stub, (_r: NotificationRoom, state) =>
+      state.storage.sql
+        .exec<{n: number; oldest: string}>(
+          "SELECT count(*) AS n, (SELECT json_extract(data, '$.text') FROM notification ORDER BY id LIMIT 1) AS oldest FROM notification"
+        )
+        .one()
+    );
+    // 5011 made: the 11 oldest went.
+    expect(kept).toEqual({n: 5000, oldest: "#12"});
   });
 });
