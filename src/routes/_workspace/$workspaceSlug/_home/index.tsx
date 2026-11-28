@@ -64,6 +64,7 @@ import {useAppForm} from "@/components/form";
 import {IconButton, IconTooltip, NativeTooltip} from "@/components/icon-button";
 import {MovePuzzleDialog} from "@/components/move-puzzle-dialog";
 import {BoardSkeleton} from "@/components/page-skeletons";
+import {PuzzleName} from "@/components/page-transition";
 import {SolveSpark} from "@/components/solve-spark";
 import {TeammateChangeFlash} from "@/components/teammate-change-flash";
 import {UserPresenceAvatars} from "@/components/user-hover-card";
@@ -2322,7 +2323,7 @@ const BlackboardPuzzle = memo(function BlackboardPuzzle({
             title={puzzle.name}
             className="-m-2 block min-w-0 flex-1 truncate p-2 hover:underline">
             <SolvedMark status={puzzle.status} />
-            {puzzle.name}
+            <PuzzleName puzzleId={puzzle.id} name={puzzle.name} />
             <PhoneAnswer answer={puzzle.answer} />
           </Link>
           <VoiceRoomBadge room={puzzle.id} />

@@ -30,6 +30,7 @@ import {EditPuzzleDialog} from "@/components/edit-puzzle-dialog";
 import {useAppForm} from "@/components/form";
 import {PuzzleGuesses} from "@/components/guess-queue";
 import {IconButton} from "@/components/icon-button";
+import {PuzzleName} from "@/components/page-transition";
 import {HelpedToggle, PuzzleContributorAvatars} from "@/components/puzzle-contributors";
 import {SolveSpark} from "@/components/solve-spark";
 import {useIsReadOnly} from "@/hooks/use-is-read-only";
@@ -134,7 +135,7 @@ export function PuzzleInfoPanel({
     <div className="bg-surface flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
       <div className="border-separator flex items-center gap-1 border-b py-1.5 ps-3 pe-1.5">
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" title={puzzle.name}>
-          {puzzle.name}
+          <PuzzleName puzzleId={puzzle.id} name={puzzle.name} />
         </h2>
         {/* Reading the puzzle is what people come here for, so it's a labelled button. */}
         {primaryLink !== undefined
