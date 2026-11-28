@@ -28,6 +28,7 @@ import {
 } from "@/server/voice";
 
 import {meter} from "../usage";
+import {copyFromKv, kvMigrationStatus, putMissing} from "./kv-migration";
 
 /// Who's on each websocket, and their call state (kept as the socket's attachment, so it survives
 /// the room hibernating).
@@ -292,6 +293,7 @@ export class WorkspaceRoom extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, workerEnv: Env) {
     super(ctx, workerEnv);
     void ctx.blockConcurrencyWhile(async () => {
+      await this.copyFromKv(ctx.id.name);
       const saved = await ctx.storage.get<VoiceUsageSample>(VOICE_USAGE_KEY);
       if (!saved) return;
       // Waking from hibernation, the calls are still there. After a restart (a deploy), sockets
@@ -300,6 +302,19 @@ export class WorkspaceRoom extends DurableObject<Env> {
       if (sameRooms(saved.rooms, this.#voiceRoomCounts())) this.#voiceUsage = saved;
       else await ctx.storage.delete(VOICE_USAGE_KEY);
     });
+  }
+
+  /// Brings over the old key-value storage's voice sessions and metering (see kv-migration.ts).
+  async copyFromKv(name: string | undefined) {
+    return await copyFromKv(this.ctx, {
+      legacy: this.env.WORKSPACE_ROOMS_KV,
+      name,
+      write: putMissing(this.ctx),
+    });
+  }
+
+  kvMigrationStatus() {
+    return {...kvMigrationStatus(this.ctx)};
   }
 
   /// Loads the workspace data and broadcasts it to all connected clients.

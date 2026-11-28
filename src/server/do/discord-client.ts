@@ -10,6 +10,7 @@ import {z} from "zod";
 
 import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import {copyFromKv, kvMigrationStatus, putMissing} from "@/server/do/kv-migration";
 
 import {
   CATEGORY,
@@ -103,11 +104,39 @@ const RETRY_KEY = "syncRetry";
 const isRetryable = (error: unknown) =>
   !(error instanceof DiscordApiError) || error.status === 429 || error.status >= 500;
 
-export class DiscordClient extends DurableObject {
+export class DiscordClient extends DurableObject<Env> {
   /** The running sync, if any: there is never more than one at a time. */
   private running: Promise<void> | undefined;
   /** The latest board received while a sync ran: synced once that run finishes. */
   private pending: SyncWorkspace | undefined;
+  /**
+   * Whether the channel ids from the old key-value storage are here. Syncing without them would
+   * create every channel again, so until then a sync fails (and is retried).
+   */
+  private hasKvData = false;
+
+  constructor(ctx: DurableObjectState, workerEnv: Env) {
+    super(ctx, workerEnv);
+    void ctx.blockConcurrencyWhile(async () => {
+      await this.copyFromKv(ctx.id.name);
+    });
+  }
+
+  /** Brings over the old key-value storage's channel ids and pending retry (see kv-migration.ts). */
+  async copyFromKv(name: string | undefined) {
+    const result = await copyFromKv(this.ctx, {
+      legacy: this.env.DISCORD_CLIENT_KV,
+      name,
+      write: putMissing(this.ctx),
+      alarm: at => this.ctx.storage.setAlarm(at),
+    });
+    this.hasKvData ||= result.alreadyDone || name !== undefined;
+    return result;
+  }
+
+  kvMigrationStatus() {
+    return {...kvMigrationStatus(this.ctx)};
+  }
 
   /**
    * Mirror the board into the guild. Never runs two syncs at once: a call during a sync queues the
@@ -186,6 +215,7 @@ export class DiscordClient extends DurableObject {
 
   private async syncOnce(workspace: SyncWorkspace) {
     const guildId = workspace.discordGuildId;
+    if (!this.hasKvData) throw new Error("The old storage's channel ids haven't been copied yet");
     const existing = await this.channels(guildId);
 
     const rounds = desiredRounds(workspace.rounds);

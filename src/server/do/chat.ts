@@ -8,6 +8,7 @@ import {db} from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {authMiddleware} from "@/server/auth";
 import {type HonoEnv} from "@/server/context";
+import {copyFromKv, kvMigrationStatus} from "@/server/do/kv-migration";
 import {MENTION_PATTERN, plainMentions} from "@/server/notifications";
 import {deletePuzzleFiles, puzzleFilesPrefix} from "@/server/puzzle-files";
 import {isReadOnlyRequest} from "@/server/workspace-access";
@@ -66,12 +67,24 @@ export type ChatRoomReceivedMessage =
   // Someone else is typing (repeated while they are; it lapses when they stop).
   | {type: "typing"; userId: string; name: string};
 
-// Not a message: the ids of the room's pinned messages (a JSON string, so `isMessage` skips it).
-const PINS_KEY = "pins";
+/**
+ * A message per row, as JSON; `pinned_at` (its `pinned.at`) lists the pinned ones in the order
+ * they were pinned. Ids are uuidv7, so they sort in the order the messages were sent.
+ */
+const SCHEMA = `
+  CREATE TABLE IF NOT EXISTS message (
+    id TEXT PRIMARY KEY,
+    data TEXT NOT NULL,
+    pinned_at INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS message_pinned ON message (pinned_at) WHERE pinned_at IS NOT NULL;
+`;
 
-function isMessage(value: ChatMessage | string): value is ChatMessage {
-  return typeof value !== "string";
-}
+/** In the old key-value storage: the ids of the room's pinned messages, as a JSON string. */
+const LEGACY_PINS_KEY = "pins";
+
+const isLegacyMessage = (value: unknown): value is ChatMessage =>
+  typeof value === "object" && value !== null && "text" in value;
 
 function send(ws: WebSocket, message: ChatRoomReceivedMessage) {
   ws.send(JSON.stringify(message));
@@ -115,18 +128,92 @@ const COMMANDS = [
 ] as const;
 
 /**
- * A puzzle's chat, or a team's (on the blackboard). Messages live in the room's durable storage (keyed by uuidv7, so in time order),
+ * A puzzle's chat, or a team's (on the blackboard). Messages live in the room's SQLite storage,
  * which survives the object being evicted or redeployed. They're kept for as long as the puzzle
  * exists; deleting the puzzle calls `clear()`.
  */
-export class ChatRoom extends DurableObject {
-  storage: DurableObjectStorage;
+export class ChatRoom extends DurableObject<Env> {
+  sql: SqlStorage;
   /** When each socket's last "typing" was relayed (in memory: losing it on eviction is fine). */
   lastTyping = new WeakMap<WebSocket, number>();
 
-  constructor(ctx: DurableObjectState<{}>, env: Env) {
+  constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.storage = ctx.storage;
+    this.sql = ctx.storage.sql;
+    void ctx.blockConcurrencyWhile(async () => {
+      this.sql.exec(SCHEMA);
+      await this.copyFromKv(ctx.id.name);
+    });
+  }
+
+  /**
+   * Brings over the room's messages from its old key-value storage (once; see kv-migration.ts).
+   * Messages already here are kept, and only those on the old pin list stay pinned.
+   */
+  async copyFromKv(name: string | undefined) {
+    return await copyFromKv(this.ctx, {
+      legacy: this.env.CHAT_ROOMS_KV,
+      name,
+      write: entries => {
+        for (const {key, value} of entries) {
+          if (isLegacyMessage(value)) {
+            this.sql.exec(
+              "INSERT OR IGNORE INTO message (id, data) VALUES (?, ?)",
+              key,
+              JSON.stringify(value)
+            );
+          } else if (key === LEGACY_PINS_KEY && typeof value === "string") {
+            const ids = z.string().array().catch([]).parse(JSON.parse(value));
+            ids.forEach((id, i) =>
+              this.sql.exec(
+                `UPDATE message SET pinned_at = coalesce(json_extract(data, '$.pinned.at'), ?)
+                 WHERE id = ? AND pinned_at IS NULL`,
+                i,
+                id
+              )
+            );
+          }
+        }
+      },
+      // A message can say it's pinned without being on the pin list (which is what the old room
+      // showed): it isn't.
+      finish: () =>
+        this.sql.exec(
+          `UPDATE message SET data = json_remove(data, '$.pinned')
+           WHERE pinned_at IS NULL AND json_extract(data, '$.pinned') IS NOT NULL`
+        ),
+    });
+  }
+
+  kvMigrationStatus() {
+    return {
+      ...kvMigrationStatus(this.ctx),
+      messages: this.sql.exec<{n: number}>("SELECT count(*) AS n FROM message").one().n,
+    };
+  }
+
+  message(id: string): ChatMessage | undefined {
+    const row = this.sql
+      .exec<{data: string}>("SELECT data FROM message WHERE id = ?", id)
+      .toArray();
+    return row[0] && JSON.parse(row[0].data);
+  }
+
+  save(message: ChatMessage) {
+    this.sql.exec(
+      `INSERT INTO message (id, data, pinned_at) VALUES (?, ?, ?)
+       ON CONFLICT (id) DO UPDATE SET data = excluded.data, pinned_at = excluded.pinned_at`,
+      message.id,
+      JSON.stringify(message),
+      message.pinned?.at ?? null
+    );
+  }
+
+  messages(query: string, ...bindings: SqlStorageValue[]): ChatMessage[] {
+    return this.sql
+      .exec<{data: string}>(query, ...bindings)
+      .toArray()
+      .map(row => JSON.parse(row.data));
   }
 
   async fetch(request: Request) {
@@ -145,17 +232,13 @@ export class ChatRoom extends DurableObject {
         ...room,
         readOnly,
       });
-      const newest = await this.storage.list<ChatMessage | string>({
-        reverse: true,
-        limit: SNAPSHOT_MESSAGES,
-      });
-      // Skip anything that isn't a message (the pin list; a briefly-stored room id in dev rooms).
-      const messages = [...newest.values()].filter(isMessage).toReversed();
-      const pinIds = await this.pinIds();
-      const pinned =
-        pinIds.length === 0
-          ? []
-          : [...(await this.storage.get<ChatMessage | string>(pinIds)).values()].filter(isMessage);
+      const messages = this.messages(
+        "SELECT data FROM message ORDER BY id DESC LIMIT ?",
+        SNAPSHOT_MESSAGES
+      ).toReversed();
+      const pinned = this.messages(
+        "SELECT data FROM message WHERE pinned_at IS NOT NULL ORDER BY pinned_at"
+      );
       send(server, {type: "snapshot", messages, pinned});
       return new Response(null, {status: 101, webSocket: client});
     };
@@ -218,7 +301,7 @@ export class ChatRoom extends DurableObject {
         reactions: command ? {[command.reaction]: 1} : {},
       };
       // Saved before it's shared, so nobody sees a message that could still be lost.
-      await this.storage.put<ChatMessage>(key, data);
+      this.save(data);
       this.broadcast({type: "message", message: data, isNew: true});
       if (command) {
         const botKey = uuidv7();
@@ -229,13 +312,13 @@ export class ChatRoom extends DurableObject {
           timestamp: Date.now(),
           reactions: {},
         };
-        await this.storage.put<ChatMessage>(botKey, botData);
+        this.save(botData);
         this.broadcast({type: "message", message: botData, isNew: true});
       }
       await this.notifyMentions(attachment, m.text);
     } else if (m.type === "react") {
-      const data = await this.storage.get<ChatMessage | string>(m.messageId);
-      if (data && isMessage(data) && !data.deleted && attachment.userId) {
+      const data = this.message(m.messageId);
+      if (data && !data.deleted && attachment.userId) {
         // Toggles your reaction: pressing one you already gave takes it back.
         const reactedBy = {...data.reactedBy};
         const by = reactedBy[m.reaction] ?? [];
@@ -248,13 +331,13 @@ export class ChatRoom extends DurableObject {
           : [...by, attachment.userId];
         if (reactedBy[m.reaction]!.length === 0) delete reactedBy[m.reaction];
         const updated: ChatMessage = {...data, reactions, reactedBy};
-        await this.storage.put(m.messageId, updated);
+        this.save(updated);
         this.broadcast({type: "message", message: updated});
       }
     } else if (m.type === "edit" || m.type === "delete") {
-      const data = await this.storage.get<ChatMessage | string>(m.messageId);
+      const data = this.message(m.messageId);
       // Only your own messages (by account, not by display name).
-      if (!data || !isMessage(data) || data.deleted || !data.userId) return;
+      if (!data || data.deleted || !data.userId) return;
       if (data.userId !== attachment.userId) return;
       const updated: ChatMessage =
         m.type === "edit"
@@ -268,33 +351,21 @@ export class ChatRoom extends DurableObject {
               deleted: true,
               pinned: undefined,
             };
-      await this.storage.put(m.messageId, updated);
-      if (m.type === "delete" && data.pinned) await this.setPinned(m.messageId, false);
+      // A deleted message is also unpinned (it has no `pinned`).
+      this.save(updated);
       this.broadcast({type: "message", message: updated});
       // Mentions the edit added (not ones already notified when it was sent).
       if (m.type === "edit") await this.notifyMentions(attachment, m.text, data.text);
     } else if (m.type === "pin") {
-      const data = await this.storage.get<ChatMessage | string>(m.messageId);
-      if (!data || !isMessage(data) || data.deleted) return;
+      const data = this.message(m.messageId);
+      if (!data || data.deleted) return;
       const updated: ChatMessage = {
         ...data,
         pinned: m.pinned ? {by: attachment.name, at: Date.now()} : undefined,
       };
-      await this.storage.put(m.messageId, updated);
-      await this.setPinned(m.messageId, m.pinned);
+      this.save(updated);
       this.broadcast({type: "message", message: updated});
     }
-  }
-
-  async pinIds(): Promise<string[]> {
-    const stored = await this.storage.get<string>(PINS_KEY);
-    return stored ? z.string().array().catch([]).parse(JSON.parse(stored)) : [];
-  }
-
-  async setPinned(messageId: string, pinned: boolean) {
-    const ids = (await this.pinIds()).filter(id => id !== messageId);
-    if (pinned) ids.push(messageId);
-    await this.storage.put(PINS_KEY, JSON.stringify(ids));
   }
 
   /**
@@ -340,11 +411,8 @@ export class ChatRoom extends DurableObject {
   async clear(puzzleId: string) {
     for (const ws of this.ctx.getWebSockets()) ws.close(1000, "Puzzle deleted");
     await deletePuzzleFiles(this.env.R2, puzzleFilesPrefix("chats", puzzleId));
-    await this.storage.deleteAlarm();
-    await this.storage.deleteAll();
+    // Its old key-value copy too, so nothing can bring the messages back.
+    await this.env.CHAT_ROOMS_KV.getByName(puzzleId).clear();
+    await this.ctx.storage.deleteAll();
   }
-
-  // Chats used to be wiped 7 days after their last activity. Rooms created before that changed
-  // still have the alarm scheduled; it now does nothing, so their history is kept.
-  async alarm() {}
 }

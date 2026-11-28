@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "wow",
   "account_id": "ff0f90cb5a46c881c601b8f3c650c60e",
-  "compatibility_date": "2025-09-02",
+  "compatibility_date": "2026-11-10",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/index.ts",
   "observability": {
@@ -60,13 +60,19 @@
   },
   "durable_objects": {
     "bindings": [
-      {"name": "CHAT_ROOMS", "class_name": "ChatRoom"},
-      {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom"},
-      {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
-      {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
-      {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
+      {"name": "CHAT_ROOMS", "class_name": "ChatRoomV2"},
+      {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoomV2"},
+      {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoomV2"},
+      {"name": "DISCORD_CLIENT", "class_name": "DiscordClientV2"},
+      {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoomV2"},
       {"name": "WHITEBOARD_ROOMS", "class_name": "WhiteboardRoom"},
       {"name": "SHEET_ROOMS", "class_name": "SheetRoom"},
+      // The old key-value-backed classes, read only to copy their data into the SQLite ones above
+      // (src/server/do/kv-migration.ts). PresenceRoom stored nothing, so it needs no binding.
+      {"name": "CHAT_ROOMS_KV", "class_name": "ChatRoom"},
+      {"name": "NOTIFICATION_ROOMS_KV", "class_name": "NotificationRoom"},
+      {"name": "DISCORD_CLIENT_KV", "class_name": "DiscordClient"},
+      {"name": "WORKSPACE_ROOMS_KV", "class_name": "WorkspaceRoom"},
     ],
   },
   "r2_buckets": [{"binding": "R2", "bucket_name": "wow"}],
@@ -92,6 +98,17 @@
     {"tag": "v2", "new_classes": ["WorkspaceRoom"]},
     {"tag": "v3", "new_sqlite_classes": ["WhiteboardRoom"]},
     {"tag": "v4", "new_sqlite_classes": ["SheetRoom"]},
+    // SQLite-backed successors of the v1/v2 key-value classes, which can't be switched in place.
+    {
+      "tag": "v5",
+      "new_sqlite_classes": [
+        "ChatRoomV2",
+        "NotificationRoomV2",
+        "PresenceRoomV2",
+        "DiscordClientV2",
+        "WorkspaceRoomV2",
+      ],
+    },
   ],
   "workflows": [
     {
@@ -176,13 +193,19 @@
       },
       "durable_objects": {
         "bindings": [
-          {"name": "CHAT_ROOMS", "class_name": "ChatRoom"},
-          {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoom"},
-          {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoom"},
-          {"name": "DISCORD_CLIENT", "class_name": "DiscordClient"},
-          {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoom"},
+          {"name": "CHAT_ROOMS", "class_name": "ChatRoomV2"},
+          {"name": "NOTIFICATION_ROOMS", "class_name": "NotificationRoomV2"},
+          {"name": "PRESENCE_ROOMS", "class_name": "PresenceRoomV2"},
+          {"name": "DISCORD_CLIENT", "class_name": "DiscordClientV2"},
+          {"name": "WORKSPACE_ROOMS", "class_name": "WorkspaceRoomV2"},
           {"name": "WHITEBOARD_ROOMS", "class_name": "WhiteboardRoom"},
           {"name": "SHEET_ROOMS", "class_name": "SheetRoom"},
+          // The old key-value-backed classes, read only to copy their data into the SQLite ones above
+          // (src/server/do/kv-migration.ts). PresenceRoom stored nothing, so it needs no binding.
+          {"name": "CHAT_ROOMS_KV", "class_name": "ChatRoom"},
+          {"name": "NOTIFICATION_ROOMS_KV", "class_name": "NotificationRoom"},
+          {"name": "DISCORD_CLIENT_KV", "class_name": "DiscordClient"},
+          {"name": "WORKSPACE_ROOMS_KV", "class_name": "WorkspaceRoom"},
         ],
       },
       "r2_buckets": [{"binding": "R2", "bucket_name": "wow-production"}],

@@ -74,15 +74,24 @@ export default {
   },
 } satisfies ExportedHandler;
 
-export {DiscordClient} from "./server/do/discord-client";
-export {ChatRoom} from "./server/do/chat";
-export {NotificationRoom} from "./server/do/notification";
-export {PresenceRoom} from "./server/do/presence";
+// SQLite-backed, under new names: the old names are the key-value classes they replaced, still
+// deployed only so their data can be copied over (src/server/do/kv-migration.ts).
+export {DiscordClient as DiscordClientV2} from "./server/do/discord-client";
+export {ChatRoom as ChatRoomV2} from "./server/do/chat";
+export {NotificationRoom as NotificationRoomV2} from "./server/do/notification";
+export {PresenceRoom as PresenceRoomV2} from "./server/do/presence";
+export {WorkspaceRoom as WorkspaceRoomV2} from "./server/do/workspace";
+export {
+  ChatRoom,
+  DiscordClient,
+  NotificationRoom,
+  PresenceRoom,
+  WorkspaceRoom,
+} from "./server/do/kv-migration";
 export {
   DeleteChannelAfterDelayWorkflow,
   DiscordDisconnectWorkflow,
 } from "./server/do/discord-client";
-export {WorkspaceRoom} from "./server/do/workspace";
 export {WhiteboardRoom} from "./server/do/whiteboard";
 export {SheetRoom} from "./server/do/sheet";
 export {PuzzleCleanupWorkflow} from "./server/puzzle-cleanup";
