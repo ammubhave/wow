@@ -2,7 +2,6 @@ import {Resizable} from "@heroui-pro/react/resizable";
 import {Button, Drawer, Tooltip} from "@heroui/react";
 import {MegaphoneIcon, MessagesSquareIcon, NotebookPenIcon} from "lucide-react";
 import * as React from "react";
-import {memo} from "react";
 import {cn} from "tailwind-variants";
 import {useMediaQuery} from "usehooks-ts";
 
@@ -175,8 +174,8 @@ function SidebarContents({
   );
 }
 
-/** One round's puzzle squares. Memoized so a workspace update only re-renders changed rounds. */
-const SidebarRound = memo(function SidebarRound({
+/** One round's puzzle squares. */
+function SidebarRound({
   round,
   allPuzzles,
 }: {
@@ -228,4 +227,4 @@ const SidebarRound = memo(function SidebarRound({
       )}
     </div>
   );
-});
+}

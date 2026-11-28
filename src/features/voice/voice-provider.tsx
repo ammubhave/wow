@@ -262,12 +262,12 @@ export function VoiceProvider({
   );
 
   return (
-    <VoiceContext.Provider value={value}>
+    <VoiceContext value={value}>
       {children}
       {/* Teammates' voices play through this (partytracks' audio sink). */}
       {/* oxlint-disable-next-line jsx-a11y/media-has-caption -- live call audio has no captions. */}
       <audio ref={audioRef} autoPlay hidden />
-    </VoiceContext.Provider>
+    </VoiceContext>
   );
 }
 

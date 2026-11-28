@@ -7,7 +7,7 @@ import {
   OctagonAlertIcon,
   PuzzleIcon,
 } from "lucide-react";
-import {memo, useState} from "react";
+import {useState} from "react";
 import {cn} from "tailwind-variants";
 import {useFormatter, useNow} from "use-intl";
 
@@ -31,7 +31,7 @@ export function RelativeTime({date}: {date: Date | string | number}) {
   return format.relativeTime(at, now);
 }
 
-export const ActivityLogItem = memo(function ActivityLogItem({
+export function ActivityLogItem({
   activityItem,
   showIcon = true,
   relativeTime = false,
@@ -191,4 +191,4 @@ export const ActivityLogItem = memo(function ActivityLogItem({
       </time>
     </div>
   );
-});
+}

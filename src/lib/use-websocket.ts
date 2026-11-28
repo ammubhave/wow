@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo} from "react";
+import {useEffect, useMemo} from "react";
 // react-use-websocket is CommonJS-only; its named export interops reliably (the default does not).
 import {ReadyState} from "react-use-websocket/dist/lib/constants";
 import {sharedWebSockets} from "react-use-websocket/dist/lib/globals";
@@ -43,6 +43,8 @@ export function useWebSocket<T = unknown>(
     options.share && typeof url === "string" && !options.queryParams && !options.fromSocketIO
       ? url
       : null;
+  // Memoized by hand on purpose: the sender holds what's queued while the socket is closed, so it
+  // must never be recreated (the compiler's memoization is an optimization, not a promise).
   const sender = useMemo(
     () => (sharedUrl === null ? null : sharedSender(() => sharedWebSockets[sharedUrl])),
     [sharedUrl]
@@ -52,14 +54,10 @@ export function useWebSocket<T = unknown>(
   useEffect(() => {
     if (readyState === ReadyState.OPEN) sender?.flush();
   }, [readyState, sender]);
-  const sendMessage = useCallback<SendMessage>(
-    (message, keep) => (sender ? sender.send(message, keep) : baseSend(message, keep)),
-    [sender, baseSend]
-  );
-  const sendJsonMessage = useCallback(
-    (message: unknown, keep?: boolean) => sendMessage(JSON.stringify(message), keep),
-    [sendMessage]
-  );
+  const sendMessage: SendMessage = (message, keep) =>
+    sender ? sender.send(message, keep) : baseSend(message, keep);
+  const sendJsonMessage = (message: unknown, keep?: boolean) =>
+    sendMessage(JSON.stringify(message), keep);
   return {...socket, sendMessage, sendJsonMessage};
 }
 

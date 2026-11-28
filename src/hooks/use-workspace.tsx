@@ -129,10 +129,10 @@ export function WorkspaceProvider({
   // Normally prefetched by the route loader; this covers the rare case it isn't ready yet.
   if (!workspace) return <WorkspaceSkeleton />;
   return (
-    <WorkspaceContext.Provider value={workspace}>
+    <WorkspaceContext value={workspace}>
       {children}
       <ConnectionBanner isOpen={readyState === ReadyState.OPEN} />
-    </WorkspaceContext.Provider>
+    </WorkspaceContext>
   );
 }
 

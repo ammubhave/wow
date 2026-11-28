@@ -12,7 +12,7 @@ import {
   SettingsIcon,
   StarIcon,
 } from "lucide-react";
-import {useEffect, useEffectEvent, useMemo, useState} from "react";
+import {useEffect, useEffectEvent, useState} from "react";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 import {useLocalStorage} from "usehooks-ts";
@@ -80,10 +80,7 @@ const pushKinds = (prefs: Omit<Prefs, "desktop">): PushKind[] => [
  */
 function DevicePush({prefs}: {prefs: Prefs}) {
   const {solves, announcements, mentions, emails, favorites} = prefs;
-  const kinds = useMemo(
-    () => pushKinds({solves, announcements, mentions, emails, favorites}),
-    [solves, announcements, mentions, emails, favorites]
-  );
+  const kinds = pushKinds({solves, announcements, mentions, emails, favorites});
   const push = usePush(kinds);
   const install = useInstallPrompt();
   const [pending, setPending] = useState(false);

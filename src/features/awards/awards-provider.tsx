@@ -1,6 +1,6 @@
 import {Tooltip} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
-import {createContext, useContext, useMemo} from "react";
+import {createContext, useContext} from "react";
 import {cn} from "tailwind-variants";
 
 import {useWorkspace} from "@/hooks/use-workspace";
@@ -26,6 +26,42 @@ const AwardsContext = createContext<Map<string, PersonAwards> | null>(null);
 /** How often badges catch up with the leaderboard. */
 const REFRESH_MS = 2 * 60_000;
 
+/** Each person's badges and close races, from the recap and the board as it is now. */
+function awardsByUser(
+  data: Parameters<typeof computeRecap>[0] | undefined,
+  puzzles: {id: string; status: string | null; isMetaPuzzle: boolean}[]
+) {
+  const result = new Map<string, PersonAwards>();
+  if (!data) return result;
+  const solvedNow = new Set(puzzles.filter(p => isSolve(p.status)).map(p => p.id));
+  const metaIds = new Set(puzzles.filter(p => p.isMetaPuzzle).map(p => p.id));
+  const {awards, standings} = computeRecap(data, solvedNow, metaIds);
+  const of = (id: string) => {
+    let entry = result.get(id);
+    if (!entry) result.set(id, (entry = {badges: [], chasing: []}));
+    return entry;
+  };
+  for (const award of awards) {
+    of(award.user.id).badges.push({emoji: award.emoji, title: award.title, stat: award.stat});
+  }
+  // Close behind: second and third in a race someone has won (a reason to keep going).
+  for (const standing of standings) {
+    const [leader, ...rest] = standing.ranked;
+    if (!leader || !awards.some(a => a.title === standing.title)) continue;
+    rest.slice(0, 2).forEach((entry, i) => {
+      const gap = leader.value - entry.value;
+      of(entry.user.id).chasing.push({
+        emoji: standing.emoji,
+        title: standing.title,
+        place: i === 0 ? 2 : 3,
+        behind: gap > 0 ? standing.short(gap) : "tied",
+        leader: leader.user.name,
+      });
+    });
+  }
+  return result;
+}
+
 export function AwardsProvider({
   workspaceSlug,
   children,
@@ -39,39 +75,11 @@ export function AwardsProvider({
     staleTime: REFRESH_MS,
     refetchInterval: REFRESH_MS,
   });
-  const puzzles = useMemo(() => workspace.rounds.flatMap(round => round.puzzles), [workspace]);
-  const byUser = useMemo(() => {
-    const result = new Map<string, PersonAwards>();
-    if (!data) return result;
-    const solvedNow = new Set(puzzles.filter(p => isSolve(p.status)).map(p => p.id));
-    const metaIds = new Set(puzzles.filter(p => p.isMetaPuzzle).map(p => p.id));
-    const {awards, standings} = computeRecap(data, solvedNow, metaIds);
-    const of = (id: string) => {
-      let entry = result.get(id);
-      if (!entry) result.set(id, (entry = {badges: [], chasing: []}));
-      return entry;
-    };
-    for (const award of awards) {
-      of(award.user.id).badges.push({emoji: award.emoji, title: award.title, stat: award.stat});
-    }
-    // Close behind: second and third in a race someone has won (a reason to keep going).
-    for (const standing of standings) {
-      const [leader, ...rest] = standing.ranked;
-      if (!leader || !awards.some(a => a.title === standing.title)) continue;
-      rest.slice(0, 2).forEach((entry, i) => {
-        const gap = leader.value - entry.value;
-        of(entry.user.id).chasing.push({
-          emoji: standing.emoji,
-          title: standing.title,
-          place: i === 0 ? 2 : 3,
-          behind: gap > 0 ? standing.short(gap) : "tied",
-          leader: leader.user.name,
-        });
-      });
-    }
-    return result;
-  }, [data, puzzles]);
-  return <AwardsContext.Provider value={byUser}>{children}</AwardsContext.Provider>;
+  const byUser = awardsByUser(
+    data,
+    workspace.rounds.flatMap(round => round.puzzles)
+  );
+  return <AwardsContext value={byUser}>{children}</AwardsContext>;
 }
 
 /** A person's badges and close races (nothing outside a workspace). */

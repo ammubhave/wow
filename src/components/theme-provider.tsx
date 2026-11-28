@@ -47,13 +47,13 @@ export function ThemeProvider({
 
   return (
     // oxlint-disable-next-line react/jsx-no-constructed-context-values -- React Compiler memoizes `value` (it only changes with `theme`).
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext {...props} value={value}>
       {/* Apply the stored theme before first paint to avoid a flash of the wrong theme. */}
       <ScriptOnce>
         {`try{var t=JSON.parse(localStorage.getItem(${JSON.stringify(storageKey)}))||${JSON.stringify(defaultTheme)};if(t==="system")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.classList.add(t)}catch(e){}`}
       </ScriptOnce>
       {children}
-    </ThemeProviderContext.Provider>
+    </ThemeProviderContext>
   );
 }
 

@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useEffectEvent, useState} from "react";
+import {useEffect, useEffectEvent, useState} from "react";
 
 import {EXTENSION_ID} from "@/lib/extension";
 import {client} from "@/lib/orpc";
@@ -142,7 +142,7 @@ export function usePush(kinds: PushKind[]) {
     })().catch((error: unknown) => console.warn("Couldn't update push notifications", error));
   }, [status, kinds]);
 
-  const enable = useCallback(async () => {
+  const enable = async () => {
     if (!VAPID_KEY) return;
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
@@ -160,9 +160,9 @@ export function usePush(kinds: PushKind[]) {
     await save(subscription, kinds);
     tellExtension(subscription.endpoint);
     setStatus("on");
-  }, [kinds]);
+  };
 
-  const disable = useCallback(async () => {
+  const disable = async () => {
     const subscription = await currentSubscription();
     if (subscription) {
       await client.push.unsubscribe({endpoint: subscription.endpoint});
@@ -170,7 +170,7 @@ export function usePush(kinds: PushKind[]) {
     }
     tellExtension(null);
     setStatus("off");
-  }, []);
+  };
 
   return {status, enable, disable};
 }

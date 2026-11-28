@@ -3,10 +3,10 @@
   // The Chrome extension type-checks with its own config (extension/tsconfig.json).
   "exclude": ["node_modules", "extension"],
   "compilerOptions": {
-    "target": "ES2024",
+    "target": "ES2025",
     "jsx": "react-jsx",
     "module": "ESNext",
-    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "lib": ["ES2025", "DOM", "DOM.Iterable"],
     "types": ["vite-plus/client", "./worker-configuration.d.ts"],
 
     /* Bundler mode */

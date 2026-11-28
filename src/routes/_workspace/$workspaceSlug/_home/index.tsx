@@ -286,7 +286,7 @@ function BoardDialogs({
     if (!open) setDialog(null);
   };
   return (
-    <OpenBoardDialogContext.Provider value={setDialog}>
+    <OpenBoardDialogContext value={setDialog}>
       {children}
       {dialog?.kind === "add-round" && (
         <AddNewRoundDialog workspaceSlug={workspaceSlug} open setOpen={setOpen} />
@@ -366,7 +366,7 @@ function BoardDialogs({
           }
         </LivePuzzle>
       )}
-    </OpenBoardDialogContext.Provider>
+    </OpenBoardDialogContext>
   );
 }
 
@@ -1432,9 +1432,9 @@ function BlackboardPage() {
                     feeder, or on a round to move it there. Filters are paused while arranging.
                   </p>
                 )}
-                <ReadOnlyContext.Provider value={isReadOnly}>
-                  <RoundProgressContext.Provider value={roundProgress}>
-                    <ArrangingContext.Provider value={isArranging}>
+                <ReadOnlyContext value={isReadOnly}>
+                  <RoundProgressContext value={roundProgress}>
+                    <ArrangingContext value={isArranging}>
                       {/* Virtualized: only the rows in view are rendered, so an update (yours or a
                           teammate's) doesn't redraw the whole board. Scrolling reuses a row's elements
                           for another puzzle, so anything in a row that keeps state or animates a
@@ -1580,9 +1580,9 @@ function BlackboardPage() {
                           </Table>
                         </Virtualizer>
                       </div>
-                    </ArrangingContext.Provider>
-                  </RoundProgressContext.Provider>
-                </ReadOnlyContext.Provider>
+                    </ArrangingContext>
+                  </RoundProgressContext>
+                </ReadOnlyContext>
                 {nothingMatches && (
                   <EmptyState className="py-16">
                     <EmptyState.Header>

@@ -280,7 +280,7 @@ export function TourProvider({
   );
 
   return (
-    <TourApiContext.Provider value={api}>
+    <TourApiContext value={api}>
       {children}
       {isActive &&
         step &&
@@ -316,6 +316,6 @@ export function TourProvider({
             </div>
           </div>
         ))}
-    </TourApiContext.Provider>
+    </TourApiContext>
   );
 }

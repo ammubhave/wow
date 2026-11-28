@@ -14,7 +14,6 @@ import {
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {CheckIcon, ExternalLinkIcon, LogOutIcon, PanelRightOpenIcon} from "lucide-react";
 import {useEffect, useState} from "react";
-import {v4 as uuidv4} from "uuid";
 
 import {userAvatarSrc, userInitials} from "@/components/user-hover-card";
 import {client, orpc} from "@/lib/orpc";
@@ -328,7 +327,7 @@ function AddPuzzle({
   const add = useMutation({
     mutationFn: async () => {
       if (!chosenRound) throw new Error("Choose a round.");
-      const id = uuidv4();
+      const id = crypto.randomUUID();
       await client.puzzles.create({
         type: "puzzle",
         id,

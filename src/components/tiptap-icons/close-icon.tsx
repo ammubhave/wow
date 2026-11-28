@@ -1,8 +1,6 @@
-import {memo} from "react";
-
 type SvgProps = React.ComponentPropsWithoutRef<"svg">;
 
-export const CloseIcon = memo(({className, ...props}: SvgProps) => {
+export function CloseIcon({className, ...props}: SvgProps) {
   return (
     <svg
       width="24"
@@ -18,6 +16,4 @@ export const CloseIcon = memo(({className, ...props}: SvgProps) => {
       />
     </svg>
   );
-});
-
-CloseIcon.displayName = "CloseIcon";
+}
