@@ -7,7 +7,7 @@ import {toast} from "sonner";
 import {ErrorPage} from "./components/error-page";
 import {NotFoundPage} from "./components/not-found-page";
 import {PageSkeleton} from "./components/page-skeletons";
-import {pageTransitions} from "./components/page-transition";
+import {animatePageChanges} from "./components/page-transition";
 import {ARCHIVED_MESSAGE_START} from "./lib/archived";
 // Import the generated route tree
 import {routeTree} from "./routeTree.gen";
@@ -45,8 +45,6 @@ export const getRouter = () => {
     ],
     // Start loading a route's data when its link is hovered or focused, so navigation is instant.
     defaultPreload: "intent",
-    // Changing page cross-fades (see page-transition.tsx).
-    defaultViewTransition: pageTransitions,
     // A route without a skeleton of its own shows a generic page outline while it loads.
     defaultPendingComponent: PageSkeleton,
     // Every navigation responds at once: a route that has to wait (its data isn't cached, or its
@@ -74,5 +72,7 @@ export const getRouter = () => {
   });
   setupRouterSsrQueryIntegration({router, queryClient});
 
+  // Changing page cross-fades (see page-transition.tsx); not on the server.
+  if (typeof document !== "undefined") animatePageChanges(router);
   return router;
 };

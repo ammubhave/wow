@@ -267,10 +267,10 @@ html[data-app] #ph-conversations-widget-container button[aria-label="Open chat"]
 /* Page changes (see page-transition.tsx): the page area cross-fades (HeroUI leaves the document
    itself out of view transitions, so the header and footer stay put and usable), and a puzzle's
    name moves between the board and its page. Quick, and nothing moves for reduced motion. */
-:root:active-view-transition-type(page) [data-scroll-restoration-id="workspace-page"] {
+:root[data-page-transition] [data-scroll-restoration-id="workspace-page"] {
   view-transition-name: workspace-page;
 }
-:root:active-view-transition-type(page) [data-scroll-restoration-id="public-page"] {
+:root[data-page-transition] [data-scroll-restoration-id="public-page"] {
   view-transition-name: public-page;
 }
 ::view-transition-group(*),
