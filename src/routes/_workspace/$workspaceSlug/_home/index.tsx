@@ -437,13 +437,15 @@ function DragHandle({label}: {label: string}) {
   );
 }
 
-// Trigger classes for the in-cell Selects (shared by each stand-in and its real Select).
+// Trigger classes for the in-cell Selects (shared by each stand-in and its real Select). `-m-2`
+// cancels the cell's padding, so the trigger fills the cell and its value lines up with the column
+// header. `pe-6` keeps room for the absolutely positioned chevron (`p-2` overrides HeroUI's own).
 const SELECT_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
-const PUZZLE_STATUS_TRIGGER_CLASS =
-  "-my-2 h-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
+  "-m-2 h-auto rounded-none border-0 bg-transparent p-2 pe-6 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
+const PUZZLE_STATUS_TRIGGER_CLASS = SELECT_TRIGGER_CLASS;
+// No chevron here; icons sized like the column header's.
 const IMPORTANCE_TRIGGER_CLASS =
-  "-my-2 h-auto w-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none";
+  "-m-2 h-auto w-auto rounded-none border-0 bg-transparent p-2 shadow-none hover:bg-accent-soft focus:bg-accent-soft focus:outline-none [&_svg]:size-4";
 
 // Sentinel id used by HeroUI ListBox/Select for the `null` status option, since
 // React Aria collection item ids cannot be null.
@@ -717,14 +719,10 @@ function DeferredSelect({
 
 const PUZZLE_STATUS_OPTIONS = getPuzzleStatusOptions();
 
-// No status yet: instead of "None" on every row, just room for the Select's muted chevron (which
-// sits over the value), so the statuses that matter stand out and the cell still reads as a picker.
-// "None" stays in the trigger's accessible name.
-const NO_STATUS = (
-  <span className="inline-block w-4">
-    <span className="sr-only">None</span>
-  </span>
-);
+// No status yet: instead of "None" on every row, just the Select's muted chevron, so the statuses
+// that matter stand out and the cell still reads as a picker. "None" stays in the trigger's
+// accessible name.
+const NO_STATUS = <span className="sr-only">None</span>;
 
 function PuzzleStatusSelect({
   value,
