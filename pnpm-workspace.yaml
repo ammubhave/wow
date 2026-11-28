@@ -1,9 +1,9 @@
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@~1.5.1
+  # Vite+ and what it depends on, exactly (npm view vite-plus@<version> dependencies).
+  vite: npm:@voidzero-dev/vite-plus-core@8.3.8001
   # Must match the exact vitest version vite-plus depends on.
-  vitest: 5.1.0
-  # Held on 1.5: 1.8 moves vite-plus-core to 8.x and brings a beta TypeScript (tsrs); upgrade on its own.
-  vite-plus: ~1.5.1
+  vitest: 5.1.1
+  vite-plus: ^1.8.0
 overrides:
   vite: "catalog:"
   vitest: "catalog:"
