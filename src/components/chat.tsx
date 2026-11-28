@@ -9,12 +9,13 @@ import {
   PromptInput,
   usePromptInputTokens,
 } from "@heroui-pro/react";
-import {Avatar, Menu} from "@heroui/react";
+import {Avatar, Menu, Spinner} from "@heroui/react";
 import {useQuery} from "@tanstack/react-query";
 import {useParams} from "@tanstack/react-router";
 import {MessagesSquareIcon, PinIcon} from "lucide-react";
 import {useEffect, useEffectEvent, useRef, useState} from "react";
 import {TokenFieldValue} from "react-aria-components/TokenField";
+import {flushSync} from "react-dom";
 import {toast} from "sonner";
 import {cn} from "tailwind-variants";
 
@@ -46,6 +47,16 @@ import {ReactionPicker, Reactions} from "./reactions";
 import {userAvatarSrc, userInitials} from "./user-hover-card";
 
 const EGGO = "Eggö";
+
+/** Scrolling back: older messages load once you're within this of the top. */
+const LOAD_OLDER_WITHIN_PX = 400;
+
+/** Scrolls to a message that's here and focuses it (which highlights it). */
+function showMessage(id: string) {
+  const element = document.getElementById(`chat-message-${id}`);
+  element?.scrollIntoView({behavior: "smooth", block: "center"});
+  element?.focus({preventScroll: true});
+}
 
 /** Consecutive messages from one sender within this window are grouped under one header. */
 const GROUP_WINDOW_MS = 60 * 1000;
@@ -86,17 +97,6 @@ function TypingIndicator({names}: {names: string[]}) {
       )}
     </div>
   );
-}
-
-/** Scrolls to a (pinned) message and briefly highlights it. */
-function jumpTo(id: string) {
-  const element = document.getElementById(`chat-message-${id}`);
-  if (!element) {
-    toast("That message is older than what's loaded here.");
-    return;
-  }
-  element.scrollIntoView({behavior: "smooth", block: "center"});
-  element.focus({preventScroll: true});
 }
 
 function startsGroup(messages: ChatMessageData[], idx: number) {
@@ -192,6 +192,14 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
   const [images, setImages] = useState<PendingImage[]>([]);
   // Every pinned message (some may be older than the loaded ones), and the one being edited.
   const [pinned, setPinned] = useState<ChatMessageData[]>([]);
+  // Scrolling back: whether the room has older messages than the ones here, and whether a page of
+  // them is on its way.
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  // A page asked for and not yet here (scroll events come faster than renders).
+  const requestingOlder = useRef(false);
+  // A pinned message that isn't loaded yet: older pages load until it is, then it's shown.
+  const pendingJump = useRef<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const me = authClient.useSession().data?.user.id;
   const [isUploading, setIsUploading] = useState(false);
@@ -250,8 +258,52 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
           );
         }
         if (message.type === "snapshot") {
-          setMessages(message.messages);
+          const newest = message.messages;
           setPinned(message.pinned ?? []);
+          requestingOlder.current = false;
+          setMessages(prev => {
+            // A reconnect: keep the older messages already loaded when they join up with the
+            // snapshot (no gap between them), so scrolling back isn't lost.
+            const first = newest[0];
+            if (!prev || !first || !prev.some(m => m.id === first.id)) {
+              setHasOlder(message.hasMore);
+              return newest;
+            }
+            return [...prev.filter(m => m.id < first.id), ...newest];
+          });
+          setLoadingOlder(false);
+        } else if (message.type === "history") {
+          requestingOlder.current = false;
+          // Shown above what's here: keep the view where it was (measured from the bottom, which
+          // doesn't move), rather than jumping to the top of the new page.
+          const log = conversation();
+          const fromBottom = log && log.scrollHeight - log.scrollTop;
+          flushSync(() => {
+            setMessages(prev => {
+              const have = new Set(prev?.map(m => m.id));
+              return [...message.messages.filter(m => !have.has(m.id)), ...(prev ?? [])];
+            });
+            setHasOlder(message.hasMore);
+            setLoadingOlder(false);
+          });
+          if (log && fromBottom !== null) log.scrollTop = log.scrollHeight - fromBottom;
+          const oldest = message.messages[0];
+          const wanted = pendingJump.current;
+          if (wanted) {
+            // Looking for a pinned message: show it once it's here, or keep going back.
+            if (document.getElementById(`chat-message-${wanted}`)) {
+              pendingJump.current = null;
+              showMessage(wanted);
+            } else if (message.hasMore && oldest) {
+              requestOlder(oldest.id);
+            } else {
+              pendingJump.current = null;
+              toast("Couldn't find that message.");
+            }
+          } else if (message.hasMore && oldest && log && log.scrollTop < LOAD_OLDER_WITHIN_PX) {
+            // Still near the top (a short page, or a fast scroll): the next one.
+            requestOlder(oldest.id);
+          }
         } else if (message.type === "message") {
           const updated = message.message;
           setPinned(prev =>
@@ -352,6 +404,51 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
 
   const rootRef = useRef<HTMLDivElement>(null);
   useStayAtNewest(rootRef);
+  /** The scrolling message list. */
+  const conversation = () =>
+    rootRef.current?.querySelector<HTMLElement>('[data-slot="chat-conversation"]') ?? null;
+
+  /** Asks for the page before a message (one request at a time). */
+  const requestOlder = (before: string) => {
+    if (requestingOlder.current) return;
+    requestingOlder.current = true;
+    setLoadingOlder(true);
+    sendJsonMessage({type: "history", before} satisfies ChatRoomSentMessage);
+  };
+  /** The page before the oldest message here, if the room has one. */
+  const loadOlder = () => {
+    const oldest = messages?.[0];
+    if (oldest && hasOlder) requestOlder(oldest.id);
+  };
+  /** Scrolled near the top: the page before. */
+  const onScroll = useEffectEvent(() => {
+    const log = conversation();
+    if (log && log.scrollTop < LOAD_OLDER_WITHIN_PX) loadOlder();
+  });
+  // The list (and its scroll box) appears once the snapshot is here.
+  const loaded = messages !== null;
+  useEffect(() => {
+    const log = rootRef.current?.querySelector('[data-slot="chat-conversation"]');
+    if (!loaded || !log) return undefined;
+    const listener = () => onScroll();
+    log.addEventListener("scroll", listener, {passive: true});
+    return () => log.removeEventListener("scroll", listener);
+  }, [loaded]);
+
+  /** Scrolls to a (pinned) message, loading older ones first if it isn't here yet. */
+  const jumpTo = (id: string) => {
+    if (messages?.some(m => m.id === id)) {
+      showMessage(id);
+      return;
+    }
+    pendingJump.current = id;
+    // Scrolled up (past the few pixels it still counts as the bottom), the conversation stops
+    // following the newest message, which would otherwise pull the view back down as older pages
+    // make the list longer.
+    const log = conversation();
+    if (log) log.scrollTop = Math.max(0, log.scrollTop - 16);
+    loadOlder();
+  };
 
   // Who's here: on this puzzle, or (team chat) on the workspace's other pages, like the board.
   const presences = usePresences(puzzleId ?? workspaceSlug);
@@ -383,110 +480,120 @@ export function Chat({puzzleId}: {puzzleId?: string}) {
               </EmptyState.Header>
             </EmptyState>
           ) : (
-            messages.map((message, idx) => {
-              const isFirstInGroup = startsGroup(messages, idx);
-              const sender = presenceByName.get(message.name);
-              return (
-                <ChatMessage.Assistant
-                  key={message.id}
-                  id={`chat-message-${message.id}`}
-                  // Focusable (not tabbable) so tapping a message on a touch screen, which has no
-                  // hover, focuses it and reveals its reaction button.
-                  tabIndex={-1}
-                  // `group`: the reaction button appears while the message is hovered or focused.
-                  className={cn(
-                    "group hover:bg-surface-secondary/60 focus:bg-surface-secondary/60 relative -mx-2 px-2 outline-none",
-                    isFirstInGroup ? "mt-2 pt-1 pb-0.5" : "py-0.5",
-                    message.timestamp > mountedAt && ARRIVE_FROM_BOTTOM
-                  )}>
-                  <ChatMessage.Avatar
-                    show={isFirstInGroup}
-                    alt={message.name}
-                    src={sender ? userAvatarSrc(sender) : undefined}
-                    fallback={message.name === EGGO ? "🧇" : userInitials(message.name)}
-                  />
-                  <ChatMessage.Body className="gap-1 pe-0">
-                    {isFirstInGroup && (
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="flex min-w-0 items-center gap-1 text-sm font-semibold">
-                          {message.name}
-                          <AwardBadges userId={message.userId} />
-                        </span>
-                        <span className="text-muted flex items-center gap-1 text-xs">
-                          {message.pinned && (
-                            <PinIcon
-                              className="text-accent size-3"
-                              aria-label={`Pinned by ${message.pinned.by}`}
-                            />
-                          )}
-                          <time
-                            dateTime={new Date(message.timestamp).toISOString()}
-                            title={new Date(message.timestamp).toLocaleString()}>
-                            {formatTime(new Date(message.timestamp))}
-                          </time>
-                        </span>
-                      </div>
-                    )}
-                    <ChatMessage.Content className="flex min-w-0 flex-1 flex-col gap-1.5 wrap-anywhere">
-                      {message.deleted ? (
-                        <p className="text-muted text-sm italic">Message deleted</p>
-                      ) : editingId === message.id ? (
-                        <MessageEditor
-                          message={message}
-                          onCancel={() => setEditingId(null)}
-                          onSave={text => {
-                            send({type: "edit", messageId: message.id, text});
-                            setEditingId(null);
-                          }}
-                        />
-                      ) : message.name === EGGO ? (
-                        <EggoText text={message.text} />
-                      ) : (
-                        message.text && <LazyMarkdown>{message.text}</LazyMarkdown>
-                      )}
-                      {message.editedAt && !message.deleted && editingId !== message.id && (
-                        <span
-                          className="text-muted -mt-1 text-xs"
-                          title={`Edited ${new Date(message.editedAt).toLocaleString()}`}>
-                          (edited)
-                        </span>
-                      )}
-                      {message.images?.map(id => (
-                        <ImageLightbox
-                          key={id}
-                          src={imageUrl(id)}
-                          alt={`Shared by ${message.name}`}
-                        />
-                      ))}
-                    </ChatMessage.Content>
-                    {/* Floats over the corner instead of taking a column on every message. */}
-                    {!message.deleted && editingId !== message.id && (
-                      <ChatMessage.Actions className="bg-surface absolute -top-3 right-1 opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
-                        <ReactionPicker
-                          onReact={reaction =>
-                            send({type: "react", messageId: message.id, reaction})
-                          }
-                        />
-                        <MessageActions
-                          message={message}
-                          isMine={me !== undefined && message.userId === me}
-                          onPin={isPinned =>
-                            send({type: "pin", messageId: message.id, pinned: isPinned})
-                          }
-                          onEdit={() => setEditingId(message.id)}
-                          onDelete={() => send({type: "delete", messageId: message.id})}
-                        />
-                      </ChatMessage.Actions>
-                    )}
-                    <Reactions
-                      reactions={message.reactions}
-                      isMine={reaction => !!me && !!message.reactedBy?.[reaction]?.includes(me)}
-                      onReact={reaction => send({type: "react", messageId: message.id, reaction})}
+            <>
+              {hasOlder ? (
+                <div className="text-muted flex h-8 items-center justify-center gap-2 text-xs">
+                  {loadingOlder && <Spinner size="sm" aria-label="Loading earlier messages" />}
+                  {loadingOlder ? "Loading earlier messages…" : null}
+                </div>
+              ) : (
+                <p className="text-muted py-2 text-center text-xs">Start of the conversation</p>
+              )}
+              {messages.map((message, idx) => {
+                const isFirstInGroup = startsGroup(messages, idx);
+                const sender = presenceByName.get(message.name);
+                return (
+                  <ChatMessage.Assistant
+                    key={message.id}
+                    id={`chat-message-${message.id}`}
+                    // Focusable (not tabbable) so tapping a message on a touch screen, which has no
+                    // hover, focuses it and reveals its reaction button.
+                    tabIndex={-1}
+                    // `group`: the reaction button appears while the message is hovered or focused.
+                    className={cn(
+                      "group hover:bg-surface-secondary/60 focus:bg-surface-secondary/60 relative -mx-2 px-2 outline-none",
+                      isFirstInGroup ? "mt-2 pt-1 pb-0.5" : "py-0.5",
+                      message.timestamp > mountedAt && ARRIVE_FROM_BOTTOM
+                    )}>
+                    <ChatMessage.Avatar
+                      show={isFirstInGroup}
+                      alt={message.name}
+                      src={sender ? userAvatarSrc(sender) : undefined}
+                      fallback={message.name === EGGO ? "🧇" : userInitials(message.name)}
                     />
-                  </ChatMessage.Body>
-                </ChatMessage.Assistant>
-              );
-            })
+                    <ChatMessage.Body className="gap-1 pe-0">
+                      {isFirstInGroup && (
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="flex min-w-0 items-center gap-1 text-sm font-semibold">
+                            {message.name}
+                            <AwardBadges userId={message.userId} />
+                          </span>
+                          <span className="text-muted flex items-center gap-1 text-xs">
+                            {message.pinned && (
+                              <PinIcon
+                                className="text-accent size-3"
+                                aria-label={`Pinned by ${message.pinned.by}`}
+                              />
+                            )}
+                            <time
+                              dateTime={new Date(message.timestamp).toISOString()}
+                              title={new Date(message.timestamp).toLocaleString()}>
+                              {formatTime(new Date(message.timestamp))}
+                            </time>
+                          </span>
+                        </div>
+                      )}
+                      <ChatMessage.Content className="flex min-w-0 flex-1 flex-col gap-1.5 wrap-anywhere">
+                        {message.deleted ? (
+                          <p className="text-muted text-sm italic">Message deleted</p>
+                        ) : editingId === message.id ? (
+                          <MessageEditor
+                            message={message}
+                            onCancel={() => setEditingId(null)}
+                            onSave={text => {
+                              send({type: "edit", messageId: message.id, text});
+                              setEditingId(null);
+                            }}
+                          />
+                        ) : message.name === EGGO ? (
+                          <EggoText text={message.text} />
+                        ) : (
+                          message.text && <LazyMarkdown>{message.text}</LazyMarkdown>
+                        )}
+                        {message.editedAt && !message.deleted && editingId !== message.id && (
+                          <span
+                            className="text-muted -mt-1 text-xs"
+                            title={`Edited ${new Date(message.editedAt).toLocaleString()}`}>
+                            (edited)
+                          </span>
+                        )}
+                        {message.images?.map(id => (
+                          <ImageLightbox
+                            key={id}
+                            src={imageUrl(id)}
+                            alt={`Shared by ${message.name}`}
+                          />
+                        ))}
+                      </ChatMessage.Content>
+                      {/* Floats over the corner instead of taking a column on every message. */}
+                      {!message.deleted && editingId !== message.id && (
+                        <ChatMessage.Actions className="bg-surface absolute -top-3 right-1 opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
+                          <ReactionPicker
+                            onReact={reaction =>
+                              send({type: "react", messageId: message.id, reaction})
+                            }
+                          />
+                          <MessageActions
+                            message={message}
+                            isMine={me !== undefined && message.userId === me}
+                            onPin={isPinned =>
+                              send({type: "pin", messageId: message.id, pinned: isPinned})
+                            }
+                            onEdit={() => setEditingId(message.id)}
+                            onDelete={() => send({type: "delete", messageId: message.id})}
+                          />
+                        </ChatMessage.Actions>
+                      )}
+                      <Reactions
+                        reactions={message.reactions}
+                        isMine={reaction => !!me && !!message.reactedBy?.[reaction]?.includes(me)}
+                        onReact={reaction => send({type: "react", messageId: message.id, reaction})}
+                      />
+                    </ChatMessage.Body>
+                  </ChatMessage.Assistant>
+                );
+              })}
+            </>
           )}
         </ChatConversation.Content>
         <ChatConversation.ScrollButton aria-label="Scroll to newest" tooltip="Scroll to newest" />

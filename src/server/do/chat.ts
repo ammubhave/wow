@@ -36,6 +36,8 @@ const chatRoomSentMessageSchema = z.union([
   z.object({type: z.literal("pin"), messageId: z.string(), pinned: z.boolean()}),
   // "I'm typing" (sent every few seconds while composing): relayed to the others, never stored.
   z.object({type: z.literal("typing")}),
+  // Older messages, scrolling back: the page before this message (by id). Read-only rooms too.
+  z.object({type: z.literal("history"), before: z.string().max(64)}),
 ]);
 export type ChatRoomSentMessage = z.infer<typeof chatRoomSentMessageSchema>;
 
@@ -59,8 +61,11 @@ export type ChatMessage = {
   pinned?: {by: string; at: number};
 };
 export type ChatRoomReceivedMessage =
-  // `pinned`: every pinned message, including ones older than the snapshot's window.
-  | {type: "snapshot"; messages: ChatMessage[]; pinned: ChatMessage[]}
+  // `pinned`: every pinned message, including ones older than the snapshot's window. `hasMore`:
+  // older messages than these exist (ask with "history").
+  | {type: "snapshot"; messages: ChatMessage[]; pinned: ChatMessage[]; hasMore: boolean}
+  // A page of older messages (oldest first), for the socket that asked.
+  | {type: "history"; messages: ChatMessage[]; hasMore: boolean}
   // `isNew`: just sent (otherwise an existing message changed: reacted to, edited, pinned, …).
   | {type: "message"; message: ChatMessage; isNew?: boolean}
   // Someone else is typing (repeated while they are; it lapses when they stop).
@@ -111,8 +116,9 @@ const mentionedIn = (text: string) =>
 /** The fastest one socket's "typing" pings are relayed (the page sends one every 3s). */
 const TYPING_MIN_INTERVAL_MS = 1500;
 
-// Joining sends the newest messages only, so a long-running chat stays cheap to open.
-const SNAPSHOT_MESSAGES = 500;
+// Joining sends the newest messages only, so a long-running chat stays cheap to open; scrolling
+// back loads older ones a page at a time.
+const PAGE_MESSAGES = 100;
 
 /** Eggö's commands: a message starting with one gets its reaction, and Eggö repeats it. */
 const COMMANDS = [
@@ -153,6 +159,22 @@ export class ChatRoom extends DurableObject<Env> {
     );
   }
 
+  /** The newest page of messages (before a message, when scrolling back), oldest first. */
+  page(before?: string): {messages: ChatMessage[]; hasMore: boolean} {
+    // One more than a page, to know whether there's another.
+    const newest = before
+      ? this.messages(
+          "SELECT data FROM message WHERE id < ? ORDER BY id DESC LIMIT ?",
+          before,
+          PAGE_MESSAGES + 1
+        )
+      : this.messages("SELECT data FROM message ORDER BY id DESC LIMIT ?", PAGE_MESSAGES + 1);
+    return {
+      messages: newest.slice(0, PAGE_MESSAGES).toReversed(),
+      hasMore: newest.length > PAGE_MESSAGES,
+    };
+  }
+
   messages(query: string, ...bindings: SqlStorageValue[]): ChatMessage[] {
     return this.sql
       .exec<{data: string}>(query, ...bindings)
@@ -176,14 +198,11 @@ export class ChatRoom extends DurableObject<Env> {
         ...room,
         readOnly,
       });
-      const messages = this.messages(
-        "SELECT data FROM message ORDER BY id DESC LIMIT ?",
-        SNAPSHOT_MESSAGES
-      ).toReversed();
+      const {messages, hasMore} = this.page();
       const pinned = this.messages(
         "SELECT data FROM message WHERE pinned_at IS NOT NULL ORDER BY pinned_at"
       );
-      send(server, {type: "snapshot", messages, pinned});
+      send(server, {type: "snapshot", messages, pinned, hasMore});
       return new Response(null, {status: 101, webSocket: client});
     };
     app.get("/api/chat/:puzzleId", c =>
@@ -209,6 +228,10 @@ export class ChatRoom extends DurableObject<Env> {
       m = chatRoomSentMessageSchema.parse(JSON.parse(message));
     } catch {
       return; // Ignore malformed messages instead of throwing in the DO.
+    }
+    if (m.type === "history") {
+      send(ws, {type: "history", ...this.page(m.before)});
+      return;
     }
     if (attachment.readOnly) return;
 
